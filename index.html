@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Julian Veerkamp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080810;
+      --surface: #0f0f1a;
+      --border: #1e1e2e;
+      --accent: #7c6fff;
+      --accent2: #ff6fb0;
+      --accent3: #6fffd4;
+      --text: #e8e8f0;
+      --muted: #6b6b8a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(124,111,255,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(255,111,176,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(111,255,212,0.04) 0%, transparent 60%);
+      animation: bgShift 12s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes bgShift {
+      0%   { opacity: 1; transform: scale(1); }
+      100% { opacity: 0.7; transform: scale(1.05); }
+    }
+
+    /* Noise overlay */
+    .noise {
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.4;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem 6rem;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .avatar-ring {
+      width: 90px;
+      height: 90px;
+      margin: 0 auto 1.2rem;
+      border-radius: 50%;
+      padding: 2px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .avatar-ring:hover {
+      transform: scale(1.05) rotate(5deg);
+      box-shadow: 0 0 30px rgba(124,111,255,0.4);
+    }
+
+    .avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      overflow: hidden;
+    }
+
+    .avatar-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+    }
+
+    /* Typing cursor */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--accent);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Link grid */
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .link-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.9rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .link-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .link-card:hover::before { opacity: 0.07; }
+
+    .link-card:hover {
+      border-color: rgba(124,111,255,0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(124,111,255,0.15);
+    }
+
+    .link-card:active { transform: translateY(0); }
+
+    .link-card-icon {
+      font-size: 1.3rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .link-card-name {
+      font-weight: 600;
+      font-size: 0.88rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .link-card-desc {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 300;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Tools list — wider cards */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    @media (max-width: 480px) {
+      .link-grid { grid-template-columns: repeat(2, 1fr); }
+      .tools-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 1.6rem; }
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    footer span {
+      color: var(--accent);
+    }
+
+    /* Ripple effect */
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    .link-card .ripple-el {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(124,111,255,0.3);
+      pointer-events: none;
+      transform: scale(0);
+      animation: ripple 0.5s linear;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="noise"></div>
+
+  <main>
+    <header class="header">
+      <div class="avatar-ring" title="Hey 👋">
+        <div class="avatar-inner">
+          <!-- Hauptfoto (wird zuerst angezeigt) -->
+          <img src="img/foto1.jpg" alt="Julian Veerkamp" />
+        </div>
+      </div>
+      <h1>Julian Veerkamp</h1>
+      <p class="tagline"><span id="typed"></span><span class="cursor"></span></p>
+    </header>
+
+    <section class="section">
+      <div class="section-label">Social Media</div>
+      <div class="link-grid">
+        <a class="link-card" href="https://signal.me/#eu/JnL6PouqINGbQCUuNhXo69gpY5xPND4QNTH02ntumokkWus1NVRGC490c4jjJo2r" target="_blank">
+          <span class="link-card-icon">💬</span>
+          <span class="link-card-name">Signal</span>
+          <span class="link-card-desc">Schreib mir</span>
+        </a>
+        <a class="link-card" href="https://instagram.com/juliansebv" target="_blank">
+          <span class="link-card-icon">📸</span>
+          <span class="link-card-name">Instagram</span>
+          <span class="link-card-desc">Schöne Fotos</span>
+        </a>
+        <a class="link-card" href="https://bere.al/juliansebv" target="_blank">
+          <span class="link-card-icon">📷</span>
+          <span class="link-card-name">BeReal</span>
+          <span class="link-card-desc">Fotos</span>
+        </a>
+        <a class="link-card" href="https://discord.com/invite/ethfHJk9" target="_blank">
+          <span class="link-card-icon">🎮</span>
+          <span class="link-card-name">Discord</span>
+          <span class="link-card-desc">Rede mit mir</span>
+        </a>
+        <a class="link-card" href="https://stats.fm/savo" target="_blank">
+          <span class="link-card-icon">🎵</span>
+          <span class="link-card-name">Spotify</span>
+          <span class="link-card-desc">Höre was ich höre</span>
+        </a>
+        <a class="link-card" href="https://twitch.tv/savo2610" target="_blank">
+          <span class="link-card-icon">🟣</span>
+          <span class="link-card-name">Twitch</span>
+          <span class="link-card-desc">Schau was ich schau</span>
+        </a>
+        <a class="link-card" href="https://youtube.com/@savo2610" target="_blank">
+          <span class="link-card-icon">▶️</span>
+          <span class="link-card-name">YouTube</span>
+          <span class="link-card-desc">Qualitätscontent</span>
+        </a>
+        <a class="link-card" href="https://www.komoot.de/user/464140060326" target="_blank">
+          <span class="link-card-icon">🏔️</span>
+          <span class="link-card-name">Komoot</span>
+          <span class="link-card-desc">Wandern & Radfahren</span>
+        </a>
+        <a class="link-card" href="https://linkedin.com/in/jsveerkamp" target="_blank">
+          <span class="link-card-icon">💼</span>
+          <span class="link-card-name">LinkedIn</span>
+          <span class="link-card-desc">Meine Erfahrung</span>
+        </a>
+        <a class="link-card" href="https://github.com/Savo2610" target="_blank">
+          <span class="link-card-icon">⚙️</span>
+          <span class="link-card-name">GitHub</span>
+          <span class="link-card-desc">Meine Projekte</span>
+        </a>
+        <a class="link-card" href="https://paypal.me/juliansebv" target="_blank">
+          <span class="link-card-icon">💸</span>
+          <span class="link-card-name">PayPal</span>
+          <span class="link-card-desc">Geld senden</span>
+        </a>
+        <a class="link-card" href="solana:BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da">
+          <span class="link-card-icon">◎</span>
+          <span class="link-card-name">Solana</span>
+          <span class="link-card-desc">Echtes Geld</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-label">Meine Tools</div>
+      <div class="tools-grid">
+        <a class="link-card" href="https://bin.veerka.mp" target="_blank">
+          <span class="link-card-icon">📋</span>
+          <span class="link-card-name">PasteBin</span>
+          <span class="link-card-desc">Sende Texte</span>
+        </a>
+        <a class="link-card" href="https://send.veerka.mp" target="_blank">
+          <span class="link-card-icon">📦</span>
+          <span class="link-card-name">FileTransfer</span>
+          <span class="link-card-desc">Sende Dateien</span>
+        </a>
+        <a class="link-card" href="https://zeit.veerka.mp" target="_blank">
+          <span class="link-card-icon">⏱️</span>
+          <span class="link-card-name">Arbeitszeit</span>
+          <span class="link-card-desc">Wie lange arbeitest du?</span>
+        </a>
+        <a class="link-card" href="https://diarydash.streamlit.app" target="_blank">
+          <span class="link-card-icon">📓</span>
+          <span class="link-card-name">DiaryDash</span>
+          <span class="link-card-desc">Analysiere dein Tagebuch</span>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      made with <span>♥</span> · <span>veerka.mp</span> 
+    </footer>
+  </main>
+
+  <script>
+    // Typing animation
+    const phrases = [
+      'Student E-Technik und IT. 👨‍💻',
+      'Vibe Coder. ✨',
+      'Freiwilliger Feuerwehrmann. 🚒',
+      'Skilehrer. ⛷️',
+      'Techno-Fan. 🪩',
+      'Wanderer & Kletterer. 🏔️',
+      'Aus Frankfurt. 🏢',
+    ];
+    let pi = 0, ci = 0, deleting = false;
+    const el = document.getElementById('typed');
+
+    function type() {
+      const phrase = phrases[pi];
+      if (!deleting) {
+        el.textContent = phrase.slice(0, ++ci);
+        if (ci === phrase.length) { deleting = true; setTimeout(type, 2200); return; }
+      } else {
+        el.textContent = phrase.slice(0, --ci);
+        if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
+      }
+      setTimeout(type, deleting ? 40 : 70);
+    }
+    type();
+
+    // Ripple effect on cards
+    document.querySelectorAll('.link-card').forEach(card => {
+      card.addEventListener('click', function(e) {
+        const rect = card.getBoundingClientRect();
+        const r = document.createElement('span');
+        r.className = 'ripple-el';
+        const size = Math.max(rect.width, rect.height);
+        r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+        card.appendChild(r);
+        r.addEventListener('animationend', () => r.remove());
+      });
+    });
+
+    // Avatar Slideshow – Fotos + Krabbe am Ende
+    // Pfade anpassen: Fotos ins Repo legen, z.B. in einen Ordner img/
+    const avatarSequence = [
+      { type: 'img', src: 'img/foto1.jpg' },
+      { type: 'img', src: 'img/foto2.jpg' },
+      { type: 'img', src: 'img/foto3.jpg' },
+      { type: 'img', src: 'img/foto4.jpg' },
+      { type: 'img', src: 'img/foto5.jpg' },
+      { type: 'emoji', val: '🦞' },
+    ];
+    let avatarIdx = 0;
+    const avatarInner = document.querySelector('.avatar-inner');
+
+    function setAvatar(item) {
+      if (item.type === 'img') {
+        avatarInner.innerHTML = `<img src="${item.src}" alt="Julian Veerkamp" />`;
+      } else {
+        avatarInner.innerHTML = item.val;
+      }
+    }
+
+    document.querySelector('.avatar-ring').addEventListener('click', () => {
+      avatarIdx = (avatarIdx + 1) % avatarSequence.length;
+      setAvatar(avatarSequence[avatarIdx]);
+    });
+  </script>
+</body>
+</html>

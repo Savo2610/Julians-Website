@@ -1,0 +1,5 @@
+# Die Avatar-Fotos ändern sich praktisch nie – 30 Tage im Browser behalten.
+# Wird ein Foto ausgetauscht, den Dateinamen mitändern (foto1b.webp o. ä.),
+# sonst sehen wiederkehrende Besucher bis zu 30 Tage das alte Bild.
+/img/*
+  Cache-Control: public, max-age=2592000

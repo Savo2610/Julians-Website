@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Julian Veerkamp</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="/img/foto1.webp">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -228,7 +230,7 @@
     /* Tools list — wider cards */
     .tools-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 0.6rem;
     }
 
@@ -275,7 +277,7 @@
       <div class="avatar-ring" title="Hey 👋">
         <div class="avatar-inner">
           <!-- Hauptfoto (wird zuerst angezeigt) -->
-          <img src="https://github.com/Savo2610/Julians-Website/blob/main/img/foto1.jpg?raw=true" alt="Julian Veerkamp" />
+          <img src="/img/foto1.webp" width="256" height="256" fetchpriority="high" alt="Julian Veerkamp" />
         </div>
       </div>
       <h1>Julian Veerkamp</h1>
@@ -351,25 +353,20 @@
     <section class="section">
       <div class="section-label">Meine Tools</div>
       <div class="tools-grid">
-        <a class="link-card" href="https://bin.veerka.mp" target="_blank">
-          <span class="link-card-icon">📋</span>
-          <span class="link-card-name">PasteBin</span>
-          <span class="link-card-desc">Sende Texte</span>
+        <a class="link-card" href="https://s.veerka.mp" target="_blank">
+          <span class="link-card-icon">🔗</span>
+          <span class="link-card-name">Kurzlink</span>
+          <span class="link-card-desc">Links kürzen</span>
         </a>
-        <a class="link-card" href="https://send.veerka.mp" target="_blank">
-          <span class="link-card-icon">📦</span>
-          <span class="link-card-name">FileTransfer</span>
-          <span class="link-card-desc">Sende Dateien</span>
+        <a class="link-card" href="https://packliste.veerka.mp" target="_blank">
+          <span class="link-card-icon">🎒</span>
+          <span class="link-card-name">Packliste</span>
+          <span class="link-card-desc">Nichts vergessen</span>
         </a>
         <a class="link-card" href="https://zeit.veerka.mp" target="_blank">
           <span class="link-card-icon">⏱️</span>
           <span class="link-card-name">Arbeitszeit</span>
           <span class="link-card-desc">Wie lange arbeitest du?</span>
-        </a>
-        <a class="link-card" href="https://diarydash.streamlit.app" target="_blank">
-          <span class="link-card-icon">📓</span>
-          <span class="link-card-name">DiaryDash</span>
-          <span class="link-card-desc">Analysiere dein Tagebuch</span>
         </a>
       </div>
     </section>
@@ -422,23 +419,31 @@
     // Avatar Slideshow – Fotos + Krabbe am Ende
     // Pfade anpassen: Fotos ins Repo legen, z.B. in einen Ordner img/
     const avatarSequence = [
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto1.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto2.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto3.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto4.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto5.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto6.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto7.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto8.jpg?raw=true' },
-      { type: 'img', src: 'https://github.com/Savo2610/Julians-Website/blob/main/img/foto9.jpg?raw=true' },
+      { type: 'img', src: '/img/foto1.webp' },
+      { type: 'img', src: '/img/foto2.webp' },
+      { type: 'img', src: '/img/foto3.webp' },
+      { type: 'img', src: '/img/foto4.webp' },
+      { type: 'img', src: '/img/foto5.webp' },
+      { type: 'img', src: '/img/foto6.webp' },
+      { type: 'img', src: '/img/foto7.webp' },
+      { type: 'img', src: '/img/foto8.webp' },
+      { type: 'img', src: '/img/foto9.webp' },
       { type: 'emoji', val: '🦞' },
     ];
     let avatarIdx = 0;
     const avatarInner = document.querySelector('.avatar-inner');
 
+    // Die restlichen Fotos im Hintergrund holen, damit der Wechsel per Klick
+    // ohne Ladepause passiert (zusammen ~100 KB).
+    addEventListener('load', () => {
+      for (const item of avatarSequence) {
+        if (item.type === 'img') new Image().src = item.src;
+      }
+    });
+
     function setAvatar(item) {
       if (item.type === 'img') {
-        avatarInner.innerHTML = `<img src="${item.src}" alt="Julian Veerkamp" />`;
+        avatarInner.innerHTML = `<img src="${item.src}" width="256" height="256" alt="Julian Veerkamp" />`;
       } else {
         avatarInner.innerHTML = item.val;
       }

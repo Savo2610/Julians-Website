@@ -828,6 +828,74 @@
       .up-ziehen { display: none; }
     }
 
+    /* --- Kurzlink-Dialog --- */
+
+    .kz-feld {
+      width: 100%;
+      padding: 0.6rem 0.7rem;
+      background: rgba(8,8,16,0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+      outline: none;
+    }
+
+    .kz-feld:focus { border-color: rgba(124,111,255,0.5); }
+    .kz-feld::placeholder { color: var(--muted); }
+
+    /* Turnstile zeigt sich nur, wenn es wirklich nachfragen will. Solange es
+       schweigt, ist der Kasten unsichtbar und soll keinen Platz kosten – den
+       Abstand nach unten macht ohnehin der Knopf. */
+    .kz-ts {
+      display: flex;
+      justify-content: center;
+    }
+
+    .kz-out {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.9rem;
+      padding: 0.55rem 0.7rem;
+      background: rgba(8,8,16,0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .kz-kurz {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--accent3);
+      text-decoration-color: rgba(111,255,212,0.4);
+      text-underline-offset: 3px;
+    }
+
+    .kz-kopieren {
+      flex: none;
+      padding: 0.32rem 0.55rem;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+
+    .kz-kopieren:hover {
+      color: var(--text);
+      border-color: rgba(124,111,255,0.4);
+    }
+
+    .kz-fuss { margin-top: 0.9rem; font-size: 0.7rem; }
+
     /* Schmalere Fenster: alles untereinander, Social zweispaltig. */
     @media (max-width: 720px) {
       .inhalt { grid-template-columns: 1fr; gap: 2rem; }
@@ -919,7 +987,9 @@
       <section>
         <div class="section-label">Meine Tools</div>
         <div class="tools-grid">
-          <a class="link-card" href="https://s.veerka.mp" target="_blank">
+          <!-- Ohne JavaScript bleibt es der Link auf die volle Seite. Mit
+               JavaScript übernimmt der Dialog weiter unten. -->
+          <a class="link-card" id="kz-kachel" href="https://s.veerka.mp" target="_blank">
             <span class="link-card-icon">🔗</span>
             <span class="link-card-name">Kurzlink</span>
             <span class="link-card-desc">Links kürzen</span>
@@ -1032,6 +1102,37 @@
     </p>
   </dialog>
 
+  <!-- Kurzlink-Dialog. Wird von /kurz.js gefüllt und gesteuert. -->
+  <dialog id="kz-dialog" class="dialog" aria-labelledby="kz-titel">
+    <button type="button" class="dialog-zu" id="kz-zu" aria-label="Schließen">×</button>
+
+    <div class="dialog-kopf">
+      <span class="dialog-symbol">🔗</span>
+      <strong id="kz-titel">Kurzlink</strong>
+    </div>
+
+    <form id="kz-form" autocomplete="off">
+      <label class="dialog-label" for="kz-url">Lange Adresse</label>
+      <input type="url" id="kz-url" class="kz-feld" inputmode="url"
+             placeholder="https://…" required />
+      <!-- Hier rendert Turnstile, sobald /kurz.js den Sitekey geholt hat. -->
+      <div class="kz-ts" id="kz-ts"></div>
+      <button type="submit" class="dialog-los" id="kz-los" disabled>Moment…</button>
+    </form>
+
+    <div class="kz-out" id="kz-out" hidden>
+      <a class="kz-kurz" id="kz-kurz" href="#" target="_blank" rel="noopener"></a>
+      <button type="button" class="kz-kopieren" id="kz-kopieren">Kopieren</button>
+    </div>
+
+    <p class="dialog-status" id="kz-status" role="status" aria-live="polite" hidden></p>
+
+    <p class="dialog-text kz-fuss">
+      QR-Code gibt es auf <a href="https://s.veerka.mp" target="_blank" rel="noopener">s.veerka.mp</a>.
+      Kurzlinks sind öffentlich erratbar – nichts Vertrauliches kürzen.
+    </p>
+  </dialog>
+
   <script>
     // Typing animation
     const phrases = [
@@ -1101,11 +1202,16 @@
       }, 1600);
     });
 
-    // Die Upload-Kachel hat kein Gegenstück als App, deshalb übernimmt der
-    // Dialog überall – ohne die Umwege von oben.
+    // Upload und Kurzlink haben kein Gegenstück als App, deshalb übernimmt
+    // der Dialog dort überall – ohne die Umwege von oben.
     document.getElementById('up-kachel').addEventListener('click', (e) => {
       e.preventDefault();
       import('/upload.js').then(m => m.oeffnen());
+    });
+
+    document.getElementById('kz-kachel').addEventListener('click', (e) => {
+      e.preventDefault();
+      import('/kurz.js').then(m => m.oeffnen());
     });
 
     // Avatar Slideshow – Fotos + Krabbe am Ende

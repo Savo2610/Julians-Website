@@ -300,6 +300,26 @@
       gap: 0.6rem;
     }
 
+    /* Die Tools stehen in einer schmalen Spalte – dort ist die flache Form
+       mit Symbol links und Text rechts richtig. Vier flache Kacheln bleiben
+       so niedriger als die drei Reihen Social Media daneben, damit alles
+       zusammen auf einen Bildschirm passt. */
+    .tools-grid .link-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "symbol name"
+        "symbol desc";
+      align-items: center;
+      column-gap: 0.7rem;
+      row-gap: 0;
+      padding: 0.7rem 0.9rem;
+    }
+
+    .tools-grid .link-card-icon { grid-area: symbol; font-size: 1.25rem; }
+    .tools-grid .link-card-name { grid-area: name; }
+    .tools-grid .link-card-desc { grid-area: desc; }
+
     .link-card {
       display: flex;
       flex-direction: column;
@@ -516,6 +536,11 @@
             <span class="link-card-icon">⏱️</span>
             <span class="link-card-name">Arbeitszeit</span>
             <span class="link-card-desc">Wie lange arbeitest du?</span>
+          </a>
+          <a class="link-card" href="https://upload.veerka.mp" target="_blank">
+            <span class="link-card-icon">📤</span>
+            <span class="link-card-name">Upload</span>
+            <span class="link-card-desc">Dateien senden</span>
           </a>
         </div>
       </section>

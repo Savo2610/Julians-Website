@@ -14,6 +14,9 @@ npm run deploy    # von Hand nach veerka.mp
 | -------------------------- | --------------------------------------------------- |
 | `public/index.html`        | die komplette Seite – HTML, CSS und JS in einer Datei |
 | `public/scene.js`          | die 3D-Szene hinter der Seite (three.js)            |
+| `public/wallet.js`         | der Solana-Dialog: Wallet finden und senden         |
+| `public/upload.js`         | der Upload-Dialog: Briefkasten in klein             |
+| `public/dialog.js`         | das bisschen, das sich beide Dialoge teilen         |
 | `public/vendor/three-*/`   | three.js, unverändert aus dem npm-Paket             |
 | `public/img/*.webp`        | die Avatar-Fotos, 256 px, ~12 KB pro Stück          |
 | `public/_headers`          | Cache-Regeln für Bilder und `vendor/`               |
@@ -57,6 +60,27 @@ mkdir -p public/vendor/three-<version>
 cp package/build/three.module.min.js package/build/three.core.min.js \
    package/LICENSE public/vendor/three-<version>/
 ```
+
+## Die zwei Dialoge
+
+Zwei Kacheln öffnen statt eines Links ein Fenster. Beide Module werden erst
+beim ersten Klick geladen – ohne JavaScript bleibt die Kachel der Link, der
+sie vorher war.
+
+**Solana** (`wallet.js`) sucht Wallet-Erweiterungen über den Wallet Standard,
+baut die Überweisung als rohe Bytes selbst zusammen und gibt sie der Wallet
+zum Signieren und Senden. Der Betrag lässt sich in SOL oder Euro eintippen;
+gesendet wird immer SOL. Ist keine Wallet da, steht dort eine Empfehlung.
+
+**Upload** (`upload.js`) ist der Briefkasten von `upload.veerka.mp` in klein:
+Dateien wählen oder hineinziehen, Fortschritt in Prozent, dazu ein Feld für
+Text und Links. Gesprochen wird direkt mit der API dort, die ihre
+Einwurf-Routen dafür nach veerka.mp herausgibt (CORS). Es gilt das anonyme
+Limit von 50 MB pro Datei; für mehr führt ein Link auf die volle Seite.
+
+Zum lokalen Ausprobieren muss der Uploader daneben laufen (`npm run dev` in
+seinem Repo, Port 8788) und dort `DEV_HERKUNFT=http://localhost:8787` in
+`.dev.vars` stehen. Sonst gingen Probe-Uploads in den echten Speicher.
 
 ## Fotos austauschen
 

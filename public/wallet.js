@@ -8,6 +8,8 @@
 //
 // Die Bytefolge ist gegen @solana/web3.js 1.98.4 geprüft (siehe Commit).
 
+import { schliessbar } from './dialog.js';
+
 export const EMPFAENGER = 'BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da';
 
 // Nur für den Blockhash. Gesendet wird über die Wallet, nicht über uns.
@@ -414,36 +416,8 @@ function verdrahten() {
   if (vorbereitet) return;
   vorbereitet = true;
 
-  const dialog = $('sol-dialog');
   $('sol-adresse-text').textContent = kurz(EMPFAENGER);
-  $('sol-zu').addEventListener('click', () => dialog.close());
-
-  // Klick auf den dunklen Rand schließt ebenfalls – aber nur, wenn er
-  // wirklich draußen beginnt UND endet. Die frühere Prüfung auf
-  // "Ziel ist der Dialog" traf auch das Innenpolster des Fensters und
-  // jedes Markieren, das über den Rand hinausrutschte.
-  const draussen = (ereignis) => {
-    const flaeche = dialog.getBoundingClientRect();
-    return (
-      ereignis.clientX < flaeche.left ||
-      ereignis.clientX > flaeche.right ||
-      ereignis.clientY < flaeche.top ||
-      ereignis.clientY > flaeche.bottom
-    );
-  };
-
-  // detail > 0 grenzt echte Mausklicks von Tastatur-Auslösungen ab, die
-  // ohne Koordinaten kommen und sonst als "draußen" gälten.
-  let vonDraussen = false;
-  dialog.addEventListener('mousedown', (ereignis) => {
-    vonDraussen = ereignis.detail > 0 && draussen(ereignis);
-  });
-
-  dialog.addEventListener('click', (ereignis) => {
-    const schliessen = vonDraussen && ereignis.detail > 0 && draussen(ereignis);
-    vonDraussen = false;
-    if (schliessen) dialog.close();
-  });
+  schliessbar($('sol-dialog'), $('sol-zu'));
 
   $('sol-kopieren').addEventListener('click', async () => {
     const hinweis = $('sol-kopieren-text');

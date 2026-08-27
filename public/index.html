@@ -434,9 +434,13 @@
       animation: ripple 0.5s linear;
     }
 
-    /* --- Solana-Dialog --- */
+    /* --- Dialogfenster --- */
 
-    .sol-dialog {
+    /* Rahmen, Kopf, Knopf, Statuszeile: das haben der Solana- und der
+       Upload-Dialog gemeinsam. Was nur einen von beiden betrifft, steht
+       weiter unten unter eigenem Namen. */
+
+    .dialog {
       width: min(24rem, calc(100vw - 2rem));
       /* Der Reset ganz oben nimmt <dialog> das margin:auto, mit dem der
          Browser sonst zentriert. Hier wieder her. */
@@ -454,13 +458,13 @@
       position: relative;
     }
 
-    .sol-dialog::backdrop {
+    .dialog::backdrop {
       background: rgba(8,8,16,0.72);
       -webkit-backdrop-filter: blur(3px);
       backdrop-filter: blur(3px);
     }
 
-    .sol-zu {
+    .dialog-zu {
       position: absolute;
       top: 0.7rem;
       right: 0.8rem;
@@ -474,9 +478,9 @@
       border-radius: 8px;
     }
 
-    .sol-zu:hover { color: var(--text); }
+    .dialog-zu:hover { color: var(--text); }
 
-    .sol-kopf {
+    .dialog-kopf {
       display: flex;
       align-items: center;
       gap: 0.8rem;
@@ -485,7 +489,7 @@
       margin-bottom: 1.1rem;
     }
 
-    .sol-symbol {
+    .dialog-symbol {
       font-size: 1.6rem;
       width: 2.6rem;
       height: 2.6rem;
@@ -497,7 +501,68 @@
       flex: none;
     }
 
-    .sol-kopf strong { font-size: 1rem; }
+    .dialog-kopf strong { font-size: 1rem; }
+
+    /* Eigene display-Regeln stechen sonst das hidden-Attribut aus. */
+    .dialog [hidden] { display: none; }
+
+    .dialog-block { margin-top: 1.1rem; }
+
+    .dialog-label {
+      display: block;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+
+    .dialog-los {
+      width: 100%;
+      margin-top: 0.9rem;
+      padding: 0.7rem;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 0.2s ease;
+    }
+
+    .dialog-los:hover { filter: brightness(1.12); }
+    .dialog-los:disabled { filter: grayscale(0.7) brightness(0.7); cursor: default; }
+
+    .dialog-text {
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .dialog-text a {
+      color: var(--accent3);
+      text-decoration-color: rgba(111,255,212,0.4);
+      text-underline-offset: 3px;
+    }
+
+    .dialog-status {
+      margin-top: 0.9rem;
+      font-size: 0.75rem;
+      font-weight: 300;
+      line-height: 1.5;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .dialog-status a { color: var(--accent3); }
+    .dialog-status[data-art="fehler"] { color: var(--accent2); }
+    .dialog-status[data-art="gut"] { color: var(--accent3); }
+
+    /* --- Solana-Dialog --- */
 
     .sol-adresse {
       display: flex;
@@ -531,21 +596,6 @@
       text-transform: uppercase;
       color: var(--muted);
       flex: none;
-    }
-
-    /* Eigene display-Regeln stechen sonst das hidden-Attribut aus. */
-    .sol-dialog [hidden] { display: none; }
-
-    .sol-block { margin-top: 1.1rem; }
-
-    .sol-label {
-      display: block;
-      font-family: 'Space Mono', monospace;
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.45rem;
     }
 
     .sol-betrag {
@@ -636,49 +686,147 @@
       font-size: 0.82rem;
     }
 
-    .sol-los {
-      width: 100%;
-      margin-top: 0.9rem;
-      padding: 0.7rem;
-      border: 0;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 600;
+    /* --- Upload-Dialog --- */
+
+    .up-zone {
+      position: relative;
+      display: block;
+      padding: 1.3rem 1rem;
+      text-align: center;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      background: rgba(8,8,16,0.5);
       cursor: pointer;
-      transition: filter 0.2s ease;
+      transition: border-color 0.2s ease, background 0.2s ease;
     }
 
-    .sol-los:hover { filter: brightness(1.12); }
-    .sol-los:disabled { filter: grayscale(0.7) brightness(0.7); cursor: default; }
+    .up-zone:hover,
+    .up-zone:focus-within,
+    .up-zone[data-zieht] {
+      border-color: rgba(124,111,255,0.5);
+      background: rgba(124,111,255,0.07);
+    }
 
-    .sol-text {
-      font-size: 0.78rem;
-      font-weight: 300;
+    /* Das Eingabefeld selbst deckt die Fläche ab: damit öffnet ein Klick
+       irgendwo in der Zone die Dateiauswahl, und die Tastatur kommt auch hin. */
+    .up-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .up-zone-text {
+      display: block;
+      font-size: 0.85rem;
+    }
+
+    .up-zone-klein {
+      display: block;
+      margin-top: 0.3rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
       color: var(--muted);
-      line-height: 1.55;
     }
 
-    .sol-text a {
-      color: var(--accent3);
-      text-decoration-color: rgba(111,255,212,0.4);
-      text-underline-offset: 3px;
+    .up-liste {
+      list-style: none;
+      margin-top: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
-    .sol-status {
-      margin-top: 0.9rem;
-      font-size: 0.75rem;
-      font-weight: 300;
+    .up-datei {
+      padding: 0.5rem 0.6rem;
+      background: rgba(8,8,16,0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .up-kopfzeile {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .up-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.76rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .up-groesse {
+      flex: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+
+    .up-weg {
+      flex: none;
+      background: none;
+      border: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0 0.15rem;
+      cursor: pointer;
+    }
+
+    .up-weg:hover { color: var(--text); }
+
+    /* Der Balken kommt erst, wenn diese Datei wirklich unterwegs ist. */
+    .up-balken {
+      height: 3px;
+      margin-top: 0.45rem;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .up-balken i {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.2s ease;
+    }
+
+    .up-datei[data-stand="fertig"] .up-balken i { background: var(--accent3); }
+    .up-datei[data-stand="fehler"] .up-balken i { background: var(--accent2); }
+
+    .up-notiz {
+      width: 100%;
+      min-height: 3.2rem;
+      resize: vertical;
+      padding: 0.55rem 0.7rem;
+      background: rgba(8,8,16,0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
       line-height: 1.5;
-      color: var(--muted);
-      word-break: break-word;
+      outline: none;
     }
 
-    .sol-status a { color: var(--accent3); }
-    .sol-status[data-art="fehler"] { color: var(--accent2); }
-    .sol-status[data-art="gut"] { color: var(--accent3); }
+    .up-notiz:focus { border-color: rgba(124,111,255,0.5); }
+    .up-notiz::placeholder { color: var(--muted); }
+
+    .up-fuss { margin-top: 0.9rem; font-size: 0.7rem; }
+
+    /* Auf dem Handy zieht niemand etwas irgendwohin. */
+    @media (pointer: coarse) {
+      .up-ziehen { display: none; }
+    }
 
     /* Schmalere Fenster: alles untereinander, Social zweispaltig. */
     @media (max-width: 720px) {
@@ -786,7 +934,9 @@
             <span class="link-card-name">Arbeitszeit</span>
             <span class="link-card-desc">Wie lange arbeitest du?</span>
           </a>
-          <a class="link-card" href="https://upload.veerka.mp" target="_blank">
+          <!-- Ohne JavaScript bleibt es der Link auf die volle Seite. Mit
+               JavaScript übernimmt der Dialog weiter unten. -->
+          <a class="link-card" id="up-kachel" href="https://upload.veerka.mp" target="_blank">
             <span class="link-card-icon">📤</span>
             <span class="link-card-name">File Uploader</span>
             <span class="link-card-desc">Sende mir Dateien</span>
@@ -805,11 +955,11 @@
   <div class="scroll-cue" aria-hidden="true">scroll</div>
 
   <!-- Solana-Dialog. Wird von /wallet.js gefüllt und gesteuert. -->
-  <dialog id="sol-dialog" class="sol-dialog" aria-labelledby="sol-titel">
-    <button type="button" class="sol-zu" id="sol-zu" aria-label="Schließen">×</button>
+  <dialog id="sol-dialog" class="dialog" aria-labelledby="sol-titel">
+    <button type="button" class="dialog-zu" id="sol-zu" aria-label="Schließen">×</button>
 
-    <div class="sol-kopf">
-      <span class="sol-symbol">◎</span>
+    <div class="dialog-kopf">
+      <span class="dialog-symbol">◎</span>
       <strong id="sol-titel">Solana</strong>
     </div>
 
@@ -819,8 +969,8 @@
     </button>
 
     <!-- Wallet-Erweiterung gefunden: hier wird wirklich gesendet. -->
-    <div class="sol-block" id="sol-senden" hidden>
-      <label class="sol-label" for="sol-betrag">Betrag</label>
+    <div class="dialog-block" id="sol-senden" hidden>
+      <label class="dialog-label" for="sol-betrag">Betrag</label>
       <div class="sol-betrag">
         <!-- Bewusst kein type="number": ob das dort ein Komma durchgeht,
              hängt an der Browsersprache. Als Text lesen wir beides. -->
@@ -832,20 +982,54 @@
       </div>
       <p class="sol-umrechnung" id="sol-umrechnung" hidden></p>
       <div class="sol-chips" id="sol-chips"></div>
-      <label class="sol-label" for="sol-wahl" id="sol-wahl-label" hidden>Wallet</label>
+      <label class="dialog-label" for="sol-wahl" id="sol-wahl-label" hidden>Wallet</label>
       <select id="sol-wahl" class="sol-wahl" hidden></select>
-      <button type="button" class="sol-los" id="sol-los">Senden</button>
+      <button type="button" class="dialog-los" id="sol-los">Senden</button>
     </div>
 
     <!-- Keine Wallet da: Empfehlung statt Sackgasse. -->
-    <div class="sol-block" id="sol-keine" hidden>
-      <p class="sol-text">
+    <div class="dialog-block" id="sol-keine" hidden>
+      <p class="dialog-text">
         Keine Wallet gefunden. Ich empfehle
         <a href="https://solflare.com/download" target="_blank" rel="noopener noreferrer">Solflare</a>.
       </p>
     </div>
 
-    <p class="sol-status" id="sol-status" role="status" aria-live="polite" hidden></p>
+    <p class="dialog-status" id="sol-status" role="status" aria-live="polite" hidden></p>
+  </dialog>
+
+  <!-- Upload-Dialog. Wird von /upload.js gefüllt und gesteuert. Der Briefkasten
+       selbst steht auf upload.veerka.mp; hier liegt nur die kleine Fassung. -->
+  <dialog id="up-dialog" class="dialog" aria-labelledby="up-titel">
+    <button type="button" class="dialog-zu" id="up-zu" aria-label="Schließen">×</button>
+
+    <div class="dialog-kopf">
+      <span class="dialog-symbol">📤</span>
+      <strong id="up-titel">Dateien senden</strong>
+    </div>
+
+    <label class="up-zone" id="up-zone">
+      <input type="file" id="up-auswahl" multiple aria-label="Dateien auswählen" />
+      <span class="up-zone-text">Dateien wählen<span class="up-ziehen"> oder hierher ziehen</span></span>
+      <span class="up-zone-klein" id="up-grenze">Alle Dateitypen</span>
+    </label>
+
+    <ul class="up-liste" id="up-liste" hidden></ul>
+
+    <div class="dialog-block">
+      <label class="dialog-label" for="up-notiz">Oder Text und Links</label>
+      <textarea id="up-notiz" class="up-notiz"
+                placeholder="Adresse, Link, ein paar Zeilen …"></textarea>
+    </div>
+
+    <button type="button" class="dialog-los" id="up-los" disabled>Senden</button>
+
+    <p class="dialog-status" id="up-status" role="status" aria-live="polite" hidden></p>
+
+    <p class="dialog-text up-fuss">
+      Größere Dateien und Vorschau auf
+      <a href="https://upload.veerka.mp" target="_blank" rel="noopener noreferrer">upload.veerka.mp</a>.
+    </p>
   </dialog>
 
   <script>
@@ -915,6 +1099,13 @@
         removeEventListener('visibilitychange', merken);
         if (!weggewesen && document.visibilityState === 'visible') solDialog();
       }, 1600);
+    });
+
+    // Die Upload-Kachel hat kein Gegenstück als App, deshalb übernimmt der
+    // Dialog überall – ohne die Umwege von oben.
+    document.getElementById('up-kachel').addEventListener('click', (e) => {
+      e.preventDefault();
+      import('/upload.js').then(m => m.oeffnen());
     });
 
     // Avatar Slideshow – Fotos + Krabbe am Ende

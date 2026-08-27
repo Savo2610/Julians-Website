@@ -3,3 +3,8 @@
 # sonst sehen wiederkehrende Besucher bis zu 30 Tage das alte Bild.
 /img/*
   Cache-Control: public, max-age=2592000
+
+# three.js liegt versioniert im Pfad (/vendor/three-<version>/) – ein Update
+# bekommt einen neuen Ordner, also darf die Datei ewig im Cache bleiben.
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable

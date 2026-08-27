@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Julian Veerkamp</title>
+  <meta name="description" content="Julian Veerkamp – Student E-Technik und IT, Feuerwehrmann, Skilehrer. Alle Links an einem Ort." />
+  <meta name="theme-color" content="#080810" />
   <!-- Die Seite ist auch unter www.veerka.mp erreichbar; für Suchmaschinen
        zählt die Adresse ohne www. -->
   <link rel="canonical" href="https://veerka.mp/">
@@ -25,6 +27,8 @@
       --muted: #6b6b8a;
     }
 
+    html { scroll-behavior: smooth; }
+
     body {
       background: var(--bg);
       color: var(--text);
@@ -33,7 +37,23 @@
       overflow-x: hidden;
     }
 
-    /* Animated background */
+    /* Die 3D-Szene liegt ganz hinten und fängt keine Klicks ab. */
+    #scene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.4s ease;
+    }
+
+    html[data-scene="an"] #scene { opacity: 1; }
+
+    /* Animated background – gleichzeitig der Ersatz, wenn die Szene
+       nicht läuft (kein WebGL oder "weniger Bewegung"). */
     .bg-gradient {
       position: fixed;
       inset: 0;
@@ -43,13 +63,29 @@
         radial-gradient(ellipse 50% 40% at 50% 50%, rgba(111,255,212,0.04) 0%, transparent 60%);
       animation: bgShift 12s ease-in-out infinite alternate;
       pointer-events: none;
-      z-index: 0;
+      z-index: 1;
+      transition: opacity 1.4s ease;
     }
+
+    html[data-scene="an"] .bg-gradient { opacity: 0; }
 
     @keyframes bgShift {
       0%   { opacity: 1; transform: scale(1); }
       100% { opacity: 0.7; transform: scale(1.05); }
     }
+
+    /* Dezenter Schleier über der Szene, damit der Text immer lesbar ist. */
+    .scrim {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(8,8,16,0.05) 0%, rgba(8,8,16,0.30) 55%, rgba(8,8,16,0.60) 100%);
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 1.4s ease;
+    }
+
+    html[data-scene="an"] .scrim { opacity: 1; }
 
     /* Noise overlay */
     .noise {
@@ -57,22 +93,21 @@
       inset: 0;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
       pointer-events: none;
-      z-index: 1;
+      z-index: 3;
       opacity: 0.4;
     }
 
-    main {
+    /* Gipfel: erster Bildschirm, hier läuft die Szene ungestört. */
+    .hero {
       position: relative;
-      z-index: 2;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 4rem 1.5rem 6rem;
-    }
-
-    /* Header */
-    .header {
+      z-index: 4;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      margin-bottom: 3.5rem;
+      padding: 5rem 1.5rem 7rem;
     }
 
     .avatar-ring {
@@ -84,6 +119,7 @@
       background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
       cursor: pointer;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
 
     .avatar-ring:hover {
@@ -112,7 +148,7 @@
     }
 
     h1 {
-      font-size: 2rem;
+      font-size: clamp(2rem, 7vw, 3.1rem);
       font-weight: 700;
       letter-spacing: -0.03em;
       margin-bottom: 0.4rem;
@@ -123,10 +159,12 @@
     }
 
     .tagline {
-      color: var(--muted);
+      color: #a9a9c8;
       font-size: 0.95rem;
       font-weight: 300;
       letter-spacing: 0.05em;
+      text-shadow: 0 2px 12px rgba(8,8,16,0.9);
+      min-height: 1.4em;
     }
 
     /* Typing cursor */
@@ -144,9 +182,50 @@
       50% { opacity: 0; }
     }
 
+    /* Hinweis zum Scrollen – verschwindet, sobald es losgeht. */
+    .scroll-cue {
+      position: absolute;
+      bottom: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      transition: opacity 0.5s ease;
+    }
+
+    .scroll-cue::after {
+      content: '';
+      width: 1px;
+      height: 34px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      animation: cueDrop 1.8s ease-in-out infinite;
+    }
+
+    @keyframes cueDrop {
+      0%, 100% { transform: scaleY(0.4); transform-origin: top; opacity: 0.4; }
+      50%      { transform: scaleY(1);   transform-origin: top; opacity: 1; }
+    }
+
+    body.scrolled .scroll-cue { opacity: 0; }
+
+    main {
+      position: relative;
+      z-index: 4;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 1.5rem 8rem;
+    }
+
     /* Section */
     .section {
-      margin-bottom: 2.5rem;
+      margin-bottom: 6rem;
     }
 
     .section-label {
@@ -180,12 +259,14 @@
       flex-direction: column;
       gap: 0.25rem;
       padding: 0.9rem 1rem;
-      background: var(--surface);
+      background: rgba(15,15,26,0.62);
+      -webkit-backdrop-filter: blur(12px) saturate(1.3);
+      backdrop-filter: blur(12px) saturate(1.3);
       border: 1px solid var(--border);
       border-radius: 12px;
       text-decoration: none;
       color: var(--text);
-      transition: all 0.2s ease;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       position: relative;
       overflow: hidden;
     }
@@ -237,16 +318,38 @@
       gap: 0.6rem;
     }
 
+    /* Einblenden beim Scrollen. Versteckt wird nur, wenn das Skript die
+       Klasse gesetzt hat – ohne JS bleibt alles sichtbar. */
+    html.js-reveal .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    html.js-reveal .reveal.is-in { opacity: 1; transform: none; }
+
+    html.js-reveal .reveal .link-card:nth-child(2)  { transition-delay: 40ms; }
+    html.js-reveal .reveal .link-card:nth-child(3)  { transition-delay: 80ms; }
+    html.js-reveal .reveal .link-card:nth-child(4)  { transition-delay: 120ms; }
+    html.js-reveal .reveal .link-card:nth-child(5)  { transition-delay: 160ms; }
+    html.js-reveal .reveal .link-card:nth-child(6)  { transition-delay: 200ms; }
+    html.js-reveal .reveal .link-card:nth-child(7)  { transition-delay: 240ms; }
+    html.js-reveal .reveal .link-card:nth-child(8)  { transition-delay: 280ms; }
+    html.js-reveal .reveal .link-card:nth-child(9)  { transition-delay: 320ms; }
+    html.js-reveal .reveal .link-card:nth-child(10) { transition-delay: 360ms; }
+
     @media (max-width: 480px) {
       .link-grid { grid-template-columns: repeat(2, 1fr); }
       .tools-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 1.6rem; }
+      .section { margin-bottom: 4.5rem; }
     }
 
     /* Footer */
     footer {
+      position: relative;
+      z-index: 4;
       text-align: center;
-      margin-top: 3rem;
+      padding-bottom: 4rem;
       font-size: 0.75rem;
       color: var(--muted);
       font-family: 'Space Mono', monospace;
@@ -269,27 +372,38 @@
       transform: scale(0);
       animation: ripple 0.5s linear;
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      html.js-reveal .reveal { opacity: 1; transform: none; transition: none; }
+      .scroll-cue::after, .bg-gradient { animation: none; }
+      .hero { min-height: auto; padding-top: 4rem; padding-bottom: 3rem; }
+      .section { margin-bottom: 2.5rem; }
+    }
   </style>
 </head>
 <body>
+  <canvas id="scene" aria-hidden="true"></canvas>
   <div class="bg-gradient"></div>
+  <div class="scrim"></div>
   <div class="noise"></div>
 
-  <main>
-    <header class="header">
-      <div class="avatar-ring" title="Hey 👋">
-        <div class="avatar-inner">
-          <!-- Hauptfoto (wird zuerst angezeigt) -->
-          <img src="/img/foto1.webp" width="256" height="256" fetchpriority="high" alt="Julian Veerkamp" />
-        </div>
+  <header class="hero">
+    <div class="avatar-ring" title="Hey 👋">
+      <div class="avatar-inner">
+        <!-- Hauptfoto (wird zuerst angezeigt) -->
+        <img src="/img/foto1.webp" width="256" height="256" fetchpriority="high" alt="Julian Veerkamp" />
       </div>
-      <h1>Julian Veerkamp</h1>
-      <p class="tagline"><span id="typed"></span><span class="cursor"></span></p>
-    </header>
+    </div>
+    <h1>Julian Veerkamp</h1>
+    <p class="tagline"><span id="typed"></span><span class="cursor"></span></p>
+    <div class="scroll-cue">scroll</div>
+  </header>
 
+  <main>
     <section class="section">
-      <div class="section-label">Social Media</div>
-      <div class="link-grid">
+      <div class="section-label reveal">Social Media</div>
+      <div class="link-grid reveal">
         <a class="link-card" href="https://signal.me/#eu/JnL6PouqINGbQCUuNhXo69gpY5xPND4QNTH02ntumokkWus1NVRGC490c4jjJo2r" target="_blank">
           <span class="link-card-icon">💬</span>
           <span class="link-card-name">Signal</span>
@@ -299,21 +413,6 @@
           <span class="link-card-icon">📸</span>
           <span class="link-card-name">Instagram</span>
           <span class="link-card-desc">Schöne Fotos</span>
-        </a>
-        <a class="link-card" href="https://bere.al/juliansebv" target="_blank">
-          <span class="link-card-icon">📷</span>
-          <span class="link-card-name">BeReal</span>
-          <span class="link-card-desc">Fotos</span>
-        </a>
-        <a class="link-card" href="https://discord.com/invite/ethfHJk9" target="_blank">
-          <span class="link-card-icon">🎮</span>
-          <span class="link-card-name">Discord</span>
-          <span class="link-card-desc">Rede mit mir</span>
-        </a>
-        <a class="link-card" href="https://stats.fm/savo" target="_blank">
-          <span class="link-card-icon">🎵</span>
-          <span class="link-card-name">Spotify</span>
-          <span class="link-card-desc">Höre was ich höre</span>
         </a>
         <a class="link-card" href="https://twitch.tv/savo2610" target="_blank">
           <span class="link-card-icon">🟣</span>
@@ -325,11 +424,6 @@
           <span class="link-card-name">YouTube</span>
           <span class="link-card-desc">Qualitätscontent</span>
         </a>
-        <a class="link-card" href="https://www.komoot.de/user/464140060326" target="_blank">
-          <span class="link-card-icon">🏔️</span>
-          <span class="link-card-name">Komoot</span>
-          <span class="link-card-desc">Wandern & Radfahren</span>
-        </a>
         <a class="link-card" href="https://linkedin.com/in/jsveerkamp" target="_blank">
           <span class="link-card-icon">💼</span>
           <span class="link-card-name">LinkedIn</span>
@@ -339,6 +433,16 @@
           <span class="link-card-icon">⚙️</span>
           <span class="link-card-name">GitHub</span>
           <span class="link-card-desc">Meine Projekte</span>
+        </a>
+        <a class="link-card" href="https://stats.fm/savo" target="_blank">
+          <span class="link-card-icon">🎵</span>
+          <span class="link-card-name">Spotify</span>
+          <span class="link-card-desc">Höre was ich höre</span>
+        </a>
+        <a class="link-card" href="https://www.komoot.de/user/464140060326" target="_blank">
+          <span class="link-card-icon">🏔️</span>
+          <span class="link-card-name">Komoot</span>
+          <span class="link-card-desc">Wandern & Radfahren</span>
         </a>
         <a class="link-card" href="https://paypal.me/juliansebv" target="_blank">
           <span class="link-card-icon">💸</span>
@@ -354,8 +458,8 @@
     </section>
 
     <section class="section">
-      <div class="section-label">Meine Tools</div>
-      <div class="tools-grid">
+      <div class="section-label reveal">Meine Tools</div>
+      <div class="tools-grid reveal">
         <a class="link-card" href="https://s.veerka.mp" target="_blank">
           <span class="link-card-icon">🔗</span>
           <span class="link-card-name">Kurzlink</span>
@@ -373,11 +477,11 @@
         </a>
       </div>
     </section>
-
-    <footer>
-      made with <span>♥</span> · <span>veerka.mp</span> 
-    </footer>
   </main>
+
+  <footer>
+    made with <span>♥</span> · <span>veerka.mp</span>
+  </footer>
 
   <script>
     // Typing animation
@@ -456,6 +560,47 @@
       avatarIdx = (avatarIdx + 1) % avatarSequence.length;
       setAvatar(avatarSequence[avatarIdx]);
     });
+
+    // Karten einblenden, sobald sie in den Blick kommen
+    const wenigerBewegung = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const zeigAlles = () => document.querySelectorAll('.reveal').forEach(n => n.classList.add('is-in'));
+
+    if (!wenigerBewegung && 'IntersectionObserver' in window) {
+      // Erst ab hier gilt die versteckte Startposition – schlägt das Skript
+      // fehl, stehen die Links trotzdem da.
+      document.documentElement.classList.add('js-reveal');
+      const beobachter = new IntersectionObserver((eintraege) => {
+        for (const e of eintraege) {
+          if (e.isIntersecting) { e.target.classList.add('is-in'); beobachter.unobserve(e.target); }
+        }
+      }, { rootMargin: '0px 0px -12% 0px' });
+      document.querySelectorAll('.reveal').forEach(n => beobachter.observe(n));
+      // Notbremse: was nach drei Sekunden noch versteckt ist, wird gezeigt.
+      setTimeout(zeigAlles, 3000);
+    } else {
+      zeigAlles();
+    }
+
+    // Scroll-Hinweis ausblenden, sobald der Erste scrollt
+    addEventListener('scroll', () => {
+      document.body.classList.toggle('scrolled', window.scrollY > 40);
+    }, { passive: true });
+
+    // Die 3D-Szene erst nach dem ersten Bild nachladen – und nur, wenn sie
+    // hier auch Sinn ergibt. Ohne sie bleibt der Farbverlauf von vorher.
+    (function () {
+      if (wenigerBewegung) return;
+      let webgl = false;
+      try {
+        const c = document.createElement('canvas');
+        webgl = !!(c.getContext('webgl2') || c.getContext('webgl'));
+      } catch (_) { /* egal, dann eben nicht */ }
+      if (!webgl) return;
+
+      const start = () => import('/scene.js').catch(err => console.warn('Szene aus:', err));
+      if (document.readyState === 'complete') start();
+      else addEventListener('load', start, { once: true });
+    })();
   </script>
 </body>
 </html>

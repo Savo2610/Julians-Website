@@ -434,6 +434,252 @@
       animation: ripple 0.5s linear;
     }
 
+    /* --- Solana-Dialog --- */
+
+    .sol-dialog {
+      width: min(24rem, calc(100vw - 2rem));
+      /* Der Reset ganz oben nimmt <dialog> das margin:auto, mit dem der
+         Browser sonst zentriert. Hier wieder her. */
+      margin: auto;
+      max-height: calc(100dvh - 2rem);
+      overflow-y: auto;
+      padding: 1.4rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(15,15,26,0.92);
+      -webkit-backdrop-filter: blur(18px) saturate(1.3);
+      backdrop-filter: blur(18px) saturate(1.3);
+      color: var(--text);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+      position: relative;
+    }
+
+    .sol-dialog::backdrop {
+      background: rgba(8,8,16,0.72);
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
+    }
+
+    .sol-zu {
+      position: absolute;
+      top: 0.7rem;
+      right: 0.8rem;
+      background: none;
+      border: 0;
+      color: var(--muted);
+      font-size: 1.4rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: 8px;
+    }
+
+    .sol-zu:hover { color: var(--text); }
+
+    .sol-kopf {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      /* rechts Platz für den Schließen-Knopf, der darüber liegt */
+      padding-right: 1.4rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .sol-symbol {
+      font-size: 1.6rem;
+      width: 2.6rem;
+      height: 2.6rem;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(124,111,255,0.18), rgba(111,255,212,0.12));
+      flex: none;
+    }
+
+    .sol-kopf strong { font-size: 1rem; }
+
+    .sol-adresse {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: rgba(8,8,16,0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .sol-adresse:hover { border-color: rgba(124,111,255,0.4); }
+
+    .sol-adresse code {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sol-adresse span {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex: none;
+    }
+
+    /* Eigene display-Regeln stechen sonst das hidden-Attribut aus. */
+    .sol-dialog [hidden] { display: none; }
+
+    .sol-block { margin-top: 1.1rem; }
+
+    .sol-label {
+      display: block;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+
+    .sol-betrag {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      background: rgba(8,8,16,0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .sol-betrag:focus-within { border-color: rgba(124,111,255,0.5); }
+
+    .sol-betrag input {
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: 0;
+      outline: none;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+    }
+
+    .sol-einheit {
+      flex: none;
+      background: none;
+      border: 0;
+      padding: 0.15rem 0;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      cursor: default;
+    }
+
+    /* Nur mit Kurs ist die Einheit wirklich ein Knopf. */
+    .sol-einheit[data-tauschbar] {
+      cursor: pointer;
+      color: var(--accent3);
+    }
+
+    .sol-einheit[data-tauschbar]::after {
+      content: ' ⇄';
+      opacity: 0.6;
+    }
+
+    .sol-umrechnung {
+      margin-top: 0.4rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .sol-chips {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.55rem;
+    }
+
+    .sol-chips button {
+      flex: 1;
+      padding: 0.35rem 0;
+      background: rgba(8,8,16,0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .sol-chips button:hover {
+      color: var(--text);
+      border-color: rgba(124,111,255,0.4);
+    }
+
+    .sol-wahl {
+      width: 100%;
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.6rem;
+      background: rgba(8,8,16,0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+    }
+
+    .sol-los {
+      width: 100%;
+      margin-top: 0.9rem;
+      padding: 0.7rem;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 0.2s ease;
+    }
+
+    .sol-los:hover { filter: brightness(1.12); }
+    .sol-los:disabled { filter: grayscale(0.7) brightness(0.7); cursor: default; }
+
+    .sol-text {
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .sol-text a {
+      color: var(--accent3);
+      text-decoration-color: rgba(111,255,212,0.4);
+      text-underline-offset: 3px;
+    }
+
+    .sol-status {
+      margin-top: 0.9rem;
+      font-size: 0.75rem;
+      font-weight: 300;
+      line-height: 1.5;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .sol-status a { color: var(--accent3); }
+    .sol-status[data-art="fehler"] { color: var(--accent2); }
+    .sol-status[data-art="gut"] { color: var(--accent3); }
+
     /* Schmalere Fenster: alles untereinander, Social zweispaltig. */
     @media (max-width: 720px) {
       .inhalt { grid-template-columns: 1fr; gap: 2rem; }
@@ -511,7 +757,10 @@
             <span class="link-card-name">PayPal</span>
             <span class="link-card-desc">Geld senden</span>
           </a>
-          <a class="link-card" href="solana:BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da">
+          <!-- Ohne JavaScript bleibt es der Deeplink von früher, der auf dem
+               Handy die Wallet-App öffnet. Mit JavaScript übernimmt der
+               Dialog weiter unten. -->
+          <a class="link-card" id="sol-kachel" href="solana:BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da">
             <span class="link-card-icon">◎</span>
             <span class="link-card-name">Solana</span>
             <span class="link-card-desc">Echtes Geld</span>
@@ -555,6 +804,50 @@
 
   <div class="scroll-cue" aria-hidden="true">scroll</div>
 
+  <!-- Solana-Dialog. Wird von /wallet.js gefüllt und gesteuert. -->
+  <dialog id="sol-dialog" class="sol-dialog" aria-labelledby="sol-titel">
+    <button type="button" class="sol-zu" id="sol-zu" aria-label="Schließen">×</button>
+
+    <div class="sol-kopf">
+      <span class="sol-symbol">◎</span>
+      <strong id="sol-titel">Solana</strong>
+    </div>
+
+    <button type="button" class="sol-adresse" id="sol-kopieren" title="Adresse kopieren">
+      <code id="sol-adresse-text"></code>
+      <span id="sol-kopieren-text">kopieren</span>
+    </button>
+
+    <!-- Wallet-Erweiterung gefunden: hier wird wirklich gesendet. -->
+    <div class="sol-block" id="sol-senden" hidden>
+      <label class="sol-label" for="sol-betrag">Betrag</label>
+      <div class="sol-betrag">
+        <!-- Bewusst kein type="number": ob das dort ein Komma durchgeht,
+             hängt an der Browsersprache. Als Text lesen wir beides. -->
+        <input type="text" id="sol-betrag" value="0,1"
+               inputmode="decimal" autocomplete="off" />
+        <!-- Einheit ist gleichzeitig der Umschalter SOL <-> EUR. Ohne Kurs
+             bleibt sie ein reines Etikett, siehe wallet.js. -->
+        <button type="button" class="sol-einheit" id="sol-einheit">SOL</button>
+      </div>
+      <p class="sol-umrechnung" id="sol-umrechnung" hidden></p>
+      <div class="sol-chips" id="sol-chips"></div>
+      <label class="sol-label" for="sol-wahl" id="sol-wahl-label" hidden>Wallet</label>
+      <select id="sol-wahl" class="sol-wahl" hidden></select>
+      <button type="button" class="sol-los" id="sol-los">Senden</button>
+    </div>
+
+    <!-- Keine Wallet da: Empfehlung statt Sackgasse. -->
+    <div class="sol-block" id="sol-keine" hidden>
+      <p class="sol-text">
+        Keine Wallet gefunden. Ich empfehle
+        <a href="https://solflare.com/download" target="_blank" rel="noopener noreferrer">Solflare</a>.
+      </p>
+    </div>
+
+    <p class="sol-status" id="sol-status" role="status" aria-live="polite" hidden></p>
+  </dialog>
+
   <script>
     // Typing animation
     const phrases = [
@@ -593,6 +886,35 @@
         card.appendChild(r);
         r.addEventListener('animationend', () => r.remove());
       });
+    });
+
+    // Solana: am Rechner den Dialog mit den Wallet-Erweiterungen, am Handy
+    // wie bisher direkt in die Wallet-App. Öffnet sich dort nichts – weil
+    // keine Wallet installiert ist –, bleibt die Seite sichtbar, und wir
+    // holen den Dialog mit dem Hinweis nach.
+    const solKachel = document.getElementById('sol-kachel');
+    const solDialog = () => import('/wallet.js').then(m => m.oeffnen());
+    const grobeEingabe = matchMedia('(pointer: coarse)').matches;
+
+    solKachel.addEventListener('click', (e) => {
+      if (!grobeEingabe) {
+        e.preventDefault();
+        solDialog();
+        return;
+      }
+
+      // Bewusst nur die Sichtbarkeit, kein 'blur': Safari verliert den Fokus
+      // auch an seinen eigenen "Adresse ungültig"-Hinweis, und genau dann
+      // soll der Tipp ja kommen.
+      let weggewesen = false;
+      const merken = () => { weggewesen = true; };
+      addEventListener('pagehide', merken, { once: true });
+      addEventListener('visibilitychange', merken, { once: true });
+      setTimeout(() => {
+        removeEventListener('pagehide', merken);
+        removeEventListener('visibilitychange', merken);
+        if (!weggewesen && document.visibilityState === 'visible') solDialog();
+      }, 1600);
     });
 
     // Avatar Slideshow – Fotos + Krabbe am Ende

@@ -17,6 +17,11 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
+      /* Höhe des Kopfbereichs ganz oben und zusammengeschoben. Dazwischen
+         wird über --k (0 … 1, vom Skript gesetzt) interpoliert. */
+      --hero-h: 100vh;
+      --bar-h: 96px;
+
       --bg: #080810;
       --surface: #0f0f1a;
       --border: #1e1e2e;
@@ -25,6 +30,10 @@
       --accent3: #6fffd4;
       --text: #e8e8f0;
       --muted: #6b6b8a;
+    }
+
+    @supports (height: 100svh) {
+      :root { --hero-h: 100svh; }
     }
 
     html { scroll-behavior: smooth; }
@@ -97,27 +106,55 @@
       opacity: 0.4;
     }
 
-    /* Gipfel: erster Bildschirm, hier läuft die Szene ungestört. */
+    /* Der Kopfbereich bleibt beim Scrollen oben stehen und schiebt sich
+       dabei zu einer schmalen Leiste zusammen. Er hängt fixiert über der
+       Seite, damit das Layout darunter nicht wandert; den Platz beim
+       Seitenanfang hält .hero-platz. */
     .hero {
-      position: relative;
-      z-index: 4;
-      min-height: 100svh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      height: calc(var(--hero-h) - var(--k, 0) * (var(--hero-h) - var(--bar-h)));
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 5rem 1.5rem 7rem;
+      padding: 0 1.5rem;
+      /* Der Kopf liegt als eigene Ebene über der Seite. Klicks sollen
+         hindurchgehen – nur das Foto ist selbst anklickbar. */
+      pointer-events: none;
     }
 
+    /* Sobald er zusammengeschoben ist, braucht er einen eigenen Grund –
+       sonst scrollen die Kacheln sichtbar durch die Schrift. */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, rgba(8,8,16,0.95) 0%, rgba(8,8,16,0.74) 100%);
+      -webkit-backdrop-filter: blur(14px) saturate(1.2);
+      backdrop-filter: blur(14px) saturate(1.2);
+      box-shadow: 0 1px 0 rgba(124,111,255,0.16);
+      /* eigener Wert, der erst am Ende des Zusammenschiebens hochläuft –
+         sonst liegt auf halbem Weg ein graues Rechteck über der Szene */
+      opacity: var(--kb, 0);
+    }
+
+    .hero-platz { height: var(--hero-h); }
+
     .avatar-ring {
-      width: 90px;
-      height: 90px;
-      margin: 0 auto 1.2rem;
+      width: calc(90px - var(--k, 0) * 48px);
+      height: calc(90px - var(--k, 0) * 48px);
+      margin: 0 auto calc(1.2rem - var(--k, 0) * 0.95rem);
       border-radius: 50%;
       padding: 2px;
       background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
       cursor: pointer;
+      pointer-events: auto;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
@@ -135,7 +172,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.2rem;
+      font-size: calc(2.2rem - var(--k, 0) * 1.25rem);
       overflow: hidden;
     }
 
@@ -148,10 +185,12 @@
     }
 
     h1 {
-      font-size: clamp(2rem, 7vw, 3.1rem);
+      --gross: clamp(2rem, 7vw, 3.1rem);
+      font-size: calc(1.08rem + (1 - var(--k, 0)) * (var(--gross) - 1.08rem));
       font-weight: 700;
       letter-spacing: -0.03em;
-      margin-bottom: 0.4rem;
+      line-height: 1.15;
+      margin-bottom: calc(0.4rem - var(--k, 0) * 0.28rem);
       background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -160,7 +199,7 @@
 
     .tagline {
       color: #a9a9c8;
-      font-size: 0.95rem;
+      font-size: calc(0.68rem + (1 - var(--k, 0)) * 0.27rem);
       font-weight: 300;
       letter-spacing: 0.05em;
       text-shadow: 0 2px 12px rgba(8,8,16,0.9);
@@ -220,7 +259,9 @@
       z-index: 4;
       max-width: 680px;
       margin: 0 auto;
-      padding: 0 1.5rem 8rem;
+      /* oben etwas Luft, damit die erste Überschrift nicht direkt unter
+         der Leiste klebt */
+      padding: 2rem 1.5rem 8rem;
     }
 
     /* Section */
@@ -377,7 +418,7 @@
       html { scroll-behavior: auto; }
       html.js-reveal .reveal { opacity: 1; transform: none; transition: none; }
       .scroll-cue::after, .bg-gradient { animation: none; }
-      .hero { min-height: auto; padding-top: 4rem; padding-bottom: 3rem; }
+      :root { --hero-h: 60vh; }
       .section { margin-bottom: 2.5rem; }
     }
   </style>
@@ -399,6 +440,7 @@
     <p class="tagline"><span id="typed"></span><span class="cursor"></span></p>
     <div class="scroll-cue">scroll</div>
   </header>
+  <div class="hero-platz" aria-hidden="true"></div>
 
   <main>
     <section class="section">
@@ -413,16 +455,6 @@
           <span class="link-card-icon">📸</span>
           <span class="link-card-name">Instagram</span>
           <span class="link-card-desc">Schöne Fotos</span>
-        </a>
-        <a class="link-card" href="https://twitch.tv/savo2610" target="_blank">
-          <span class="link-card-icon">🟣</span>
-          <span class="link-card-name">Twitch</span>
-          <span class="link-card-desc">Schau was ich schau</span>
-        </a>
-        <a class="link-card" href="https://youtube.com/@savo2610" target="_blank">
-          <span class="link-card-icon">▶️</span>
-          <span class="link-card-name">YouTube</span>
-          <span class="link-card-desc">Qualitätscontent</span>
         </a>
         <a class="link-card" href="https://linkedin.com/in/jsveerkamp" target="_blank">
           <span class="link-card-icon">💼</span>
@@ -581,10 +613,31 @@
       zeigAlles();
     }
 
-    // Scroll-Hinweis ausblenden, sobald der Erste scrollt
-    addEventListener('scroll', () => {
+    // Kopfbereich zusammenschieben: --k läuft von 0 (ganz oben, großes
+    // Bild) auf 1 (schmale Leiste). Alle Größen im CSS hängen daran.
+    let kAngefordert = false;
+
+    function kopfAktualisieren() {
+      kAngefordert = false;
+      const lauf = Math.max(1, window.innerHeight * 0.55);
+      const k = Math.min(1, window.scrollY / lauf);
+      // Der Grund der Leiste kommt erst auf den letzten 40 % dazu.
+      const b = Math.min(1, Math.max(0, (k - 0.6) / 0.4));
+      const wurzel = document.documentElement.style;
+      wurzel.setProperty('--k', k.toFixed(4));
+      wurzel.setProperty('--kb', (b * b * (3 - 2 * b)).toFixed(4));
       document.body.classList.toggle('scrolled', window.scrollY > 40);
-    }, { passive: true });
+    }
+
+    function kopfAnfordern() {
+      if (kAngefordert) return;
+      kAngefordert = true;
+      requestAnimationFrame(kopfAktualisieren);
+    }
+
+    addEventListener('scroll', kopfAnfordern, { passive: true });
+    addEventListener('resize', kopfAnfordern);
+    kopfAktualisieren();
 
     // Die 3D-Szene erst nach dem ersten Bild nachladen – und nur, wenn sie
     // hier auch Sinn ergibt. Ohne sie bleibt der Farbverlauf von vorher.

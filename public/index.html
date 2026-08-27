@@ -17,10 +17,9 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Höhe des Kopfbereichs ganz oben und zusammengeschoben. Dazwischen
-         wird über --k (0 … 1, vom Skript gesetzt) interpoliert. */
-      --hero-h: 100vh;
-      --bar-h: 96px;
+      /* Höhe des Kopfbereichs. Wird beim Laden nachgemessen, der Wert hier
+         ist nur der Startwert, bis die Schriften da sind. */
+      --kopf-h: 252px;
 
       --bg: #080810;
       --surface: #0f0f1a;
@@ -30,10 +29,6 @@
       --accent3: #6fffd4;
       --text: #e8e8f0;
       --muted: #6b6b8a;
-    }
-
-    @supports (height: 100svh) {
-      :root { --hero-h: 100svh; }
     }
 
     html { scroll-behavior: smooth; }
@@ -106,50 +101,52 @@
       opacity: 0.4;
     }
 
-    /* Der Kopfbereich bleibt beim Scrollen oben stehen und schiebt sich
-       dabei zu einer schmalen Leiste zusammen. Er hängt fixiert über der
-       Seite, damit das Layout darunter nicht wandert; den Platz beim
-       Seitenanfang hält .hero-platz. */
+    /* ------------------------------------------------------------------
+       Kopfbereich: bleibt beim Scrollen in voller Größe oben stehen und
+       blendet erst auf den letzten Metern weg (--aus). Den Platz im Fluss
+       hält .hero-platz, damit nichts springt.
+       ------------------------------------------------------------------ */
     .hero {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 5;
-      height: calc(var(--hero-h) - var(--k, 0) * (var(--hero-h) - var(--bar-h)));
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 0 1.5rem;
-      /* Der Kopf liegt als eigene Ebene über der Seite. Klicks sollen
-         hindurchgehen – nur das Foto ist selbst anklickbar. */
+      padding: 1.8rem 1.5rem 1.6rem;
+      opacity: calc(1 - var(--aus, 0));
+      transform: translateY(calc(var(--aus, 0) * -26px));
+      /* Klicks gehen hindurch – nur das Foto ist selbst anklickbar. */
       pointer-events: none;
     }
 
-    /* Sobald er zusammengeschoben ist, braucht er einen eigenen Grund –
-       sonst scrollen die Kacheln sichtbar durch die Schrift. */
+    /* Eigener Grund, sobald die Kacheln darunter durchwandern. Nach unten
+       läuft er weich aus, damit keine harte Kante über der Szene liegt. */
     .hero::after {
       content: '';
       position: absolute;
-      inset: 0;
+      inset: -1px 0 0;
       z-index: -1;
-      background: linear-gradient(180deg, rgba(8,8,16,0.95) 0%, rgba(8,8,16,0.74) 100%);
-      -webkit-backdrop-filter: blur(14px) saturate(1.2);
-      backdrop-filter: blur(14px) saturate(1.2);
-      box-shadow: 0 1px 0 rgba(124,111,255,0.16);
-      /* eigener Wert, der erst am Ende des Zusammenschiebens hochläuft –
-         sonst liegt auf halbem Weg ein graues Rechteck über der Szene */
-      opacity: var(--kb, 0);
+      background: linear-gradient(180deg,
+        rgba(8,8,16,0.95) 0%,
+        rgba(8,8,16,0.90) 62%,
+        rgba(8,8,16,0.70) 84%,
+        rgba(8,8,16,0) 100%);
+      -webkit-backdrop-filter: blur(12px) saturate(1.2);
+      backdrop-filter: blur(12px) saturate(1.2);
+      opacity: calc(0.22 + 0.78 * var(--kb, 0));
     }
 
-    .hero-platz { height: var(--hero-h); }
+    .hero-platz { height: var(--kopf-h); }
 
     .avatar-ring {
-      width: calc(90px - var(--k, 0) * 48px);
-      height: calc(90px - var(--k, 0) * 48px);
-      margin: 0 auto calc(1.2rem - var(--k, 0) * 0.95rem);
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 0.9rem;
       border-radius: 50%;
       padding: 2px;
       background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
@@ -172,7 +169,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: calc(2.2rem - var(--k, 0) * 1.25rem);
+      font-size: 2.4rem;
       overflow: hidden;
     }
 
@@ -185,12 +182,11 @@
     }
 
     h1 {
-      --gross: clamp(2rem, 7vw, 3.1rem);
-      font-size: calc(1.08rem + (1 - var(--k, 0)) * (var(--gross) - 1.08rem));
+      font-size: clamp(1.9rem, 5vw, 2.6rem);
       font-weight: 700;
       letter-spacing: -0.03em;
       line-height: 1.15;
-      margin-bottom: calc(0.4rem - var(--k, 0) * 0.28rem);
+      margin-bottom: 0.35rem;
       background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -199,7 +195,7 @@
 
     .tagline {
       color: #a9a9c8;
-      font-size: calc(0.68rem + (1 - var(--k, 0)) * 0.27rem);
+      font-size: 0.95rem;
       font-weight: 300;
       letter-spacing: 0.05em;
       text-shadow: 0 2px 12px rgba(8,8,16,0.9);
@@ -221,28 +217,30 @@
       50% { opacity: 0; }
     }
 
-    /* Hinweis zum Scrollen – verschwindet, sobald es losgeht. */
+    /* Hinweis unten am Bildrand – verschwindet beim ersten Scrollen. */
     .scroll-cue {
-      position: absolute;
-      bottom: 2.2rem;
+      position: fixed;
+      bottom: 1rem;
       left: 50%;
       transform: translateX(-50%);
+      z-index: 4;
       font-family: 'Space Mono', monospace;
-      font-size: 0.62rem;
+      font-size: 0.6rem;
       letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--muted);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.6rem;
-      transition: opacity 0.5s ease;
+      gap: 0.4rem;
+      pointer-events: none;
+      opacity: calc(1 - var(--kb, 0));
     }
 
     .scroll-cue::after {
       content: '';
       width: 1px;
-      height: 34px;
+      height: 22px;
       background: linear-gradient(to bottom, var(--accent), transparent);
       animation: cueDrop 1.8s ease-in-out infinite;
     }
@@ -252,21 +250,23 @@
       50%      { transform: scaleY(1);   transform-origin: top; opacity: 1; }
     }
 
-    body.scrolled .scroll-cue { opacity: 0; }
-
+    /* ------------------------------------------------------------------
+       Inhalt: links drei Spalten Social Media, rechts eine Spalte Tools –
+       zusammen mit dem Kopf passt das auf einen Bildschirm.
+       ------------------------------------------------------------------ */
     main {
       position: relative;
       z-index: 4;
-      max-width: 680px;
+      max-width: 880px;
       margin: 0 auto;
-      /* oben etwas Luft, damit die erste Überschrift nicht direkt unter
-         der Leiste klebt */
-      padding: 2rem 1.5rem 8rem;
+      padding: 2rem 1.5rem 2.5rem;
     }
 
-    /* Section */
-    .section {
-      margin-bottom: 6rem;
+    .inhalt {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
     }
 
     .section-label {
@@ -275,7 +275,7 @@
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 1rem;
+      margin-bottom: 0.9rem;
       display: flex;
       align-items: center;
       gap: 0.6rem;
@@ -288,10 +288,15 @@
       background: var(--border);
     }
 
-    /* Link grid */
     .link-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1fr;
       gap: 0.6rem;
     }
 
@@ -352,53 +357,48 @@
       z-index: 1;
     }
 
-    /* Tools list — wider cards */
-    .tools-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 0.6rem;
-    }
-
-    /* Einblenden beim Scrollen. Versteckt wird nur, wenn das Skript die
-       Klasse gesetzt hat – ohne JS bleibt alles sichtbar. */
-    html.js-reveal .reveal {
+    /* Die Kacheln fahren beim Laden im Slalom herein – abwechselnd von
+       links und rechts, leicht schräg und unscharf, und setzen sich dann.
+       Die Klasse nimmt das Skript wieder weg, sobald alle da sind; sonst
+       würde die Animation den :hover-Effekt blockieren. */
+    html.js-anim .link-card {
       opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      animation: kachelRein 0.66s cubic-bezier(0.19, 1.2, 0.34, 1) both;
+      animation-delay: calc(var(--i, 0) * 55ms + 100ms);
     }
 
-    html.js-reveal .reveal.is-in { opacity: 1; transform: none; }
-
-    html.js-reveal .reveal .link-card:nth-child(2)  { transition-delay: 40ms; }
-    html.js-reveal .reveal .link-card:nth-child(3)  { transition-delay: 80ms; }
-    html.js-reveal .reveal .link-card:nth-child(4)  { transition-delay: 120ms; }
-    html.js-reveal .reveal .link-card:nth-child(5)  { transition-delay: 160ms; }
-    html.js-reveal .reveal .link-card:nth-child(6)  { transition-delay: 200ms; }
-    html.js-reveal .reveal .link-card:nth-child(7)  { transition-delay: 240ms; }
-    html.js-reveal .reveal .link-card:nth-child(8)  { transition-delay: 280ms; }
-    html.js-reveal .reveal .link-card:nth-child(9)  { transition-delay: 320ms; }
-    html.js-reveal .reveal .link-card:nth-child(10) { transition-delay: 360ms; }
-
-    @media (max-width: 480px) {
-      .link-grid { grid-template-columns: repeat(2, 1fr); }
-      .tools-grid { grid-template-columns: 1fr; }
-      .section { margin-bottom: 4.5rem; }
+    @keyframes kachelRein {
+      from {
+        opacity: 0;
+        transform: translate(calc(var(--seite, 1) * 52px), -14px) rotate(calc(var(--seite, 1) * -3.5deg)) scale(0.94);
+        filter: blur(8px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+        filter: blur(0);
+      }
     }
 
-    /* Footer */
+    /* Auslauf: hier ist nur noch die Szene zu sehen – Tal, Feuerwehrauto
+       und der Absturz. */
+    .finale { height: 170svh; }
+
+    @supports not (height: 100svh) {
+      .finale { height: 170vh; }
+    }
+
     footer {
       position: relative;
       z-index: 4;
       text-align: center;
-      padding-bottom: 4rem;
+      padding-bottom: 3rem;
       font-size: 0.75rem;
       color: var(--muted);
       font-family: 'Space Mono', monospace;
     }
 
-    footer span {
-      color: var(--accent);
-    }
+    footer span { color: var(--accent); }
 
     /* Ripple effect */
     @keyframes ripple {
@@ -414,12 +414,22 @@
       animation: ripple 0.5s linear;
     }
 
+    /* Schmalere Fenster: alles untereinander, Social zweispaltig. */
+    @media (max-width: 720px) {
+      .inhalt { grid-template-columns: 1fr; gap: 2rem; }
+      .link-grid { grid-template-columns: repeat(2, 1fr); }
+      .tools-grid { grid-template-columns: repeat(2, 1fr); }
+      main { padding: 1.5rem 1.2rem 2rem; }
+      .avatar-ring { width: 90px; height: 90px; }
+      .link-card { padding: 0.8rem 0.9rem; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      html.js-reveal .reveal { opacity: 1; transform: none; transition: none; }
-      .scroll-cue::after, .bg-gradient { animation: none; }
-      :root { --hero-h: 60vh; }
-      .section { margin-bottom: 2.5rem; }
+      html.js-anim .link-card { opacity: 1; animation: none; }
+      .scroll-cue { display: none; }
+      .bg-gradient { animation: none; }
+      .finale { display: none; }
     }
   </style>
 </head>
@@ -429,7 +439,7 @@
   <div class="scrim"></div>
   <div class="noise"></div>
 
-  <header class="hero">
+  <header class="hero" id="kopf">
     <div class="avatar-ring" title="Hey 👋">
       <div class="avatar-inner">
         <!-- Hauptfoto (wird zuerst angezeigt) -->
@@ -438,82 +448,87 @@
     </div>
     <h1>Julian Veerkamp</h1>
     <p class="tagline"><span id="typed"></span><span class="cursor"></span></p>
-    <div class="scroll-cue">scroll</div>
   </header>
   <div class="hero-platz" aria-hidden="true"></div>
 
   <main>
-    <section class="section">
-      <div class="section-label reveal">Social Media</div>
-      <div class="link-grid reveal">
-        <a class="link-card" href="https://signal.me/#eu/JnL6PouqINGbQCUuNhXo69gpY5xPND4QNTH02ntumokkWus1NVRGC490c4jjJo2r" target="_blank">
-          <span class="link-card-icon">💬</span>
-          <span class="link-card-name">Signal</span>
-          <span class="link-card-desc">Schreib mir</span>
-        </a>
-        <a class="link-card" href="https://instagram.com/juliansebv" target="_blank">
-          <span class="link-card-icon">📸</span>
-          <span class="link-card-name">Instagram</span>
-          <span class="link-card-desc">Schöne Fotos</span>
-        </a>
-        <a class="link-card" href="https://linkedin.com/in/jsveerkamp" target="_blank">
-          <span class="link-card-icon">💼</span>
-          <span class="link-card-name">LinkedIn</span>
-          <span class="link-card-desc">Meine Erfahrung</span>
-        </a>
-        <a class="link-card" href="https://github.com/Savo2610" target="_blank">
-          <span class="link-card-icon">⚙️</span>
-          <span class="link-card-name">GitHub</span>
-          <span class="link-card-desc">Meine Projekte</span>
-        </a>
-        <a class="link-card" href="https://stats.fm/savo" target="_blank">
-          <span class="link-card-icon">🎵</span>
-          <span class="link-card-name">Spotify</span>
-          <span class="link-card-desc">Höre was ich höre</span>
-        </a>
-        <a class="link-card" href="https://www.komoot.de/user/464140060326" target="_blank">
-          <span class="link-card-icon">🏔️</span>
-          <span class="link-card-name">Komoot</span>
-          <span class="link-card-desc">Wandern & Radfahren</span>
-        </a>
-        <a class="link-card" href="https://paypal.me/juliansebv" target="_blank">
-          <span class="link-card-icon">💸</span>
-          <span class="link-card-name">PayPal</span>
-          <span class="link-card-desc">Geld senden</span>
-        </a>
-        <a class="link-card" href="solana:BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da">
-          <span class="link-card-icon">◎</span>
-          <span class="link-card-name">Solana</span>
-          <span class="link-card-desc">Echtes Geld</span>
-        </a>
-      </div>
-    </section>
+    <div class="inhalt">
+      <section>
+        <div class="section-label">Social Media</div>
+        <div class="link-grid">
+          <a class="link-card" href="https://signal.me/#eu/JnL6PouqINGbQCUuNhXo69gpY5xPND4QNTH02ntumokkWus1NVRGC490c4jjJo2r" target="_blank">
+            <span class="link-card-icon">💬</span>
+            <span class="link-card-name">Signal</span>
+            <span class="link-card-desc">Schreib mir</span>
+          </a>
+          <a class="link-card" href="https://instagram.com/juliansebv" target="_blank">
+            <span class="link-card-icon">📸</span>
+            <span class="link-card-name">Instagram</span>
+            <span class="link-card-desc">Schöne Fotos</span>
+          </a>
+          <a class="link-card" href="https://linkedin.com/in/jsveerkamp" target="_blank">
+            <span class="link-card-icon">💼</span>
+            <span class="link-card-name">LinkedIn</span>
+            <span class="link-card-desc">Meine Erfahrung</span>
+          </a>
+          <a class="link-card" href="https://github.com/Savo2610" target="_blank">
+            <span class="link-card-icon">⚙️</span>
+            <span class="link-card-name">GitHub</span>
+            <span class="link-card-desc">Meine Projekte</span>
+          </a>
+          <a class="link-card" href="https://stats.fm/savo" target="_blank">
+            <span class="link-card-icon">🎵</span>
+            <span class="link-card-name">Spotify</span>
+            <span class="link-card-desc">Höre was ich höre</span>
+          </a>
+          <a class="link-card" href="https://www.komoot.de/user/464140060326" target="_blank">
+            <span class="link-card-icon">🏔️</span>
+            <span class="link-card-name">Komoot</span>
+            <span class="link-card-desc">Wandern & Radfahren</span>
+          </a>
+          <a class="link-card" href="https://paypal.me/juliansebv" target="_blank">
+            <span class="link-card-icon">💸</span>
+            <span class="link-card-name">PayPal</span>
+            <span class="link-card-desc">Geld senden</span>
+          </a>
+          <a class="link-card" href="solana:BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da">
+            <span class="link-card-icon">◎</span>
+            <span class="link-card-name">Solana</span>
+            <span class="link-card-desc">Echtes Geld</span>
+          </a>
+        </div>
+      </section>
 
-    <section class="section">
-      <div class="section-label reveal">Meine Tools</div>
-      <div class="tools-grid reveal">
-        <a class="link-card" href="https://s.veerka.mp" target="_blank">
-          <span class="link-card-icon">🔗</span>
-          <span class="link-card-name">Kurzlink</span>
-          <span class="link-card-desc">Links kürzen</span>
-        </a>
-        <a class="link-card" href="https://packliste.veerka.mp" target="_blank">
-          <span class="link-card-icon">🎒</span>
-          <span class="link-card-name">Packliste</span>
-          <span class="link-card-desc">Nichts vergessen</span>
-        </a>
-        <a class="link-card" href="https://zeit.veerka.mp" target="_blank">
-          <span class="link-card-icon">⏱️</span>
-          <span class="link-card-name">Arbeitszeit</span>
-          <span class="link-card-desc">Wie lange arbeitest du?</span>
-        </a>
-      </div>
-    </section>
+      <section>
+        <div class="section-label">Meine Tools</div>
+        <div class="tools-grid">
+          <a class="link-card" href="https://s.veerka.mp" target="_blank">
+            <span class="link-card-icon">🔗</span>
+            <span class="link-card-name">Kurzlink</span>
+            <span class="link-card-desc">Links kürzen</span>
+          </a>
+          <a class="link-card" href="https://packliste.veerka.mp" target="_blank">
+            <span class="link-card-icon">🎒</span>
+            <span class="link-card-name">Packliste</span>
+            <span class="link-card-desc">Nichts vergessen</span>
+          </a>
+          <a class="link-card" href="https://zeit.veerka.mp" target="_blank">
+            <span class="link-card-icon">⏱️</span>
+            <span class="link-card-name">Arbeitszeit</span>
+            <span class="link-card-desc">Wie lange arbeitest du?</span>
+          </a>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <div class="finale" aria-hidden="true"></div>
 
   <footer>
     made with <span>♥</span> · <span>veerka.mp</span>
   </footer>
+
+  <div class="scroll-cue" aria-hidden="true">scroll</div>
 
   <script>
     // Typing animation
@@ -593,50 +608,59 @@
       setAvatar(avatarSequence[avatarIdx]);
     });
 
-    // Karten einblenden, sobald sie in den Blick kommen
     const wenigerBewegung = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const zeigAlles = () => document.querySelectorAll('.reveal').forEach(n => n.classList.add('is-in'));
 
-    if (!wenigerBewegung && 'IntersectionObserver' in window) {
-      // Erst ab hier gilt die versteckte Startposition – schlägt das Skript
-      // fehl, stehen die Links trotzdem da.
-      document.documentElement.classList.add('js-reveal');
-      const beobachter = new IntersectionObserver((eintraege) => {
-        for (const e of eintraege) {
-          if (e.isIntersecting) { e.target.classList.add('is-in'); beobachter.unobserve(e.target); }
-        }
-      }, { rootMargin: '0px 0px -12% 0px' });
-      document.querySelectorAll('.reveal').forEach(n => beobachter.observe(n));
-      // Notbremse: was nach drei Sekunden noch versteckt ist, wird gezeigt.
-      setTimeout(zeigAlles, 3000);
-    } else {
-      zeigAlles();
+    // Kacheln im Slalom hereinfahren lassen. Danach wird die Klasse wieder
+    // entfernt, damit :hover die Karten wieder bewegen darf.
+    const karten = [...document.querySelectorAll('.link-card')];
+    karten.forEach((k, i) => {
+      k.style.setProperty('--i', i);
+      k.style.setProperty('--seite', i % 2 ? 1 : -1);
+    });
+    if (!wenigerBewegung) {
+      document.documentElement.classList.add('js-anim');
+      setTimeout(() => document.documentElement.classList.remove('js-anim'),
+                 100 + karten.length * 55 + 900);
     }
 
-    // Kopfbereich zusammenschieben: --k läuft von 0 (ganz oben, großes
-    // Bild) auf 1 (schmale Leiste). Alle Größen im CSS hängen daran.
-    let kAngefordert = false;
+    // Der Kopfbereich behält seine Größe. Er bekommt nur einen Grund,
+    // sobald die Kacheln darunter durchlaufen (--kb), und blendet ganz
+    // unten weg (--aus), damit das Tal frei liegt.
+    const kopf = document.getElementById('kopf');
+    const wurzel = document.documentElement;
+    let angefordert = false;
+
+    const weich = (a, b, x) => {
+      const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    };
+
+    function kopfMessen() {
+      wurzel.style.setProperty('--kopf-h', Math.round(kopf.offsetHeight) + 'px');
+    }
 
     function kopfAktualisieren() {
-      kAngefordert = false;
-      const lauf = Math.max(1, window.innerHeight * 0.55);
-      const k = Math.min(1, window.scrollY / lauf);
-      // Der Grund der Leiste kommt erst auf den letzten 40 % dazu.
-      const b = Math.min(1, Math.max(0, (k - 0.6) / 0.4));
-      const wurzel = document.documentElement.style;
-      wurzel.setProperty('--k', k.toFixed(4));
-      wurzel.setProperty('--kb', (b * b * (3 - 2 * b)).toFixed(4));
-      document.body.classList.toggle('scrolled', window.scrollY > 40);
+      angefordert = false;
+      const gesamt = wurzel.scrollHeight - window.innerHeight;
+      const p = gesamt > 0 ? window.scrollY / gesamt : 0;
+      const aus = weich(0.78, 0.94, p);
+      wurzel.style.setProperty('--kb', Math.min(1, window.scrollY / 140).toFixed(3));
+      wurzel.style.setProperty('--aus', aus.toFixed(3));
+      // Ausgeblendet heißt auch: nicht mehr anklickbar.
+      kopf.style.visibility = aus > 0.985 ? 'hidden' : '';
     }
 
-    function kopfAnfordern() {
-      if (kAngefordert) return;
-      kAngefordert = true;
+    function anfordern() {
+      if (angefordert) return;
+      angefordert = true;
       requestAnimationFrame(kopfAktualisieren);
     }
 
-    addEventListener('scroll', kopfAnfordern, { passive: true });
-    addEventListener('resize', kopfAnfordern);
+    addEventListener('scroll', anfordern, { passive: true });
+    addEventListener('resize', () => { kopfMessen(); anfordern(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(kopfMessen);
+    new ResizeObserver(kopfMessen).observe(kopf);
+    kopfMessen();
     kopfAktualisieren();
 
     // Die 3D-Szene erst nach dem ersten Bild nachladen – und nur, wenn sie

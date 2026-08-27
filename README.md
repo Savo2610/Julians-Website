@@ -23,9 +23,11 @@ npm run deploy    # von Hand nach veerka.mp
 ## Die Szene beim Scrollen
 
 `public/scene.js` baut eine Nachtabfahrt: oben der Gipfel, dann die Piste mit
-dem Skifahrer, unten das Tal mit Hütte und Feuerwehrauto. Der Scrollfortschritt
-(0 … 1) ist die einzige Eingabe, alles andere ergibt sich daraus. Die Geometrie
-entsteht im Code – es gibt keine Modelldateien.
+dem Skifahrer, unten das Tal mit Hütte und Feuerwehrauto – und auf dem letzten
+Viertel kommt eine FPV-Drohne angeflogen und geht neben dem Auto in den Schnee.
+Der Scrollfortschritt (0 … 1) ist die einzige Eingabe, alles andere ergibt sich
+daraus; auch der Absturz, der beim Zurückscrollen wieder zurückläuft. Die
+Geometrie entsteht im Code – es gibt keine Modelldateien.
 
 Die Stellschrauben stehen als `TUNE` und `COL` oben in der Datei: Länge der
 Abfahrt, Höhenunterschied, Pistenbreite, Schwungweite, Kameraabstand, Farben.

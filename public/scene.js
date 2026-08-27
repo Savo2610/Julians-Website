@@ -595,6 +595,229 @@ const blaulichter = [];
 }
 
 /* ------------------------------------------------------------------ *
+ *  Die Drohne – eine SpeedyBee-artige 5-Zoll-Quad, die im Tal einschlägt
+ *
+ *  Der Ablauf hängt am Scrollfortschritt, nicht an der Uhr: zurückscrollen
+ *  spult den Absturz wieder zurück. Nur die Propeller drehen sich nach der
+ *  Zeit, damit es auch im Stillstand surrt.
+ * ------------------------------------------------------------------ */
+const drohne = (() => {
+  const gruppe = new THREE.Group();
+  const props = [];
+
+  const schwarz = new THREE.MeshLambertMaterial({ color: '#191921', flatShading: true });
+  // etwas Eigenleuchten, sonst säuft das Gelb in der Nacht ab
+  const gelb    = new THREE.MeshLambertMaterial({ color: '#ffc21a', emissive: '#4a3400', flatShading: true });
+  const grau    = new THREE.MeshLambertMaterial({ color: '#3c3c4a', flatShading: true });
+
+  // Rahmen: zwei Platten, vier Arme über Kreuz
+  const platte = (b, h, t, y) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(b, h, t), schwarz);
+    m.position.y = y;
+    gruppe.add(m);
+  };
+  platte(0.62, 0.05, 0.56, 0);
+  platte(0.56, 0.04, 0.50, 0.32);
+
+  for (let i = 0; i < 4; i++) {
+    const w = Math.PI / 4 + i * Math.PI / 2;
+    const cx = Math.cos(w), cz = Math.sin(w);
+
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.07, 0.16), schwarz);
+    arm.position.set(cx * 0.45, 0.02, cz * 0.45);
+    arm.rotation.y = -w;
+    gruppe.add(arm);
+
+    const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.17, 8), grau);
+    motor.position.set(cx * 0.82, 0.11, cz * 0.82);
+    gruppe.add(motor);
+
+    // Propeller: zwei Blätter plus eine fast durchsichtige Scheibe, die
+    // den Kreis andeutet, solange er sich dreht
+    const prop = new THREE.Group();
+    prop.position.set(cx * 0.82, 0.22, cz * 0.82);
+    for (const dreh of [0, Math.PI / 2]) {
+      const blatt = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.015, 0.1), grau);
+      blatt.rotation.y = dreh;
+      prop.add(blatt);
+    }
+    const scheibe = new THREE.Mesh(
+      new THREE.CircleGeometry(0.33, 16),
+      new THREE.MeshBasicMaterial({
+        color: '#a6adcf', transparent: true, opacity: 0.14,
+        side: THREE.DoubleSide, depthWrite: false,
+      })
+    );
+    scheibe.rotation.x = -Math.PI / 2;
+    prop.add(scheibe);
+    gruppe.add(prop);
+    props.push({ prop, scheibe, richtung: i % 2 ? 1 : -1 });
+  }
+
+  // Akku oben drauf – das Gelb ist das, woran man die Marke erkennt
+  const akku = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.34), gelb);
+  akku.position.set(-0.02, 0.45, 0);
+  gruppe.add(akku);
+
+  // Kamera vorn, leicht nach oben geneigt
+  const kam = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.17, 0.15), schwarz);
+  kam.position.set(0.3, 0.2, 0);
+  kam.rotation.z = 0.42;
+  gruppe.add(kam);
+  const linse = new THREE.Mesh(
+    new THREE.SphereGeometry(0.055, 8, 6),
+    new THREE.MeshBasicMaterial({ color: '#6f7bd6' })
+  );
+  linse.position.set(0.39, 0.26, 0);
+  gruppe.add(linse);
+
+  // Antennen nach hinten, mit gelben Enden
+  for (const z of [-0.14, 0.14]) {
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.36, 5), schwarz);
+    ant.position.set(-0.32, 0.36, z);
+    ant.rotation.z = 0.9;
+    gruppe.add(ant);
+    const spitze = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.1, 6), gelb);
+    spitze.position.set(-0.45, 0.45, z);
+    spitze.rotation.z = 0.9;
+    gruppe.add(spitze);
+  }
+
+  // rote Kontrollleuchte hinten
+  const led = new THREE.Mesh(
+    new THREE.BoxGeometry(0.06, 0.05, 0.09),
+    new THREE.MeshBasicMaterial({ color: '#ff4d5e' })
+  );
+  led.position.set(-0.31, 0.2, 0);
+  gruppe.add(led);
+
+  gruppe.scale.setScalar(2.4);
+  gruppe.visible = false;
+  scene.add(gruppe);
+
+  // Ein Propeller, der beim Aufschlag wegfliegt
+  const splitter = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.035, 0.19), grau);
+  splitter.visible = false;
+  scene.add(splitter);
+
+  // Schneewolke am Einschlagpunkt
+  const wolke = (() => {
+    const n = 110;
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const w = Math.random() * Math.PI * 2;
+      const r = Math.pow(Math.random(), 0.5);
+      pos[i * 3]     = Math.cos(w) * r;
+      pos[i * 3 + 1] = Math.pow(Math.random(), 1.6) * 0.9;
+      pos[i * 3 + 2] = Math.sin(w) * r;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.Points(g, new THREE.PointsMaterial({
+      map: punktTex, color: '#eaeeff', size: 0.95, sizeAttenuation: true,
+      transparent: true, opacity: 0, depthWrite: false,
+    }));
+    m.visible = false;
+    scene.add(m);
+    return m;
+  })();
+
+  // Einschlagpunkt: 25 m vor der Stelle, an der die Kamera stehen bleibt,
+  // fast auf ihrer Linie. Am Auto ausgerichtet wäre er auf schmalen
+  // Displays aus dem Bild gewandert.
+  const aufschlag = (() => {
+    const z = (10 - TUNE.RUN) - 25;
+    const x = pisteX(z) + carve(z) * 0.4 + 3.5;
+    return new THREE.Vector3(x, bodenY(x, z), z);
+  })();
+  wolke.position.copy(aufschlag);
+
+  // Anflug: sie kommt aus dem Tal auf uns zu, oben rechts ins Bild, und
+  // geht dann vor der Kamera in den Schnee
+  const abflug = new THREE.Vector3(aufschlag.x + 10, aufschlag.y + 16, aufschlag.z - 34);
+
+  const ruhe = new THREE.Vector3();
+  let propWinkel = 0;
+
+  return function setzen(d, dt, zeit) {
+    if (d <= 0.001) {
+      gruppe.visible = splitter.visible = wolke.visible = false;
+      return;
+    }
+    gruppe.visible = true;
+
+    const TREFFER = 0.52;
+    let tempo;
+
+    if (d < TREFFER) {
+      // Anflug
+      const t = d / TREFFER;
+      const e = t * t * (3 - 2 * t);
+      gruppe.position.lerpVectors(abflug, aufschlag, e);
+      gruppe.position.y += Math.sin(t * Math.PI) * 3.4;          // Bogen
+      gruppe.position.x += Math.sin(t * 11) * 0.7 * (1 - t);     // Zappeln
+      gruppe.position.z += Math.cos(t * 9) * 0.5 * (1 - t);
+      gruppe.rotation.set(
+        -0.2 - t * 0.6,
+        -0.5 - t * 1.3,                       // dreht sich weg, verliert die Lage
+        Math.sin(t * 8) * 0.45 * (1 - t) + t * 0.6
+      );
+      tempo = 1;
+      splitter.visible = false;
+      wolke.visible = false;
+    } else {
+      // Aufschlag, Überschlag, liegen bleiben
+      const t = (d - TREFFER) / (1 - TREFFER);
+      const abkling = Math.exp(-t * 4.5);
+      const huepfer = Math.abs(Math.sin(t * Math.PI * 2.3)) * abkling * 1.9;
+      const dreh = (1 - abkling) * 8;
+
+      gruppe.position.copy(aufschlag);
+      gruppe.position.x += (1 - abkling) * 2.6;
+      gruppe.position.z += (1 - abkling) * 0.8;
+      gruppe.position.y += huepfer + 0.14;
+      gruppe.rotation.set(-0.8 - dreh, 3.4 + dreh * 0.35, 1.2 + dreh * 0.55);
+
+      // die letzten Grad ausrollen: sie bleibt auf dem Rücken liegen
+      const still = smoothstep(0.45, 1, t);
+      ruhe.set(0.16, 2.35, 1.72);
+      gruppe.rotation.x = THREE.MathUtils.lerp(gruppe.rotation.x, ruhe.x, still);
+      gruppe.rotation.y = THREE.MathUtils.lerp(gruppe.rotation.y, ruhe.y, still);
+      gruppe.rotation.z = THREE.MathUtils.lerp(gruppe.rotation.z, ruhe.z, still);
+      gruppe.position.y = THREE.MathUtils.lerp(gruppe.position.y, aufschlag.y + 0.16, still);
+
+      tempo = abkling * 0.55;
+
+      // abgerissener Propeller
+      splitter.visible = true;
+      const st = Math.min(1, t * 2.4);
+      splitter.position.set(
+        aufschlag.x - 1.1 - st * 2.4,
+        aufschlag.y + 0.1 + Math.sin(st * Math.PI) * 1.6,
+        aufschlag.z + 0.6 + st * 1.3
+      );
+      splitter.rotation.set(st * 9, st * 14, st * 6);
+
+      // Schneewolke: geht auf und verzieht sich
+      wolke.visible = true;
+      const wt = Math.min(1, t * 1.1);
+      wolke.scale.setScalar(1.4 + wt * 7);
+      wolke.material.opacity = (1 - wt) * 0.95;
+    }
+
+    // Nach dem Aufschlag blinkt nur noch die Kontrollleuchte
+    led.material.color.setHex(d < TREFFER || (zeit % 1.6) < 0.9 ? 0xff4d5e : 0x3a1218);
+
+    // Propeller drehen – aufgesammelt, damit ein Tempowechsel nicht springt
+    propWinkel += dt * tempo * 46;
+    for (const p of props) {
+      p.prop.rotation.y = propWinkel * p.richtung;
+      p.scheibe.material.opacity = 0.14 * tempo;
+    }
+  };
+})();
+
+/* ------------------------------------------------------------------ *
  *  Schneeflocken – laufen immer, damit die Szene auch im Stillstand lebt
  * ------------------------------------------------------------------ */
 const flocken = (() => {
@@ -677,7 +900,7 @@ function bildAufbauen(dt, zeit) {
   const start = smoothstep(0, 0.13, jetzt);
   const ende  = smoothstep(0.84, 1, jetzt);
 
-  const hoehe   = THREE.MathUtils.lerp(34, 11, start) + ende * 6;
+  const hoehe   = THREE.MathUtils.lerp(34, 11, start) + ende * 3;
   const abstand = THREE.MathUtils.lerp(60, TUNE.LEAD, start);
 
   pfadPunkt(strecke + abstand, posSki);
@@ -708,7 +931,7 @@ function bildAufbauen(dt, zeit) {
     const halbHoch = THREE.MathUtils.degToRad(camera.fov) / 2;
     const halbBreit = Math.atan(Math.tan(halbHoch) * camera.aspect);
     camera.rotateY(ende * halbBreit * 0.34);
-    camera.rotateX(ende * halbHoch * 0.34);
+    camera.rotateX(ende * halbHoch * 0.24);
   }
 
   // Skifahrer aufs Ziel ausrichten (Vorderseite ist +Z) und in die
@@ -730,6 +953,9 @@ function bildAufbauen(dt, zeit) {
   // Mondlicht hinter der Kamera halten, sonst wird es unten stockdunkel
   mond.position.set(posKam.x - 70, posKam.y + 90, posKam.z + 40);
   mond.target.position.copy(posKam);
+
+  // Die Drohne kommt auf dem letzten Viertel der Seite angeflogen
+  drohne(smoothstep(0.74, 1, jetzt), dt, zeit);
 
   // Blaulicht: deutsches Doppelblitz-Muster, links und rechts versetzt
   for (const b of blaulichter) {

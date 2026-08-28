@@ -176,7 +176,7 @@ function punktTextur() {
 const punktTex = punktTextur();
 
 // Sterne, jeder mit eigener Phase – dadurch funkeln sie unterschiedlich.
-{
+const sterneMat = (() => {
   const n = mobil ? 420 : 900;
   const pos = new Float32Array(n * 3);
   const phase = new Float32Array(n);
@@ -197,7 +197,7 @@ const punktTex = punktTextur();
   g.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1));
   g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
 
-  himmel.add(new THREE.Points(g, new THREE.ShaderMaterial({
+  const mat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     fog: false,
@@ -222,8 +222,69 @@ const punktTex = punktTextur();
         gl_FragColor = vec4(vec3(0.85, 0.88, 1.0), t.a * vHell * 0.9);
       }
     `,
-  })));
-}
+  });
+  himmel.add(new THREE.Points(g, mat));
+  return mat;
+})();
+
+// Sternschnuppe: alle paar Sekunden zieht eine über den Grat. Der Schweif
+// sind einfach 18 Punkte hintereinander, vorn hell, hinten aus.
+const sternschnuppe = (() => {
+  const N = 18;
+  const pos = new Float32Array(N * 3);
+  const col = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const h = Math.pow(1 - i / (N - 1), 2);
+    col[i * 3] = h; col[i * 3 + 1] = h * 0.96; col[i * 3 + 2] = h * 0.86;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const punkte = new THREE.Points(g, new THREE.PointsMaterial({
+    map: punktTex, size: 5.5, sizeAttenuation: false, vertexColors: true,
+    transparent: true, opacity: 0, depthWrite: false, fog: false,
+    blending: THREE.AdditiveBlending,
+  }));
+  punkte.frustumCulled = false;
+  himmel.add(punkte);
+
+  const start = new THREE.Vector3();
+  const rich  = new THREE.Vector3();
+  let wartet = 2 + Math.random() * 5;
+  let t = -1;                                   // < 0 heißt: gerade fliegt keine
+
+  return function (dt) {
+    if (t < 0) {
+      punkte.material.opacity = 0;
+      wartet -= dt;
+      if (wartet > 0) return;
+      // Grob in Blickrichtung und flach über dem Grat: die Kamera schaut
+      // die ganze Abfahrt über rund 20° nach unten, viel mehr Himmel als
+      // ein schmales Band über den Gipfeln ist nie im Bild.
+      const w = (Math.random() - 0.5) * 2.2;
+      const hoch = (0.035 + Math.random() * 0.09) * Math.PI / 2;
+      const r = 800, rh = Math.cos(hoch) * r;
+      start.set(Math.sin(w) * rh, Math.sin(hoch) * r, -Math.cos(w) * rh);
+      // quer zur Blickrichtung, mit leichtem Gefälle – so bleibt sie den
+      // ganzen Flug über in diesem Band
+      const seite = Math.random() < 0.5 ? -1 : 1;
+      rich.set(Math.cos(w) * seite, -0.18 - Math.random() * 0.17, Math.sin(w) * seite)
+          .normalize().multiplyScalar(360);
+      t = 0;
+    }
+
+    t += dt / 0.85;                             // eine Schnuppe dauert 0,85 s
+    if (t >= 1) { t = -1; wartet = 4 + Math.random() * 9; return; }
+    punkte.material.opacity = Math.sin(t * Math.PI) * 0.95;
+
+    const a = g.attributes.position;
+    for (let i = 0; i < N; i++) {
+      const k = t - i * 0.009;                  // enger, sonst wirkt es gepunktet
+      a.setXYZ(i, start.x + rich.x * k, start.y + rich.y * k, start.z + rich.z * k);
+    }
+    a.needsUpdate = true;
+  };
+})();
 
 // Mond mit Hof
 {
@@ -398,7 +459,8 @@ const punktTex = punktTextur();
 const skifahrer = new THREE.Group();
 scene.add(skifahrer);
 
-{
+const haltung = (() => {
+  const stoecke = [];
   const dunkel  = new THREE.MeshLambertMaterial({ color: '#14141f', flatShading: true });
   const jacke   = new THREE.MeshLambertMaterial({ color: COL.jacke, flatShading: true });
   const helm    = new THREE.MeshLambertMaterial({ color: '#e8e8f0', flatShading: true });
@@ -420,6 +482,7 @@ scene.add(skifahrer);
     stock.position.set(s * 0.52, 0.75, -0.5);
     stock.rotation.x = 0.55;
     koerper.add(stock);
+    stoecke.push(stock);
   }
 
   const rumpf = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.5, 3, 8), jacke);
@@ -432,7 +495,20 @@ scene.add(skifahrer);
   koerper.add(kopf);
 
   skifahrer.add(koerper);
-}
+
+  // Unten im Tal geht er aus der Hocke: `t` läuft von 0 (Abfahrtshocke)
+  // auf 1 (steht aufrecht, Stöcke unten).
+  return function aufrichten(t) {
+    rumpf.rotation.x = -0.32 + t * 0.30;
+    rumpf.position.y = 1.35 + t * 0.20;
+    kopf.position.y  = 1.92 + t * 0.28;
+    kopf.position.z  = 0.14 - t * 0.14;
+    for (const stock of stoecke) {
+      stock.rotation.x = 0.55 - t * 0.48;
+      stock.position.y = 0.75 - t * 0.14;
+    }
+  };
+})();
 
 /* --- Schneefahne hinter den Skiern --- */
 const fahne = (() => {
@@ -478,6 +554,87 @@ const talMitte = (() => {
   return new THREE.Vector3(x, bodenY(x, z), z);
 })();
 
+// Wo die Drohne einschlägt: 25 m vor der Stelle, an der die Kamera stehen
+// bleibt, fast auf ihrer Linie. Am Auto ausgerichtet wäre der Punkt auf
+// schmalen Displays aus dem Bild gewandert. Steht hier oben, weil auch der
+// Skifahrer am Ende dorthin schaut.
+const einschlag = (() => {
+  const z = (10 - TUNE.RUN) - 25;
+  const x = pisteX(z) + carve(z) * 0.4 + 3.5;
+  return new THREE.Vector3(x, bodenY(x, z), z);
+})();
+
+/* --- Anklickbare Stellen im Tal ---------------------------------------
+   Drohne und Auto sind zu filigran, um sie direkt zu treffen. Jedes
+   bekommt deshalb eine unsichtbare Kugel als Trefferfläche: sie rendert
+   nichts (kein Farb-, kein Tiefenschreiben), lässt sich aber raycasten. */
+const klickbar = [];
+function trefferflaeche(eltern, radius, tun) {
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 8, 6),
+    new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false })
+  );
+  m.userData.tun = tun;
+  eltern.add(m);
+  klickbar.push(m);
+}
+
+/* --- Namensschilder -----------------------------------------------------
+   Wer ein Osterei anklickt, bekommt daneben ein kleines Schild mit dem
+   echten Link. Bewusst zweistufig: ein Klick irgendwo in die Landschaft
+   soll niemanden ungefragt von der Seite werfen, und als richtiges <a>
+   zeigt der Browser beim Draufhalten auch, wohin es geht. */
+const schild = (() => {
+  const alle = [];
+  const pos = new THREE.Vector3();
+
+  function verstecken(e) {
+    e.rest = 0;
+    e.a.classList.remove('da');
+    e.a.tabIndex = -1;
+    e.a.setAttribute('aria-hidden', 'true');
+  }
+
+  function neu(text, url, objekt, hoehe) {
+    const a = document.createElement('a');
+    a.className = 'szene-schild';
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = text;
+    a.tabIndex = -1;
+    a.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(a);
+
+    const e = { a, objekt, hoehe, rest: 0 };
+    alle.push(e);
+    return () => {
+      e.rest = 9;                               // Sekunden, dann geht es wieder
+      a.classList.add('da');
+      a.tabIndex = 0;
+      a.removeAttribute('aria-hidden');
+    };
+  }
+
+  function schritt(dt, imTal) {
+    let rechteck = null;
+    for (const e of alle) {
+      if (e.rest <= 0) continue;
+      e.rest -= dt;
+      if (e.rest <= 0 || !imTal) { verstecken(e); continue; }
+
+      rechteck = rechteck || canvas.getBoundingClientRect();
+      pos.set(e.objekt.position.x, e.objekt.position.y + e.hoehe, e.objekt.position.z)
+         .project(camera);
+      if (pos.z > 1) { verstecken(e); continue; }   // hinter der Kamera
+      e.a.style.left = Math.round(rechteck.left + (pos.x + 1) / 2 * rechteck.width) + 'px';
+      e.a.style.top  = Math.round(rechteck.top + (-pos.y + 1) / 2 * rechteck.height) + 'px';
+    }
+  }
+
+  return { neu, schritt };
+})();
+
 /* --- Berghütte mit warmem Fensterlicht --- */
 {
   const huette = new THREE.Group();
@@ -515,7 +672,7 @@ const talMitte = (() => {
 
 /* --- Feuerwehrauto: Kasten auf Rädern, aber es liest sich sofort --- */
 const blaulichter = [];
-{
+const feuerwehr = (() => {
   const auto = new THREE.Group();
   const rot     = new THREE.MeshLambertMaterial({ color: '#c8202a', flatShading: true });
   const weiss   = new THREE.MeshLambertMaterial({ color: '#e9e9f2', flatShading: true });
@@ -592,7 +749,34 @@ const blaulichter = [];
   auto.rotation.y = -2.2;                       // Dreiviertelansicht von vorn
   auto.scale.setScalar(1.2);
   scene.add(auto);
-}
+
+  // Fahrlicht – aus, solange es steht
+  const fahrlicht = new THREE.PointLight('#fff0c8', 0, 42, 2);
+  fahrlicht.position.set(5.4, 2.4, 0);
+  auto.add(fahrlicht);
+
+  return { auto, fahrlicht };
+})();
+
+/* --- Osterei: anklicken schaltet kurz das Fahrlicht ein und gibt den Link
+   zur Jugendfeuerwehr frei. Stehen bleibt es dabei. --- */
+const anschalten = (() => {
+  const { auto, fahrlicht } = feuerwehr;
+  let t = -1;
+
+  const zeigen = schild.neu('Jugendfeuerwehr Harheim',
+    'https://www.instagram.com/ff_harheim_teamzukunft/', auto, 8);
+
+  trefferflaeche(auto, 4.2, () => { t = 0; zeigen(); });
+
+  return function (dt) {
+    if (t < 0) return;
+    t += dt / 7;
+    if (t >= 1) { t = -1; fahrlicht.intensity = 0; return; }
+    // aufblenden, halten, wieder ausgehen
+    fahrlicht.intensity = 55 * Math.min(1, t * 9, (1 - t) * 6);
+  };
+})();
 
 /* ------------------------------------------------------------------ *
  *  Die Drohne – eine SpeedyBee-artige 5-Zoll-Quad, die im Tal einschlägt
@@ -695,6 +879,13 @@ const drohne = (() => {
   gruppe.visible = false;
   scene.add(gruppe);
 
+  // Osterei: anklicken, dann heult sie nochmal auf, hebt kurz ab und
+  // kippt wieder weg. `belebung` < 0 heißt: liegt einfach da.
+  let belebung = -1;
+  const zeigen = schild.neu('KI-Drohne · Uniprojekt',
+    'https://ai-drone-fra-uas.github.io/ai-drone/', gruppe, 3.4);
+  trefferflaeche(gruppe, 1.1, () => { if (belebung < 0) belebung = 0; zeigen(); });
+
   // Ein Propeller, der beim Aufschlag wegfliegt
   const splitter = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.035, 0.19), grau);
   splitter.visible = false;
@@ -722,24 +913,48 @@ const drohne = (() => {
     return m;
   })();
 
-  // Einschlagpunkt: 25 m vor der Stelle, an der die Kamera stehen bleibt,
-  // fast auf ihrer Linie. Am Auto ausgerichtet wäre er auf schmalen
-  // Displays aus dem Bild gewandert.
-  const aufschlag = (() => {
-    const z = (10 - TUNE.RUN) - 25;
-    const x = pisteX(z) + carve(z) * 0.4 + 3.5;
-    return new THREE.Vector3(x, bodenY(x, z), z);
-  })();
+  const aufschlag = einschlag;
   wolke.position.copy(aufschlag);
 
   // Anflug: sie kommt aus dem Tal auf uns zu, oben rechts ins Bild, und
   // geht dann vor der Kamera in den Schnee
   const abflug = new THREE.Vector3(aufschlag.x + 10, aufschlag.y + 16, aufschlag.z - 34);
 
+  /* --- Die Ehrenrunde beim Anklicken -----------------------------------
+     Nur hier fliegt sie einen Kreis, nicht im Anflug. Der Kreis hängt an
+     der Blickachse und sein Radius am tatsächlichen Bildwinkel, sonst
+     verschwindet sie im Hochformat seitlich aus dem Bild. */
+  const START_W = -Math.PI * 0.4;
+  const _b = new THREE.Vector3(), _c = new THREE.Vector3();
+  const vorn = new THREE.Vector3();
+  const qRuhe = new THREE.Quaternion(), qFlug = new THREE.Quaternion();
+
+  const kreisPunkt = (w, mitte, r, out) =>
+    out.set(mitte.x + Math.cos(w) * r, mitte.y, mitte.z + Math.sin(w) * r);
+
+  // Wo sie während der Runde ist. b läuft von 0 (liegt noch) bis 1 (liegt
+  // wieder): bis 0.26 steigt sie auf, bis 0.84 einmal herum, dann zurück.
+  const AUF = 0.26, AB = 0.84;
+  function flugPunkt(b, mitte, r, out) {
+    if (b < AUF) {
+      kreisPunkt(START_W, mitte, r, _b);
+      return out.lerpVectors(aufschlag, _b, smoothstep(0.09, AUF, b));
+    }
+    if (b < AB) {
+      const u = (b - AUF) / (AB - AUF);
+      kreisPunkt(START_W + u * Math.PI * 2, mitte, r, out);
+      out.y += Math.sin(u * Math.PI * 2) * 1.6;       // leicht auf und ab
+      return out;
+    }
+    const u = (b - AB) / (1 - AB);
+    kreisPunkt(START_W, mitte, r, _b);
+    return out.lerpVectors(_b, aufschlag, smoothstep(0, 1, u));
+  }
+
   const ruhe = new THREE.Vector3();
   let propWinkel = 0;
 
-  return function setzen(d, dt, zeit) {
+  function setzen(d, dt, zeit, mitte) {
     if (d <= 0.001) {
       gruppe.visible = splitter.visible = wolke.visible = false;
       return;
@@ -805,8 +1020,50 @@ const drohne = (() => {
       wolke.material.opacity = (1 - wt) * 0.95;
     }
 
-    // Nach dem Aufschlag blinkt nur noch die Kontrollleuchte
-    led.material.color.setHex(d < TREFFER || (zeit % 1.6) < 0.9 ? 0xff4d5e : 0x3a1218);
+    // --- Osterei: sie rappelt sich auf und dreht eine Ehrenrunde ---
+    let b = 0;
+    if (belebung >= 0) {
+      belebung += dt / 7;                       // die Runde dauert 7 Sekunden
+      if (belebung >= 1) belebung = -1; else b = belebung;
+    }
+    if (b > 0 && d >= TREFFER) {
+      // Kreis über dem Wrack, aber Richtung Blickachse gerückt und nur so
+      // weit, wie er ins Bild passt.
+      const halbHoch = THREE.MathUtils.degToRad(camera.fov) / 2;
+      const halbBreit = Math.atan(Math.tan(halbHoch) * camera.aspect);
+      const r = Math.min(10, Math.tan(halbBreit * 0.55) * 28);
+      _c.copy(aufschlag).lerp(mitte, 0.5);
+      _c.y = aufschlag.y + 7.5;
+
+      // Vor dem Abheben zittert sie nur; danach zählt die Bahn.
+      const luft = smoothstep(0.09, 0.3, b) * (1 - smoothstep(0.9, 1, b));
+      flugPunkt(b, _c, r, vorn);
+      gruppe.position.lerp(vorn, luft);
+      if (b < 0.12) gruppe.position.y += Math.sin(b * 150) * 0.05;
+
+      // Nase in Flugrichtung: ein Stück weiter auf der Bahn peilen und die
+      // Differenz als Richtung nehmen.
+      flugPunkt(Math.min(1, b + 0.006), _c, r, _b).sub(vorn);
+      if (_b.lengthSq() > 1e-8) {
+        qRuhe.copy(gruppe.quaternion);          // die Lage aus dem Absturz
+        gruppe.rotation.set(0, Math.atan2(-_b.z, _b.x), 0);
+        gruppe.rotateZ(Math.atan2(_b.y, Math.hypot(_b.x, _b.z)) * 0.7);
+        // in die Kurve legen, am Anfang und Ende der Runde weich
+        gruppe.rotateX(-0.5 * smoothstep(AUF, AUF + 0.08, b) * (1 - smoothstep(AB - 0.08, AB, b)));
+        qFlug.copy(gruppe.quaternion);
+        gruppe.quaternion.slerpQuaternions(qRuhe, qFlug, luft);
+      }
+
+      tempo = Math.max(tempo, smoothstep(0, 0.08, b) * (1 - smoothstep(0.92, 1, b)) * 1.25);
+    } else {
+      b = 0;
+    }
+
+    // Nach dem Aufschlag blinkt nur noch die Kontrollleuchte – während des
+    // Startversuchs steht sie auf Grün.
+    led.material.color.setHex(
+      b > 0 && b < 0.94 ? 0x4dff8a
+        : d < TREFFER || (zeit % 1.6) < 0.9 ? 0xff4d5e : 0x3a1218);
 
     // Propeller drehen – aufgesammelt, damit ein Tempowechsel nicht springt
     propWinkel += dt * tempo * 46;
@@ -814,7 +1071,9 @@ const drohne = (() => {
       p.prop.rotation.y = propWinkel * p.richtung;
       p.scheibe.material.opacity = 0.14 * tempo;
     }
-  };
+  }
+
+  return setzen;
 })();
 
 /* ------------------------------------------------------------------ *
@@ -880,7 +1139,59 @@ if (!mobil) {
   }, { passive: true });
 }
 
+/* ------------------------------------------------------------------ *
+ *  Ostereier anklicken
+ *
+ *  Das Canvas selbst hört keine Zeigerereignisse (pointer-events: none,
+ *  sonst schluckt es die Links). Der Listener hängt deshalb am Fenster
+ *  und prüft selbst, ob wirklich ins Leere geklickt wurde. Aktiv ist er
+ *  nur ganz unten im Tal – oben soll ein Klick nichts auslösen.
+ * ------------------------------------------------------------------ */
+let unten = 0;                                  // 0 = oben am Berg, 1 = im Tal
+
+{
+  const strahl = new THREE.Raycaster();
+  const zeiger = new THREE.Vector2();
+
+  // Ein Ziel zählt nur, wenn es und alle seine Eltern sichtbar sind –
+  // das ausgerückte Feuerwehrauto lässt sich sonst im Nichts anklicken.
+  const sichtbar = (o) => { for (let e = o; e; e = e.parent) if (!e.visible) return false; return true; };
+
+  function ziel(e) {
+    if (unten < 0.35) return null;
+    if (e.target && e.target.closest && e.target.closest('a, button, input, label')) return null;
+    // Am Canvas-Rechteck messen, nicht am Fenster: das stimmt auch dann,
+    // wenn die Leinwand mal nicht das ganze Fenster ausfüllt.
+    const r = canvas.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    zeiger.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    strahl.setFromCamera(zeiger, camera);
+    for (const t of strahl.intersectObjects(klickbar, false)) {
+      if (sichtbar(t.object)) return t.object;
+    }
+    return null;
+  }
+
+  addEventListener('click', (e) => {
+    const o = ziel(e);
+    if (o) o.userData.tun();
+  });
+
+  // Zeiger nur umschalten, wenn sich wirklich etwas ändert – sonst
+  // schreibt jede Mausbewegung in den Stil und überschreibt fremde Cursor.
+  if (!mobil) {
+    let zeigt = false;
+    addEventListener('pointermove', (e) => {
+      const drauf = !!ziel(e);
+      if (drauf === zeigt) return;
+      zeigt = drauf;
+      document.body.style.cursor = drauf ? 'pointer' : '';
+    }, { passive: true });
+  }
+}
+
 const posSki = new THREE.Vector3();
+const drohnenMitte = new THREE.Vector3();
 const posKam = new THREE.Vector3();
 const blick  = new THREE.Vector3();
 const fern   = new THREE.Vector3();
@@ -927,6 +1238,15 @@ function bildAufbauen(dt, zeit) {
   // der Überschrift. Deshalb wird sie anschließend um einen Bruchteil des
   // Bildwinkels gedreht: das Auto rutscht nach rechts unten, und zwar auf
   // jedem Seitenverhältnis gleich weit.
+  // Im Hochformat ist der Ausschnitt so schmal, dass der Skifahrer aus dem
+  // Finale fällt. Dort geht der Bildwinkel zum Schluss etwas auf; ab einem
+  // Seitenverhältnis von 0.85 bleibt alles wie gehabt.
+  const wunschFov = 52 + ende * clamp01((0.85 - camera.aspect) / 0.35) * 13;
+  if (camera.fov !== wunschFov) {
+    camera.fov = wunschFov;
+    camera.updateProjectionMatrix();
+  }
+
   if (ende > 0) {
     const halbHoch = THREE.MathUtils.degToRad(camera.fov) / 2;
     const halbBreit = Math.atan(Math.tan(halbHoch) * camera.aspect);
@@ -939,9 +1259,19 @@ function bildAufbauen(dt, zeit) {
   skifahrer.position.copy(posSki);
   pfadPunkt(strecke + abstand + 6, hilfs);
   skifahrer.lookAt(hilfs);
+
+  // Unten kommt er zum Stehen, richtet sich auf und dreht sich zu dem
+  // Wrack um, das er sich gerade eingefangen hat. Gedreht wird über den
+  // kürzeren Weg – sonst schraubt er sich einmal falschherum herum.
+  const halt = smoothstep(0.9, 1, jetzt);
+  if (halt > 0) {
+    let d = Math.atan2(einschlag.x - posSki.x, einschlag.z - posSki.z) - skifahrer.rotation.y;
+    d -= Math.round(d / (Math.PI * 2)) * Math.PI * 2;
+    skifahrer.rotateY(d * halt);
+  }
   const kruemmung = Math.sin(kamZ * TUNE.CARVE_FREQ) * TUNE.CARVE_AMP * TUNE.CARVE_FREQ;
-  skifahrer.rotateZ(THREE.MathUtils.clamp(kruemmung * 2.2, -0.5, 0.5));
-  skifahrer.visible = jetzt < 0.985;
+  skifahrer.rotateZ(THREE.MathUtils.clamp(kruemmung * 2.2, -0.5, 0.5) * (1 - halt));
+  haltung(halt);
 
   fahne.aktualisiere(zeit, clamp01(tempo * 3.2) * 0.9 + (tempo > 0.001 ? 0.1 : 0));
 
@@ -954,8 +1284,22 @@ function bildAufbauen(dt, zeit) {
   mond.position.set(posKam.x - 70, posKam.y + 90, posKam.z + 40);
   mond.target.position.copy(posKam);
 
+  sternschnuppe(dt);
+
   // Die Drohne kommt auf dem letzten Viertel der Seite angeflogen
-  drohne(smoothstep(0.74, 1, jetzt), dt, zeit);
+  // Ein Punkt auf der Blickachse. Die Ehrenrunde beim Anklicken orientiert
+  // sich daran, damit sie auch im Hochformat im Bild bleibt – die Kamera
+  // schaut nicht genau die Piste entlang.
+  camera.getWorldDirection(drohnenMitte);
+  drohnenMitte.y = 0;
+  drohnenMitte.normalize().multiplyScalar(30).add(posKam);
+  drohnenMitte.y = bodenY(drohnenMitte.x, drohnenMitte.z);
+  drohne(smoothstep(0.74, 1, jetzt), dt, zeit, drohnenMitte);
+
+  // Ostereier: erst im Tal anklickbar
+  unten = ende;
+  anschalten(dt);
+  schild.schritt(dt, unten >= 0.35);
 
   // Blaulicht: deutsches Doppelblitz-Muster, links und rechts versetzt
   for (const b of blaulichter) {
@@ -970,23 +1314,22 @@ function bildAufbauen(dt, zeit) {
 /* ------------------------------------------------------------------ *
  *  Schleife
  * ------------------------------------------------------------------ */
-function groesse() {
-  const w = window.innerWidth, h = window.innerHeight;
+function groesse(w = window.innerWidth, h = window.innerHeight) {
+  // Notfalls 1 px: ein verstecktes Fenster meldet 0 und würde das
+  // Seitenverhältnis auf NaN setzen – danach rendert gar nichts mehr.
+  w = Math.max(1, w); h = Math.max(1, h);
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
-addEventListener('resize', groesse);
+addEventListener('resize', () => groesse());
 groesse();
-
-let sterneMat = null;
-himmel.traverse((o) => { if (o.isPoints) sterneMat = o.material; });
 
 let zuletzt = performance.now(), laufzeit = 0;
 
 function einzelbild(dt) {
   laufzeit += dt;
-  if (sterneMat) sterneMat.uniforms.uTime.value = laufzeit;
+  sterneMat.uniforms.uTime.value = laufzeit;
   bildAufbauen(dt, laufzeit);
   renderer.render(scene, camera);
 }
@@ -1012,6 +1355,9 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.szene = {
     springe(p) { ziel = jetzt = vorher = clamp01(p); },
     bild(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) einzelbild(dt); },
-    THREE, scene, camera,
+    // klickbar[0] = Feuerwehrauto, klickbar[1] = Drohne; .userData.tun()
+    // löst das jeweilige Osterei aus, ohne wirklich klicken zu müssen.
+    masse: groesse,
+    klickbar, THREE, scene, camera,
   };
 }

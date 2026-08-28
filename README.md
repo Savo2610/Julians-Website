@@ -33,8 +33,46 @@ Der Scrollfortschritt (0 … 1) ist die einzige Eingabe, alles andere ergibt sic
 daraus; auch der Absturz, der beim Zurückscrollen wieder zurückläuft. Die
 Geometrie entsteht im Code – es gibt keine Modelldateien.
 
+Unten im Tal kommt der Skifahrer zum Stehen, richtet sich auf und dreht sich zu
+dem Wrack um. Im Hochformat geht dafür zum Schluss der Bildwinkel etwas auf,
+sonst fiele er aus dem schmalen Ausschnitt; ab einem Seitenverhältnis von 0.85
+bleibt die Brennweite unverändert.
+
 Die Stellschrauben stehen als `TUNE` und `COL` oben in der Datei: Länge der
 Abfahrt, Höhenunterschied, Pistenbreite, Schwungweite, Kameraabstand, Farben.
+
+### Ostereier
+
+Drei kleine Zugaben, alle folgenlos und beliebig oft auslösbar:
+
+* **Sternschnuppe** – zieht alle paar Sekunden über den Grat. Sie fliegt flach,
+  weil die Kamera während der ganzen Abfahrt rund 20° nach unten schaut und
+  vom Himmel nie mehr als ein schmales Band über den Gipfeln im Bild ist.
+* **Drohne anklicken** – sie zittert kurz, rappelt sich auf und dreht in
+  sieben Sekunden eine Ehrenrunde, bevor sie sich wieder in den Schnee legt;
+  Kontrollleuchte dabei grün. Dazu erscheint ein Schild mit dem Link zum
+  Uniprojekt. Der Kreis hängt an der Blickachse und sein Radius am
+  tatsächlichen Bildwinkel – sonst fliegt sie im Hochformat seitlich aus dem
+  Bild. Am Ende landet sie exakt wieder in der Lage, in der sie lag, damit
+  beim Übergang nichts springt. Im Anflug fliegt sie bewusst *keinen* Kreis:
+  der wirkte dort wie vorgespult.
+* **Feuerwehrauto anklicken** – das Fahrlicht geht kurz an, stehen bleibt es
+  dabei. Dazu ein Schild mit dem Link zur Jugendfeuerwehr.
+
+Die Links stecken absichtlich nur in der Szene und in keiner Kachel – sie sind
+als Überraschung gedacht. Der Preis dafür: Suchmaschinen, Screenreader und alle
+ohne WebGL oder mit *prefers-reduced-motion* sehen sie nie.
+
+Angeklickt wird zweistufig: der Klick auf das Objekt lässt nur das Schild
+erscheinen, erst das Schild ist der Link. Ein Klick irgendwo in die Landschaft
+soll niemanden ungefragt von der Seite werfen, und als richtiges `<a>` zeigt der
+Browser beim Draufhalten auch das Ziel an. Nach neun Sekunden verschwindet das
+Schild wieder.
+
+Anklickbar sind die beiden erst ganz unten im Tal. Das Canvas selbst hört keine
+Zeigerereignisse (`pointer-events: none`, sonst schluckt es die Links) – der
+Listener hängt am Fenster und prüft per Raycast gegen zwei unsichtbare Kugeln,
+die als Trefferflächen an Drohne und Auto hängen.
 
 Geladen wird das Modul erst nach dem ersten Bild und nur, wenn der Browser
 WebGL kann und niemand *prefers-reduced-motion* eingestellt hat. Sonst bleibt
@@ -47,6 +85,8 @@ Konsole:
 ```js
 szene.springe(0.6)   // an diese Stelle der Abfahrt springen (0 … 1)
 szene.bild(30)       // 30 Einzelbilder rechnen, ohne zu scrollen
+szene.masse(390, 844)          // Bildausschnitt erzwingen, z. B. Handyformat
+szene.klickbar[0].userData.tun()  // Auto ausrücken lassen (1 = Drohne)
 ```
 
 ### three.js aktualisieren

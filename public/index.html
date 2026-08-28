@@ -56,6 +56,35 @@
 
     html[data-scene="an"] #scene { opacity: 1; }
 
+    /* Namensschild eines Ostereis in der Szene. Wird von scene.js erzeugt
+       und positioniert; ohne Szene gibt es keins. */
+    .szene-schild {
+      position: fixed;
+      z-index: 4;
+      transform: translate(-50%, -100%);
+      padding: 0.42rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(12, 12, 22, 0.86);
+      backdrop-filter: blur(10px);
+      color: #e9e9f6;
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    .szene-schild.da { opacity: 1; pointer-events: auto; }
+    .szene-schild:hover,
+    .szene-schild:focus-visible { border-color: rgba(255, 255, 255, 0.42); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .szene-schild { transition: none; }
+    }
+
     /* Animated background – gleichzeitig der Ersatz, wenn die Szene
        nicht läuft (kein WebGL oder "weniger Bewegung"). */
     .bg-gradient {

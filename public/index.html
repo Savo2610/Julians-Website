@@ -85,6 +85,20 @@
       .szene-schild { transition: none; }
     }
 
+    /* Der Vorhang zur Lernwerkstatt: dieselbe Nachtfarbe, mit der die Seite
+       drüben anfängt. Wird von scene.js angelegt und geschaltet. */
+    .szene-blende {
+      position: fixed;
+      inset: 0;
+      z-index: 8;
+      background: #080b14;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.52s ease-in;
+    }
+
+    .szene-blende.da { opacity: 1; pointer-events: auto; }
+
     /* Animated background – gleichzeitig der Ersatz, wenn die Szene
        nicht läuft (kein WebGL oder "weniger Bewegung"). */
     .bg-gradient {

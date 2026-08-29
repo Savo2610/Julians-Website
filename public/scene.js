@@ -595,12 +595,25 @@ const schild = (() => {
     e.a.setAttribute('aria-hidden', 'true');
   }
 
-  function neu(text, url, objekt, hoehe) {
+  /* `beiKlick` ist optional. Wer eine Funktion mitgibt, bekommt das Schild
+     als Link auf dieselbe Seite und darf den Klick selbst behandeln – nur
+     der schlichte Linksklick, damit Mittelklick und Cmd-Klick weiter das
+     tun, was der Browser sonst tut. Ohne die Funktion bleibt es wie gehabt
+     ein Link in einen neuen Tab. */
+  function neu(text, url, objekt, hoehe, beiKlick) {
     const a = document.createElement('a');
     a.className = 'szene-schild';
     a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
+    if (beiKlick) {
+      a.addEventListener('click', (ev) => {
+        if (ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+        ev.preventDefault();
+        beiKlick();
+      });
+    } else {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    }
     a.textContent = text;
     a.tabIndex = -1;
     a.setAttribute('aria-hidden', 'true');
@@ -633,6 +646,19 @@ const schild = (() => {
   }
 
   return { neu, schritt };
+})();
+
+/* --- Der Vorhang für den Übergang zur Lernwerkstatt ---------------------
+   Dieselbe Nachtfarbe, mit der drüben die Straße anfängt: das Bild zieht
+   sich zu, während das Auto davonfährt, und geht auf jf.veerka.mp wieder
+   auf. Er entsteht hier und nicht im HTML – ohne Szene gibt es auch nichts
+   zu überblenden. */
+const blende = (() => {
+  const d = document.createElement('div');
+  d.className = 'szene-blende';
+  d.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(d);
+  return d;
 })();
 
 /* --- Berghütte mit warmem Fensterlicht --- */
@@ -707,11 +733,13 @@ const feuerwehr = (() => {
     teil(new THREE.BoxGeometry(0.09, 0.09, 1.0), chrom, -3.9 + i * 0.72, 3.5, 0);
   }
 
-  // Räder
+  // Räder. Die Achse zeigt nach dem Drehen entlang Z, gerollt wird also
+  // um die lokale Z-Achse – siehe `raeder` weiter unten.
+  const raeder = [];
   const rad = new THREE.CylinderGeometry(0.68, 0.68, 0.42, 12);
   rad.rotateX(Math.PI / 2);
   for (const x of [2.3, -1.4, -2.6]) {
-    for (const z of [-1.25, 1.25]) teil(rad, dunkel, x, 0.68, z);
+    for (const z of [-1.25, 1.25]) raeder.push(teil(rad, dunkel, x, 0.68, z));
   }
 
   // Scheinwerfer
@@ -746,35 +774,169 @@ const feuerwehr = (() => {
 
   auto.position.copy(talMitte);
   auto.position.y = bodenY(auto.position.x, auto.position.z);
+  // YXZ: y ist der Kurs, x die Wank- und z die Nickachse. Das Modell schaut
+  // nach +X, deshalb sitzt das Wanken auf x und nicht wie üblich auf z.
+  auto.rotation.order = 'YXZ';
   auto.rotation.y = -2.2;                       // Dreiviertelansicht von vorn
   auto.scale.setScalar(1.2);
   scene.add(auto);
 
-  // Fahrlicht – aus, solange es steht
+  // Fahrlicht – aus, solange es steht. Zwei Lichter: der Punkt macht den
+  // Schein um die Scheinwerfer herum, der Kegel die Pfütze auf dem Schnee.
   const fahrlicht = new THREE.PointLight('#fff0c8', 0, 42, 2);
   fahrlicht.position.set(5.4, 2.4, 0);
   auto.add(fahrlicht);
 
-  return { auto, fahrlicht };
+  const kegel = new THREE.SpotLight('#fff2cf', 0, 95, 0.40, 0.45, 1.1);
+  kegel.position.set(3.9, 1.9, 0);
+  kegel.target.position.set(34, -3.4, 0);       // nach vorn und leicht nach unten
+  auto.add(kegel, kegel.target);
+
+  return { auto, fahrlicht, kegel, raeder };
 })();
 
-/* --- Osterei: anklicken schaltet kurz das Fahrlicht ein und gibt den Link
-   zur Jugendfeuerwehr frei. Stehen bleibt es dabei. --- */
-const anschalten = (() => {
-  const { auto, fahrlicht } = feuerwehr;
-  let t = -1;
+/* --- Osterei: Einsatz für 19/43 --------------------------------------
+   Anklicken lässt das Auto losfahren – Fahrlicht an, eine Runde durch den
+   Talkessel, wieder auf denselben Fleck. Die Runde ist ein voller Kreis,
+   deshalb endet sie von selbst genau dort, wo sie angefangen hat: Anfangs-
+   und Endwinkel sind derselbe, und `smoothstep` sorgt dafür, dass es an
+   beiden Enden aus dem Stand anfährt und wieder ausrollt.
 
-  const zeigen = schild.neu('Jugendfeuerwehr Harheim',
-    'https://www.instagram.com/ff_harheim_teamzukunft/', auto, 8);
+   Dazu erscheint das Schild mit dem Link zur Lernwerkstatt. Wer das
+   anklickt, schickt es wirklich weg: es beschleunigt geradeaus, das Bild
+   zieht sich auf die Nachtfarbe zu – und drüben auf jf.veerka.mp rollt
+   dasselbe Fahrzeug wieder ins Bild (`?einfahrt=1`). --- */
+const LERNWERKSTATT = 'https://jf.veerka.mp/';
 
-  trefferflaeche(auto, 4.2, () => { t = 0; zeigen(); });
+const einsatz = (() => {
+  const { auto, fahrlicht, kegel, raeder } = feuerwehr;
+
+  const RUNDE  = 7;       // Sekunden für eine Runde
+  // Eng gewählt: die Kamera steht nur rund 30 m entfernt, und nach vorn kommt
+  // das Auto auf einem Kreis genau um R näher. Mit mehr Radius liefe es einem
+  // ins Objektiv, mit weniger wäre es hinter den Kacheln kaum zu sehen.
+  const R      = 6;       // Radius der Schleife in Metern
+  const WEG_MS = 820;     // vom Klick aufs Schild bis zum Seitenwechsel
+  const WEITE  = 34;      // Meter, die es dabei zurücklegt
+  const HELL   = 62;      // Fahrlicht bei voller Fahrt
+
+  const stand = auto.position.clone();
+  const kurs  = auto.rotation.y;
+  // Fahrtrichtung ist +X, also zeigt der Kurs in der Ebene hierhin:
+  const vorn  = new THREE.Vector3(Math.cos(kurs), 0, -Math.sin(kurs));
+
+  // Der Kreismittelpunkt liegt links vom Auto: die Runde geht dann nach rechts
+  // durchs Bild und bleibt dort, wo die Landschaft frei ist – nach der anderen
+  // Seite verschwände sie hinter den Kacheln.
+  const mitte  = new THREE.Vector3(stand.x + vorn.z * R, 0, stand.z - vorn.x * R);
+  const startW = Math.atan2(stand.z - mitte.z, stand.x - mitte.x);
+
+  // Das Schild bleibt am Parkplatz stehen, statt mit auf die Runde zu gehen:
+  // an einem Fahrzeug in Fahrt wäre es nicht zu treffen.
+  const pflock = new THREE.Object3D();
+  pflock.position.copy(stand);
+  scene.add(pflock);
+
+  let b = -1;             // < 0 steht, 0 … 1 die Runde
+  let weg = 0;            // > 0: unterwegs zur Lernwerkstatt, in Sekunden
+  const abfahrt = new THREE.Vector3();   // wo die Abfahrt losging
+  const richtung = new THREE.Vector3();  // und wohin sie zeigt
+
+  function raederDrehen(strecke) {
+    // Radhalbmesser 0.68 im Modell, das Ganze steht auf Maßstab 1.2
+    const w = strecke / (1.2 * 0.68);
+    for (const r of raeder) r.rotation.z -= w;
+  }
+
+  function licht(v) {
+    fahrlicht.intensity = HELL * v;
+    kegel.intensity = 230 * v;
+  }
+
+  /* Beim ersten Klick schon einmal die Verbindung nach jf.veerka.mp
+     aufbauen. Vorher spricht diese Seite mit niemandem dort. */
+  let vorgewarnt = false;
+  function vorwarnen() {
+    if (vorgewarnt) return;
+    vorgewarnt = true;
+    const l = document.createElement('link');
+    l.rel = 'preconnect';
+    l.href = 'https://jf.veerka.mp';
+    document.head.appendChild(l);
+  }
+
+  /* Klick aufs Schild: raus aus der Runde, geradeaus davon, Bild zu. */
+  function abfahren() {
+    if (weg) return;
+    weg = 1e-4;
+    abfahrt.copy(auto.position);
+    richtung.set(Math.cos(auto.rotation.y), 0, -Math.sin(auto.rotation.y));
+    blende.classList.add('da');
+    setTimeout(() => { location.href = LERNWERKSTATT + '?einfahrt=1'; }, WEG_MS);
+  }
+
+  const zeigen = schild.neu('Jugendfeuerwehr Harheim · Lernwerkstatt',
+    LERNWERKSTATT, pflock, 8, abfahren);
+
+  trefferflaeche(auto, 4.2, () => {
+    if (weg) return;
+    if (b < 0) b = 0;     // eine zweite Runde nachlegen geht nicht
+    zeigen();
+    vorwarnen();
+  });
+
+  /* Zurück-Knopf: der Browser holt die Seite aus dem Cache – mitsamt dem
+     zugezogenen Vorhang und einem Auto, das ein Stück weiter steht. Beides
+     gehört zurück auf Anfang. */
+  addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    weg = 0;
+    b = -1;
+    auto.position.copy(stand);
+    auto.rotation.set(0, kurs, 0);
+    licht(0);
+    blende.classList.remove('da');
+  });
 
   return function (dt) {
-    if (t < 0) return;
-    t += dt / 7;
-    if (t >= 1) { t = -1; fahrlicht.intensity = 0; return; }
-    // aufblenden, halten, wieder ausgehen
-    fahrlicht.intensity = 55 * Math.min(1, t * 9, (1 - t) * 6);
+    if (weg) {
+      weg += dt;
+      const t = clamp01(weg / (WEG_MS / 1000));
+      // gleichmäßig beschleunigt statt weich – es geht zum Einsatz
+      const s = WEITE * t * t;
+      auto.position.copy(abfahrt).addScaledVector(richtung, s);
+      auto.position.y = bodenY(auto.position.x, auto.position.z);
+      auto.rotation.x = 0;
+      auto.rotation.z = 0.05 * (1 - t * 0.4);      // Nase hoch beim Anfahren
+      licht(1);
+      raederDrehen(2 * WEITE * t / (WEG_MS / 1000) * dt);
+      return;
+    }
+
+    if (b < 0) return;
+    b += dt / RUNDE;
+    if (b >= 1) {                                  // wieder eingeparkt
+      b = -1;
+      auto.position.copy(stand);
+      auto.rotation.set(0, kurs, 0);
+      licht(0);
+      return;
+    }
+
+    // Rueckwaerts um den Kreis, weil der Mittelpunkt links liegt: fuer eine
+    // Linkskurve laeuft der Winkel fallend. Der Kurs ist die Tangente daran.
+    const w = startW - smoothstep(0, 1, b) * Math.PI * 2;
+    auto.position.set(mitte.x + Math.cos(w) * R, 0, mitte.z + Math.sin(w) * R);
+    auto.position.y = bodenY(auto.position.x, auto.position.z);
+    auto.rotation.y = Math.atan2(Math.cos(w), Math.sin(w));
+
+    // Bahngeschwindigkeit: die Ableitung von smoothstep ist 6b(1-b)
+    const tempo = (6 * b * (1 - b)) / RUNDE * 2 * Math.PI * R;
+    const v = clamp01(tempo / 15);
+    auto.rotation.x = 0.06 * v;                    // wankt nach außen
+    auto.rotation.z = 0.035 * v * (b < 0.5 ? 1 : -1);   // anfahren, bremsen
+    licht(smoothstep(0, 0.05, b) * (1 - smoothstep(0.93, 1, b)));
+    raederDrehen(tempo * dt);
   };
 })();
 
@@ -1298,7 +1460,7 @@ function bildAufbauen(dt, zeit) {
 
   // Ostereier: erst im Tal anklickbar
   unten = ende;
-  anschalten(dt);
+  einsatz(dt);
   schild.schritt(dt, unten >= 0.35);
 
   // Blaulicht: deutsches Doppelblitz-Muster, links und rechts versetzt

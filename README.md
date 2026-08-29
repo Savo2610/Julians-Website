@@ -56,8 +56,33 @@ Drei kleine Zugaben, alle folgenlos und beliebig oft auslösbar:
   Bild. Am Ende landet sie exakt wieder in der Lage, in der sie lag, damit
   beim Übergang nichts springt. Im Anflug fliegt sie bewusst *keinen* Kreis:
   der wirkte dort wie vorgespult.
-* **Feuerwehrauto anklicken** – das Fahrlicht geht kurz an, stehen bleibt es
-  dabei. Dazu ein Schild mit dem Link zur Jugendfeuerwehr.
+* **Feuerwehrauto anklicken** – Fahrlicht an, und es dreht in sieben Sekunden
+  eine Runde durch den Talkessel, bevor es wieder auf demselben Fleck steht.
+  Die Runde ist ein voller Kreis: Anfangs- und Endwinkel sind derselbe,
+  deshalb kommt es von allein genau zurück, und mit `smoothstep` auf dem
+  Winkel fährt es aus dem Stand an und rollt wieder aus. Der Mittelpunkt
+  liegt links vom Auto, damit die Runde nach rechts durchs freie Bild geht
+  und nicht hinter den Kacheln verschwindet – und der Radius ist mit sechs
+  Metern klein, weil die Kamera nur rund dreißig Meter entfernt steht.
+  Dazu erscheint ein Schild mit dem Link zur Lernwerkstatt.
+
+### Der Übergang zur Lernwerkstatt
+
+Das Schild am Feuerwehrauto führt nicht einfach weg, es fährt hin: ein Klick
+darauf lässt das Auto geradeaus beschleunigen, das Bild zieht sich auf `#080b14`
+zu – dieselbe Nacht, mit der `jf.veerka.mp` anfängt – und drüben rollt dasselbe
+Fahrzeug wieder ins Bild. Den Anstoß dafür gibt der Anhang `?einfahrt=1`, den
+die Startseite der Jugendfeuerwehr auswertet und danach gleich wieder aus der
+Adresszeile nimmt.
+
+Der Vorhang entsteht in `scene.js` und nicht im HTML: ohne Szene gibt es auch
+nichts zu überblenden. Beim Zurück-Knopf holt der Browser die Seite samt
+zugezogenem Vorhang aus dem Cache, deshalb räumt ein `pageshow` mit
+`e.persisted` beides wieder auf.
+
+Als `<a>` mit dem echten Ziel bleibt das Schild ein normaler Link: Mittelklick
+und Cmd-Klick öffnen weiter einen Tab, nur der schlichte Linksklick nimmt den
+Umweg über die Ausfahrt.
 
 Die Links stecken absichtlich nur in der Szene und in keiner Kachel – sie sind
 als Überraschung gedacht. Der Preis dafür: Suchmaschinen, Screenreader und alle
@@ -86,7 +111,7 @@ Konsole:
 szene.springe(0.6)   // an diese Stelle der Abfahrt springen (0 … 1)
 szene.bild(30)       // 30 Einzelbilder rechnen, ohne zu scrollen
 szene.masse(390, 844)          // Bildausschnitt erzwingen, z. B. Handyformat
-szene.klickbar[0].userData.tun()  // Auto ausrücken lassen (1 = Drohne)
+szene.klickbar[0].userData.tun()  // Auto auf die Runde schicken (1 = Drohne)
 ```
 
 ### three.js aktualisieren

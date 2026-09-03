@@ -17,6 +17,7 @@ import { DragLift } from './drag-lift.js'
 import { RaceCourse } from './race.js'
 import { createRail, createPadMarker, createParkSign } from './props/funpark.js'
 import { createSledFence } from './props/sled.js'
+import { snowPaint } from './props/snow-paint.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -134,6 +135,17 @@ export function populate(world, sky, registry) {
   // den Bestand. Muss vor der Bepflanzung feststehen.
   LANES.length = 0
   LANES.push({ x1: LIFT_BASE.x, z1: LIFT_BASE.z, x2: LIFT_TOP.x, z2: LIFT_TOP.z, r: 7.5 })
+  // Die vier markierten Wege muessen frei bleiben. Sie waren es frueher von
+  // selbst, weil dort kaum Wald stand – seit der Wald dichter ist, muessen
+  // sie es ausdruecklich sein. Ein markierter Weg, der von Baeumen versperrt
+  // wird, ist schlimmer als gar keiner.
+  for (const trail of Object.values(TRAILS)) {
+    for (let i = 0; i < trail.path.length - 1; i++) {
+      const [x1, z1] = trail.path[i]
+      const [x2, z2] = trail.path[i + 1]
+      LANES.push({ x1, z1, x2, z2, r: 5 })
+    }
+  }
   // Die freie Abfahrt braucht keine Gelaendeformung, aber eine Schneise –
   // sonst stehen die Stangen zwischen Baeumen. Sie faellt schmal aus: der
   // Streifen Wald zwischen Piste und Rodelbahn ist das, was die beiden
@@ -350,6 +362,37 @@ export function populate(world, sky, registry) {
     world.addCollider(sx, sz, 0.45)
   }
 
+  // --- Wegweiser im Schnee ------------------------------------------------
+  // Die Stangen sagen, wo der Weg ist. Die Winkel im Schnee sagen, wohin er
+  // fuehrt – man kann ihnen folgen, ohne die Karte im Kopf zu haben. Sie
+  // tragen die Farbe ihres Weges, damit man beim Kreuzen sieht, auf welchem
+  // man gerade ist.
+  {
+    const paint = snowPaint()
+    const washed = new THREE.Color()
+    for (const trail of Object.values(TRAILS)) {
+      const pts = trail.path
+      // Farbe auf Schnee ist nie satt. Ein Drittel Weiss dazu, sonst liegen
+      // vier Plastikpfeile in der Landschaft statt vier Markierungen.
+      washed.setHex(trail.markerColor).lerp(new THREE.Color(0xffffff), 0.34)
+      const tone = washed.getHex()
+      // Der Weg wird als Polylinie abgeschritten, ein Winkel alle 16 Meter.
+      let carry = 7
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [x1, z1] = pts[i]
+        const [x2, z2] = pts[i + 1]
+        const len = Math.hypot(x2 - x1, z2 - z1)
+        const dx = (x2 - x1) / len
+        const dz = (z2 - z1) / len
+        for (let d = carry; d < len; d += 16) {
+          paint.chevron(x1 + dx * d, z1 + dz * d, dx, dz, 2.2, tone)
+        }
+        carry = Math.max(0, carry - len) || (16 - ((len - carry) % 16))
+      }
+    }
+    world.scene.add(paint.build({ name: 'wegweiser-schnee' }))
+  }
+
   // --- Schlepplift --------------------------------------------------------
   // Verbindet den Talkessel mit dem Gipfel des Bergarms. Er ist der einzige
   // bequeme Weg nach oben – zu Fuss kommt man nur kriechend hinauf.
@@ -402,10 +445,11 @@ export function populate(world, sky, registry) {
   ], { seed: 93 })
 
   // --- Rodelbahn vom Gipfel ----------------------------------------------
-  // Die Bahn ist eine Rinne mit Banden, keine Slalomstrecke: es gibt nur einen
-  // Weg hindurch, gefahren wird auf Zeit. Start oben am Lift-Ausstieg, Ziel
-  // unten kurz vor dem umgestuerzten Stamm.
-  const race = new RaceCourse(world, { lane: SLED_LANE, gates: false })
+  // Die Bahn ist eine Rinne mit Banden – die Tore darin sind kein zweiter
+  // Weg, sondern eine Aufgabe innerhalb des einen Wegs: sie zwingen zu einer
+  // Linie, statt nur zu einer Richtung. Wo es durchgeht, steht in der Farbe
+  // im Schnee, nicht in den Stangen.
+  const race = new RaceCourse(world, { lane: SLED_LANE, gates: true })
   world.scene.add(createSledFence(SLED_LANE))
 
   {

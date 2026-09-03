@@ -49,7 +49,7 @@ export const TRAILS = {
     label: 'SPORT',
     color: '#d1552a',
     markerColor: 0xdd7a3c,
-    path: [[9, 22], [17, 11], [23, 0], [26, -12], [27, -24], [25, -33]],
+    path: [[9, 22], [17, 11], [23, 0], [24, -13], [19, -25], [12, -35], [7, -44]],
   },
   tools: {
     label: 'WERKSTATT',

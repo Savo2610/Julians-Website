@@ -46,7 +46,7 @@ export const SUMMIT = { x: -58, z: -64, height: 30 }
 // Der Scheitel liegt weit ausserhalb der Karte, der Radius ist gross: so
 // beginnt die Flanke schon frueh im Tal und laeuft ueber eine lange Strecke
 // aus, statt als Kegel am Kartenrand zu kleben.
-export const SPORT_HILL = { x: 36, z: -98, radius: 72, height: 20 }
+export const SPORT_HILL = { x: 27, z: -87, radius: 68, height: 19 }
 
 // --- Pistenbaender ----------------------------------------------------------
 // Ein Band zieht das Gelaende entlang einer Linie auf ein gleichmaessiges
@@ -141,6 +141,12 @@ function laneAt(x, z, lane) {
 // nach unten ist die Falllinie, aber kein Vergnuegen. Ueber ihre Laenge
 // dreht sie sich in Summe um gut 220 Grad.
 //
+// Sie endet dort, wo der Hang endet, und laeuft nicht mehr zwanzig Meter
+// flach ins Tal aus. Das hat zwei Gruende: flaches Ausrollen ist keine
+// Fahrt mehr, und die Querachse des Ziels zeigt hier ueber den Bildschirm
+// statt in die Blickachse. Bei fester Kamera ist ein Bogen, dessen Achse in
+// die Blickrichtung zeigt, nur ein senkrechter Strich.
+//
 // Die Hoehen sind nicht auf ein gleichmaessiges Gefaelle gerechnet, sondern
 // ein geglaettetes, streng fallendes Abbild des natuerlichen Gelaendes: der
 // Berg gibt sein Gefaelle nun einmal oben her und laeuft unten flach aus. So
@@ -155,21 +161,24 @@ export const SLED_LANE = makeLane([
   { x: -26, z: -45, h: 10.79 },
   { x: -18, z: -41, h: 5.24 },
   { x: -11, z: -36, h: 2.34 },
-  { x: -6, z: -30, h: 1.87 },
-  { x: -11, z: -24, h: 1.40 },
-  { x: -15, z: -19, h: 1.44 },
+  { x: -6, z: -30, h: 1.90 },
+  { x: -2, z: -25, h: 1.55 },
 ], { width: 13, feather: 9, endFade: 8, bank: 1.35, flat: 0.5 })
 
-// Der Funpark auf dem Nordosthang – rund 15 Grad. Flach genug, dass man die
+// Der Funpark auf dem Nordosthang – 7 bis 14 Grad. Flach genug, dass man die
 // Figuren trifft statt sie zu ueberfahren, steil genug, dass man ohne
 // Nachdruecken durchkommt.
+//
+// Er ist naeher an die Mitte gerueckt: sein Ende liegt jetzt gut zwanzig
+// Meter weiter innen als vorher. Der Berg dahinter ist mitgewandert, sonst
+// muesste das Band Gelaende ausgleichen, das es nicht ausgleichen kann.
 export const PARK_LANE = makeLane([
-  { x: 19, z: -64, h: 10.57 },
-  { x: 24, z: -60, h: 9.90 },
-  { x: 30, z: -56, h: 8.72 },
-  { x: 38, z: -51, h: 6.64 },
-  { x: 46, z: -45, h: 4.54 },
-  { x: 52, z: -38, h: 1.24 },
+  { x: 10, z: -53, h: 8.93 },
+  { x: 15, z: -49, h: 8.10 },
+  { x: 21, z: -45, h: 6.70 },
+  { x: 29, z: -40, h: 4.30 },
+  { x: 37, z: -34, h: 2.30 },
+  { x: 43, z: -27, h: 1.20 },
 ], { width: 18, feather: 8, endFade: 8 })
 
 const LANES = globalThis.__noLanes ? [] : [SLED_LANE, PARK_LANE]
@@ -248,10 +257,10 @@ function ledge(x, z, f) {
 // Laenge. Aneinandergereiht braucht das mehr Platz, als man denkt – deshalb
 // reicht das Band bis ganz hinauf.
 export const PARK_FEATURES = [
-  { kind: 'rollers', x: 26.2, z: -58.6, dx: 0.832, dz: 0.555, count: 3, spacing: 4.2, height: 0.7, width: 9 },
-  { kind: 'kicker', x: 35.4, z: -52.6, dx: 0.848, dz: 0.530, length: 4.5, width: 7.5, height: 1.60 },
-  { kind: 'ledge', x: 42.0, z: -48.0, dx: 0.800, dz: 0.600, length: 7, width: 2.6, height: 0.85, ramp: 2.2 },
-  { kind: 'kicker', x: 48.6, z: -42.0, dx: 0.651, dz: 0.759, length: 5.0, width: 8.5, height: 2.30 },
+  { kind: 'rollers', x: 17.2, z: -47.6, dx: 0.832, dz: 0.555, count: 3, spacing: 4.2, height: 0.7, width: 9 },
+  { kind: 'kicker', x: 26.4, z: -41.6, dx: 0.848, dz: 0.530, length: 4.5, width: 7.5, height: 1.15 },
+  { kind: 'ledge', x: 33.0, z: -37.0, dx: 0.800, dz: 0.600, length: 7, width: 2.6, height: 0.85, ramp: 2.2 },
+  { kind: 'kicker', x: 39.6, z: -31.0, dx: 0.651, dz: 0.759, length: 5.0, width: 8.5, height: 2.30 },
 ]
 
 function parkFeatures(x, z) {

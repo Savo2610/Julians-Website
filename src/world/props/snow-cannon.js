@@ -27,6 +27,15 @@ const TRACK = 0.85       // wie weit der Kopf aus der Ruhelage schwenken darf
 const TRACK_RATE = 1.9   // rad/s, wie schnell er nachfuehrt
 const SPIN_UP = 1.6      // 1/s, wie schnell sie anlaeuft und wieder ausgeht
 
+// Sie geht nicht bei jeder Vorbeifahrt an. Eine Maschine, die jedesmal
+// zuverlaessig anspringt, ist ein Schalter; eine, die es manchmal tut, ist ein
+// Ereignis. Nach jedem Schub – und nach jedem Wuerfeln, das gegen sie ausging
+// – ist sie fuer eine Weile gesperrt, sonst entscheidet sie sechzigmal in der
+// Sekunde neu und laeuft am Ende doch durch.
+const BURST = 4.0        // wie lange ein Schub laeuft
+const LOCKOUT = 8.0      // Sperre danach, in Sekunden
+const CHANCE = 0.5       // wie oft sie sich ueberhaupt dafuer entscheidet
+
 // Weiss auf Weiss sieht man nicht. Die Fahne bekommt deshalb einen leicht
 // kuehlen Ton und weiche runde Punkte – ohne beides ist sie im besonnten
 // Schnee schlicht unsichtbar.
@@ -156,6 +165,8 @@ export function createSnowCannon({ heading = 0 } = {}) {
   let wanted = 0       // Schwenk, den das Ziel verlangt
   let power = 0        // 0 aus, 1 volle Fahne
   let demand = 0       // ob gerade jemand im Feld steht
+  let burst = 0        // Restlaufzeit des laufenden Schubs
+  let lock = 0         // Sperre, bis sie wieder wuerfeln darf
   const muzzle = new THREE.Vector3(0, 1.36, 1.5)
   const world = new THREE.Vector3()
 
@@ -170,23 +181,41 @@ export function createSnowCannon({ heading = 0 } = {}) {
   // Vom Kinderland jeden Bild aufgerufen: nimm den Fahrer ins Visier, wenn er
   // im Feld steht. Steht er nicht drin, faellt der Kopf in die Ruhelage
   // zurueck und die Kanone geht aus.
-  group.userData.aimAt = (x, z) => {
+  //
+  // `allowed` ist das Veto von aussen. Wer auf dem Zauberteppich steht, faehrt
+  // nicht, sondern wird gezogen – er kann nicht ausweichen, und eingeschneit
+  // zu werden, waehrend man am Seil haengt, ist kein Ereignis, sondern eine
+  // Schikane.
+  group.userData.aimAt = (x, z, allowed = true) => {
     const p = base()
     const dx = x - p.x
     const dz = z - p.z
     const dist = Math.hypot(dx, dz)
     let bearing = Math.atan2(dx, dz) - group.rotation.y
     bearing = Math.atan2(Math.sin(bearing), Math.cos(bearing))
-    if (dist > 2 && dist < REACH + 4 && Math.abs(bearing) < TRACK) {
-      wanted = bearing
-      demand = 1
-    } else {
+    const inField = allowed && dist > 2 && dist < REACH + 4 && Math.abs(bearing) < TRACK
+
+    if (!inField) {
       wanted = 0
       demand = 0
+      burst = 0
+      return
     }
+    // Einmal je Vorbeifahrt wuerfeln, dann sperren.
+    if (burst <= 0 && lock <= 0) {
+      if (Math.random() < CHANCE) burst = BURST
+      lock = LOCKOUT
+    }
+    // Der Kopf folgt auch dann, wenn sie nicht blaest – ein Geraet, das
+    // hinschaut und schweigt, wirkt aufmerksamer als eines, das wegsieht.
+    wanted = bearing
+    demand = burst > 0 ? 1 : 0
   }
 
   group.userData.animate = (t, dt) => {
+    burst = Math.max(0, burst - dt)
+    lock = Math.max(0, lock - dt)
+
     // Nachfuehren mit begrenzter Winkelgeschwindigkeit – der Kopf ist schwer
     // und soll dem Fahrer hinterherziehen, nicht auf ihm kleben.
     const max = TRACK_RATE * dt

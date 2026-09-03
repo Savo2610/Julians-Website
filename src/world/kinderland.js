@@ -286,7 +286,9 @@ export class Kinderland {
     // Die Kanone nimmt den Fahrer ins Visier, sobald er in ihr Feld faehrt,
     // und geht sonst aus. Wer in der Fahne steht, wird eingeschneit; der Wert
     // steigt, solange man drin bleibt, und taut danach von selbst wieder ab.
-    this.cannon.userData.aimAt(sx, sz)
+    // Am Seil des Zauberteppichs bleibt sie stumm, und sie springt auch nicht
+    // bei jeder Vorbeifahrt an – siehe snow-cannon.js.
+    this.cannon.userData.aimAt(sx, sz, !skier.tow)
     const hit = this.cannon.userData.inPlume(sx, sz)
     if (hit > 0) skier.dustWithSnow(Math.min(1, skier.snowed + hit * dt * 2.2))
 

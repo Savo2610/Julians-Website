@@ -11,6 +11,7 @@ import { createFireTruck } from '../world/props/firetruck.js'
 import { createShortcutTunnel } from '../world/props/shortcut-tunnel.js'
 import { createGearDepot } from '../world/props/gear-depot.js'
 import { createTicketBooth } from '../world/props/ticket-booth.js'
+import { createTimeClock } from '../world/props/time-clock.js'
 import { CAMERA } from '../config.js'
 import { findFlatSpot } from '../world/heightfield.js'
 
@@ -53,10 +54,13 @@ export const TRAILS = {
     path: [[9, 22], [17, 11], [22, 0], [20, -14], [17, -26], [15, -38], [15, -48]],
   },
   tools: {
-    label: 'WERKSTATT',
+    label: 'TOOLS',
     color: '#37b87c',
     markerColor: 0x46b98a,
-    // Nach Westen, an der Rohrpost und dem Felsdurchgang vorbei.
+    // Nach Westen, an der Stechuhr, der Rohrpost und dem Felsdurchgang
+    // vorbei. Er heisst nicht mehr WERKSTATT: die Werkstatt ist inzwischen ein
+    // Haus im Osten, und zwei Dinge desselben Namens an verschiedenen Enden
+    // des Tals sind einer zuviel.
     path: [[-8, 27], [-18, 25], [-28, 21], [-36, 14], [-44, 6], [-49, -4]],
   },
 }
@@ -67,12 +71,16 @@ export const STATION_SPOTS = {
   // Uebungshang die flachste Stelle der Gegend – die Huette wuerde mitten in
   // den Slalom wandern.
   cabin:     { x: 25, z: 21, clearing: 13, footprint: 3.4, search: 3, trail: 'career' },
-  // Unterhalb des Weges zwischen Startplateau und Huette, am Waldrand. Man
-  // faehrt nicht mehr darueber, sondern sieht es hangabwaerts zwischen den
-  // Staemmen stehen und macht einen Bogen dorthin. Die Lichtung ist klein –
-  // eine Stange braucht keine, und mit sechs Metern haette sie sich ihren
-  // Wald selbst weggeraeumt. Die Gruppe Baeume dazu steht in populate.
-  signpostCareer: { x: 18, z: 36, clearing: 4, footprint: 1.2, search: 2, trail: 'career' },
+  // LinkedIn steht nicht mehr allein im Wald, sondern als Tafel neben der Tuer
+  // der Werkstatt. Eine Stange im Unterholz war ein Fundstueck; das Profil
+  // gehoert aber zu demselben Menschen wie der Quelltext im Haus daneben, und
+  // zwei Stationen fuer eine Person an zwei Enden des Waldes sind zwei Orte zu
+  // wenig zusammen gedacht. Der Versatz zur Huette ist so gewaehlt, dass die
+  // Tafel vor der Huette steht und nicht hinter ihr – bei sechsunddreissig
+  // Grad Kamerawinkel verschluckt das Dach alles, was dahinter liegt – und
+  // dabei seitlich versetzt, damit sie nicht ihrerseits die Tuer und das
+  // Schild WERKSTATT verdeckt.
+  signpostCareer: { x: 0, z: 0, from: 'cabin', offset: [3.4, 0.55], footprint: 1.0, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
@@ -88,20 +96,29 @@ export const STATION_SPOTS = {
   telescope: { x: -59, z: -71, clearing: 7, footprint: 1.2, search: 3, trail: 'social' },
 
   // Weg 3 – Werkzeuge
+  // Die Stechuhr steht am Anfang des Weges: man stempelt, bevor man arbeitet.
+  // Nicht direkt am Wegweiser – acht Meter weiter unten, wo der Hang mit sechs
+  // Grad flach genug fuer einen Pfosten ist und noch sechs Meter Luft bis zur
+  // Rohrpost bleiben. Der Suchradius ist klein, sonst rutscht sie auf das
+  // Startplateau zurueck; das ist weit und breit die flachste Flaeche.
+  clock:     { x: -15, z: 23, clearing: 5, footprint: 1.4, search: 1.5, trail: 'tools' },
   pipe:      { x: -19, z: 25, clearing: 8, footprint: 1.4, search: 6, trail: 'tools' },
   tunnel:    { x: -34, z: 15, clearing: 9, footprint: 2.0, search: 6, trail: 'tools' },
   depot:     { x: -48, z: 0, clearing: 8, footprint: 2.0, search: 7, trail: 'tools' },
 
   // Abseits der Wege – nur wer stoebert, findet sie.
-  // Die Drohne liegt bewusst nicht an der Piste, sondern in einer Waldtasche
-  // noerdlich hinter dem Startplateau: in jeder Himmelsrichtung stehen
-  // Baeume, der naechste Weg ist 17 Einheiten weg. Die Lichtung ist klein
-  // gehalten, sonst raeumt sie sich ihr Versteck selber weg.
-  drone:     { x: -15, z: 43, clearing: 4, footprint: 1.2, search: 2, trail: null },
-  // Der Loeschzug steht auf der Terrasse hinter dem Kinderland – die flachste
-  // Stelle der Osthoehe, gut drei Grad. Ein Fahrzeug braucht ebenen Boden,
-  // und von dort schaut man auf die Anlage hinunter.
-  firetruck: { x: 51, z: 20, clearing: 10, footprint: 3.2, search: 4, trail: null },
+  //
+  // Die beiden haben die Plaetze getauscht. Das ist nicht nur eine andere
+  // Adresse: die Waldtasche noerdlich hinter dem Startplateau ist ein Ort mit
+  // Zufahrt, und ein Fahrzeug, das irgendwo steht, will erklaeren koennen,
+  // wie es dorthin gekommen ist – seine Lichtung ist gross genug, dass sie
+  // als Wendeplatz durchgeht. Die Drohne dagegen ist abgestuerzt; ihr steht
+  // die freie Terrasse ueber dem Kinderland besser, weil ein Absturz von
+  // oben kommt. Die Lichtungs- und Fussmasse sind bei den Objekten geblieben
+  // und nicht bei den Koordinaten: der Loeschzug braucht seine ebenen zehn
+  // Meter, die Drohne haette sich damit ihr Versteck selbst weggeraeumt.
+  drone:     { x: 51, z: 20, clearing: 4, footprint: 1.2, search: 2, trail: null },
+  firetruck: { x: -15, z: 43, clearing: 10, footprint: 3.2, search: 4, trail: null },
 }
 
 export function populateStations(world, registry) {
@@ -111,9 +128,20 @@ export function populateStations(world, registry) {
   // korrigierten Koordinaten werden zurueckgeschrieben, damit Marker, Hinweis
   // und Kollision am selben Ort sitzen wie das Objekt.
   for (const [key, spot] of Object.entries(STATION_SPOTS)) {
+    if (spot.from) continue
     const flat = findFlatSpot(spot.x, spot.z, spot.search ?? 9, spot.footprint ?? 2.2)
     spot.x = flat.x
     spot.z = flat.z
+  }
+  // Angehaengte Plaetze zuletzt: sie sollen einen festen Versatz zu ihrem
+  // Bezugsobjekt behalten und nicht selbst wegwandern. Wer beides suchen
+  // laesst, bekommt zwei Objekte, die sich in ihrer eigenen Lichtung
+  // gegenseitig verschieben.
+  for (const spot of Object.values(STATION_SPOTS)) {
+    if (!spot.from) continue
+    const host = STATION_SPOTS[spot.from]
+    spot.x = host.x + spot.offset[0]
+    spot.z = host.z + spot.offset[1]
   }
 
   const place = (object, spot, { yOffset = 0, rotation = 0, collider = null } = {}) => {
@@ -143,11 +171,15 @@ export function populateStations(world, registry) {
     labelHeight: world.heightAt(STATION_SPOTS.cabin.x, STATION_SPOTS.cabin.z) + 4.2,
   })
 
+  // Die Tafel vor der Huette. Sie hat einen eigenen, kleinen Wirkungskreis:
+  // wer bis vor die Tafel faehrt, meint das Profil, wer davor stehenbleibt,
+  // die Werkstatt. Die Registrierung nimmt immer die naechste Station, also
+  // genuegt der kleinere Radius, um sich innerhalb des grossen durchzusetzen.
   const careerSign = createSignpost([
     { text: 'LINKEDIN', background: '#0a66c2', width: 1.8, height: 0.48 },
     { text: 'Profil', background: '#e8e2d6', color: '#3b4a58', width: 1.4, height: 0.34 },
-  ], { height: 2.7 })
-  place(careerSign, STATION_SPOTS.signpostCareer, { rotation: FACING, collider: 0.55 })
+  ], { height: 2.3 })
+  place(careerSign, STATION_SPOTS.signpostCareer, { rotation: FACING, collider: 0.45 })
   register({
     id: 'linkedin',
     label: 'LinkedIn',
@@ -155,8 +187,8 @@ export function populateStations(world, registry) {
     color: '#0a66c2',
     url: LINKS.linkedin,
     position: STATION_SPOTS.signpostCareer,
-    radius: 5.5,
-    labelHeight: world.heightAt(STATION_SPOTS.signpostCareer.x, STATION_SPOTS.signpostCareer.z) + 3.5,
+    radius: 3.2,
+    labelHeight: world.heightAt(STATION_SPOTS.signpostCareer.x, STATION_SPOTS.signpostCareer.z) + 3.0,
   })
 
   // --- Weg 2: Soziales und Bezahlen ---------------------------------------
@@ -210,6 +242,25 @@ export function populateStations(world, registry) {
   })
 
   // --- Weg 3: Werkzeuge ---------------------------------------------------
+  const clock = createTimeClock()
+  place(clock, STATION_SPOTS.clock, { rotation: FACING, collider: 0.5 })
+  register({
+    id: 'worktime',
+    label: 'Arbeitszeitrechner',
+    hint: LINKS.worktime ? 'Stempeln' : 'noch nicht verlinkt',
+    color: '#37b87c',
+    position: STATION_SPOTS.clock,
+    radius: 4.5,
+    labelHeight: world.heightAt(STATION_SPOTS.clock.x, STATION_SPOTS.clock.z) + 3.2,
+    // Erst stempelt sie, dann oeffnet sie. Die Karte faehrt auch dann heraus,
+    // wenn noch keine Adresse hinterlegt ist – das Geraet funktioniert, nur
+    // der Link fehlt, und das soll man am Geraet sehen und nicht raten.
+    onUse: () => {
+      clock.userData.stamp?.()
+      if (LINKS.worktime) window.open(LINKS.worktime, '_blank', 'noopener,noreferrer')
+    },
+  })
+
   const pipe = createUploadPipe()
   place(pipe, STATION_SPOTS.pipe, { rotation: FACING + 0.1, collider: 0.8 })
   register({

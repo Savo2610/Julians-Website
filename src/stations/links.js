@@ -14,4 +14,5 @@ export const LINKS = {
   upload: null,      // deine Uploadseite
   shortener: null,   // dein Link-Shortener
   packlist: null,    // deine Packlisten-App
+  worktime: null,    // dein Arbeitszeitrechner
 }

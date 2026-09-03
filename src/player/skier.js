@@ -231,7 +231,18 @@ export class Skier {
     this.position.z = nz
 
     // --- Boden / Luft ---------------------------------------------------
-    const G = 22
+    // Schwerkraft und Luftwiderstand. Zweiundzwanzig war korrekt und langweilig:
+    // ein Sprung war nach einer knappen Sekunde vorbei, und in einer knappen
+    // Sekunde dreht man einmal und schaut sonst zu. Achtzehn verlaengert jeden
+    // Flug um gut ein Fuenftel und hebt den Scheitel um denselben Anteil, ohne
+    // dass die Landung schwebend wird.
+    //
+    // Der Luftwiderstand ist der Preis dafuer. Laenger fliegen heisst bei
+    // gleichem Tempo auch weiter fliegen, und die Landehaenge im Park sind so
+    // lang, wie der Park breit ist. Wer in der Luft langsamer wird, bleibt
+    // laenger oben und kommt trotzdem auf dem Hang auf. Nebenbei ist es genau
+    // das, was man erwartet: quer in der Luft stehen kostet Tempo.
+    const G = 18
     const groundY = terrainHeight(nx, nz)
     // Wie schnell der Boden den Fahrer gerade anhebt. Auf einer Schanze ist
     // das die Steiggeschwindigkeit, mit der er ueber die Kante geht.
@@ -253,9 +264,9 @@ export class Skier {
           this.airborne = true
           // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
           // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
-          // Deckel liegt bei dreizehn – knapp vier Meter Scheitelhoehe und
-          // gut eine Sekunde Flug, so lang wie die Landehaenge im Park.
-          this.vy = Math.min(this._rise - G * dt, 13)
+          // Deckel liegt bei vierzehn – knapp sechs Meter Scheitelhoehe und
+          // anderthalb Sekunden Flug, mehr als jede Schanze im Park hergibt.
+          this.vy = Math.min(this._rise - G * dt, 14)
           this.height = Math.min(free - groundY, 0.6)
         }
       }
@@ -264,6 +275,7 @@ export class Skier {
     if (this.airborne) {
       this.vy -= G * dt
       this.height += this.vy * dt
+      this.speed *= 1 - Math.min(0.5, SKIER.airDrag * dt)
       if (this.height <= 0) {
         this.height = 0
         this.airborne = false

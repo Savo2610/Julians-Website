@@ -5,6 +5,13 @@ import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 // einer Flamme aus zwei ineinander liegenden Kegeln. Die Flamme leuchtet selbst
 // (emissive) – echtes Licht bekommt nur der Platz als Ganzes, sonst wird die
 // Beleuchtung zu teuer.
+//
+// Sie hat keine Kollision. Ein Kranz aus achtzehn Pfaehlen um das Startplateau
+// waere sonst genau das: ein Zaun, den man auf den ersten Metern der Fahrt
+// umkurven muss. Stattdessen faellt sie um, wenn man sie erwischt, verlischt
+// und richtet sich nach ein paar Sekunden wieder auf. Das ist die bessere
+// Antwort auf einen Gegenstand am Wegrand: nicht wegnehmen, sondern
+// nachgeben.
 
 const WOOD = 0x5d4130
 const WRAP = 0x3d2c1f
@@ -75,7 +82,56 @@ export function createTorch(seed = 0) {
 
   const phase = rnd(4) * 10
 
-  group.userData.animate = (t) => {
+  // --- Umfallen -----------------------------------------------------------
+  // Ein einziger Zustand genuegt: `fall` laeuft von 0 (steht) auf 1 (liegt)
+  // und wieder zurueck. Die Neigung ist der Sinus davon, das Feuer der
+  // Kehrwert – sie geht aus, waehrend sie kippt, und kommt beim Aufrichten
+  // wieder. Ein Schwingen beim Zurueckstellen macht aus dem Aufrichten eine
+  // Bewegung statt eines Zurueckspulens.
+  let fall = 0
+  let hold = 0
+  let tipX = 1
+  let tipZ = 0
+
+  // Die Stossrichtung kommt in Weltkoordinaten herein, gekippt wird aber im
+  // Koerper der Gruppe – und die steht bereits um einen Zufallswinkel gedreht.
+  // Ohne diese Rueckdrehung faellt jede Fackel in ihre eigene Richtung statt
+  // in die, aus der sie getroffen wurde.
+  group.userData.knock = (dirX, dirZ) => {
+    if (fall > 0.4) return
+    const len = Math.hypot(dirX, dirZ) || 1
+    const a = group.rotation.y
+    const wx = dirX / len
+    const wz = dirZ / len
+    tipX = wx * Math.cos(a) - wz * Math.sin(a)
+    tipZ = wx * Math.sin(a) + wz * Math.cos(a)
+    hold = 2.6
+  }
+
+  group.userData.animate = (t, dt = 0) => {
+    if (hold > 0) {
+      hold -= dt
+      fall = Math.min(1, fall + dt * 4.5)
+    } else if (fall > 0) {
+      fall = Math.max(0, fall - dt * 1.5)
+    }
+    if (fall > 0) {
+      // Um die Fusslinie kippen: die Achse steht quer zur Stossrichtung.
+      const a = fall * (Math.PI / 2) * 0.94
+      group.rotation.x = a * tipZ
+      group.rotation.z = -a * tipX
+      const lit = Math.max(0, 1 - fall * 2.2)
+      outer.visible = inner.visible = lit > 0.02
+      outerMat.opacity = 0.55 * lit
+      innerMat.opacity = 0.95 * lit
+      if (lit <= 0.02) return
+    } else if (group.rotation.x !== 0 || group.rotation.z !== 0) {
+      group.rotation.x = 0
+      group.rotation.z = 0
+      outer.visible = inner.visible = true
+      innerMat.opacity = 0.95
+    }
+
     // Flackern aus zwei ungleich schnellen Sinuskurven – wirkt unregelmaessig,
     // ohne zufaellig zu springen.
     const f = Math.sin(t * 9.1 + phase) * 0.5 + Math.sin(t * 5.3 + phase * 2) * 0.5
@@ -89,5 +145,6 @@ export function createTorch(seed = 0) {
   }
 
   group.userData.flameHeight = flameY + 0.3
+  group.userData.isTorch = true
   return group
 }

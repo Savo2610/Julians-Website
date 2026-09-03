@@ -26,6 +26,7 @@ export const SKIER = {
   steerLerp: 9,       // wie direkt die Lenkung anspricht
   brakeDrag: 4.5,     // wie hart S bremst
   coastDrag: 1.15,    // wie schnell man ohne Eingabe ausrollt
+  airDrag: 0.16,      // Tempoverlust je Sekunde in der Luft
   slopeInfluence: 9,  // wie stark Gefaelle das Tempo moduliert
   minClimbSpeed: 2.4, // Kriechtempo bergauf, damit man nie festsitzt
   bodyRadius: 0.55,

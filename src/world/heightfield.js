@@ -226,6 +226,14 @@ export const KINDER_LANE = makeLane([
 // verrechnet, und wo zwei sich ueberlagern, gewinnt in der Mitte das spaetere.
 // Genau das ist hier gewollt – die Strecke soll gerade sein, auch wo der
 // Funpark daneben etwas anderes vorhat.
+//
+// Sie bleibt gerade und wird keine Halfpipe – das war einmal versucht und ist
+// zweimal gescheitert. Fahrerisch: wer eine Wand anschneidet, bekommt Hoehe
+// aus der Steigrate des Bodens, behaelt aber seine Fahrtrichtung. Die Wand
+// gibt nicht zurueck, was sie nimmt, also wird man aus der Pipe geworfen
+// statt in ihr gehalten. Baulich: die Bande reicht mit ihrem Federsaum ueber
+// das Band hinaus, und dort drueben liegt der Zauberteppich.
+
 // Die sichtbare Strecke – so weit reichen die Leuchtleisten.
 export const SHOOT_RUN = { from: { x: 34.0, z: -9.9 }, to: { x: 20.0, z: 12.0 } }
 

@@ -31,9 +31,14 @@ const CLEARINGS = [
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
   { x: 17.3, z: -60.6, r: 9 }, // Terrasse mit der Apres-Ski-Huette
-  { x: -35.8, z: -33.2, r: 8 },  // Lichtschranke des Speedchecks
+  { x: -37.2, z: -31.8, r: 8 },  // Lichtschranke des Speedchecks
   { x: -21.5, z: -24.5, r: 5 },  // Display des Speedchecks
-  ...Object.values(STATION_SPOTS).map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
+  // Angehaengte Plaetze wie die Tafel an der Werkstatt bringen keine eigene
+  // Lichtung mit – sie liegen in der ihres Bezugsobjekts, und ihre
+  // Koordinaten stehen an dieser Stelle ohnehin noch auf null.
+  ...Object.values(STATION_SPOTS)
+    .filter((s) => s.clearing)
+    .map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
 ]
 
 // Zusaetzlich zu den runden Lichtungen gibt es Schneisen: Streifen entlang
@@ -263,28 +268,11 @@ export function populate(world, sky, registry) {
       shade: rng(),
     }
   })
-  // Eine Handvoll Baeume um den LinkedIn-Wegweiser. Der Bestand ist dort von
-  // Natur aus duenn – die Haine kommen aus einem Rauschfeld, und genau an
-  // dieser Stelle liegt es niedrig. Ohne diese Gruppe stuende das Schild auf
-  // freiem Feld statt am Waldrand, und das war ausdruecklich nicht gewollt.
-  {
-    const sign = STATION_SPOTS.signpostCareer
-    for (const [angle, dist, variant] of [
-      [0.35, 5.2, 0], [1.15, 6.4, 1], [2.0, 5.6, 0], [2.75, 7.4, 2],
-      [3.6, 5.0, 1], [4.4, 6.8, 0], [5.2, 5.4, 2], [5.9, 7.8, 1],
-    ]) {
-      placements.push({
-        x: sign.x + Math.sin(angle) * dist,
-        z: sign.z + Math.cos(angle) * dist,
-        variant,
-        rotation: angle * 1.7,
-        scale: 0.85 + ((angle * 7) % 1) * 0.6,
-        tiltX: (((angle * 13) % 1) - 0.5) * 0.06,
-        tiltZ: (((angle * 17) % 1) - 0.5) * 0.06,
-        shade: (angle * 11) % 1,
-      })
-    }
-  }
+  // Die Baumgruppe um den frueheren LinkedIn-Wegweiser ist mit ihm
+  // verschwunden. Sie stand dort, weil das Schild einen Waldrand brauchte und
+  // das Rauschfeld an der Stelle zu duenn war; ohne Schild ist sie ein Hain
+  // ohne Anlass, und der Hang zwischen Plateau und Kinderland ist mit ihm
+  // wieder frei zu befahren.
 
   createForest(world, placements)
 
@@ -376,6 +364,11 @@ export function populate(world, sky, registry) {
   const nearExit = (angle) =>
     exits.some((e) => Math.abs(Math.atan2(Math.sin(angle - e), Math.cos(angle - e))) < 0.42)
 
+  // Keine Kollision. Der Kranz stand vorher als Reihe fester Pfaehle um den
+  // Platz, auf dem die Fahrt anfaengt – man ist auf den ersten zwanzig Metern
+  // gegen die eigene Kulisse gefahren. Jetzt faehrt man hindurch und legt
+  // dabei um, was im Weg war; nach ein paar Sekunden steht es wieder.
+  const torches = []
   const torchCount = 18
   for (let i = 0; i < torchCount; i++) {
     const angle = (i / torchCount) * Math.PI * 2
@@ -384,9 +377,23 @@ export function populate(world, sky, registry) {
     const tz = PLATEAU.z + Math.cos(angle) * torchRadius
     const torch = createTorch(i * 7 + 3)
     world.place(torch, tx, tz, { rotation: rng() * Math.PI * 2 })
-    world.addCollider(tx, tz, 0.32)
+    torches.push({ obj: torch, x: tx, z: tz })
     animatedProps.push(torch.userData.animate)
   }
+
+  // Umstossen: ein Kreis von einem halben Meter genuegt. Gestossen wird in
+  // Fahrtrichtung und nicht radial vom Fusspunkt weg – wer knapp vorbeizieht,
+  // soll sie in seine Richtung legen und nicht zur Seite schieben.
+  animatedProps.push(() => {
+    const skier = skierRef.current
+    if (!skier) return
+    for (const t of torches) {
+      const dx = skier.position.x - t.x
+      const dz = skier.position.z - t.z
+      if (dx * dx + dz * dz > 0.36) continue
+      t.obj.userData.knock(skier.forward.x, skier.forward.z)
+    }
+  })
 
   // Zwei warme Lichter tragen den ganzen Platz – einzelne Lichter pro Fackel
   // waeren zu teuer.
@@ -622,19 +629,29 @@ export function populate(world, sky, registry) {
   // und die Bahn dort gerade laeuft – eine Messung in der Kurve waere eine
   // Messung des Kurvenradius.
   //
-  // Die Lichtschranke steht drei Meter links der Pistenachse, also mittig in
-  // dem Korridor, in dem man tatsaechlich faehrt: links begrenzt ihn die
-  // Lifttrasse, rechts der Wald vor der Rodelbahn. Der Gegenpfosten steht
-  // knapp am Rand der Trasse, der Kamerapfosten auf der anderen Seite – man
-  // faehrt zwischen beiden hindurch.
+  // Die Lichtschranke ist so weit nach links gerueckt, wie es geht: der
+  // Reflektorpfosten steht noch fuenf Meter neben der Lifttrasse, weiter waere
+  // er in ihr. Der Kamerapfosten steht dreizehn Meter davon entfernt auf der
+  // anderen Seite – man faehrt zwischen beiden hindurch, und die Kamera schaut
+  // von rechts, also aus der Richtung, aus der sie den Fahrer von vorn
+  // erwischt.
+  //
+  // Die Torachse steht quer zur Falllinie und nicht quer zur Pistenachse. Der
+  // Unterschied ist hier zwoelf Grad: der Polygonzug der Piste ist von Hand
+  // gesetzt und laeuft ein Stueck schraeg durch den Hang, die Falllinie nicht.
+  // Gemessen wird ohnehin die Geschwindigkeit und nicht der Winkel – aber
+  // schief steht sie eben trotzdem, und man sieht es sofort. Quer zur
+  // Falllinie liegen beide Pfosten auf derselben Hoehenlinie; die gemessenen
+  // Fusspunkte unterscheiden sich um fuenf Zentimeter.
+  const speedAt = { x: -37.2, z: -31.8 }
   const speedDir = (() => {
-    const [ax, az] = FREE_PISTE[2]
-    const [bx, bz] = FREE_PISTE[4]
-    const len = Math.hypot(bx - ax, bz - az)
-    return { dx: (bx - ax) / len, dz: (bz - az) / len }
+    const n = new THREE.Vector3()
+    terrainNormal(speedAt.x, speedAt.z, n)
+    const len = Math.hypot(n.x, n.z) || 1
+    return { dx: n.x / len, dz: n.z / len }
   })()
   const speedCheck = new SpeedCheck(world, {
-    x: -35.8, z: -33.2, dx: speedDir.dx, dz: speedDir.dz, width: 10,
+    x: speedAt.x, z: speedAt.z, dx: speedDir.dx, dz: speedDir.dz, width: 10,
   })
   // Das Display steht weit unterhalb, seitlich neben dem einzelnen Baum und
   // dort, wo der Hang endlich flach wird – ein Brett auf zwei Pfosten in

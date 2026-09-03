@@ -171,8 +171,10 @@ function advance(dt) {
     stations.trigger()
     stationUI.flash()
   }
-  for (const animate of props.animated) animate(elapsed)
-  // Das Kinderland braucht zusaetzlich dt: Wackeln und Umfallen sind
+  // dt kommt mit, weil inzwischen nicht mehr alles eine Funktion der Uhrzeit
+  // ist – umgestossene Fackeln richten sich ueber eine Dauer wieder auf.
+  for (const animate of props.animated) animate(elapsed, dt)
+  // Das Kinderland braucht dt aus demselben Grund: Wackeln und Umfallen sind
   // Ausschwingvorgaenge, keine Funktionen der Uhrzeit.
   props.kinderland.animate(elapsed, dt)
 

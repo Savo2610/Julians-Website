@@ -15,6 +15,8 @@ import { createTorch } from './props/torch.js'
 import { createSummitCross } from './props/summit-cross.js'
 import { DragLift } from './drag-lift.js'
 import { RaceCourse } from './race.js'
+import { RailRide } from './rail-ride.js'
+import { SpeedCheck } from './speed-check.js'
 import { createRail, createPadMarker, createParkSign, createParkBox, createLipMarker } from './props/funpark.js'
 import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
@@ -29,6 +31,8 @@ const CLEARINGS = [
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
   { x: 17.3, z: -60.6, r: 9 }, // Terrasse mit der Apres-Ski-Huette
+  { x: -34.5, z: -34, r: 9 },  // Messstelle des Speedchecks
+  { x: -35.5, z: -25.3, r: 5 }, // Display des Speedchecks
   ...Object.values(STATION_SPOTS).map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
 ]
 
@@ -483,18 +487,9 @@ export function populate(world, sky, registry) {
 
   // Der Rueckweg traegt dieselbe Farbe wie die freie Abfahrt: von unten
   // gesehen ist beides derselbe Weg zurueck an den Lift.
+  // Die Stangen in der Farbe der freien Abfahrt sagen genug; ein Schild am
+  // Ziel waere ein Wort zuviel.
   createPisteMarkers(world, route(RETURN_PATH, 5.0), { seed: 61, color: 0xe8703a })
-  {
-    // Ein Wegweiser am Ziel. Wer die Uhr gestoppt hat, schaut zuerst auf die
-    // Zeit und dann ratlos in den Wald – dieses Schild beantwortet die Frage,
-    // bevor sie entsteht.
-    const [hx, hz] = RETURN_PATH[0]
-    const home = createSignpost([
-      { text: 'TALSTATION', background: '#e8703a', width: 2.6, height: 0.6, rotation: -0.35 },
-    ], { height: 2.4 })
-    world.place(home, hx + 2.6, hz + 1.4, { rotation: Math.PI * 0.25 })
-    world.addCollider(hx + 2.6, hz + 1.4, 0.45)
-  }
 
   // --- Zaeune -------------------------------------------------------------
   // Ein alter Weidezaun im Osten, ein Absperrzaun oberhalb des Seeufers.
@@ -556,7 +551,9 @@ export function populate(world, sky, registry) {
     world.addCollider(APRES.x + 3.2, APRES.z + 3.2, 2.6)
     animatedProps.push(apres.userData.animate)
 
-    // Das Rail liegt auf der Schneekante und laeuft mit ihr.
+    // Das Rail liegt auf der Schneekante und laeuft mit ihr. Es ist jetzt
+    // laenger und an den rechten Rand des Bandes gerueckt – zwischen den
+    // Schanzen war kein Platz mehr, seit die beiden Landehaenge haben.
     const ledge = PARK_FEATURES.find((f) => f.kind === 'ledge')
     const rail = createRail({ length: ledge.length - 1.6, height: 0.5 })
     // align: das Rail muss der Neigung der Kante folgen. Waagerecht steckt ein
@@ -586,41 +583,22 @@ export function populate(world, sky, registry) {
       })
     }
 
-    // --- Die Schanzen sichtbar machen -------------------------------------
-    // Eine Schanze aus Schnee ist bei diesem Sonnenstand in einer Schneeflaeche
-    // fast unsichtbar: gleiche Farbe, kaum Schatten, und von oben sieht man
-    // die Steigung ohnehin nicht. Deshalb bekommt jede Schanze drei Dinge –
-    // Winkel im Schnee vor der Anfahrt, einen kraeftigen Balken genau auf der
-    // Absprungkante und zwei Kloetze an den Enden dieser Kante. Erst damit
-    // liest man aus der Vogelperspektive, wo man abhebt.
-    const paint = snowPaint()
+    // --- Die Absprungkanten ------------------------------------------------
+    // Die Farbe im Schnee ist wieder weg. Seit die Schanzen einen Landehang
+    // haben, sind sie als Form lesbar: eine Rampe mit einer Mulde dahinter
+    // wirft aus jedem Winkel Schatten, ein aufgemalter Balken war dagegen nur
+    // laut. Was bleibt, sind zwei Kloetze an den Enden der Kante – sie sagen,
+    // wie breit die Kante ist, und man sieht sie im Anfahren.
     for (const f of PARK_FEATURES) {
       if (f.kind !== 'kicker') continue
-      const nx = -f.dz
-      const nz = f.dx
       const half = f.width * 0.5
-
-      // Ein Winkel am Fuss der Rampe und ein Balken auf der Kante – mehr
-      // nicht. Anfahrtsmarken weiter oben und Landemarken weiter unten
-      // waren zusaetzlich versucht und wieder verworfen: die Figuren liegen
-      // hier nur sechs bis acht Meter auseinander, und die Markierung der
-      // einen Schanze landete regelmaessig auf der naechsten Figur.
-      const lead = f.length + 2.2
-      paint.chevron(f.x - f.dx * lead, f.z - f.dz * lead, f.dx, f.dz, 2.6, 0xf0a074)
-      paint.bar(
-        f.x - nx * half, f.z - nz * half,
-        f.x + nx * half, f.z + nz * half,
-        1.0, 0xe4703a,
-      )
-
       for (const side of [-1, 1]) {
-        const mx = f.x + nx * side * (half + 0.5)
-        const mz = f.z + nz * side * (half + 0.5)
-        const lip = createLipMarker(0xe4703a)
+        const mx = f.x - f.dz * side * (half + 0.5)
+        const mz = f.z + f.dx * side * (half + 0.5)
+        const lip = createLipMarker(0x2f6bd8)
         world.place(lip, mx, mz, { rotation: Math.atan2(f.dx, f.dz) })
       }
     }
-    world.scene.add(paint.build({ name: 'funpark-markierung' }))
 
     // Gepolsterte Marker links und rechts der Figuren – sie machen aus der
     // Schneeflaeche einen Park. Die Schanzen bekommen keine mehr: sie haben
@@ -639,6 +617,26 @@ export function populate(world, sky, registry) {
     }
   }
 
+  // --- Speedcheck auf der freien Abfahrt -----------------------------------
+  // Die Stelle ist so gewaehlt, dass man vorher gut zwanzig Meter Anlauf hat
+  // und die Bahn dort gerade laeuft – eine Messung in der Kurve waere eine
+  // Messung des Kurvenradius.
+  const speedDir = (() => {
+    const [ax, az] = FREE_PISTE[2]
+    const [bx, bz] = FREE_PISTE[4]
+    const len = Math.hypot(bx - ax, bz - az)
+    return { dx: (bx - ax) / len, dz: (bz - az) / len }
+  })()
+  const speedCheck = new SpeedCheck(world, {
+    x: -34.5, z: -34, dx: speedDir.dx, dz: speedDir.dz, width: 10,
+  })
+  speedCheck.buildDisplay(-35.5, -25.3)
+  speedCheck._draw()
+
+  // Die Rail ist ausserdem fahrbar: wer sie oben mit gedrueckter Leertaste
+  // erwischt, wird aufgezogen und rutscht bis ans Ende durch.
+  const railRide = new RailRide(world, PARK_FEATURES.find((f) => f.kind === 'ledge'))
+
   // --- Kinderland ---------------------------------------------------------
   // Spielwiese oben auf der Osthoehe, Uebungshang darunter, Zauberteppich
   // dazwischen. Der Teppich beginnt keine sieben Meter neben der Huette –
@@ -652,5 +650,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { lake, lift, race, kinderland, animated: [...stations.animated, ...animatedProps] }
+  return { lake, lift, race, kinderland, railRide, speedCheck, animated: [...stations.animated, ...animatedProps] }
 }

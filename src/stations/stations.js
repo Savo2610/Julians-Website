@@ -2,7 +2,6 @@ import * as THREE from 'three'
 import { LINKS } from './links.js'
 import { createMarker } from './marker.js'
 import { createEmergencyPhone } from '../world/props/emergency-phone.js'
-import { createVendingMachine } from '../world/props/vending.js'
 import { createUploadPipe } from '../world/props/upload-pipe.js'
 import { createSignpost } from '../world/props/signpost.js'
 import { createTelescope } from '../world/props/telescope.js'
@@ -77,12 +76,9 @@ export const STATION_SPOTS = {
 
   // Weg 2 – Soziales und Bezahlen
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
-  // Kassenhaeuschen und Automat stehen zusammen auf dem Weg vom Materialdepot
-  // zur Talstation. Der Automat stand vorher allein am Lifteinstieg und sah
-  // aus wie vergessen; erst zu zweit lesen sie sich als Kassenbereich, an dem
-  // man vorbeimuss, bevor man in den Lift steigt.
-  ticket:    { x: -41, z: -1, clearing: 8, footprint: 2.4, search: 2.5, trail: 'social' },
-  vending:   { x: -38.6, z: -3.4, clearing: 6, footprint: 1.8, search: 2, trail: 'social' },
+  // Die Skikasse steht auf dem Weg vom Materialdepot zur Talstation – man
+  // kommt daran vorbei, bevor man in den Lift steigt.
+  ticket:    { x: -40, z: -2, clearing: 9, footprint: 2.4, search: 2.5, trail: 'social' },
   // Das Fernrohr stand frueher auf der Talschulter – da beginnt jetzt die
   // Rodelbahn. Es ist auf die Suedschulter hinter dem Gipfel gewichen: von
   // dort schaut man ueber die andere Talseite, und wer vom Lift kommt, findet
@@ -177,21 +173,19 @@ export function populateStations(world, registry) {
     labelHeight: world.heightAt(STATION_SPOTS.phone.x, STATION_SPOTS.phone.z) + 3.1,
   })
 
-  // Das Haeuschen selbst ist keine Station – es hat nichts zu oeffnen. Es
-  // steht da, damit der Automat daneben einen Grund hat.
-  const booth = createTicketBooth({ label: 'SKIPAESSE' })
+  // Die Skikasse ist jetzt das Haeuschen selbst. Der Automat daneben war die
+  // zweite Kasse fuer dieselbe Sache; seine beiden Zahlwege sind als Tafeln
+  // in die Front des Hauses gewandert.
+  const booth = createTicketBooth({ label: 'SKIKASSE', leftColor: 0x2b8ce6, rightColor: 0x9945ff })
   place(booth, STATION_SPOTS.ticket, { rotation: FACING, collider: 1.3 })
-
-  const vending = createVendingMachine({ leftColor: 0x2b8ce6, rightColor: 0x9945ff })
-  place(vending, STATION_SPOTS.vending, { rotation: FACING - 0.15, collider: 0.95 })
   register({
     id: 'paypal',
     label: 'Skikasse',
     hint: LINKS.paypal || LINKS.solana ? 'PayPal oder Solana' : 'noch nicht verlinkt',
     color: '#2b8ce6',
-    position: STATION_SPOTS.vending,
-    radius: 4.5,
-    labelHeight: world.heightAt(STATION_SPOTS.vending.x, STATION_SPOTS.vending.z) + 3.2,
+    position: STATION_SPOTS.ticket,
+    radius: 5.0,
+    labelHeight: world.heightAt(STATION_SPOTS.ticket.x, STATION_SPOTS.ticket.z) + 3.6,
     onUse: () => {
       const target = LINKS.paypal || LINKS.solana
       if (target) window.open(target, '_blank', 'noopener,noreferrer')

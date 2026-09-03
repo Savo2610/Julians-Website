@@ -204,13 +204,14 @@ export class Kinderland {
     })
   }
 
-  // Die Schneekanone steht am oberen Drittel des Uebungshangs, knapp innerhalb
-  // der Einfassung, und blaest quer ueber die Strecke. Quer ist hier zweimal
-  // richtig: man faehrt zwangslaeufig hindurch, und die Fahne laeuft bei
-  // fester Kamera fast vollstaendig ueber den Bildschirm, statt als Fleck in
-  // die Blickachse zu zeigen.
+  // Die Schneekanone steht am oberen Drittel des Uebungshangs, hinter der
+  // Absperrung, und blaest ueber den Zaun hinweg quer auf die Strecke. Quer
+  // ist hier zweimal richtig: man faehrt zwangslaeufig hindurch, und die
+  // Fahne laeuft bei fester Kamera fast vollstaendig ueber den Bildschirm,
+  // statt als Fleck in die Blickachse zu zeigen. Hinter dem Zaun ist sie,
+  // weil ein Geraet mit einem Geblaese nicht dort steht, wo Kinder fahren.
   _buildCannon() {
-    const p = this.at(13, 6.2)
+    const p = this.at(13, 10.5)
     const cannon = createSnowCannon({ heading: p.heading + Math.PI / 2 })
     this.world.place(cannon, p.x, p.z, {})
     this.world.addCollider(p.x, p.z, 1.0)
@@ -283,8 +284,10 @@ export class Kinderland {
     const sz = skier.position.z
     const moving = skier.speed > 1.2 && !skier.tow
 
-    // In der Fahne der Kanone wird man eingeschneit. Der Wert steigt, solange
-    // man drin bleibt, und taut danach von selbst wieder ab.
+    // Die Kanone nimmt den Fahrer ins Visier, sobald er in ihr Feld faehrt,
+    // und geht sonst aus. Wer in der Fahne steht, wird eingeschneit; der Wert
+    // steigt, solange man drin bleibt, und taut danach von selbst wieder ab.
+    this.cannon.userData.aimAt(sx, sz)
     const hit = this.cannon.userData.inPlume(sx, sz)
     if (hit > 0) skier.dustWithSnow(Math.min(1, skier.snowed + hit * dt * 2.2))
 

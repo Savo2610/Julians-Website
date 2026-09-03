@@ -1,16 +1,18 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial, labelTexture } from '../../core/geometry.js'
 
-// Das Kassenhaeuschen an der Talstation: ein Holzhaus mit Schalterfenster,
-// rotem Vordach und einer Absperrgasse davor.
+// Die Skikasse: ein Holzhaus mit Schalterfenster, rotem Vordach und einer
+// Absperrgasse davor.
 //
 // Von oben sieht man vor allem das Dach. Deshalb traegt das Dach die Farbe
 // und die Form – ein Satteldach mit Schneeauflage und ein weit
 // vorgezogenes rotes Vordach ueber dem Schalter. Die Waende darunter sind
 // fast Nebensache; sie muessen nur da sein, damit das Dach nicht schwebt.
 //
-// Der Automat daneben allein war zu wenig: ein Ort, an dem man bezahlt,
-// braucht eine Front, hinter der jemand sitzen koennte.
+// Der Automat, der frueher daneben stand, ist in das Haus gezogen: die
+// beiden Zahlwege haengen jetzt als leuchtende Tafeln neben dem Schalter,
+// und auf dem Brett steht ein Kartenleser. Ein Haus und ein Automat
+// nebeneinander waren zwei Kassen fuer eine Sache.
 
 const WOOD = 0x7b5236
 const WOOD_DARK = 0x54382a
@@ -21,7 +23,11 @@ const METAL = 0x99a1ab
 const RED = 0xc8402f
 const WARM = 0xffc46b
 
-export function createTicketBooth({ label = 'KASSE' } = {}) {
+export function createTicketBooth({
+  label = 'KASSE',
+  leftColor = 0x2b8ce6,
+  rightColor = 0x9945ff,
+} = {}) {
   const group = new THREE.Group()
   const parts = []
 
@@ -123,6 +129,21 @@ export function createTicketBooth({ label = 'KASSE' } = {}) {
       position: [sx * (W / 2 + 0.2), 1.25, front + 1.2],
     })
   }
+
+  // --- Die beiden Zahlwege --------------------------------------------------
+  // Sie sitzen als leuchtende Tafeln links und rechts neben dem Schalter,
+  // dort, wo an einem Automaten die Knoepfe waeren. Zwei Farben, zwei Wege –
+  // was dahinter steckt, sagt die Einblendung beim Draufzufahren.
+  for (const [i, c] of [leftColor, rightColor].entries()) {
+    const px = (i === 0 ? -1 : 1) * (W / 2 - 0.46)
+    parts.push({ geo: new THREE.BoxGeometry(0.78, 0.62, 0.1), color: 0x3a2a20, position: [px, 0.72, front + 0.06] })
+    parts.push({ geo: new THREE.BoxGeometry(0.64, 0.48, 0.08), color: c, position: [px, 0.72, front + 0.09] })
+    // Ein schmaler Schlitz darunter, damit die Tafel als Bedienfeld liest.
+    parts.push({ geo: new THREE.BoxGeometry(0.4, 0.07, 0.06), color: 0x1c222a, position: [px, 0.38, front + 0.08] })
+  }
+  // Kartenleser auf dem Schalterbrett, leicht zur Kamera gekippt.
+  parts.push({ geo: new THREE.BoxGeometry(0.3, 0.42, 0.1), color: 0x2b2f36, position: [W / 2 - 0.42, 1.6, front + 0.24], rotation: [-0.5, 0, 0] })
+  parts.push({ geo: new THREE.BoxGeometry(0.22, 0.24, 0.06), color: 0x7fd4a8, position: [W / 2 - 0.42, 1.66, front + 0.29], rotation: [-0.5, 0, 0] })
 
   // --- Details -------------------------------------------------------------
   // Preistafel an der Seitenwand, ein Kasten und ein Besen an der anderen.

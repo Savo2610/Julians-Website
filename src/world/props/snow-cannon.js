@@ -1,14 +1,14 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 
-// Die Schneekanone: ein Geblaese auf einem Schlitten, das quer ueber die
-// Strecke blaest und langsam hin und her schwenkt.
+// Die Schneekanone: ein Geblaese auf einem Schlitten hinter der Absperrung
+// des Kinderlands, das ueber den Zaun hinweg auf die Strecke blaest.
 //
-// Der Reiz liegt nicht im Geraet, sondern in der Fahne. Sie ist ein
-// Partikelsystem, das die Kanone mitdreht – wer hindurchfaehrt, kommt weiss
-// wieder heraus. Damit ist die Kanone das einzige Ding auf der Karte, das
-// den Fahrer selbst veraendert, und deshalb steht sie quer und nicht laengs:
-// laengs koennte man ihr ausweichen, quer faehrt man mitten hinein.
+// Sie laeuft nicht durch. Steht niemand davor, ist sie aus und der Kopf steht
+// in Ruhelage. Faehrt jemand durch ihr Feld, laeuft sie an und der Strahl
+// folgt ihm, solange er in Reichweite bleibt. Das ist der Unterschied
+// zwischen einer Kulisse und einem Geraet: es reagiert, und man merkt, dass
+// man gemeint ist.
 //
 // Der Kegel ist eine reine Rechenform. Die Partikel starten an der Muendung,
 // bekommen etwas Streuung und fallen; getroffen ist, wer im Kegel steckt.
@@ -21,13 +21,11 @@ const YELLOW = 0xe8b03a
 const HOSE = 0x37414c
 
 const COUNT = 420
-const REACH = 13         // Wurfweite der Fahne
-const SPREAD = 0.34      // halber Oeffnungswinkel in rad
-// Der Schwenk muss kleiner bleiben als die Streuung, sonst wandert die Fahne
-// an einer festen Stelle staendig vorbei und man wird nur mit Glueck getroffen.
-// Bei 0,38 zu 0,34 ueberlappen sich die Kegelraender an jedem Punkt der Bahn.
-const SWEEP = 0.38       // Schwenk zu jeder Seite
-const SWEEP_RATE = 0.28  // rad/s
+const REACH = 15         // Wurfweite der Fahne
+const SPREAD = 0.30      // halber Oeffnungswinkel in rad
+const TRACK = 0.85       // wie weit der Kopf aus der Ruhelage schwenken darf
+const TRACK_RATE = 1.9   // rad/s, wie schnell er nachfuehrt
+const SPIN_UP = 1.6      // 1/s, wie schnell sie anlaeuft und wieder ausgeht
 
 // Weiss auf Weiss sieht man nicht. Die Fahne bekommt deshalb einen leicht
 // kuehlen Ton und weiche runde Punkte – ohne beides ist sie im besonnten
@@ -154,23 +152,66 @@ export function createSnowCannon({ heading = 0 } = {}) {
   head.add(plume)
 
   // --- Bewegung ------------------------------------------------------------
-  let sweep = 0
+  let swing = 0        // aktueller Schwenk des Kopfes
+  let wanted = 0       // Schwenk, den das Ziel verlangt
+  let power = 0        // 0 aus, 1 volle Fahne
+  let demand = 0       // ob gerade jemand im Feld steht
   const muzzle = new THREE.Vector3(0, 1.36, 1.5)
+  const world = new THREE.Vector3()
+
+  // Wo steht die Kanone, und wohin zeigt sie gerade? Der Kopf haengt in der
+  // Gruppe, also addieren sich beide Drehungen.
+  const base = () => {
+    world.set(0, 0, 0)
+    group.localToWorld(world)
+    return world
+  }
+
+  // Vom Kinderland jeden Bild aufgerufen: nimm den Fahrer ins Visier, wenn er
+  // im Feld steht. Steht er nicht drin, faellt der Kopf in die Ruhelage
+  // zurueck und die Kanone geht aus.
+  group.userData.aimAt = (x, z) => {
+    const p = base()
+    const dx = x - p.x
+    const dz = z - p.z
+    const dist = Math.hypot(dx, dz)
+    let bearing = Math.atan2(dx, dz) - group.rotation.y
+    bearing = Math.atan2(Math.sin(bearing), Math.cos(bearing))
+    if (dist > 2 && dist < REACH + 4 && Math.abs(bearing) < TRACK) {
+      wanted = bearing
+      demand = 1
+    } else {
+      wanted = 0
+      demand = 0
+    }
+  }
 
   group.userData.animate = (t, dt) => {
-    sweep = Math.sin(t * SWEEP_RATE) * SWEEP
-    head.rotation.y = sweep
+    // Nachfuehren mit begrenzter Winkelgeschwindigkeit – der Kopf ist schwer
+    // und soll dem Fahrer hinterherziehen, nicht auf ihm kleben.
+    const max = TRACK_RATE * dt
+    swing += THREE.MathUtils.clamp(wanted - swing, -max, max)
+    head.rotation.y = swing
 
-    const step = dt / 1.35
+    power += (demand - power) * Math.min(1, SPIN_UP * dt)
+    plume.visible = power > 0.02
+    plume.material.opacity = 0.7 * power
+    if (!plume.visible) return
+
+    // Solange sie aus ist, laufen die Partikel nicht weiter – die Fahne
+    // waechst dadurch beim Anlaufen aus der Muendung heraus, statt fertig
+    // dazustehen.
+    const step = (dt / 1.35) * power
+    const reach = REACH * (0.35 + 0.65 * power)
     for (let i = 0; i < COUNT; i++) {
       life[i] += step
       if (life[i] > 1) life[i] -= 1
       const u = life[i]
-      const d = u * REACH
+      const d = u * reach
       // Streuung waechst mit der Entfernung – daraus wird der Kegel.
       const spread = d * Math.tan(SPREAD)
       positions[i * 3] = muzzle.x + seed[i * 3] * spread
-      positions[i * 3 + 1] = muzzle.y + seed[i * 3 + 1] * spread + d * 0.22 - u * u * REACH * 0.30
+      positions[i * 3 + 1] = muzzle.y + seed[i * 3 + 1] * spread + d * 0.22 - u * u * reach * 0.30
       positions[i * 3 + 2] = muzzle.z + d * seed[i * 3 + 2]
     }
     geo.attributes.position.needsUpdate = true
@@ -178,22 +219,21 @@ export function createSnowCannon({ heading = 0 } = {}) {
 
   // Steckt der Punkt (x, z) in der Fahne? Gerechnet wird in der Ebene: die
   // Fahne haengt zwar durch, aber wer darunter durchfaehrt, faehrt trotzdem
-  // hindurch.
-  const world = new THREE.Vector3()
+  // hindurch. Ausgeschaltet trifft sie niemanden.
   group.userData.inPlume = (x, z) => {
-    world.set(0, 0, 0)
-    group.localToWorld(world)
-    const ax = Math.sin(group.rotation.y + sweep)
-    const az = Math.cos(group.rotation.y + sweep)
-    const dx = x - world.x
-    const dz = z - world.z
+    if (power < 0.35) return 0
+    const p = base()
+    const ax = Math.sin(group.rotation.y + swing)
+    const az = Math.cos(group.rotation.y + swing)
+    const dx = x - p.x
+    const dz = z - p.z
     const along = dx * ax + dz * az
     if (along < 1.2 || along > REACH) return 0
     const across = Math.abs(-dx * az + dz * ax)
     const half = along * Math.tan(SPREAD) + 0.6
     if (across > half) return 0
     // Voll in der Mitte, an der Kante nur noch angehaucht.
-    return (1 - across / half) * (1 - Math.max(0, (along - REACH * 0.75) / (REACH * 0.25)) * 0.6)
+    return (1 - across / half) * (1 - Math.max(0, (along - REACH * 0.75) / (REACH * 0.25)) * 0.6) * power
   }
 
   group.rotation.y = heading

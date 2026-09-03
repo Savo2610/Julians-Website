@@ -182,6 +182,11 @@ export const SLED_LANE = makeLane([
 //
 // endFade ist von acht auf vier Meter herunter: bei acht waere die Terrasse
 // zur Haelfte wieder ausgeblendet und damit keine.
+//
+// Unten haengt ein Auslauf dran, der nach Westen in die Talsohle dreht. Er
+// traegt nichts mehr – er ist nur der Platz, den die zweite Schanze zum
+// Landen braucht. Nach Osten ginge es nicht: dort steigt schon die Kuppe des
+// Kinderlands an, und ein Landehang, der bergauf laeuft, ist eine Wand.
 export const PARK_LANE = makeLane([
   { x: 10.0, z: -60.4, h: 11.20 },
   { x: 13.0, z: -55.2, h: 10.50 },
@@ -191,6 +196,8 @@ export const PARK_LANE = makeLane([
   { x: 27, z: -29, h: 3.55 },
   { x: 29.5, z: -22, h: 2.10 },
   { x: 30.5, z: -18, h: 1.55 },
+  { x: 28.8, z: -13.8, h: 1.20 },
+  { x: 26.4, z: -9.8, h: 0.95 },
 ], { width: 16, feather: 7, endFade: 4 })
 
 // Der Uebungshang des Kinderlands: vom Muldenrand bei der Huette hinauf auf
@@ -225,27 +232,52 @@ function local(x, z, f) {
   return { u: ax * f.dx + az * f.dz, v: -ax * f.dz + az * f.dx }
 }
 
-// Absprung: steigt quadratisch an und bricht an der Kante ab.
+// Absprung mit Landehang.
+//
+// Frueher brach die Schanze hinter der Kante nach anderthalb Einheiten ab und
+// ging gleich wieder in die Bahn ueber. Das hatte zwei Folgen: der Flug endete
+// auf flachem Boden, und wer bergauf fuhr, traf hinten eine fast senkrechte
+// Wand – bergauf gab es dadurch mehr Airtime als bergab, also genau
+// verkehrt herum.
+//
+// Jetzt liegt hinter der Kante ein Landehang mit gleichmaessiger Neigung: von
+// der Kante hinunter unter die Bahnsohle, dort ein gerundeter Knick, dann ein
+// flacher Auslauf zurueck auf Bahnhoehe. Bergab verlaengert das den Flug und
+// faengt ihn weich auf. Bergauf klettert man nur noch ueber gut dreissig Grad
+// statt ueber eine Wand – und die Steigung vor der Kante entscheidet ueber
+// den Absprung.
+//
+// Der Landehang ist bewusst gerade und nicht weich geschwungen. Eine weiche
+// Kurve waere in der Mitte doppelt so steil wie im Mittel, und diese Mitte
+// waere bergauf wieder eine Schanze.
 function kicker(x, z, f) {
   const { u, v } = local(x, z, f)
   const hw = f.width * 0.5
   const av = Math.abs(v)
-  // Hinter der Kante faellt die Schanze auf 1,5 Einheiten ab statt senkrecht.
-  // Eine senkrechte Wand zerfaellt im Dreiecksnetz zu einer Zackenreihe – die
-  // Aufloesung des Gelaendes liegt bei einer halben Einheit. Fuer den Abflug
-  // aendert das nichts: massgeblich ist die Steigung *vor* der Kante.
-  const drop = 1.5
+  const land = f.landing
+  const dip = f.dip
+  const knuckle = f.knuckle ?? 0.5   // wo im Landehang die Sohle liegt
   const flank = 3.0
-  if (u > drop || u < -f.length || av > hw + flank) return 0
-  const along = (u + f.length) / f.length
+  if (u > land || u < -f.length || av > hw + flank) return 0
   const side = av <= hw ? 1 : smooth((hw + flank - av) / flank)
-  const lip = u > 0 ? smooth(1 - u / drop) : 1
-  // Kubisch statt quadratisch: der Fuss bleibt flach, die Steigung sammelt
-  // sich an der Kante. Genau dort entscheidet sich der Absprung – bei einem
-  // quadratischen Profil verteilt sie sich zu gleichmaessig und der Fahrer
-  // rollt ueber die Kante, statt abzuheben.
-  const a = Math.min(1, along)
-  return f.height * a * a * a * side * lip
+
+  if (u <= 0) {
+    // Kubisch statt quadratisch: der Fuss bleibt flach, die Steigung sammelt
+    // sich an der Kante. Genau dort entscheidet sich der Absprung – bei einem
+    // quadratischen Profil verteilt sie sich zu gleichmaessig und der Fahrer
+    // rollt ueber die Kante, statt abzuheben.
+    const a = Math.min(1, (u + f.length) / f.length)
+    return f.height * a * a * a * side
+  }
+
+  const t = u / land
+  // Beide Geraden ueber ihren Abschnitt hinaus verlaengert und dann ineinander
+  // geblendet – das rundet den Knick an der Sohle, ohne die Neigung der
+  // Flanken zu veraendern.
+  const slope = f.height + (-dip - f.height) * (t / knuckle)
+  const runout = -dip * (1 - (t - knuckle) / (1 - knuckle))
+  const w = smooth(Math.min(1, Math.max(0, (t - knuckle) / 0.18 + 0.5)))
+  return (slope * (1 - w) + runout * w) * side
 }
 
 // Wellenbahn: eine Reihe weicher Buckel, die an beiden Enden ausklingt.
@@ -273,32 +305,42 @@ function ledge(x, z, f) {
   return f.height * ends * side
 }
 
-// Die Figuren liegen der Reihe nach im Band, von oben nach unten immer
-// groesser. Richtung ist jeweils die Fahrtrichtung des Bandes an der Stelle.
-// Die Hoehe einer Schanze ist nicht ihr Absprungwinkel: das Band faellt
-// darunter mit knapp 10 Grad weiter, das frisst rund ein Sechstel der Rampe
-// pro Einheit Laenge. Massgeblich ist die Steigung an der Kante, und die ist
-// beim quadratischen Profil 2*Hoehe/Laenge minus dem Gefaelle des Bandes.
-// Bei Tempo 13 ergibt das hier Abfluege von rund einer halben bis zwei
-// Dritteln Sekunde.
-// Die Figuren duerfen sich nicht ueberlappen: eine Wellenbahn ist so lang wie
-// Anzahl mal Abstand, eine Schanze so lang wie ihre Rampe, eine Kante wie ihre
-// Laenge. Aneinandergereiht braucht das mehr Platz, als man denkt – deshalb
-// reicht das Band bis ganz hinauf.
+// Die Figuren liegen der Reihe nach im Band. Richtung ist jeweils die
+// Fahrtrichtung des Bandes an der Stelle.
 //
-// Neben der Sprunglinie in der Mitte laeuft links davon eine Jib-Linie: zwei
-// Boxen und das Rail. So ist der Park zu zweit befahrbar und man muss nicht
-// ueber eine Schanze, um an eine Box zu kommen – genau so sind echte Parks
-// aufgeteilt. Die Boxen liegen im seitlichen Versatz zur Bandmitte, aber
-// innerhalb der flachen Breite, sonst haengen sie in der Boeschung.
+// Die Hoehe einer Schanze ist nicht ihr Absprungwinkel: das Band faellt
+// darunter mit knapp 10 Grad weiter, das frisst einen Teil der Rampe. Was
+// zaehlt, ist die Steigung an der Kante, und die ist beim kubischen Profil
+// 3*Hoehe/Laenge minus dem Gefaelle des Bandes. Bei Tempo 13 sind das hier
+// gut eine Sekunde Flugzeit und knapp drei Meter Scheitelhoehe.
+//
+// Der Platz ist knapp gerechnet. Jede Schanze braucht Rampe *und* Landehang –
+// zusammen sechzehn bis achtzehn Einheiten – und der Landehang muss auch
+// wirklich frei sein, sonst landet man auf der naechsten Figur. Deshalb liegt
+// die zweite Schanze ganz unten und das Band hat einen Auslauf bekommen.
+//
+// Quer dazu ist der Park in drei Spuren geteilt: in der Mitte die
+// Sprunglinie, links die beiden Boxen, rechts das lange Rail. Der seitliche
+// Versatz von siebeneinhalb Einheiten ist kein Geschmack, sondern Rechnung:
+// die Flanke einer Schanze reicht mit halber Breite plus drei Einheiten
+// Auslauf bis 6,5 – wer naeher liegt, haengt schief in der Boeschung. Nach
+// aussen begrenzt die flache Breite des Bandes.
 export const PARK_FEATURES = [
-  { kind: 'rollers', x: 20.0, z: -43.1, dx: 0.496, dz: 0.868, count: 3, spacing: 4.2, height: 0.7, width: 9 },
-  { kind: 'kicker', x: 24.3, z: -35.2, dx: 0.394, dz: 0.919, length: 4.5, width: 7.5, height: 1.15 },
-  { kind: 'box', x: 19.3, z: -33.0, dx: 0.394, dz: 0.919, length: 6.6, width: 1.5, height: 0.42, ramp: 1.2 },
-  { kind: 'ledge', x: 27.4, z: -27.8, dx: 0.336, dz: 0.942, length: 7, width: 2.6, height: 0.85, ramp: 2.2 },
-  { kind: 'box', x: 22.2, z: -26.0, dx: 0.336, dz: 0.942, length: 8.2, width: 2.0, height: 0.60, ramp: 1.5 },
-  { kind: 'kicker', x: 29.7, z: -21.0, dx: 0.336, dz: 0.942, length: 5.0, width: 8.5, height: 2.30 },
+  { kind: 'rollers', x: 18.97, z: -44.80, dx: 0.496, dz: 0.868, count: 3, spacing: 4.2, height: 0.7, width: 9 },
+  { kind: 'kicker', x: 24.74, z: -34.28, dx: 0.394, dz: 0.919, length: 5.0, width: 7.0, height: 1.70, landing: 11, dip: 1.0 },
+  { kind: 'box', x: 17.85, z: -31.33, dx: 0.394, dz: 0.919, length: 6.6, width: 1.5, height: 0.42, ramp: 1.2 },
+  { kind: 'box', x: 20.36, z: -25.30, dx: 0.336, dz: 0.942, length: 8.2, width: 2.0, height: 0.60, ramp: 1.5 },
+  { kind: 'ledge', x: 34.49, z: -30.34, dx: 0.336, dz: 0.942, length: 12, width: 2.6, height: 0.85, ramp: 2.2 },
+  { kind: 'kicker', x: 29.70, z: -21.20, dx: 0.243, dz: 0.970, length: 5.5, width: 7.5, height: 2.50, landing: 12, dip: 1.2 },
 ]
+
+// Ist der Punkt im Funpark? Gemessen wird am Band selbst, nicht an einem
+// zusaetzlichen Rechteck – der Park ist genau das, was das Band abdeckt.
+// Gebraucht wird das fuer die Tricks: sie sollen dort gehen, wo Figuren
+// stehen, und nicht auf der Piste.
+export function inFunpark(x, z) {
+  return laneAt(x, z, PARK_LANE) !== null
+}
 
 // Steht der Fahrer gerade auf einer Box oder der Schneekante? Gebraucht wird
 // das nur fuer die Rueckmeldung – ein Slide auf der Box heisst anders als

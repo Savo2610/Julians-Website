@@ -135,6 +135,8 @@ function advance(dt) {
   // Der Zauberteppich laeuft nach derselben Regel: er gibt die Zielposition
   // vor, solange jemand darauf steht.
   props.kinderland.update(dt, skier, input)
+  // Und die Rail im Funpark – dieselbe Mechanik, nur abwaerts und schneller.
+  props.railRide.update(dt, skier, input)
   skier.update(dt, input, trail)
   emitSpray(dt)
   spray.update(dt)
@@ -159,6 +161,8 @@ function advance(dt) {
 
   // Rennstrecke: Zeitnahme laeuft mit, ohne dass man etwas starten muesste.
   props.race.update(dt, skier)
+  // Dasselbe auf der freien Abfahrt, nur eine Zahl statt einer Uhr.
+  props.speedCheck.update(dt, skier)
 
   // Stationen: Naehe pruefen, Hinweis nachfuehren, Objekte animieren.
   stations.update(dt, skier)

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { SKIER, TRICK, WORLD } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark } from '../world/heightfield.js'
 import { createSkierModel } from './skier-model.js'
 
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
@@ -252,8 +252,10 @@ export class Skier {
         if (free > groundY + 0.03) {
           this.airborne = true
           // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
-          // Tempo trifft, soll ihn abheben lassen und nicht abschiessen.
-          this.vy = Math.min(this._rise - G * dt, 11)
+          // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
+          // Deckel liegt bei zwoelf – knapp drei ein halb Meter Scheitelhoehe
+          // und gut eine Sekunde Flug, so lang wie die Landehaenge im Park.
+          this.vy = Math.min(this._rise - G * dt, 12)
           this.height = Math.min(free - groundY, 0.6)
         }
       }
@@ -303,6 +305,18 @@ export class Skier {
   // beim Landen die Kontrolle verliert, und es ist genau das Gefuehl, das man
   // aus einem Snowboardspiel kennt: die Drehung ist Schau, die Linie bleibt.
   _updateTrick(dt, input) {
+    // Tricks gibt es nur im Park. Auf der Piste waere das Querstellen der Ski
+    // eine zweite Bremse und die Drehung in der Luft ein Gag ohne Ort – die
+    // Figuren, zu denen sie gehoeren, stehen nun einmal alle hier.
+    if (!inFunpark(this.position.x, this.position.z)) {
+      this.spinRate = 0
+      this._airSpin = 0
+      this._wasAirborne = false
+      this.spin += (0 - this.spin) * damp(7, dt)
+      this.slide += (0 - this.slide) * damp(TRICK.slideLerp, dt)
+      return
+    }
+
     const key = input.has('jump')
 
     if (this.airborne) {
@@ -361,14 +375,18 @@ export class Skier {
     const k = damp(9, dt)
     this.position.x += (target.x - this.position.x) * k
     this.position.z += (target.z - this.position.z) * k
-    this.position.y = groundY
+    // `lift` hebt den Fahrer ueber den Boden – auf der Rail steht er auf dem
+    // Rohr und nicht im Schnee.
+    this.position.y = groundY + (this.tow.lift ?? 0)
     this.height = 0
     this.airborne = false
     this._rise = 0
     this._prevGroundY = groundY
-    // Am Buegel oder auf dem Band wird nicht getrickst.
+    // Am Buegel oder auf dem Band wird nicht getrickst. Auf der Rail schon:
+    // dort ist das Querstellen die ganze Figur.
     this.spin += (0 - this.spin) * damp(8, dt)
-    this.slide += (0 - this.slide) * damp(8, dt)
+    const slideTarget = this.tow.slidePose ? TRICK.slideAngle : 0
+    this.slide += (slideTarget - this.slide) * damp(8, dt)
     this.spinRate = 0
     this._airSpin = 0
 

@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { terrainHeight, SLED_LANE } from './heightfield.js'
 import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readableYaw } from './props/slalom.js'
-import { snowPaint } from './props/snow-paint.js'
 
 // Die Zeitnahme einer Bahn: Start, Ziel, Tore – und die Farbe im Schnee, die
 // sagt, wo man langfahren soll.
@@ -36,10 +35,6 @@ const GATE_OFFSET = 3.4
 const GATE_TOLERANCE = 0.9  // etwas Nachsicht an den Stangen
 // Ab dieser Kruemmung gilt ein Stueck als Kurve und das Tor wandert nach innen.
 const BEND = 0.022          // rad pro Meter, entspricht etwa 45 m Radius
-
-const RED = 0xd8402f
-const BLUE = 0x2f6bd8
-
 
 
 export class RaceCourse {
@@ -122,42 +117,30 @@ export class RaceCourse {
   _build() {
     const group = new THREE.Group()
     this.group = group
-    const paint = snowPaint()
 
-    // Bogen und Farbe muessen dieselbe Achse haben, sonst liegt der Balken
-    // schraeg unter dem Tor und das Paar liest sich als Kreuz statt als
-    // Durchfahrt. Deshalb liefert place die tatsaechlich benutzte Achse
-    // zurueck: `through` ist die Richtung hindurch, `span` die Querachse.
-    const place = (object, x, z, heading) => {
-      const yaw = readableYaw(heading)
+    // Die Farbe im Schnee ist wieder weg – Banden, Bogen und Stangen sagen
+    // schon alles, und die Balken darunter machten aus einer Rennstrecke
+    // einen Parkplatz. Was bleibt, sind Dinge, die im Schnee stehen.
+    const place = (object, x, z, heading, skew = true) => {
+      const yaw = skew ? readableYaw(heading) : heading
       object.position.set(x, terrainHeight(x, z), z)
       object.rotation.y = yaw
       group.add(object)
-      return { tx: Math.sin(yaw), tz: Math.cos(yaw), sx: Math.cos(yaw), sz: -Math.sin(yaw) }
     }
 
     // --- Start und Ziel ------------------------------------------------
-    // Beide bekommen einen Karobalken quer im Schnee. Der Bogen darueber ist
-    // Schmuck und Wegweiser aus der Ferne, gelesen wird der Balken.
+    // Der Startbogen steht quer zur Falllinie, ohne Verdrehung: er ist die
+    // Linie, ueber die die Uhr laeuft, und die liegt rechtwinklig zur
+    // Fahrtrichtung oder gar nicht. Das Ziel darf sich weiter zur Kamera
+    // drehen – dort zaehlt Lesbarkeit mehr als Rechtwinkligkeit, weil man
+    // durchfaehrt und nicht daran wartet.
     const start = this.pointAt(this.startS)
     const finish = this.pointAt(this.finishS)
-    const band = this.lane.width * 0.86
 
-    for (const [p, arch] of [[start, createStartArch()], [finish, createFinishArch()]]) {
-      const a = place(arch, p.x, p.z, Math.atan2(p.dx, p.dz))
-      paint.checker(p.x, p.z, a.tx, a.tz, 2.4, band, { cells: 9 })
-    }
-
-    // Ein paar Winkel vor dem Start: sie zeigen, in welche Richtung die Bahn
-    // laeuft, bevor man sie sehen kann.
-    for (let s = this.startS - 9; s < this.startS - 2; s += 3) {
-      if (s < 0) continue
-      const p = this.pointAt(s)
-      paint.chevron(p.x, p.z, p.dx, p.dz, 2.6, 0x9fb4cc)
-    }
+    place(createStartArch(), start.x, start.z, Math.atan2(start.dx, start.dz), false)
+    place(createFinishArch(), finish.x, finish.z, Math.atan2(finish.dx, finish.dz))
 
     if (!this.withGates) {
-      group.add(paint.build({ name: 'bahn-markierung' }))
       this.world.scene.add(group)
       return
     }
@@ -188,23 +171,12 @@ export class RaceCourse {
       const z = p.z - p.dx * offset
       const red = i % 2 === 0
       const gate = createSlalomGate({ color: red ? 'red' : 'blue', number: i + 1 })
-      const a = place(gate, x, z, Math.atan2(p.dx, p.dz))
-
-      // Die Durchfahrt im Schnee: ein Balken in der Torfarbe zwischen den
-      // Stangen, auf derselben Achse wie das Tor. Von oben sieht man dadurch
-      // die Linie und nicht nur die Stangen.
-      const half = GATE_WIDTH / 2 - 0.3
-      paint.bar(
-        x - a.sx * half, z - a.sz * half,
-        x + a.sx * half, z + a.sz * half,
-        0.7, red ? RED : BLUE,
-      )
+      place(gate, x, z, Math.atan2(p.dx, p.dz))
 
       this.gates.push({ s, offset, index: i, passed: false, missed: false })
       i++
     }
 
-    group.add(paint.build({ name: 'bahn-markierung' }))
     this.world.scene.add(group)
   }
 

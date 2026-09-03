@@ -11,6 +11,7 @@ import { createDrone } from '../world/props/drone.js'
 import { createFireTruck } from '../world/props/firetruck.js'
 import { createShortcutTunnel } from '../world/props/shortcut-tunnel.js'
 import { createGearDepot } from '../world/props/gear-depot.js'
+import { createTicketBooth } from '../world/props/ticket-booth.js'
 import { CAMERA } from '../config.js'
 import { findFlatSpot } from '../world/heightfield.js'
 
@@ -67,16 +68,21 @@ export const STATION_SPOTS = {
   // Uebungshang die flachste Stelle der Gegend – die Huette wuerde mitten in
   // den Slalom wandern.
   cabin:     { x: 25, z: 21, clearing: 13, footprint: 3.4, search: 3, trail: 'career' },
-  // Zwischen Startplateau und Huette, halb im Wald – man faehrt daran vorbei,
-  // statt es am Ende einer Sackgasse zu suchen. Kleiner Suchradius, sonst
-  // rutscht das Schild auf das Plateau.
-  signpostCareer: { x: 13, z: 26, clearing: 6, footprint: 1.2, search: 2.5, trail: 'career' },
+  // Unterhalb des Weges zwischen Startplateau und Huette, am Waldrand. Man
+  // faehrt nicht mehr darueber, sondern sieht es hangabwaerts zwischen den
+  // Staemmen stehen und macht einen Bogen dorthin. Die Lichtung ist klein –
+  // eine Stange braucht keine, und mit sechs Metern haette sie sich ihren
+  // Wald selbst weggeraeumt. Die Gruppe Baeume dazu steht in populate.
+  signpostCareer: { x: 18, z: 36, clearing: 4, footprint: 1.2, search: 2, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
-  // Die Skikasse steht am Lifteinstieg – dort kauft man schliesslich sein
-  // Ticket.
-  vending:   { x: -28, z: -4, clearing: 7, footprint: 1.8, search: 5, trail: 'social' },
+  // Kassenhaeuschen und Automat stehen zusammen auf dem Weg vom Materialdepot
+  // zur Talstation. Der Automat stand vorher allein am Lifteinstieg und sah
+  // aus wie vergessen; erst zu zweit lesen sie sich als Kassenbereich, an dem
+  // man vorbeimuss, bevor man in den Lift steigt.
+  ticket:    { x: -41, z: -1, clearing: 8, footprint: 2.4, search: 2.5, trail: 'social' },
+  vending:   { x: -38.6, z: -3.4, clearing: 6, footprint: 1.8, search: 2, trail: 'social' },
   // Das Fernrohr stand frueher auf der Talschulter – da beginnt jetzt die
   // Rodelbahn. Es ist auf die Suedschulter hinter dem Gipfel gewichen: von
   // dort schaut man ueber die andere Talseite, und wer vom Lift kommt, findet
@@ -170,6 +176,11 @@ export function populateStations(world, registry) {
     radius: 5.5,
     labelHeight: world.heightAt(STATION_SPOTS.phone.x, STATION_SPOTS.phone.z) + 3.1,
   })
+
+  // Das Haeuschen selbst ist keine Station – es hat nichts zu oeffnen. Es
+  // steht da, damit der Automat daneben einen Grund hat.
+  const booth = createTicketBooth({ label: 'SKIPAESSE' })
+  place(booth, STATION_SPOTS.ticket, { rotation: FACING, collider: 1.3 })
 
   const vending = createVendingMachine({ leftColor: 0x2b8ce6, rightColor: 0x9945ff })
   place(vending, STATION_SPOTS.vending, { rotation: FACING - 0.15, collider: 0.95 })

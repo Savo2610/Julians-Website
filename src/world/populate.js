@@ -44,6 +44,15 @@ export const LIFT_TOP = { x: -63, z: -55 }
 // Rodelbahn, ueberall gut zehn Meter von beiden entfernt. Hier wird nichts
 // ins Gelaende geschnitten – der Hang faellt hier von selbst gleichmaessig
 // mit knapp 40 Grad, und wer ohne Uhr fahren will, hat seinen Weg.
+// Der Rueckweg vom Ziel der Rodelbahn zur Talstation. Ohne ihn steht man
+// unten im Wald und muss sich seinen Weg suchen – gerade dann, wenn man
+// gerade eine Zeit gefahren ist und gleich nochmal will. Er faellt kaum,
+// laeuft aber ueber flaches Gelaende und trifft am Ende auf die Ausfahrt der
+// freien Abfahrt, sodass beide Wege gemeinsam zum Lift fuehren.
+const RETURN_PATH = [
+  [-4, -27], [-10, -24], [-17, -21], [-23, -18], [-27, -15],
+]
+
 const FREE_PISTE = [
   [-44, -52], [-41, -46], [-38, -40], [-34.5, -34],
   [-31, -28], [-28.5, -22], [-27, -14],
@@ -156,6 +165,13 @@ export function populate(world, sky, registry) {
     const [x2, z2] = FREE_PISTE[i + 1]
     LANES.push({ x1, z1, x2, z2, r: 4.5 })
   }
+  // Derselbe Gedanke fuer den Rueckweg: ein Weg, der zugewachsen ist, ist
+  // keiner. Breiter als die freie Abfahrt, weil man hier ohne Schwung ankommt.
+  for (let i = 0; i < RETURN_PATH.length - 1; i++) {
+    const [x1, z1] = RETURN_PATH[i]
+    const [x2, z2] = RETURN_PATH[i + 1]
+    LANES.push({ x1, z1, x2, z2, r: 6 })
+  }
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
   // Bewuchs und Boden nicht auseinanderlaufen koennen.
@@ -237,6 +253,29 @@ export function populate(world, sky, registry) {
       shade: rng(),
     }
   })
+  // Eine Handvoll Baeume um den LinkedIn-Wegweiser. Der Bestand ist dort von
+  // Natur aus duenn – die Haine kommen aus einem Rauschfeld, und genau an
+  // dieser Stelle liegt es niedrig. Ohne diese Gruppe stuende das Schild auf
+  // freiem Feld statt am Waldrand, und das war ausdruecklich nicht gewollt.
+  {
+    const sign = STATION_SPOTS.signpostCareer
+    for (const [angle, dist, variant] of [
+      [0.35, 5.2, 0], [1.15, 6.4, 1], [2.0, 5.6, 0], [2.75, 7.4, 2],
+      [3.6, 5.0, 1], [4.4, 6.8, 0], [5.2, 5.4, 2], [5.9, 7.8, 1],
+    ]) {
+      placements.push({
+        x: sign.x + Math.sin(angle) * dist,
+        z: sign.z + Math.cos(angle) * dist,
+        variant,
+        rotation: angle * 1.7,
+        scale: 0.85 + ((angle * 7) % 1) * 0.6,
+        tiltX: (((angle * 13) % 1) - 0.5) * 0.06,
+        tiltZ: (((angle * 17) % 1) - 0.5) * 0.06,
+        shade: (angle * 11) % 1,
+      })
+    }
+  }
+
   createForest(world, placements)
 
   // --- Felsen -----------------------------------------------------------
@@ -432,10 +471,34 @@ export function populate(world, sky, registry) {
   // eingeschnittenes Band – die Piste soll offen bleiben.
   createPisteMarkers(world, route(FREE_PISTE, 5.5), { seed: 55, color: 0xe8703a })
 
+  // Der Rueckweg traegt dieselbe Farbe wie die freie Abfahrt: von unten
+  // gesehen ist beides derselbe Weg zurueck an den Lift.
+  createPisteMarkers(world, route(RETURN_PATH, 5.0), { seed: 61, color: 0xe8703a })
+  {
+    // Ein Wegweiser am Ziel. Wer die Uhr gestoppt hat, schaut zuerst auf die
+    // Zeit und dann ratlos in den Wald – dieses Schild beantwortet die Frage,
+    // bevor sie entsteht.
+    const [hx, hz] = RETURN_PATH[0]
+    const home = createSignpost([
+      { text: 'TALSTATION', background: '#e8703a', width: 2.6, height: 0.6, rotation: -0.35 },
+    ], { height: 2.4 })
+    world.place(home, hx + 2.6, hz + 1.4, { rotation: Math.PI * 0.25 })
+    world.addCollider(hx + 2.6, hz + 1.4, 0.45)
+  }
+
   // --- Zaeune -------------------------------------------------------------
   // Ein alter Weidezaun im Osten, ein Absperrzaun oberhalb des Seeufers.
+  // Der Ostzaun folgt jetzt der Kante des Waldes statt einer geraden Linie
+  // durch ihn hindurch. Die Punkte liegen auf einer Kontur gleichen Abstands
+  // zum Rand der Spielflaeche – derselben Groesse, aus der auch die Waldbreite
+  // gerechnet wird. Damit laeuft der Zaun zwangslaeufig da, wo der Bestand
+  // aufhoert, und nicht quer hindurch. Vorn ist er ausserdem so weit
+  // hinausgezogen, dass der Loeschzug davor Platz hat und nicht mehr mitten
+  // im Zaun steht.
   createFence(world, [
-    { x: 52, z: 18 }, { x: 46, z: 30 }, { x: 34, z: 44 }, { x: 20, z: 50 },
+    { x: 59.3, z: 16.3 }, { x: 57.0, z: 24.2 }, { x: 52.0, z: 31.0 },
+    { x: 46.2, z: 36.7 }, { x: 41.2, z: 42.2 }, { x: 35.7, z: 47.0 },
+    { x: 29.8, z: 50.9 }, { x: 23.5, z: 54.1 },
   ], { seed: 41 })
   createFence(world, [
     { x: -24, z: 44 }, { x: -30, z: 52 }, { x: -42, z: 54 },

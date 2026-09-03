@@ -18,8 +18,12 @@ import { snowPaint } from './props/snow-paint.js'
 // nur auf den geraden Stuecken wechseln die Tore die Seite und erzeugen den
 // Rhythmus.
 
-const GATE_START = 6        // erstes Tor, Abstand vom Start
-const GATE_SPACING = 9
+const GATE_START = 8        // erstes Tor, Abstand vom Start
+// Weniger Tore mit mehr Luft dazwischen: bei neun Metern Abstand ging der
+// Rhythmus in Hektik ueber, man haengte von einem Tor ins naechste, ohne den
+// Bogen je fertig zu fahren. Vierzehn Meter lassen den Schwung auslaufen –
+// aus sechs Toren werden vier, und die vier zaehlen dann auch.
+const GATE_SPACING = 14
 // Versatz und Abstand haengen zusammen: um von Tor zu Tor zu kommen, muss der
 // Fahrer 2*Versatz seitlich schaffen, waehrend er den Abstand faehrt. Bei
 // Tempo 15 und einer Drehrate von 3,1 rad/s ist bei diesen Werten ein sauberer
@@ -39,7 +43,11 @@ const BLUE = 0x2f6bd8
 
 
 export class RaceCourse {
-  constructor(world, { lane = SLED_LANE, gates = true, startFade = 3.0, finishFade = 4.0 } = {}) {
+  // startFade ist der Abstand des Startbogens vom oberen Ende des Bandes.
+  // Er liegt bewusst nicht direkt an der Bergstation: wer aus dem Lift
+  // kommt, faellt sonst ohne Vorwarnung in die Zeitnahme. Zwoelf Meter
+  // reichen, um sich zu sortieren und den Bogen kommen zu sehen.
+  constructor(world, { lane = SLED_LANE, gates = true, startFade = 12.0, finishFade = 4.0 } = {}) {
     this.world = world
     this.lane = lane
     this.withGates = gates

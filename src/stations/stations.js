@@ -72,7 +72,11 @@ export const STATION_SPOTS = {
   depot:     { x: -48, z: 0, clearing: 8, footprint: 2.0, search: 7, trail: 'tools' },
 
   // Abseits der Wege – nur wer stoebert, findet sie.
-  drone:     { x: -28, z: -30, clearing: 6, footprint: 1.2, search: 7, trail: null },
+  // Die Drohne liegt bewusst nicht an der Piste, sondern in einer Waldtasche
+  // noerdlich hinter dem Startplateau: in jeder Himmelsrichtung stehen
+  // Baeume, der naechste Weg ist 17 Einheiten weg. Die Lichtung ist klein
+  // gehalten, sonst raeumt sie sich ihr Versteck selber weg.
+  drone:     { x: -15, z: 43, clearing: 4, footprint: 1.2, search: 2, trail: null },
   firetruck: { x: 33, z: -30, clearing: 10, footprint: 3.2, search: 8, trail: null },
 }
 

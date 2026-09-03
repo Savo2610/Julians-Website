@@ -3,7 +3,6 @@ import { LINKS } from './links.js'
 import { createMarker } from './marker.js'
 import { createEmergencyPhone } from '../world/props/emergency-phone.js'
 import { createUploadPipe } from '../world/props/upload-pipe.js'
-import { createSignpost } from '../world/props/signpost.js'
 import { createTelescope } from '../world/props/telescope.js'
 import { createCabin } from '../world/props/cabin.js'
 import { createDrone } from '../world/props/drone.js'
@@ -70,17 +69,12 @@ export const STATION_SPOTS = {
   // Kleiner Suchradius: seit das Kinderland-Band daneben liegt, waere der
   // Uebungshang die flachste Stelle der Gegend – die Huette wuerde mitten in
   // den Slalom wandern.
+  // In der Huette liegen beide beruflichen Adressen: der Quelltext und das
+  // Profil. Es gab dafuer einmal eine eigene Tafel daneben, dann eine vor der
+  // Tuer – beides blieb ein zweites Schild fuer denselben Menschen am selben
+  // Ort. Zwei Zeilen auf der Karte der Huette sagen dasselbe und stehen
+  // niemandem im Weg.
   cabin:     { x: 25, z: 21, clearing: 13, footprint: 3.4, search: 3, trail: 'career' },
-  // LinkedIn steht nicht mehr allein im Wald, sondern als Tafel neben der Tuer
-  // der Werkstatt. Eine Stange im Unterholz war ein Fundstueck; das Profil
-  // gehoert aber zu demselben Menschen wie der Quelltext im Haus daneben, und
-  // zwei Stationen fuer eine Person an zwei Enden des Waldes sind zwei Orte zu
-  // wenig zusammen gedacht. Der Versatz zur Huette ist so gewaehlt, dass die
-  // Tafel vor der Huette steht und nicht hinter ihr – bei sechsunddreissig
-  // Grad Kamerawinkel verschluckt das Dach alles, was dahinter liegt – und
-  // dabei seitlich versetzt, damit sie nicht ihrerseits die Tuer und das
-  // Schild WERKSTATT verdeckt.
-  signpostCareer: { x: 0, z: 0, from: 'cabin', offset: [3.4, 0.55], footprint: 1.0, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
@@ -128,20 +122,9 @@ export function populateStations(world, registry) {
   // korrigierten Koordinaten werden zurueckgeschrieben, damit Marker, Hinweis
   // und Kollision am selben Ort sitzen wie das Objekt.
   for (const [key, spot] of Object.entries(STATION_SPOTS)) {
-    if (spot.from) continue
     const flat = findFlatSpot(spot.x, spot.z, spot.search ?? 9, spot.footprint ?? 2.2)
     spot.x = flat.x
     spot.z = flat.z
-  }
-  // Angehaengte Plaetze zuletzt: sie sollen einen festen Versatz zu ihrem
-  // Bezugsobjekt behalten und nicht selbst wegwandern. Wer beides suchen
-  // laesst, bekommt zwei Objekte, die sich in ihrer eigenen Lichtung
-  // gegenseitig verschieben.
-  for (const spot of Object.values(STATION_SPOTS)) {
-    if (!spot.from) continue
-    const host = STATION_SPOTS[spot.from]
-    spot.x = host.x + spot.offset[0]
-    spot.z = host.z + spot.offset[1]
   }
 
   const place = (object, spot, { yOffset = 0, rotation = 0, collider = null } = {}) => {
@@ -161,34 +144,17 @@ export function populateStations(world, registry) {
   const cabin = createCabin({ label: 'WERKSTATT' })
   place(cabin, STATION_SPOTS.cabin, { rotation: FACING + 0.28, collider: 2.1 })
   register({
-    id: 'github',
-    label: 'GitHub',
-    hint: 'Werkstatt betreten',
+    id: 'werkstatt',
+    label: 'Werkstatt',
+    hint: 'Code und Profil',
     color: '#2b3137',
-    url: LINKS.github,
     position: STATION_SPOTS.cabin,
     radius: 7.5,
     labelHeight: world.heightAt(STATION_SPOTS.cabin.x, STATION_SPOTS.cabin.z) + 4.2,
-  })
-
-  // Die Tafel vor der Huette. Sie hat einen eigenen, kleinen Wirkungskreis:
-  // wer bis vor die Tafel faehrt, meint das Profil, wer davor stehenbleibt,
-  // die Werkstatt. Die Registrierung nimmt immer die naechste Station, also
-  // genuegt der kleinere Radius, um sich innerhalb des grossen durchzusetzen.
-  const careerSign = createSignpost([
-    { text: 'LINKEDIN', background: '#0a66c2', width: 1.8, height: 0.48 },
-    { text: 'Profil', background: '#e8e2d6', color: '#3b4a58', width: 1.4, height: 0.34 },
-  ], { height: 2.3 })
-  place(careerSign, STATION_SPOTS.signpostCareer, { rotation: FACING, collider: 0.45 })
-  register({
-    id: 'linkedin',
-    label: 'LinkedIn',
-    hint: 'Profil ansehen',
-    color: '#0a66c2',
-    url: LINKS.linkedin,
-    position: STATION_SPOTS.signpostCareer,
-    radius: 3.2,
-    labelHeight: world.heightAt(STATION_SPOTS.signpostCareer.x, STATION_SPOTS.signpostCareer.z) + 3.0,
+    choices: [
+      { label: 'GitHub', url: LINKS.github, color: '#2b3137' },
+      { label: 'LinkedIn', url: LINKS.linkedin, color: '#0a66c2' },
+    ],
   })
 
   // --- Weg 2: Soziales und Bezahlen ---------------------------------------

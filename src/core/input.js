@@ -12,6 +12,11 @@ const KEY_MAP = {
   ShiftLeft: 'carve', ShiftRight: 'carve',
   Space: 'jump',
   KeyE: 'use', Enter: 'use',
+  // Stationen mit mehr als einem Ziel: die Karte zeigt die Ziffern an, mit
+  // denen man waehlt. Ein zweiter Bestaetigungsknopf waere eine Taste mehr
+  // fuer einen Fall, den es an drei Stellen im Tal gibt.
+  Digit1: 'pick1', Numpad1: 'pick1',
+  Digit2: 'pick2', Numpad2: 'pick2',
 }
 
 export class Input {

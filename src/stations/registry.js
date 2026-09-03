@@ -48,9 +48,20 @@ export class StationRegistry {
   }
 
   // Wird ausgeloest, wenn der Spieler an der aktiven Station bestaetigt.
-  trigger() {
+  // `index` waehlt bei Stationen mit mehreren Zielen eines davon aus; ohne
+  // Index gilt der gewohnte Weg (onUse, sonst url).
+  trigger(index = null) {
     const s = this.active
     if (!s) return null
+
+    if (index !== null) {
+      const choice = s.choices?.[index]
+      if (!choice || !choice.url) return null
+      choice.onPick?.()
+      window.open(choice.url, '_blank', 'noopener,noreferrer')
+      return s
+    }
+
     if (typeof s.onUse === 'function') {
       s.onUse(s)
       return s

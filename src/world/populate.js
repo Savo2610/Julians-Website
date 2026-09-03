@@ -8,6 +8,7 @@ import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
 import { createBackdrop } from './props/backdrop.js'
 import { createFence, createPisteMarkers } from './props/fence.js'
+import { createSnowCannon } from './props/snow-cannon.js'
 import { createSignpost } from './props/signpost.js'
 import { populateStations, STATION_SPOTS, TRAILS } from '../stations/stations.js'
 import { createMarker } from '../stations/marker.js'
@@ -31,7 +32,8 @@ const CLEARINGS = [
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
   { x: 17.3, z: -60.6, r: 9 }, // Terrasse mit der Apres-Ski-Huette
-  { x: -37.2, z: -31.8, r: 8 },  // Lichtschranke des Speedchecks
+  { x: -33.0, z: -25.0, r: 8 },  // Lichtschranke des Speedchecks
+  { x: -32.2, z: -37.6, r: 6 },  // Schneekanone darueber
   { x: -21.5, z: -24.5, r: 5 },  // Display des Speedchecks
   // Angehaengte Plaetze wie die Tafel an der Werkstatt bringen keine eigene
   // Lichtung mit – sie liegen in der ihres Bezugsobjekts, und ihre
@@ -346,11 +348,16 @@ export function populate(world, sky, registry) {
     return curve.getSpacedPoints(count).map((v) => ({ x: v.x, z: v.z }))
   }
 
+  // Alle Stangenreihen zusammen. Sie brauchen jeden Frame den Fahrer, um zu
+  // merken, wenn er eine erwischt – deshalb eine gemeinsame Schleife statt
+  // eines Animators je Reihe.
+  const markerRows = []
+
   for (const [key, trail] of Object.entries(TRAILS)) {
-    createPisteMarkers(world, route(trail.path, 4.6), {
+    markerRows.push(createPisteMarkers(world, route(trail.path, 4.6), {
       seed: key.length * 137 + 5,
       color: trail.markerColor,
-    })
+    }))
   }
 
   // --- Startplateau -------------------------------------------------------
@@ -384,15 +391,17 @@ export function populate(world, sky, registry) {
   // Umstossen: ein Kreis von einem halben Meter genuegt. Gestossen wird in
   // Fahrtrichtung und nicht radial vom Fusspunkt weg – wer knapp vorbeizieht,
   // soll sie in seine Richtung legen und nicht zur Seite schieben.
-  animatedProps.push(() => {
+  animatedProps.push((t, dt) => {
     const skier = skierRef.current
     if (!skier) return
-    for (const t of torches) {
-      const dx = skier.position.x - t.x
-      const dz = skier.position.z - t.z
+    for (const torch of torches) {
+      const dx = skier.position.x - torch.x
+      const dz = skier.position.z - torch.z
       if (dx * dx + dz * dz > 0.36) continue
-      t.obj.userData.knock(skier.forward.x, skier.forward.z)
+      torch.obj.userData.knock(skier.forward.x, skier.forward.z)
     }
+    // Dieselbe Regel fuer jede Pistenstange im Gebiet.
+    for (const row of markerRows) row?.userData.update(dt, skier)
   })
 
   // Zwei warme Lichter tragen den ganzen Platz – einzelne Lichter pro Fackel
@@ -490,13 +499,13 @@ export function populate(world, sky, registry) {
   // Die freie Abfahrt zwischen Lifttrasse und Rodelbahn: wer nicht auf Zeit
   // fahren will, hat hier seinen Weg vom Gipfel ins Tal. Nur Stangen, kein
   // eingeschnittenes Band – die Piste soll offen bleiben.
-  createPisteMarkers(world, route(FREE_PISTE, 5.5), { seed: 55, color: 0xe8703a })
+  markerRows.push(createPisteMarkers(world, route(FREE_PISTE, 5.5), { seed: 55, color: 0xe8703a }))
 
   // Der Rueckweg traegt dieselbe Farbe wie die freie Abfahrt: von unten
   // gesehen ist beides derselbe Weg zurueck an den Lift.
   // Die Stangen in der Farbe der freien Abfahrt sagen genug; ein Schild am
   // Ziel waere ein Wort zuviel.
-  createPisteMarkers(world, route(RETURN_PATH, 5.0), { seed: 61, color: 0xe8703a })
+  markerRows.push(createPisteMarkers(world, route(RETURN_PATH, 5.0), { seed: 61, color: 0xe8703a }))
 
   // --- Zaeune -------------------------------------------------------------
   // Ein alter Weidezaun im Osten, ein Absperrzaun oberhalb des Seeufers.
@@ -636,22 +645,56 @@ export function populate(world, sky, registry) {
   // von rechts, also aus der Richtung, aus der sie den Fahrer von vorn
   // erwischt.
   //
-  // Die Torachse steht quer zur Falllinie und nicht quer zur Pistenachse. Der
-  // Unterschied ist hier zwoelf Grad: der Polygonzug der Piste ist von Hand
-  // gesetzt und laeuft ein Stueck schraeg durch den Hang, die Falllinie nicht.
-  // Gemessen wird ohnehin die Geschwindigkeit und nicht der Winkel – aber
-  // schief steht sie eben trotzdem, und man sieht es sofort. Quer zur
-  // Falllinie liegen beide Pfosten auf derselben Hoehenlinie; die gemessenen
-  // Fusspunkte unterscheiden sich um fuenf Zentimeter.
-  const speedAt = { x: -37.2, z: -31.8 }
+  // Die Torachse steht senkrecht auf der Lifttrasse. Vorher stand sie quer zur
+  // Falllinie – rechnerisch das Sauberere, weil dann beide Pfosten auf
+  // derselben Hoehenlinie stehen. Angesehen hat es sich trotzdem schief, und
+  // zwar aus einem Grund, der nichts mit dem Hang zu tun hat: die Trasse ist
+  // die einzige lange Gerade in diesem Bildausschnitt, und alles daneben wird
+  // an ihr gemessen. Senkrecht auf ihr laeuft das Tor bei fester Kamera fast
+  // waagerecht ueber den Bildschirm (dreizehn Grad statt achtunddreissig).
+  //
+  // Der Preis: die Trasse quert den Hang um achtzehn Grad, also liegen die
+  // Pfosten nicht mehr gleich hoch. Deshalb steht das Tor jetzt acht Meter
+  // weiter unten, wo der Hang von 45 auf 25 Grad abgeflacht ist – dort sind
+  // es noch knapp zwei Meter Unterschied auf zehn Meter Torbreite.
+  const speedAt = { x: -33.0, z: -25.0 }
   const speedDir = (() => {
-    const n = new THREE.Vector3()
-    terrainNormal(speedAt.x, speedAt.z, n)
-    const len = Math.hypot(n.x, n.z) || 1
-    return { dx: n.x / len, dz: n.z / len }
+    const dx = LIFT_BASE.x - LIFT_TOP.x
+    const dz = LIFT_BASE.z - LIFT_TOP.z
+    const len = Math.hypot(dx, dz)
+    return { dx: dx / len, dz: dz / len }
   })()
   const speedCheck = new SpeedCheck(world, {
     x: speedAt.x, z: speedAt.z, dx: speedDir.dx, dz: speedDir.dz, width: 10,
+  })
+
+  // --- Schneekanone auf der freien Abfahrt ---------------------------------
+  // Einen Stangenabstand oberhalb der Lichtschranke, am oestlichen Rand der
+  // Piste, quer in den Hang blasend. Wer den Speedcheck anfaehrt, faehrt
+  // vorher durch ihr Feld – und weil sie sich wie die im Kinderland nur
+  // manchmal dafuer entscheidet, weiss man nie, ob man oben ankommt oder
+  // eingeschneit.
+  //
+  // Die Richtung zeigt quer ueber die Piste und dabei leicht hangaufwaerts.
+  // Beides ist gemessen und nicht geraten. Quer, weil die Fahne bei fester
+  // Kamera dann fast vollstaendig ueber den Bildschirm laeuft statt in die
+  // Blickachse zu zeigen. Leicht bergauf, weil der Kopf nur 0,85 rad
+  // schwenken kann und eine Sekunde braucht, bis er auf voller Leistung ist:
+  // zeigt sie quer, sieht sie den Fahrer erst, wenn er schon neben ihr ist,
+  // und blaest ihm hinterher. So bekommt sie ihn zwanzig Meter vorher ins
+  // Feld und laeuft an, waehrend er noch anfaehrt.
+  const pisteCannon = createSnowCannon({ heading: Math.atan2(-0.88, 0.47) })
+  world.place(pisteCannon, -32.2, -37.6, {})
+  world.addCollider(-32.2, -37.6, 1.0)
+  animatedProps.push((t, dt) => {
+    const skier = skierRef.current
+    if (!skier) return
+    pisteCannon.userData.aimAt(skier.position.x, skier.position.z, !skier.tow)
+    pisteCannon.userData.animate(t, dt)
+    const hit = pisteCannon.userData.inPlume(skier.position.x, skier.position.z)
+    // Schneller als im Kinderland: dort faehrt man langsam quer durch die
+    // Fahne, hier schiesst man mit zwoelf Metern je Sekunde hindurch.
+    if (hit > 0) skier.dustWithSnow(Math.min(1, skier.snowed + hit * dt * 4.5))
   })
   // Das Display steht weit unterhalb, seitlich neben dem einzelnen Baum und
   // dort, wo der Hang endlich flach wird – ein Brett auf zwei Pfosten in

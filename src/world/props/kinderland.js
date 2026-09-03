@@ -169,68 +169,10 @@ export function createCone({ color = 0xe8663a, height = 0.66 } = {}) {
   return group
 }
 
-// --- Fahnen ------------------------------------------------------------------
-// Eine Wimpelkette zwischen zwei Masten. Sie flattert immer ein bisschen und
-// schlaegt aus, wenn jemand darunter durchfaehrt.
-
-export function createFlagLine({ span = 6, height = 2.1, seed = 0 } = {}) {
-  const group = new THREE.Group()
-  const parts = []
-  const half = span / 2
-  for (const sx of [-1, 1]) {
-    parts.push({
-      geo: new THREE.CylinderGeometry(0.055, 0.07, height, 7),
-      color: POST,
-      position: [sx * half, height / 2, 0],
-    })
-    parts.push({
-      geo: new THREE.CylinderGeometry(0.3, 0.36, 0.08, 12),
-      color: SNOW,
-      position: [sx * half, 0.04, 0],
-    })
-  }
-  const mast = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
-  mast.castShadow = true
-  group.add(mast)
-
-  // Die Wimpel haengen einzeln, damit die Kette wellenfoermig laufen kann.
-  const flags = []
-  const count = 7
-  for (let i = 0; i < count; i++) {
-    const u = (i + 0.5) / count
-    const color = KINDER_COLORS[(i + seed) % KINDER_COLORS.length]
-    const geo = new THREE.BufferGeometry()
-    const w = 0.34
-    const h = 0.46
-    geo.setAttribute('position', new THREE.Float32BufferAttribute([
-      -w / 2, 0, 0, w / 2, 0, 0, 0, -h, 0,
-    ], 3))
-    geo.computeVertexNormals()
-    const flag = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      color, roughness: 0.75, side: THREE.DoubleSide, flatShading: true,
-    }))
-    // Durchhang der Kette: eine Parabel zwischen den Masten.
-    const sag = 0.34 * (1 - Math.pow((u - 0.5) * 2, 2))
-    flag.position.set((u - 0.5) * span, height - 0.12 - sag, 0)
-    flag.userData.u = u
-    group.add(flag)
-    flags.push(flag)
-  }
-
-  const spring = springy({ frequency: 8, decay: 2.6 })
-  group.userData.react = (s) => spring.hit(s)
-  group.userData.animate = (t, dt) => {
-    const gust = spring.step(dt)
-    for (const flag of flags) {
-      const u = flag.userData.u
-      // Eine Welle laeuft die Kette entlang statt alle gleichzeitig zu kippen.
-      const wave = Math.sin(t * 2.6 + u * 5 + seed)
-      flag.rotation.z = wave * 0.16 + gust * Math.sin(u * Math.PI) * 0.8
-      flag.rotation.x = wave * 0.1
-    }
-  }
-  return group
-}
+// Hier stand eine freistehende Wimpelkette zwischen zwei Masten. Sie ist
+// entfallen: sie hing im Hang, ohne etwas zu begrenzen, und stand damit neben
+// dem Wimpelzaun, der genau das tut. Zwei Sorten Wimpel in einer Anlage sind
+// eine zu viel.
 
 // --- Tunnel ------------------------------------------------------------------
 // Ein Bogen aus Ringen, durch den man faehrt. Beim Durchfahren laufen die

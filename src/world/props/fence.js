@@ -92,37 +92,124 @@ export function createFence(world, points, { spacing = 2.3, height = 1.1, seed =
 }
 
 // Pistenstangen: orange Markierungen, die einen Weg andeuten. Sie haben keine
-// Kollision – man darf und soll sie ueberfahren.
+// Kollision – man darf und soll sie ueberfahren. Und weil man das darf, sollen
+// sie es auch merken: wer eine erwischt, legt sie um, und sie richtet sich
+// nach ein paar Sekunden wieder auf. Dasselbe Verhalten wie bei den Fackeln
+// am Startplateau, aus demselben Grund – ein Gegenstand am Wegrand, der auf
+// nichts reagiert, ist eine Kulisse und kein Gegenstand.
+//
+// Alle Stangen einer Reihe sind eine einzige InstancedMesh. Das ist hier nicht
+// nur Sparsamkeit: ein umgestossener Pfahl ist eine geaenderte Matrix, und
+// eine Matrix je Instanz kostet nichts. Waeren es einzelne Meshes, haetten
+// fuenfzig Pfaehle fuenfzig Zeichenaufrufe – fuer eine Randmarkierung.
+//
+// Die Instanzen stehen bewusst ohne Gierung. Eine Stange ist rund, die
+// Drehung um die Hochachse sieht man ihr nicht an – dafuer sind ohne sie die
+// Kippwinkel x und z direkt Weltrichtungen und muessen nicht zurueckgerechnet
+// werden.
+
+const POLE_HEIGHT = 1.76
+const KNOCK_RADIUS = 0.62     // ab hier gilt die Stange als erwischt
+const KNOCK_HOLD = 2.4        // wie lange sie liegen bleibt
+const FALL_RATE = 5.0         // 1/s beim Umfallen
+const RISE_RATE = 1.4         // 1/s beim Aufrichten
+
 export function createPisteMarkers(world, points, { seed = 12, color = 0xe8703a } = {}) {
+  if (!points.length) return null
   const rng = makeRng(seed)
-  const parts = []
-  const base = terrainHeight(points[0].x, points[0].z)
 
-  for (const p of points) {
-    const y = terrainHeight(p.x, p.z) - base
-    const h = 1.62 + rng() * 0.28
-    const lean = (rng() - 0.5) * 0.22
-
+  // Eine Stange als Geometrie, Fusspunkt im Ursprung.
+  const parts = [{
+    geo: new THREE.CylinderGeometry(0.032, 0.042, POLE_HEIGHT, 6),
+    color: 0xe8e4dc,
+    position: [0, POLE_HEIGHT / 2, 0],
+  }]
+  for (const rel of [0.86, 0.66]) {
     parts.push({
-      geo: new THREE.CylinderGeometry(0.032, 0.042, h, 6),
-      color: 0xe8e4dc,
-      position: [p.x, y + h / 2, p.z],
-      rotation: [lean, 0, (rng() - 0.5) * 0.18],
+      geo: new THREE.CylinderGeometry(0.044, 0.044, 0.19, 6),
+      color,
+      position: [0, POLE_HEIGHT * rel, 0],
     })
-    // Zwei orange Ringe oben – die klassische Slalomstangen-Optik.
-    for (const rel of [0.86, 0.66]) {
-      parts.push({
-        geo: new THREE.CylinderGeometry(0.044, 0.044, 0.19, 6),
-        color,
-        position: [p.x + Math.sin(lean) * 0, y + h * rel, p.z],
-        rotation: [lean, 0, 0],
-      })
-    }
   }
 
-  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
-  mesh.position.y = base
+  const mesh = new THREE.InstancedMesh(
+    assemble(parts),
+    vertexColorMaterial({ roughness: 0.7 }),
+    points.length,
+  )
   mesh.castShadow = true
+  // Die Stangen kippen bis in die Waagerechte; die Huelle aus der Ruhelage
+  // waere dann zu klein und die Reihe verschwaende am Bildrand.
+  mesh.frustumCulled = false
+
+  const poles = []
+  const dummy = new THREE.Object3D()
+
+  points.forEach((p, i) => {
+    const pole = {
+      x: p.x,
+      z: p.z,
+      y: terrainHeight(p.x, p.z),
+      leanX: (rng() - 0.5) * 0.16,
+      leanZ: (rng() - 0.5) * 0.16,
+      scale: 0.92 + rng() * 0.16,
+      fall: 0,
+      hold: 0,
+      tipX: 1,
+      tipZ: 0,
+    }
+    poles.push(pole)
+    write(i, pole)
+  })
+
+  // Die Matrix einer Stange aus ihrem Zustand. Der Fusspunkt bleibt immer
+  // liegen – gekippt wird um ihn herum, nicht um die Mitte.
+  function write(i, pole) {
+    const a = pole.fall * (Math.PI / 2) * 0.95
+    dummy.position.set(pole.x, pole.y, pole.z)
+    dummy.rotation.set(pole.leanX + a * pole.tipZ, 0, pole.leanZ - a * pole.tipX)
+    dummy.scale.set(1, pole.scale, 1)
+    dummy.updateMatrix()
+    mesh.setMatrixAt(i, dummy.matrix)
+  }
+
+  mesh.instanceMatrix.needsUpdate = true
   world.scene.add(mesh)
+
+  // Jeden Frame aus populate aufgerufen. Der Abstandstest laeuft ueber alle
+  // Stangen der Reihe – bei ein paar Dutzend je Reihe ist das billiger als
+  // jede Buchfuehrung, die man sich stattdessen ausdenken koennte.
+  mesh.userData.update = (dt, skier) => {
+    if (!skier) return
+    const sx = skier.position.x
+    const sz = skier.position.z
+    let dirty = false
+
+    for (let i = 0; i < poles.length; i++) {
+      const pole = poles[i]
+      const dx = sx - pole.x
+      const dz = sz - pole.z
+
+      if (dx * dx + dz * dz < KNOCK_RADIUS * KNOCK_RADIUS && pole.fall < 0.4) {
+        const len = Math.hypot(skier.forward.x, skier.forward.z) || 1
+        pole.tipX = skier.forward.x / len
+        pole.tipZ = skier.forward.z / len
+        pole.hold = KNOCK_HOLD
+      }
+
+      if (pole.hold > 0) {
+        pole.hold -= dt
+        pole.fall = Math.min(1, pole.fall + dt * FALL_RATE)
+      } else if (pole.fall > 0) {
+        pole.fall = Math.max(0, pole.fall - dt * RISE_RATE)
+      } else {
+        continue
+      }
+      write(i, pole)
+      dirty = true
+    }
+    if (dirty) mesh.instanceMatrix.needsUpdate = true
+  }
+
   return mesh
 }

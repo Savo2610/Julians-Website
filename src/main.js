@@ -171,6 +171,13 @@ function advance(dt) {
     stations.trigger()
     stationUI.flash()
   }
+  // Stationen mit zwei Zielen – die Werkstatt und die Skikasse – waehlt man
+  // mit den Ziffern, die auf der Karte stehen.
+  for (const [key, index] of [['pick1', 0], ['pick2', 1]]) {
+    if (input.justPressed(key) && stations.active?.choices) {
+      if (stations.trigger(index)) stationUI.flash()
+    }
+  }
   // dt kommt mit, weil inzwischen nicht mehr alles eine Funktion der Uhrzeit
   // ist – umgestossene Fackeln richten sich ueber eine Dauer wieder auf.
   for (const animate of props.animated) animate(elapsed, dt)

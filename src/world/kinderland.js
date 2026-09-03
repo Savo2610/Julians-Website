@@ -8,7 +8,6 @@ import { createSnowCannon } from './props/snow-cannon.js'
 import {
   createNoodleArch,
   createCone,
-  createFlagLine,
   createSnowTunnel,
   createSnowman,
   createBuntingFence,
@@ -177,13 +176,10 @@ export class Kinderland {
       kind: 'arch',
     })
 
-    // Die Wimpelkette markiert die Unterkante der Spielwiese: dahinter wird
-    // der Hang steil, davor ist Kinderland.
-    this.add(createFlagLine({ span: 7, seed: 1 }), 43.0, -10.4, {
-      rotation: readableYaw(Math.atan2(0.86, 0.51)),
-      trigger: 4.2,
-      kind: 'flags',
-    })
+    // Hier stand eine grosse Wimpelkette zwischen zwei Masten. Sie hing frei
+    // im Hang und gehoerte zu nichts – die Unterkante der Wiese markiert
+    // schon der Wimpelzaun, und zwei Sorten Wimpel nebeneinander sind eine zu
+    // viel. Der niedrige Zaun bleibt, die freistehende Kette ist weg.
 
     // Drei Schneemaenner, aufgestellt wie Zuschauer am Rand: verschieden
     // gross, verschiedene Huete, alle mit Blick auf die Wiese.
@@ -229,7 +225,7 @@ export class Kinderland {
       { s: 12.4, off: 3.0 },
       { s: 9.6, off: -1.2 },
       { s: 7.0, off: 1.4, kind: 'arch' },
-      { s: 4.0, off: 0.8, kind: 'flags' },
+      { s: 4.0, off: 0.8, kind: 'arch' },
     ]
 
     gates.forEach((g, i) => {
@@ -240,10 +236,6 @@ export class Kinderland {
       if (g.kind === 'arch') {
         this.add(createNoodleArch({ color: KINDER_COLORS[i % 4], span: 4.8, height: 2.3 }), p.x, p.z, {
           rotation: yaw, trigger: 2.9, kind: 'arch',
-        })
-      } else if (g.kind === 'flags') {
-        this.add(createFlagLine({ span: 7.6, height: 2.3, seed: 3 }), p.x, p.z, {
-          rotation: yaw, trigger: 4.4, kind: 'flags',
         })
       } else {
         // Ein Tor aus zwei Huetchen: man faehrt dazwischen durch, und wer zu

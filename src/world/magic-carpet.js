@@ -1,6 +1,5 @@
 import * as THREE from 'three'
-import { assemble, vertexColorMaterial, labelTexture } from '../core/geometry.js'
-import { CAMERA } from '../config.js'
+import { assemble, vertexColorMaterial } from '../core/geometry.js'
 import { terrainHeight } from './heightfield.js'
 import { KINDER_COLORS } from './props/kinderland.js'
 
@@ -41,7 +40,7 @@ function beltTexture() {
 }
 
 export class MagicCarpet {
-  constructor(world, { base, top, speed = 5.0, label = 'ZAUBERTEPPICH' }) {
+  constructor(world, { base, top, speed = 5.0 }) {
     this.world = world
     this.speed = speed
     this.base = new THREE.Vector2(base.x, base.z)
@@ -61,7 +60,7 @@ export class MagicCarpet {
     world.scene.add(this.group)
 
     this._buildBelt()
-    this._buildStations(label)
+    this._buildStations()
 
     this.rider = null
     this.boardRadius = 4.0
@@ -148,7 +147,7 @@ export class MagicCarpet {
     this.group.add(railMesh)
   }
 
-  _buildStations(label) {
+  _buildStations() {
     // Unten eine flache Auffahrtsschanze, oben eine Abfahrtsnase – beide so
     // niedrig, dass man im Vorbeifahren nicht dagegenstoesst.
     for (const [t, sign] of [[0, -1], [1, 1]]) {
@@ -172,43 +171,10 @@ export class MagicCarpet {
       this.group.add(mesh)
     }
 
-    // Ein Schild an der Talstation, wie an jeder anderen Station im Tal auch.
-    const post = new THREE.Group()
-    const parts = []
-    parts.push({
-      geo: new THREE.CylinderGeometry(0.09, 0.12, 2.4, 8),
-      color: 0xd8dee6,
-      position: [0, 1.2, 0],
-    })
-    parts.push({
-      geo: new THREE.BoxGeometry(3.0, 0.72, 0.09),
-      color: KINDER_COLORS[1],
-      position: [0, 2.1, 0.12],
-      rotation: [-0.52, 0, 0],
-    })
-    const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
-    mesh.castShadow = true
-    post.add(mesh)
-
-    const tex = labelTexture(label, {
-      width: 512, height: 128, background: null, color: '#ffffff',
-      font: '700 74px ui-rounded, "SF Pro Rounded", system-ui, sans-serif',
-    })
-    const plate = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.8, 0.66),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
-    )
-    plate.position.set(0, 2.1, 0.155)
-    plate.rotation.x = -0.52
-    post.add(plate)
-
-    const p = this.pointAt(0, -2.4)
-    post.position.set(p.x, terrainHeight(p.x, p.z), p.z)
-    // Schilder zeigen in dieser Welt immer zur Kamera, nicht in Fahrtrichtung –
-    // sonst liest man sie von hinten.
-    post.rotation.y = CAMERA.azimuth
-    this.group.add(post)
-    this.world.addCollider(p.x, p.z, 0.4)
+    // Hier stand ein Schild mit dem Namen der Talstation. Es ist weg, aus
+    // demselben Grund wie das an der Gipfelbahn: die Station meldet sich
+    // ohnehin mit Namen und Taste, sobald man in ihrer Naehe ist, und ein
+    // Brett im Schnee, das dasselbe noch einmal sagt, steht nur im Weg.
   }
 
   canBoard(skier) {

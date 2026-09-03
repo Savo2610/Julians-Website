@@ -172,6 +172,37 @@ html, body {
   font-weight: 600;
 }
 
+.station-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 2px;
+}
+.station-choice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--choice, #35485e);
+}
+.station-choice.off { opacity: 0.35; }
+.station-choice kbd {
+  display: inline-block;
+  min-width: 9px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid rgba(34, 48, 63, 0.2);
+  border-bottom-width: 2px;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #35485e;
+  text-align: center;
+}
+.station-choice.off kbd { visibility: hidden; }
+
 /* --- Zeitnahme der Rennstrecke -------------------------------------------
    Erscheint nur waehrend eines Laufs und ein paar Sekunden danach. Der Rest
    der Welt kommt ohne Anzeige aus, das soll hier auch so bleiben. */

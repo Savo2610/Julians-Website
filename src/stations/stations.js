@@ -30,8 +30,9 @@ export const TRAILS = {
     label: 'BERUF',
     color: '#0a66c2',
     markerColor: 0x3d7fc4,
-    // Nach Osten, in die Mulde mit der Huette und weiter auf die Osthoehe.
-    path: [[7, 27], [17, 24], [27, 20], [36, 14], [44, 4], [48, -6]],
+    // Nach Osten, in die Mulde mit der Huette und dann am Fuss des
+    // Kinderlands entlang auf die Terrasse dahinter.
+    path: [[7, 27], [17, 24], [27, 20], [35, 21], [44, 21], [52, 19]],
   },
   social: {
     label: 'SOZIALES',
@@ -62,8 +63,11 @@ export const TRAILS = {
 
 export const STATION_SPOTS = {
   // Weg 1 – beruflich
-  cabin:     { x: 27, z: 20, clearing: 13, footprint: 3.4, search: 6, trail: 'career' },
-  signpostCareer: { x: 47, z: -5, clearing: 8, footprint: 1.2, search: 7, trail: 'career' },
+  // Kleiner Suchradius: seit das Kinderland-Band daneben liegt, waere der
+  // Uebungshang die flachste Stelle der Gegend – die Huette wuerde mitten in
+  // den Slalom wandern.
+  cabin:     { x: 25, z: 21, clearing: 13, footprint: 3.4, search: 3, trail: 'career' },
+  signpostCareer: { x: 52, z: 19, clearing: 8, footprint: 1.2, search: 6, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, PARK_LANE, PARK_FEATURES } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, PARK_LANE, PARK_FEATURES, KINDER_LANE } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -18,6 +18,7 @@ import { RaceCourse } from './race.js'
 import { createRail, createPadMarker, createParkSign } from './props/funpark.js'
 import { createSledFence } from './props/sled.js'
 import { snowPaint } from './props/snow-paint.js'
+import { Kinderland } from './kinderland.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -158,7 +159,7 @@ export function populate(world, sky, registry) {
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
   // Bewuchs und Boden nicht auseinanderlaufen koennen.
-  for (const [lane, r] of [[SLED_LANE, 7.5], [PARK_LANE, 13]]) {
+  for (const [lane, r] of [[SLED_LANE, 7.5], [PARK_LANE, 13], [KINDER_LANE, 12]]) {
     for (let i = 0; i < lane.points.length - 1; i++) {
       const a = lane.points[i]
       const b = lane.points[i + 1]
@@ -277,7 +278,7 @@ export function populate(world, sky, registry) {
   // --- Umgestuerzte Baeume am Waldrand ----------------------------------
   for (const [i, spot] of [
     { x: -8, z: -16, rot: 0.9 },
-    { x: 36, z: 16, rot: 2.4 },
+    { x: 21, z: 15, rot: 2.4 },
     { x: -46, z: 12, rot: 1.7 },
   ].entries()) {
     const log = createFallenTree(i * 977 + 13)
@@ -497,6 +498,12 @@ export function populate(world, sky, registry) {
     }
   }
 
+  // --- Kinderland ---------------------------------------------------------
+  // Spielwiese oben auf der Osthoehe, Uebungshang darunter, Zauberteppich
+  // dazwischen. Der Teppich beginnt keine sieben Meter neben der Huette –
+  // wer den Weg BERUF faehrt, stolpert von selbst darueber.
+  const kinderland = new Kinderland(world)
+
   // --- See --------------------------------------------------------------
   const lake = createLake(world, {
     fogColor: world.scene.fog.color,
@@ -504,5 +511,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { lake, lift, race, animated: [...stations.animated, ...animatedProps] }
+  return { lake, lift, race, kinderland, animated: [...stations.animated, ...animatedProps] }
 }

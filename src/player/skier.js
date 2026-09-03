@@ -263,16 +263,20 @@ export class Skier {
     this.slope = slopeAlong(this.position.x, this.position.z, this.forward.x, this.forward.z)
 
     // Haltung: leicht zurueckgelehnt, wie wenn man am Buegel haengt.
-    this.lean += (this.steer * 0.12 - this.lean) * damp(4, dt)
-    this.pitch += (-0.1 - this.pitch) * damp(4, dt)
-    this.crouch += (0.28 - this.crouch) * damp(5, dt)
+    const hanging = this.tow.grab !== false
+    this.lean += ((hanging ? this.steer * 0.12 : 0) - this.lean) * damp(4, dt)
+    this.pitch += ((hanging ? -0.1 : 0.02) - this.pitch) * damp(4, dt)
+    this.crouch += ((hanging ? 0.28 : 0.06) - this.crouch) * damp(5, dt)
     this.carving += (0 - this.carving) * damp(6, dt)
 
     this._applyPose(dt)
-    // Der aussenliegende Arm greift nach oben zur Zugstange.
-    const arm = this.parts.arms.right
-    arm.rotation.x = -1.15
-    arm.rotation.z = -0.25
+    // Am Schlepplift greift der aussenliegende Arm nach oben zur Zugstange.
+    // Der Zauberteppich traegt dagegen – dort steht man nur.
+    if (this.tow.grab !== false) {
+      const arm = this.parts.arms.right
+      arm.rotation.x = -1.15
+      arm.rotation.z = -0.25
+    }
 
     this._stampTrail(trail, groundY)
   }

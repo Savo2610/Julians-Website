@@ -181,7 +181,24 @@ export const PARK_LANE = makeLane([
   { x: 43, z: -27, h: 1.20 },
 ], { width: 18, feather: 8, endFade: 8 })
 
-const LANES = globalThis.__noLanes ? [] : [SLED_LANE, PARK_LANE]
+// Der Uebungshang des Kinderlands: vom Muldenrand bei der Huette hinauf auf
+// die Kuppe im Osten. Ein einziges Band traegt beides – den Zauberteppich an
+// seinem Westrand und die Uebungsstrecke daneben. Genau so ist ein echtes
+// Kinderland gebaut, und es spart die zweite Trasse.
+//
+// Das Gelaende darunter ist eine Kuppe, also in der Mitte steiler als an den
+// Enden. Ein Band mit streng gleichem Gefaelle muesste unten anderthalb Meter
+// auffuellen; diese Knoten folgen dem Berg ein Stueck weit und bleiben
+// trotzdem zwischen 17 und 22 Grad – gleichmaessig genug fuer ein Foerderband.
+export const KINDER_LANE = makeLane([
+  { x: 31.0, z: 19.0, h: -1.20 },
+  { x: 34.5, z: 13.5, h: 0.85 },
+  { x: 38.0, z: 8.0, h: 3.25 },
+  { x: 41.5, z: 2.5, h: 5.85 },
+  { x: 45.0, z: -3.0, h: 8.14 },
+], { width: 16, feather: 7, endFade: 6, flat: 0.6 })
+
+const LANES = globalThis.__noLanes ? [] : [SLED_LANE, PARK_LANE, KINDER_LANE]
 
 // --- Figuren im Funpark ------------------------------------------------------
 // Schanzen, Wellen und Kanten sind Gelaende und keine Aufbauten. Nur so faehrt

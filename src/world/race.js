@@ -1,7 +1,6 @@
 import * as THREE from 'three'
-import { CAMERA } from '../config.js'
 import { terrainHeight, SLED_LANE } from './heightfield.js'
-import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH } from './props/slalom.js'
+import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readableYaw } from './props/slalom.js'
 import { snowPaint } from './props/snow-paint.js'
 
 // Die Zeitnahme einer Bahn: Start, Ziel, Tore – und die Farbe im Schnee, die
@@ -37,19 +36,7 @@ const BEND = 0.022          // rad pro Meter, entspricht etwa 45 m Radius
 const RED = 0xd8402f
 const BLUE = 0x2f6bd8
 
-// Bei fester Kamera ist eine Achse, die in die Blickrichtung zeigt, nur ein
-// Strich. Ein Bogen quer zur Fahrtrichtung kann genau so stehen. Deshalb darf
-// er sich um bis zu 40 Grad aus der Senkrechten drehen, wenn er dadurch ueber
-// den Bildschirm laeuft – als Tor bleibt er lesbar, als Strich waere er weg.
-const MAX_SKEW = 0.7
-function readableYaw(heading) {
-  // Die Breite des Bogens auf dem Bildschirm ist |cos(gier - azimut)|. Am
-  // breitesten steht er also, wenn der Gierwinkel dem Kamera-Azimut folgt.
-  let a = CAMERA.azimuth - heading
-  // Eine Achse ist symmetrisch: eine halbe Drehung aendert nichts.
-  a -= Math.PI * Math.round(a / Math.PI)
-  return heading + THREE.MathUtils.clamp(a, -MAX_SKEW, MAX_SKEW)
-}
+
 
 export class RaceCourse {
   constructor(world, { lane = SLED_LANE, gates = true, startFade = 3.0, finishFade = 4.0 } = {}) {

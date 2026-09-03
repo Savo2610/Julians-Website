@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial, labelTexture } from '../../core/geometry.js'
+import { CAMERA } from '../../config.js'
 
 // Tore, Start und Ziel der Rennstrecke.
 //
@@ -16,6 +17,25 @@ const BLUE = 0x2f6bd8
 
 export const GATE_WIDTH = 4.4
 const PANEL_TILT = -0.42
+
+// Bei fester Kamera ist eine Achse, die in die Blickrichtung zeigt, nur ein
+// Strich. Die Breite eines Bogens auf dem Bildschirm ist |cos(gier - azimut)|,
+// am breitesten steht er also, wenn sein Gierwinkel dem Kamera-Azimut folgt.
+// Ein Bogen quer zur Fahrtrichtung darf sich deshalb bis zu 40 Grad aus der
+// Senkrechten drehen: als Tor bleibt er lesbar, als Strich waere er weg.
+const MAX_SKEW = 0.7
+export function readableYaw(heading) {
+  let a = CAMERA.azimuth - heading
+  // Fuer die Breite ist die Achse symmetrisch: eine halbe Drehung aendert
+  // nichts. Also die kuerzere der beiden Loesungen nehmen und begrenzen.
+  a -= Math.PI * Math.round(a / Math.PI)
+  let yaw = heading + THREE.MathUtils.clamp(a, -MAX_SKEW, MAX_SKEW)
+  // Fuer die Beschriftung ist sie es nicht: der Bogen traegt sein Banner auf
+  // einer Seite. Zeigt die nach hinten, wird der Bogen umgedreht – an der
+  // Breite aendert das nichts, an der Lesbarkeit alles.
+  if (Math.cos(yaw - CAMERA.azimuth) < 0) yaw += Math.PI
+  return yaw
+}
 
 // Eine Torstange: leicht konisch, mit Teller im Schnee und Kappe oben.
 function poleParts(parts, x, color, lean) {

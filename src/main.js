@@ -109,6 +109,9 @@ function advance(dt) {
   // Der Lift laeuft vor dem Fahrer: er gibt dessen Zielposition vor, wenn
   // dieser am Buegel haengt.
   props.lift.update(dt, skier, input)
+  // Der Zauberteppich laeuft nach derselben Regel: er gibt die Zielposition
+  // vor, solange jemand darauf steht.
+  props.kinderland.update(dt, skier, input)
   skier.update(dt, input, trail)
   emitSpray(dt)
   spray.update(dt)
@@ -131,6 +134,9 @@ function advance(dt) {
     stationUI.flash()
   }
   for (const animate of props.animated) animate(elapsed)
+  // Das Kinderland braucht zusaetzlich dt: Wackeln und Umfallen sind
+  // Ausschwingvorgaenge, keine Funktionen der Uhrzeit.
+  props.kinderland.animate(elapsed, dt)
 
   snowfall.userData.update(dt, elapsed, skier.position)
   props.lake.update(camera)

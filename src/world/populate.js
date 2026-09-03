@@ -15,7 +15,8 @@ import { createTorch } from './props/torch.js'
 import { createSummitCross } from './props/summit-cross.js'
 import { DragLift } from './drag-lift.js'
 import { RaceCourse } from './race.js'
-import { createRail, createPadMarker, createParkSign } from './props/funpark.js'
+import { createRail, createPadMarker, createParkSign, createParkBox, createLipMarker } from './props/funpark.js'
+import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
 import { snowPaint } from './props/snow-paint.js'
 import { Kinderland } from './kinderland.js'
@@ -27,6 +28,7 @@ const CLEARINGS = [
   { x: LAKE.x, z: LAKE.z, r: LAKE.radius * 1.02 },
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
+  { x: 17.3, z: -60.6, r: 9 }, // Terrasse mit der Apres-Ski-Huette
   ...Object.values(STATION_SPOTS).map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
 ]
 
@@ -52,6 +54,10 @@ export const LIFT_TOP = { x: -63, z: -55 }
 const RETURN_PATH = [
   [-4, -27], [-10, -24], [-17, -21], [-23, -18], [-27, -15],
 ]
+
+// Die Apres-Ski-Huette oben am Funpark. Sie steht seitlich neben der
+// Terrasse, nicht mitten darauf – die Einfahrt bleibt frei.
+const APRES = { x: 17.3, z: -60.6 }
 
 const FREE_PISTE = [
   [-44, -52], [-41, -46], [-38, -40], [-34.5, -34],
@@ -306,9 +312,13 @@ export function populate(world, sky, registry) {
   )
 
   // Zwei Landmarken-Findlinge, an denen man sich orientieren kann.
+  // Der Findling stand frueher am Rand des Hangs; seit der Funpark in der
+  // Luecke liegt, stuende er mitten in der Jib-Linie. Er ist nach Westen aus
+  // dem Band heraus gerueckt und bleibt trotzdem die Marke, an der man sieht,
+  // wo der Park anfaengt.
   const boulderA = createBoulder(31, 2.4)
-  world.place(boulderA, 18, -30, { yOffset: -1.1, rotation: 0.7 })
-  world.addCollider(18, -30, 2.6)
+  world.place(boulderA, 9, -31, { yOffset: -1.1, rotation: 0.7 })
+  world.addCollider(9, -31, 2.6)
 
   const boulderB = createBoulder(77, 2.0)
   world.place(boulderB, -22, 8, { yOffset: -0.9, rotation: 2.1 })
@@ -524,15 +534,27 @@ export function populate(world, sky, registry) {
       return { dx: (b.x - a.x) / len, dz: (b.z - a.z) / len }
     }
 
-    // Eingangsschild oben am Band, seitlich versetzt, damit es nicht im Weg
-    // steht.
-    const head = lane.points[0]
-    const d0 = dirAt(0)
-    const signX = head.x + d0.dz * 8.5 + d0.dx * 2
-    const signZ = head.z - d0.dx * 8.5 + d0.dz * 2
-    const sign = createParkSign({ title: 'FUNPARK', sub: 'Wellen, Kicker, Rail' })
+    // Eingangsschild an der Einfahrt in den Park – dort, wo die Terrasse
+    // endet und es steil wird, nicht am obersten Ende des Bandes.
+    const drop = lane.points[2]
+    const dDrop = dirAt(2)
+    const signX = drop.x + dDrop.dz * 8.5 + dDrop.dx * 1.5
+    const signZ = drop.z - dDrop.dx * 8.5 + dDrop.dz * 1.5
+    const sign = createParkSign({ title: 'FUNPARK', sub: 'Wellen, Kicker, Boxen' })
     world.place(sign, signX, signZ, { rotation: Math.PI * 0.25 })
     world.addCollider(signX, signZ, 0.8)
+
+    // --- Apres-Ski auf der Terrasse ---------------------------------------
+    // Oben liegt jetzt ein Absatz mit sieben Grad, davor geht es mit gut
+    // zwanzig hinein. Genau dort steht die Huette: an der einzigen Stelle im
+    // Park, an der man von selbst stehenbleibt.
+    const apres = createApresSki({ label: 'APRES-SKI' })
+    world.place(apres, APRES.x, APRES.z, { rotation: Math.PI * 0.25 })
+    // Das Haus ist ein Block, die Terrasse davor eine Flaeche – zwei Kreise
+    // reichen, damit man nicht hindurchfaehrt.
+    world.addCollider(APRES.x, APRES.z, 2.4)
+    world.addCollider(APRES.x + 3.2, APRES.z + 3.2, 2.6)
+    animatedProps.push(apres.userData.animate)
 
     // Das Rail liegt auf der Schneekante und laeuft mit ihr.
     const ledge = PARK_FEATURES.find((f) => f.kind === 'ledge')
@@ -540,16 +562,73 @@ export function populate(world, sky, registry) {
     // align: das Rail muss der Neigung der Kante folgen. Waagerecht steckt ein
     // Ende im Schnee und das andere haengt in der Luft – die Kante faellt auf
     // ihrer Laenge fast einen Meter.
+    // Kein yOffset: die Hoehe der Kante steckt schon im Gelaende. Sie
+    // obendrauf noch einmal zu addieren, haengte das Rohr einen knappen
+    // Meter ueber den Schnee.
     world.place(rail, ledge.x, ledge.z, {
-      yOffset: ledge.height,
       rotation: Math.atan2(ledge.dx, ledge.dz),
       align: 1,
     })
 
+    // Die Boxen der Jib-Linie sitzen genauso auf ihrer Aufschuettung.
+    for (const [i, f] of PARK_FEATURES.filter((q) => q.kind === 'box').entries()) {
+      // Nur so lang wie das flache Dach der Aufschuettung. Ein Deck, das
+      // ueber die Anrampung hinausragt, haengt an den Enden in der Luft –
+      // die Schneeform faellt dort ab, das Brett bleibt gerade.
+      const box = createParkBox({
+        length: f.length - 2 * f.ramp + 0.4,
+        width: f.width + 0.4,
+        color: i % 2 ? 0x2f6bd8 : 0xe0662f,
+      })
+      world.place(box, f.x, f.z, {
+        rotation: Math.atan2(f.dx, f.dz),
+        align: 1,
+      })
+    }
+
+    // --- Die Schanzen sichtbar machen -------------------------------------
+    // Eine Schanze aus Schnee ist bei diesem Sonnenstand in einer Schneeflaeche
+    // fast unsichtbar: gleiche Farbe, kaum Schatten, und von oben sieht man
+    // die Steigung ohnehin nicht. Deshalb bekommt jede Schanze drei Dinge –
+    // Winkel im Schnee vor der Anfahrt, einen kraeftigen Balken genau auf der
+    // Absprungkante und zwei Kloetze an den Enden dieser Kante. Erst damit
+    // liest man aus der Vogelperspektive, wo man abhebt.
+    const paint = snowPaint()
+    for (const f of PARK_FEATURES) {
+      if (f.kind !== 'kicker') continue
+      const nx = -f.dz
+      const nz = f.dx
+      const half = f.width * 0.5
+
+      // Ein Winkel am Fuss der Rampe und ein Balken auf der Kante – mehr
+      // nicht. Anfahrtsmarken weiter oben und Landemarken weiter unten
+      // waren zusaetzlich versucht und wieder verworfen: die Figuren liegen
+      // hier nur sechs bis acht Meter auseinander, und die Markierung der
+      // einen Schanze landete regelmaessig auf der naechsten Figur.
+      const lead = f.length + 2.2
+      paint.chevron(f.x - f.dx * lead, f.z - f.dz * lead, f.dx, f.dz, 2.6, 0xf0a074)
+      paint.bar(
+        f.x - nx * half, f.z - nz * half,
+        f.x + nx * half, f.z + nz * half,
+        1.0, 0xe4703a,
+      )
+
+      for (const side of [-1, 1]) {
+        const mx = f.x + nx * side * (half + 0.5)
+        const mz = f.z + nz * side * (half + 0.5)
+        const lip = createLipMarker(0xe4703a)
+        world.place(lip, mx, mz, { rotation: Math.atan2(f.dx, f.dz) })
+      }
+    }
+    world.scene.add(paint.build({ name: 'funpark-markierung' }))
+
     // Gepolsterte Marker links und rechts der Figuren – sie machen aus der
-    // Schneeflaeche einen Park.
+    // Schneeflaeche einen Park. Die Schanzen bekommen keine mehr: sie haben
+    // seit neuestem ihre Kloetze auf der Kante, und beides zusammen waere
+    // ein Slalom aus Polstern.
     let variant = 0
     for (const f of PARK_FEATURES) {
+      if (f.kind === 'kicker') continue
       const half = (f.width ?? 8) * 0.5 + 2.2
       for (const side of [-1, 1]) {
         const mx = f.x + f.dz * side * half

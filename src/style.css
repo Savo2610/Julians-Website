@@ -210,3 +210,28 @@ html, body {
   color: #5b6a7c;
   min-height: 14px;
 }
+
+/* --- Trickmeldung ---------------------------------------------------------
+   Kurz und weit unten, damit sie der Zeitnahme oben nicht ins Gehege kommt.
+   Sie steigt beim Erscheinen ein Stueck auf und verschwindet von selbst. */
+.trick-hud {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translate(-50%, 8px);
+  padding: 6px 16px 7px;
+  border-radius: 14px;
+  background: rgba(20, 30, 44, 0.72);
+  backdrop-filter: blur(8px);
+  font: 700 20px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  color: #f6fbff;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 12;
+  transition: opacity 0.18s ease, transform 0.25s ease;
+}
+.trick-hud.visible {
+  opacity: 1;
+  transform: translate(-50%, -6px);
+}

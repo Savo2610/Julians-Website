@@ -40,6 +40,24 @@ export const SKIER = {
   swingMinSpeed: 3.5,
 }
 
+// Tricks liegen alle auf einer Taste – Leertaste, dieselbe, mit der man
+// abspringt. Das ist Absicht: was die Taste tut, haengt davon ab, wo man
+// gerade ist. Am Boden stellt sie die Ski quer, in der Luft dreht sie den
+// Fahrer. Zwei Tasten fuer zwei Zustaende waeren eine Regel mehr zu merken,
+// ohne dass man je beides gleichzeitig brauchte.
+export const TRICK = {
+  spinAccel: 30,      // rad/s^2, wie schnell die Drehung anlaeuft
+  spinMax: 9.5,       // rad/s – reicht bei knapp einer Sekunde Flugzeit fuer 360
+  spinDecay: 2.5,     // wie schnell die Drehung ohne Taste ausklingt
+  slideAngle: 1.35,   // rad, wie weit die Ski beim Sliden querstehen
+  slideLerp: 7,
+  slideMinSpeed: 3.5,
+  slideDrag: 1.6,     // zusaetzlicher Widerstand quer zur Fahrt
+  // Ab dieser Drehung zaehlt ein Sprung als Trick. Etwas unter einer halben
+  // Umdrehung, damit auch ein knapper 180er anerkannt wird.
+  landedRotation: 2.7,
+}
+
 export const CAMERA = {
   // Fester Blickwinkel von schraeg oben. Die Kamera dreht sich nie mit dem
   // Fahrer – sie folgt ihm nur. Dadurch bleibt WASD dauerhaft auf dieselben

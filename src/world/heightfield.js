@@ -174,14 +174,24 @@ export const SLED_LANE = makeLane([
 // laeuft er genau zwischen den beiden Anlagen hindurch, an denen man ohnehin
 // vorbeikommt. Das Gefaelle liefert nach wie vor die Flanke des Sportbergs im
 // Sueden – deshalb liegt der Einstieg oben im Sueden und nicht im Tal.
+// Ganz oben liegt eine Terrasse: sechs Meter mit knapp sieben Grad, bevor es
+// mit gut zwanzig Grad in den Park hineingeht. Sie liegt genau auf der Achse
+// des Bandes, damit kein Knick entsteht, und ihre Hoehen folgen dem
+// gewachsenen Boden auf einen halben Meter genau – ein Plateau, das man
+// aufschuetten muesste, waere hier eine Rampe im Nichts.
+//
+// endFade ist von acht auf vier Meter herunter: bei acht waere die Terrasse
+// zur Haelfte wieder ausgeblendet und damit keine.
 export const PARK_LANE = makeLane([
-  { x: 16, z: -50, h: 8.13 },
+  { x: 10.0, z: -60.4, h: 11.20 },
+  { x: 13.0, z: -55.2, h: 10.50 },
+  { x: 16.0, z: -50.0, h: 8.13 },
   { x: 20, z: -43, h: 6.90 },
   { x: 24, z: -36, h: 5.20 },
   { x: 27, z: -29, h: 3.55 },
   { x: 29.5, z: -22, h: 2.10 },
   { x: 30.5, z: -18, h: 1.55 },
-], { width: 16, feather: 7, endFade: 8 })
+], { width: 16, feather: 7, endFade: 4 })
 
 // Der Uebungshang des Kinderlands: vom Muldenrand bei der Huette hinauf auf
 // die Kuppe im Osten. Ein einziges Band traegt beides – den Zauberteppich an
@@ -275,18 +285,42 @@ function ledge(x, z, f) {
 // Anzahl mal Abstand, eine Schanze so lang wie ihre Rampe, eine Kante wie ihre
 // Laenge. Aneinandergereiht braucht das mehr Platz, als man denkt – deshalb
 // reicht das Band bis ganz hinauf.
+//
+// Neben der Sprunglinie in der Mitte laeuft links davon eine Jib-Linie: zwei
+// Boxen und das Rail. So ist der Park zu zweit befahrbar und man muss nicht
+// ueber eine Schanze, um an eine Box zu kommen – genau so sind echte Parks
+// aufgeteilt. Die Boxen liegen im seitlichen Versatz zur Bandmitte, aber
+// innerhalb der flachen Breite, sonst haengen sie in der Boeschung.
 export const PARK_FEATURES = [
   { kind: 'rollers', x: 20.0, z: -43.1, dx: 0.496, dz: 0.868, count: 3, spacing: 4.2, height: 0.7, width: 9 },
   { kind: 'kicker', x: 24.3, z: -35.2, dx: 0.394, dz: 0.919, length: 4.5, width: 7.5, height: 1.15 },
+  { kind: 'box', x: 19.3, z: -33.0, dx: 0.394, dz: 0.919, length: 6.6, width: 1.5, height: 0.42, ramp: 1.2 },
   { kind: 'ledge', x: 27.4, z: -27.8, dx: 0.336, dz: 0.942, length: 7, width: 2.6, height: 0.85, ramp: 2.2 },
+  { kind: 'box', x: 22.2, z: -26.0, dx: 0.336, dz: 0.942, length: 8.2, width: 2.0, height: 0.60, ramp: 1.5 },
   { kind: 'kicker', x: 29.7, z: -21.0, dx: 0.336, dz: 0.942, length: 5.0, width: 8.5, height: 2.30 },
 ]
+
+// Steht der Fahrer gerade auf einer Box oder der Schneekante? Gebraucht wird
+// das nur fuer die Rueckmeldung – ein Slide auf der Box heisst anders als
+// einer im Schnee. Geprueft wird das Rechteck der Figur, nicht die Hoehe:
+// wer knapp danebensteht, ist eben nicht drauf.
+export function onParkRail(x, z) {
+  for (const f of PARK_FEATURES) {
+    if (f.kind !== 'box' && f.kind !== 'ledge') continue
+    const { u, v } = local(x, z, f)
+    if (Math.abs(u) < f.length * 0.5 - f.ramp * 0.5 && Math.abs(v) < f.width * 0.5 + 0.35) return true
+  }
+  return false
+}
 
 function parkFeatures(x, z) {
   let add = 0
   for (const f of PARK_FEATURES) {
     if (f.kind === 'kicker') add += kicker(x, z, f)
     else if (f.kind === 'rollers') add += rollers(x, z, f)
+    // Kante und Box haben dieselbe Form – ein flaches Dach mit angerampten
+    // Enden. Der Unterschied liegt allein darauf: auf der Kante liegt ein
+    // Rohr, auf der Box eine Holzplatte.
     else add += ledge(x, z, f)
   }
   return add

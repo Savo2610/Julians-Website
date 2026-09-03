@@ -83,6 +83,23 @@ function emitSpray(dt) {
     )
   }
 
+  // Ein Schwall, wenn die Kanone einen erwischt – sonst wuerde man nur
+  // merken, dass man weiss ist, aber nicht, wovon.
+  if (skier.snowBurst > 0) {
+    skier.snowBurst = 0
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * Math.PI * 2
+      const r = Math.random() * 1.1
+      spray.emit(
+        skier.position.x + Math.cos(a) * r,
+        skier.position.y + 0.4 + Math.random() * 1.4,
+        skier.position.z + Math.sin(a) * r,
+        Math.cos(a) * 2.2, 1.5 + Math.random() * 2.5, Math.sin(a) * 2.2,
+        0.6 + Math.random() * 0.7, 1,
+      )
+    }
+  }
+
   if (skier.landImpact > 0.25) {
     for (let i = 0; i < 24; i++) {
       const a = Math.random() * Math.PI * 2
@@ -99,6 +116,12 @@ function emitSpray(dt) {
     skier.landImpact = 0
   }
 }
+
+// --- Trickmeldung ------------------------------------------------------------
+const trickHud = document.createElement('div')
+trickHud.className = 'trick-hud'
+document.body.appendChild(trickHud)
+let trickTimer = 0
 
 // --- Loop --------------------------------------------------------------------
 const clock = new THREE.Clock()
@@ -122,6 +145,17 @@ function advance(dt) {
   sky.sun.target.position.copy(skier.position)
   sky.sun.position.copy(sky.sunDir).multiplyScalar(90).add(skier.position)
   sky.dome.position.set(skier.position.x, 0, skier.position.z)
+
+  // Trickmeldung: der Fahrer legt sie ab, sobald eine Figur steht.
+  if (skier.trick) {
+    trickHud.textContent = skier.trick.text
+    trickHud.classList.add('visible')
+    trickTimer = 1.1
+    skier.trick = null
+  } else if (trickTimer > 0) {
+    trickTimer -= dt
+    if (trickTimer <= 0) trickHud.classList.remove('visible')
+  }
 
   // Rennstrecke: Zeitnahme laeuft mit, ohne dass man etwas starten muesste.
   props.race.update(dt, skier)

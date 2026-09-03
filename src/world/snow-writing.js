@@ -52,12 +52,14 @@ function textTexture(lines, { fontSize = 96, lineGap = 1.25, rim = 15 } = {}) {
   return { texture: tex, aspect: width / height }
 }
 
-// Die vier Fahrtasten als Tastenkreuz. Umrandete Kaesten machen ohne ein
-// einziges Wort klar, dass es sich um Tasten handelt.
+// Die vier Fahrtasten als Tastenkreuz, darunter die Leertaste. Umrandete
+// Kaesten machen ohne ein einziges Wort klar, dass es sich um Tasten handelt.
+// Die Leertaste ist dazugekommen, seit sie mehr tut als springen – ohne
+// Hinweis findet niemand einen Trick, den es nirgends zu lesen gibt.
 function keycapTexture({ cell = 150, gap = 18, radius = 28, rim = 15 } = {}) {
   const pad = 40
   const width = cell * 3 + gap * 2 + pad * 2
-  const height = cell * 2 + gap + pad * 2
+  const height = cell * 3 + gap * 2 + pad * 2
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -76,26 +78,33 @@ function keycapTexture({ cell = 150, gap = 18, radius = 28, rim = 15 } = {}) {
     { text: 'D', col: 2, row: 1 },
   ]
 
+  // Die Leertaste ist breit und flach – daran erkennt man sie, ohne dass
+  // etwas darauf stehen muesste.
+  keys.push({ text: 'SPACE', col: 0, row: 2, span: 3, flat: 0.62 })
+
   for (const key of keys) {
+    const w = cell * (key.span ?? 1) + gap * ((key.span ?? 1) - 1)
+    const h = cell * (key.flat ?? 1)
     const x = pad + key.col * (cell + gap)
     const y = pad + key.row * (cell + gap)
-    const cx = x + cell / 2
-    const cy = y + cell / 2
+    const cx = x + w / 2
+    const cy = y + h / 2
 
     // Gruen = aufgeworfener Wall: einmal breit um Kasten und Buchstabe.
+    const font = `800 ${cell * (key.span ? 0.3 : 0.6)}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`
     ctx.strokeStyle = '#00ff00'
     ctx.lineWidth = rim * 2
     ctx.beginPath()
-    ctx.roundRect(x, y, cell, cell, radius)
+    ctx.roundRect(x, y, w, h, radius)
     ctx.stroke()
-    ctx.font = `800 ${cell * 0.6}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`
+    ctx.font = font
     ctx.strokeText(key.text, cx, cy + cell * 0.02)
 
     // Gelb = Rille: der Kastenrand selbst und der Buchstabe.
     ctx.strokeStyle = '#ffff00'
     ctx.lineWidth = rim
     ctx.beginPath()
-    ctx.roundRect(x, y, cell, cell, radius)
+    ctx.roundRect(x, y, w, h, radius)
     ctx.stroke()
     ctx.fillStyle = '#ffff00'
     ctx.fillText(key.text, cx, cy + cell * 0.02)

@@ -4,6 +4,7 @@ import { MagicCarpet } from './magic-carpet.js'
 import { readableYaw } from './props/slalom.js'
 import { LightRun } from './light-run.js'
 import { createMarker } from '../stations/marker.js'
+import { createSnowCannon } from './props/snow-cannon.js'
 import {
   createNoodleArch,
   createCone,
@@ -77,6 +78,7 @@ export class Kinderland {
     this._buildCap()
     this._buildSlope()
     this._buildLightRun()
+    this._buildCannon()
   }
 
   // Die Leuchtstrecke: gerade, links am Teppich vorbei, aus dem Kinderland
@@ -202,6 +204,20 @@ export class Kinderland {
     })
   }
 
+  // Die Schneekanone steht am oberen Drittel des Uebungshangs, knapp innerhalb
+  // der Einfassung, und blaest quer ueber die Strecke. Quer ist hier zweimal
+  // richtig: man faehrt zwangslaeufig hindurch, und die Fahne laeuft bei
+  // fester Kamera fast vollstaendig ueber den Bildschirm, statt als Fleck in
+  // die Blickachse zu zeigen.
+  _buildCannon() {
+    const p = this.at(13, 6.2)
+    const cannon = createSnowCannon({ heading: p.heading + Math.PI / 2 })
+    this.world.place(cannon, p.x, p.z, {})
+    this.world.addCollider(p.x, p.z, 1.0)
+    this.animated.push(cannon.userData.animate)
+    this.cannon = cannon
+  }
+
   _buildSlope() {
     // Der Slalom: Huetchen im Wechsel, dazwischen zwei Nudelboegen. Die
     // Abstaende sind so gewaehlt, dass man bei Reisetempo einen Rhythmus
@@ -266,6 +282,11 @@ export class Kinderland {
     const sx = skier.position.x
     const sz = skier.position.z
     const moving = skier.speed > 1.2 && !skier.tow
+
+    // In der Fahne der Kanone wird man eingeschneit. Der Wert steigt, solange
+    // man drin bleibt, und taut danach von selbst wieder ab.
+    const hit = this.cannon.userData.inPlume(sx, sz)
+    if (hit > 0) skier.dustWithSnow(Math.min(1, skier.snowed + hit * dt * 2.2))
 
     for (const r of this.reactors) {
       r.cool = Math.max(0, r.cool - dt)

@@ -43,7 +43,10 @@ export const SUMMIT = { x: -58, z: -64, height: 30 }
 // Spielflaeche: im Spiel liegt damit nur die Flanke, und die faellt
 // gleichmaessig zum Talkessel hin ab – ein Hang ohne Kuppe, auf dem sich
 // Rennstrecke und Funpark unterbringen lassen.
-export const SPORT_HILL = { x: 44, z: -104, radius: 56, height: 19 }
+// Der Scheitel liegt weit ausserhalb der Karte, der Radius ist gross: so
+// beginnt die Flanke schon frueh im Tal und laeuft ueber eine lange Strecke
+// aus, statt als Kegel am Kartenrand zu kleben.
+export const SPORT_HILL = { x: 36, z: -98, radius: 72, height: 20 }
 
 // --- Pistenbaender ----------------------------------------------------------
 // Ein Band zieht das Gelaende entlang einer Linie auf ein gleichmaessiges
@@ -56,7 +59,7 @@ export const SPORT_HILL = { x: 44, z: -104, radius: 56, height: 19 }
 // dem natuerlichen Gelaende abgemessen, dazwischen liegen sie auf einer
 // Geraden. Dadurch trifft das Band an seinen Enden das Gelaende von selbst
 // und muss dort nichts mehr ausgleichen.
-function makeLane(points, { width, feather, endFade }) {
+function makeLane(points, { width, feather, endFade, bank = 0, flat = 0.55 }) {
   const segments = []
   let total = 0
   for (let i = 0; i < points.length - 1; i++) {
@@ -75,7 +78,8 @@ function makeLane(points, { width, feather, endFade }) {
     minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z)
   }
   return {
-    points, segments, total, width, feather, endFade, reach,
+    points, segments, total, width, feather, endFade, reach, bank,
+    flatHalf: width * 0.5 * flat,
     minX: minX - reach, maxX: maxX + reach, minZ: minZ - reach, maxZ: maxZ + reach,
   }
 }
@@ -86,56 +90,89 @@ function makeLane(points, { width, feather, endFade }) {
 // Textur haben.
 function laneAt(x, z, lane) {
   if (x < lane.minX || x > lane.maxX || z < lane.minZ || z > lane.maxZ) return null
+  // Nicht den naechsten Abschnitt gewinnen lassen, sondern alle gewichtet
+  // mitteln. An einem Knick treffen zwei Abschnitte mit verschiedenen
+  // Zielhoehen aufeinander; wer nur den naechsten nimmt, bekommt genau auf
+  // der Winkelhalbierenden eine Stufe ins Gelaende geschnitten. Das Gewicht
+  // faellt mit der vierten Potenz, damit entfernte Abschnitte nichts ziehen.
   let bestD = Infinity
-  let target = 0
-  let s = 0
+  let sumW = 0
+  let sumT = 0
+  let sumS = 0
   for (const g of lane.segments) {
     let t = ((x - g.x) * g.dx + (z - g.z) * g.dz) / g.len2
     t = t < 0 ? 0 : t > 1 ? 1 : t
     const px = g.x + g.dx * t
     const pz = g.z + g.dz * t
-    const d = Math.hypot(x - px, z - pz)
-    if (d < bestD) {
-      bestD = d
-      target = g.h0 + (g.h1 - g.h0) * t
-      s = g.s0 + g.len * t
-    }
+    const d2 = (x - px) * (x - px) + (z - pz) * (z - pz)
+    const d = Math.sqrt(d2)
+    if (d < bestD) bestD = d
+    const w = 1 / (d2 * d2 + 0.05)
+    sumW += w
+    sumT += w * (g.h0 + (g.h1 - g.h0) * t)
+    sumS += w * (g.s0 + g.len * t)
   }
+  const target = sumT / sumW
+  const s = sumS / sumW
   if (bestD > lane.reach) return null
   const half = lane.width * 0.5
+  // Bande: zur Mitte hin flach, nach aussen ansteigend. Sie macht aus der
+  // Bahn eine Rinne, in der man die Kurve halten kann, statt oben hinaus zu
+  // schiessen. Quadratisch, damit der Uebergang von Sohle zu Wand weich ist.
+  // Wie hoch sie tatsaechlich wird, entscheidet erst die Hoehenfunktion:
+  // aufgeschuettet wird nur, wo das Gelaende unter der Bahn liegt.
+  let bank = 0
+  if (lane.bank > 0 && bestD > lane.flatHalf) {
+    const t = Math.min(1, (bestD - lane.flatHalf) / (half - lane.flatHalf))
+    bank = lane.bank * t * t
+  }
   const side = bestD <= half ? 1 : smooth((lane.reach - bestD) / lane.feather)
   const ends = smooth(Math.min(1, Math.min(s, lane.total - s) / lane.endFade))
   const weight = side * ends
-  return weight <= 0.001 ? null : { weight, target }
+  return weight <= 0.001 ? null : { weight, base: target, bank }
 }
 
-// Die Rennstrecke am Nordosthang. Die Hoehen sind Anfang und Ende dem
-// natuerlichen Gelaende abgenommen und dazwischen auf gleichmaessige 20 Grad
-// verteilt; die letzten zehn Einheiten flachen zum Auslauf ab. Der Hang gibt
-// von sich aus 25 Grad oben und flaches Gelaende unten her – das Band nimmt
-// oben etwas weg und schuettet unten hoechstens zwei Meter auf.
-export const RACE_LANE = makeLane([
-  { x: 34, z: -82, h: 13.05 },
-  { x: 31, z: -71, h: 8.90 },
-  { x: 33, z: -60, h: 4.82 },
-  { x: 28, z: -50, h: 0.75 },
-  { x: 27, z: -40, h: -0.75 },
-  { x: 24, z: -34, h: -1.05 },
-], { width: 14, feather: 7, endFade: 9 })
+// Die Rodelbahn vom Gipfel nach Osten. Sie faengt dort an, wo der Lift den
+// Fahrer absetzt – man steigt aus und ist im Start – holt dann nach Osten in
+// den Wald aus und kommt in einer Schleife bis kurz vor den umgestuerzten
+// Stamm im Tal. Zwischen ihr und der Lifttrasse bleibt die freie Abfahrt.
+//
+// Die Bahn ist bewusst kurvig gelegt und nicht die kuerzeste Linie: gerade
+// nach unten ist die Falllinie, aber kein Vergnuegen. Ueber ihre Laenge
+// dreht sie sich in Summe um gut 220 Grad.
+//
+// Die Hoehen sind nicht auf ein gleichmaessiges Gefaelle gerechnet, sondern
+// ein geglaettetes, streng fallendes Abbild des natuerlichen Gelaendes: der
+// Berg gibt sein Gefaelle nun einmal oben her und laeuft unten flach aus. So
+// bleibt der groesste Auf- oder Abtrag unter anderthalb Metern – haette man
+// eine Gerade erzwungen, waere unten ein fuenf Meter hoher Damm noetig
+// gewesen. Oben 19 bis 31 Grad, unten Auslauf.
+export const SLED_LANE = makeLane([
+  { x: -53, z: -56, h: 27.50 },
+  { x: -45, z: -61, h: 24.90 },
+  { x: -36, z: -60, h: 20.23 },
+  { x: -29, z: -54, h: 15.50 },
+  { x: -26, z: -45, h: 10.79 },
+  { x: -18, z: -41, h: 5.24 },
+  { x: -11, z: -36, h: 2.34 },
+  { x: -6, z: -30, h: 1.87 },
+  { x: -11, z: -24, h: 1.40 },
+  { x: -15, z: -19, h: 1.44 },
+], { width: 13, feather: 9, endFade: 8, bank: 1.35, flat: 0.5 })
 
-// Der Funpark liegt oestlich daneben und ist mit knapp 10 Grad bewusst
-// flacher: auf steilem Gelaende ueberfaehrt man die Figuren, statt sie zu
-// treffen. Er ist breiter als die Rennstrecke, damit man an einer Figur
-// vorbeifahren kann, wenn man sie nicht nehmen will.
+// Der Funpark auf dem Nordosthang – rund 15 Grad. Flach genug, dass man die
+// Figuren trifft statt sie zu ueberfahren, steil genug, dass man ohne
+// Nachdruecken durchkommt.
 export const PARK_LANE = makeLane([
-  { x: 70, z: -76, h: 6.81 },
-  { x: 67, z: -66, h: 5.06 },
-  { x: 65, z: -56, h: 3.34 },
-  { x: 62, z: -46, h: 1.57 },
-  { x: 59, z: -38, h: 0.14 },
+  { x: 19, z: -64, h: 10.57 },
+  { x: 24, z: -60, h: 9.90 },
+  { x: 30, z: -56, h: 8.72 },
+  { x: 38, z: -51, h: 6.64 },
+  { x: 46, z: -45, h: 4.54 },
+  { x: 52, z: -38, h: 1.24 },
 ], { width: 18, feather: 8, endFade: 8 })
 
-const LANES = globalThis.__noLanes ? [] : [RACE_LANE, PARK_LANE]
+const LANES = globalThis.__noLanes ? [] : [SLED_LANE, PARK_LANE]
 
 // --- Figuren im Funpark ------------------------------------------------------
 // Schanzen, Wellen und Kanten sind Gelaende und keine Aufbauten. Nur so faehrt
@@ -165,7 +202,12 @@ function kicker(x, z, f) {
   const along = (u + f.length) / f.length
   const side = av <= hw ? 1 : smooth((hw + flank - av) / flank)
   const lip = u > 0 ? smooth(1 - u / drop) : 1
-  return f.height * Math.min(1, along) * Math.min(1, along) * side * lip
+  // Kubisch statt quadratisch: der Fuss bleibt flach, die Steigung sammelt
+  // sich an der Kante. Genau dort entscheidet sich der Absprung – bei einem
+  // quadratischen Profil verteilt sie sich zu gleichmaessig und der Fahrer
+  // rollt ueber die Kante, statt abzuheben.
+  const a = Math.min(1, along)
+  return f.height * a * a * a * side * lip
 }
 
 // Wellenbahn: eine Reihe weicher Buckel, die an beiden Enden ausklingt.
@@ -201,11 +243,15 @@ function ledge(x, z, f) {
 // beim quadratischen Profil 2*Hoehe/Laenge minus dem Gefaelle des Bandes.
 // Bei Tempo 13 ergibt das hier Abfluege von rund einer halben bis zwei
 // Dritteln Sekunde.
+// Die Figuren duerfen sich nicht ueberlappen: eine Wellenbahn ist so lang wie
+// Anzahl mal Abstand, eine Schanze so lang wie ihre Rampe, eine Kante wie ihre
+// Laenge. Aneinandergereiht braucht das mehr Platz, als man denkt – deshalb
+// reicht das Band bis ganz hinauf.
 export const PARK_FEATURES = [
-  { kind: 'rollers', x: 67.7, z: -68.3, dx: -0.287, dz: 0.958, count: 4, spacing: 4.6, height: 0.7, width: 9 },
-  { kind: 'kicker', x: 65.9, z: -60.5, dx: -0.196, dz: 0.981, length: 4.5, width: 7.5, height: 1.62 },
-  { kind: 'ledge', x: 65.4, z: -52.4, dx: -0.287, dz: 0.958, length: 9, width: 2.6, height: 0.85, ramp: 2.6 },
-  { kind: 'kicker', x: 61.7, z: -45.1, dx: -0.351, dz: 0.936, length: 5.0, width: 8.5, height: 2.05 },
+  { kind: 'rollers', x: 26.2, z: -58.6, dx: 0.832, dz: 0.555, count: 3, spacing: 4.2, height: 0.7, width: 9 },
+  { kind: 'kicker', x: 35.4, z: -52.6, dx: 0.848, dz: 0.530, length: 4.5, width: 7.5, height: 1.60 },
+  { kind: 'ledge', x: 42.0, z: -48.0, dx: 0.800, dz: 0.600, length: 7, width: 2.6, height: 0.85, ramp: 2.2 },
+  { kind: 'kicker', x: 48.6, z: -42.0, dx: 0.651, dz: 0.759, length: 5.0, width: 8.5, height: 2.30 },
 ]
 
 function parkFeatures(x, z) {
@@ -258,7 +304,7 @@ export function terrainHeight(x, z) {
   // Schildes. Dazu eine flache Mulde an der Taille zum Talkessel, damit der
   // Uebergang als Senke gelesen wird und nicht als Kante.
   h += bump(x, z, SPORT_HILL.x, SPORT_HILL.z, SPORT_HILL.radius, SPORT_HILL.height)
-  h += bump(x, z, 30, -40, 22, -1.8)
+  h += bump(x, z, 26, -34, 20, -1.4)
   // Sanfter Ruecken, der den mittleren Weg gliedert.
   h += bump(x, z, 4, -10, 28, 3.2)
   // Mulde, in der die Huette steht.
@@ -273,7 +319,16 @@ export function terrainHeight(x, z) {
   // gebuegelt aussieht.
   for (const lane of LANES) {
     const hit = laneAt(x, z, lane)
-    if (hit) h = h * (1 - hit.weight) + (hit.target + grain) * hit.weight
+    if (!hit) continue
+    let target = hit.base
+    if (hit.bank > 0) {
+      // Auf der Bergseite ist der Anschnitt selbst schon die Wand. Eine Bande
+      // davor ergaebe eine zweite Kante und dazwischen einen Graben – deshalb
+      // waechst sie nur dort, wo das Gelaende unter der Bahnsohle liegt.
+      const fill = Math.min(1, Math.max(0, (hit.base + hit.bank - h) / hit.bank))
+      target += hit.bank * fill
+    }
+    h = h * (1 - hit.weight) + (target + grain) * hit.weight
   }
 
   // Die Figuren im Funpark sitzen auf dem geglaetteten Band – deshalb erst

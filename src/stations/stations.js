@@ -70,10 +70,13 @@ export const STATION_SPOTS = {
   // Die Skikasse steht am Lifteinstieg – dort kauft man schliesslich sein
   // Ticket.
   vending:   { x: -28, z: -4, clearing: 7, footprint: 1.8, search: 5, trail: 'social' },
-  // Das Fernrohr steht nicht auf der Kuppe, sondern eine Stufe darunter auf
-  // der Talschulter – dort faengt die Abfahrt an und man sieht das ganze
-  // Tal. Der hoechste Punkt bleibt dem Gipfelkreuz.
-  telescope: { x: -47, z: -58, clearing: 7, footprint: 1.2, search: 3, trail: 'social' },
+  // Das Fernrohr stand frueher auf der Talschulter – da beginnt jetzt die
+  // Rodelbahn. Es ist auf die Suedschulter hinter dem Gipfel gewichen: von
+  // dort schaut man ueber die andere Talseite, und wer vom Lift kommt, findet
+  // es, wenn er einmal um das Gipfelkreuz faehrt. Trotz der Lage hinter der
+  // Kuppe ist es sichtbar – bei 36 Grad Kamerawinkel steigt die Sichtlinie
+  // schneller als der Berg dahinter abfaellt.
+  telescope: { x: -59, z: -71, clearing: 7, footprint: 1.2, search: 3, trail: 'social' },
 
   // Weg 3 – Werkzeuge
   pipe:      { x: -19, z: 25, clearing: 8, footprint: 1.4, search: 6, trail: 'tools' },

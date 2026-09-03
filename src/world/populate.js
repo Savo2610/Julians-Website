@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, RACE_LANE, PARK_LANE, PARK_FEATURES } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, PARK_LANE, PARK_FEATURES } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -16,6 +16,7 @@ import { createSummitCross } from './props/summit-cross.js'
 import { DragLift } from './drag-lift.js'
 import { RaceCourse } from './race.js'
 import { createRail, createPadMarker, createParkSign } from './props/funpark.js'
+import { createSledFence } from './props/sled.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -23,7 +24,7 @@ const CLEARINGS = [
   { x: PLATEAU.x, z: PLATEAU.z, r: PLATEAU.radius + 5 },   // Startplateau
   { x: LAKE.x, z: LAKE.z, r: LAKE.radius * 1.02 },
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
-  { x: -40, z: -44, r: 12 },   // Startbereich der langen Abfahrt
+  { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
   ...Object.values(STATION_SPOTS).map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
 ]
 
@@ -36,6 +37,15 @@ const LANES = []
 // frei, und die Trasse quert den Hang sogar weniger schraeg als vorher.
 export const LIFT_BASE = { x: -34, z: -8 }
 export const LIFT_TOP = { x: -63, z: -55 }
+
+// Die freie Abfahrt: sie laeuft im Korridor zwischen Lifttrasse und
+// Rodelbahn, ueberall gut zehn Meter von beiden entfernt. Hier wird nichts
+// ins Gelaende geschnitten – der Hang faellt hier von selbst gleichmaessig
+// mit knapp 40 Grad, und wer ohne Uhr fahren will, hat seinen Weg.
+const FREE_PISTE = [
+  [-44, -52], [-41, -46], [-38, -40], [-34.5, -34],
+  [-31, -28], [-28.5, -22], [-27, -14],
+]
 
 function inClearing(x, z, pad = 0) {
   for (const c of CLEARINGS) {
@@ -124,16 +134,43 @@ export function populate(world, sky, registry) {
   // den Bestand. Muss vor der Bepflanzung feststehen.
   LANES.length = 0
   LANES.push({ x1: LIFT_BASE.x, z1: LIFT_BASE.z, x2: LIFT_TOP.x, z2: LIFT_TOP.z, r: 7.5 })
+  // Die freie Abfahrt braucht keine Gelaendeformung, aber eine Schneise –
+  // sonst stehen die Stangen zwischen Baeumen. Sie faellt schmal aus: der
+  // Streifen Wald zwischen Piste und Rodelbahn ist das, was die beiden
+  // ueberhaupt als getrennte Wege lesbar macht.
+  for (let i = 0; i < FREE_PISTE.length - 1; i++) {
+    const [x1, z1] = FREE_PISTE[i]
+    const [x2, z2] = FREE_PISTE[i + 1]
+    LANES.push({ x1, z1, x2, z2, r: 4.5 })
+  }
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
   // Bewuchs und Boden nicht auseinanderlaufen koennen.
-  for (const [lane, r] of [[RACE_LANE, 11], [PARK_LANE, 13]]) {
+  for (const [lane, r] of [[SLED_LANE, 7.5], [PARK_LANE, 13]]) {
     for (let i = 0; i < lane.points.length - 1; i++) {
       const a = lane.points[i]
       const b = lane.points[i + 1]
       LANES.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, r })
     }
   }
+  // Abstand zur Rodelbahn – gebraucht fuer das Waldband, das sie einfasst.
+  const sledDist = (x, z) => {
+    let best = Infinity
+    const pts = SLED_LANE.points
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i]
+      const b = pts[i + 1]
+      const ax = b.x - a.x
+      const az = b.z - a.z
+      const t = Math.max(0, Math.min(1, ((x - a.x) * ax + (z - a.z) * az) / (ax * ax + az * az)))
+      const dx = x - (a.x + ax * t)
+      const dz = z - (a.z + az * t)
+      const d = dx * dx + dz * dz
+      if (d < best) best = d
+    }
+    return Math.sqrt(best)
+  }
+
   const n = new THREE.Vector3()
 
   const steepness = (x, z) => {
@@ -145,7 +182,7 @@ export function populate(world, sky, registry) {
   // Dichter Guertel aussen, lockere Gruppen innen: der Wald ist die weiche
   // Talgrenze, bevor die Felswand kommt.
   const treeSpots = scatter(rng, {
-    count: 760,
+    count: 880,
     minDist: 3.4,
     accept: (x, z) => {
       const edge = playAreaDistance(x, z)
@@ -164,7 +201,11 @@ export function populate(world, sky, registry) {
       const rim = THREE.MathUtils.smoothstep(edge, -22, -4)
       // Grosszuegige Haine statt Gleichverteilung.
       const groves = Math.pow(THREE.MathUtils.smoothstep(fbm(x * 0.035 + 60, z * 0.035 + 60, 3), 0.52, 0.78), 1.4)
-      const density = Math.min(1, rim * 0.98 + groves * 0.5) * treeline
+      // Waldband an der Rodelbahn: sie soll durch den Bestand fahren und
+      // nicht neben ihm her. Direkt an der Bahn haelt die Schneise frei, ab
+      // etwa zehn Metern steht der Wald dann dicht an der Bande.
+      const woods = 0.75 * (1 - THREE.MathUtils.smoothstep(sledDist(x, z), 12, 30))
+      const density = Math.min(1, rim * 0.98 + groves * 0.5 + woods) * treeline
       return rng() < density
     },
   })
@@ -223,7 +264,7 @@ export function populate(world, sky, registry) {
 
   // --- Umgestuerzte Baeume am Waldrand ----------------------------------
   for (const [i, spot] of [
-    { x: -12, z: -18, rot: 0.9 },
+    { x: -8, z: -16, rot: 0.9 },
     { x: 36, z: 16, rot: 2.4 },
     { x: -46, z: 12, rot: 1.7 },
   ].entries()) {
@@ -343,10 +384,10 @@ export function populate(world, sky, registry) {
   world.place(cross, SUMMIT.x + 1.5, SUMMIT.z + 1.5, { rotation: Math.PI * 0.25 })
   world.addCollider(SUMMIT.x + 1.5, SUMMIT.z + 1.5, 0.7)
 
-  // Stangen fuer die lange Abfahrt vom Gipfel zurueck ins Tal.
-  createPisteMarkers(world, route([
-    [-52, -56], [-42, -49], [-32, -38], [-22, -26], [-12, -14], [-4, -2], [0, 14],
-  ], 5.5), { seed: 55, color: 0xe8703a })
+  // Die freie Abfahrt zwischen Lifttrasse und Rodelbahn: wer nicht auf Zeit
+  // fahren will, hat hier seinen Weg vom Gipfel ins Tal. Nur Stangen, kein
+  // eingeschnittenes Band – die Piste soll offen bleiben.
+  createPisteMarkers(world, route(FREE_PISTE, 5.5), { seed: 55, color: 0xe8703a })
 
   // --- Zaeune -------------------------------------------------------------
   // Ein alter Weidezaun im Osten, ein Absperrzaun oberhalb des Seeufers.
@@ -360,10 +401,12 @@ export function populate(world, sky, registry) {
     { x: 14, z: -46 }, { x: 2, z: -50 }, { x: -12, z: -48 },
   ], { seed: 93 })
 
-  // --- Sportgelaende im Nordosten ----------------------------------------
-  // Rennstrecke mit Zeitnahme und daneben der Funpark. Die Schanzen selbst
-  // sind Gelaende (siehe heightfield.js) – hier stehen nur die Aufbauten.
-  const race = new RaceCourse(world, {})
+  // --- Rodelbahn vom Gipfel ----------------------------------------------
+  // Die Bahn ist eine Rinne mit Banden, keine Slalomstrecke: es gibt nur einen
+  // Weg hindurch, gefahren wird auf Zeit. Start oben am Lift-Ausstieg, Ziel
+  // unten kurz vor dem umgestuerzten Stamm.
+  const race = new RaceCourse(world, { lane: SLED_LANE, gates: false })
+  world.scene.add(createSledFence(SLED_LANE))
 
   {
     const lane = PARK_LANE

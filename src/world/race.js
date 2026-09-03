@@ -1,13 +1,17 @@
 import * as THREE from 'three'
-import { terrainHeight, RACE_LANE } from './heightfield.js'
+import { terrainHeight, SLED_LANE } from './heightfield.js'
 import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH } from './props/slalom.js'
 
-// Die Rennstrecke: Tore, Start, Ziel und die Zeitnahme.
+// Die Zeitnahme einer Bahn: Start, Ziel, optional Tore.
 //
 // Alles rechnet in den Koordinaten des Bandes: s ist die Strecke von oben,
 // v der seitliche Versatz zur Mittellinie. Damit braucht die Zeitnahme keine
-// Trigger-Boxen – ein Tor gilt als gefahren, wenn der Fahrer die Hoehe des
-// Tors passiert und dabei innerhalb der Torbreite liegt.
+// Trigger-Boxen – die Uhr laeuft, sobald der Fahrer die Starthoehe von oben
+// passiert, und steht, wenn er die Zielhoehe erreicht.
+//
+// Die Rodelbahn faehrt ohne Tore: sie ist eine Rinne mit Banden, in der man
+// ohnehin nur einen Weg hat. Wer Tore setzt (gateCount > 0), bekommt die
+// Slalom-Auswertung samt Strafsekunden dazu.
 
 const GATE_START = 4        // erstes Tor, Abstand vom Start
 const GATE_SPACING = 7.5
@@ -19,9 +23,10 @@ const GATE_OFFSET = 2.6
 const GATE_TOLERANCE = 1.2  // etwas Nachsicht an den Stangen
 
 export class RaceCourse {
-  constructor(world, { lane = RACE_LANE } = {}) {
+  constructor(world, { lane = SLED_LANE, gates = true, startFade = 3.0, finishFade = 4.0 } = {}) {
     this.world = world
     this.lane = lane
+    this.withGates = gates
     this.gates = []
     this.state = 'idle'
     this.time = 0
@@ -31,10 +36,8 @@ export class RaceCourse {
     this._prevS = null
     this._hold = 0
 
-    this.startS = 3.0
-    // Das Ziel liegt am Ende des steilen Teils, nicht am Bandende: die
-    // letzten zehn Einheiten sind Auslauf zum Ausrollen.
-    this.finishS = lane.total - 4
+    this.startS = startFade
+    this.finishS = lane.total - finishFade
 
     this._build()
     this._buildHud()
@@ -98,6 +101,11 @@ export class RaceCourse {
 
     const finish = this.pointAt(this.finishS)
     place(createFinishArch(), finish.x, finish.z, Math.atan2(finish.dx, finish.dz))
+
+    if (!this.withGates) {
+      this.world.scene.add(group)
+      return
+    }
 
     // Tore im Wechsel links und rechts. Die letzte Torhoehe muss vor dem Ziel
     // liegen, sonst haengt ein Tor im Zielbogen.

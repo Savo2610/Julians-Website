@@ -11,7 +11,7 @@ export const WORLD = {
   basins: [
     { x: 0, z: 0, radius: 66 },        // Talkessel mit Plateau und den drei Wegen
     { x: -58, z: -64, radius: 41 },    // Bergarm im Nordwesten: lange Abfahrt und Lift
-    { x: 46, z: -62, radius: 35 },     // Sportgelaende im Nordosten: Rennhang und Funpark
+    { x: 38, z: -56, radius: 32 },     // Sportgelaende im Nordosten: der Funpark
   ],
   rimWidth: 17,       // wie breit der Gebirgsrand ansteigt
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { KINDER_LANE, terrainHeight } from './heightfield.js'
+import { KINDER_LANE, SHOOT_RUN, terrainHeight } from './heightfield.js'
 import { MagicCarpet } from './magic-carpet.js'
 import { readableYaw } from './props/slalom.js'
 import { LightRun } from './light-run.js'
@@ -85,12 +85,11 @@ export class Kinderland {
   // heraus ins Tal. Der Tunnel steht darin – er stand vorher allein auf der
   // Kuppe und sah dort aus wie hingestellt; hier hat er eine Aufgabe.
   _buildLightRun() {
-    const top = this.at(26, -13)
-    const bottom = this.at(0, -13)
-    this.lightRun = new LightRun(this.world, {
-      from: { x: top.x, z: top.z },
-      to: { x: bottom.x, z: bottom.z },
-    })
+    // Anfang und Ende kommen aus dem Hoehenfeld, nicht aus den
+    // Bandkoordinaten des Kinderlands: die Strecke hat dort inzwischen ihr
+    // eigenes Band, und beides muss dieselbe Linie meinen, sonst laufen
+    // Leuchtleisten und Aufschuettung auseinander.
+    this.lightRun = new LightRun(this.world, { from: SHOOT_RUN.from, to: SHOOT_RUN.to })
 
     const mid = this.lightRun.pointAt(this.lightRun.length * 0.5)
     this.add(createSnowTunnel({ length: 6.0, width: 5.0, height: 2.7 }), mid.x, mid.z, {

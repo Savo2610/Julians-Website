@@ -2,18 +2,19 @@ import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../core/geometry.js'
 import { CAMERA } from '../config.js'
 import { terrainHeight } from './heightfield.js'
-import { snowPaint } from './props/snow-paint.js'
 
-// Die Radarfalle auf der freien Abfahrt: eine Linie im Schnee, eine kleine
-// Kamera am Rand und ein Display, das anzeigt, wie schnell man durch war.
+// Die Radarfalle auf der freien Abfahrt: zwei Pfosten links und rechts der
+// Bahn, auf dem rechten eine kleine Kamera, auf dem linken ihr Reflektor –
+// eine Lichtschranke, durch die man faehrt. Weiter unten steht das Display
+// mit der Geschwindigkeit.
 //
 // Sie misst nichts, was man nicht ohnehin haette – aber sie macht daraus eine
 // Zahl, und eine Zahl will man verbessern. Das ist der ganze Zweck: der Hang
 // war vorher der Weg ohne Uhr, jetzt hat er einen Grund.
 //
-// Die Markierung bleibt bewusst blass. Eine Rennstrecke daneben hat schon
-// Bogen, Banden und Stangen; wenn die freie Abfahrt genauso laut wird, sind
-// es zwei Rennstrecken und keine Wahl mehr.
+// Im Schnee liegt nichts. Ein Strich quer ueber die Bahn sah nach Startlinie
+// aus, und eine zweite Rennstrecke neben der Rennstrecke ist keine Wahl mehr.
+// Zwei Pfosten sagen dasselbe und stehen dabei nicht im Weg.
 
 const POST = 0x5d666f
 const BODY = 0x3a424c
@@ -57,21 +58,12 @@ export class SpeedCheck {
     const { x, z, dx, dz, nx, nz } = this
     const half = this.width / 2
 
-    // --- Linie im Schnee ---------------------------------------------------
-    const paint = snowPaint()
-    paint.bar(x - nx * half, z - nz * half, x + nx * half, z + nz * half, 0.5, 0xa9c2dc)
-    // Zwei kurze Striche daneben markieren die Breite, ohne die Linie zu
-    // verstaerken – von oben sieht man daran, dass die Linie gemeint ist.
-    for (const side of [-1, 1]) {
-      const mx = x + nx * side * (half + 0.9)
-      const mz = z + nz * side * (half + 0.9)
-      paint.bar(mx - dx * 1.1, mz - dz * 1.1, mx + dx * 1.1, mz + dz * 1.1, 0.45, 0xa9c2dc)
-    }
-    this.world.scene.add(paint.build({ name: 'speedcheck-linie' }))
-
-    // --- Kamera am Rand ----------------------------------------------------
-    const camX = x - nx * (half + 1.6)
-    const camZ = z - nz * (half + 1.6)
+    // --- Rechter Pfosten mit Kamera ---------------------------------------
+    // Rechts, weil die Kamera dem Fahrer ins Gesicht schauen soll: er kommt
+    // von oben links ins Bild, und von dort aus ist rechts die Seite, auf der
+    // sie nicht hinter ihm steht.
+    const camX = x + nx * half
+    const camZ = z + nz * half
     const parts = []
     parts.push({ geo: new THREE.CylinderGeometry(0.07, 0.09, 2.4, 8), color: POST, position: [0, 1.2, 0] })
     parts.push({ geo: new THREE.BoxGeometry(0.34, 0.3, 0.5), color: BODY, position: [0, 2.42, 0.16] })
@@ -92,12 +84,29 @@ export class SpeedCheck {
     parts.push({ geo: new THREE.BoxGeometry(0.4, 0.05, 0.34), color: POST, position: [0, 2.6, 0.28], rotation: [0.2, 0, 0] })
     const cam = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.55 }))
     cam.castShadow = true
-    // Die Kamera schaut quer auf die Bahn, also entlang der Normalen.
+    // Die Kamera schaut quer ueber die Bahn zum Gegenpfosten.
     cam.position.set(camX, terrainHeight(camX, camZ), camZ)
-    cam.rotation.y = Math.atan2(nx, nz)
+    cam.rotation.y = Math.atan2(-nx, -nz)
     this.world.scene.add(cam)
     this.world.addCollider(camX, camZ, 0.35)
-    this.camPost = { x: camX, z: camZ }
+
+    // --- Linker Pfosten mit Reflektor --------------------------------------
+    const refX = x - nx * half
+    const refZ = z - nz * half
+    const ref = []
+    ref.push({ geo: new THREE.CylinderGeometry(0.07, 0.09, 2.2, 8), color: POST, position: [0, 1.1, 0] })
+    ref.push({ geo: new THREE.BoxGeometry(0.3, 0.34, 0.1), color: BODY, position: [0, 2.24, 0.06] })
+    ref.push({ geo: new THREE.BoxGeometry(0.2, 0.24, 0.05), color: LENS, position: [0, 2.24, 0.12] })
+    // Ein schmales Warnband am Mast, damit der Pfosten nicht als Zaunrest liest.
+    for (const y of [0.7, 1.0, 1.3]) {
+      ref.push({ geo: new THREE.CylinderGeometry(0.1, 0.1, 0.12, 8), color: 0xe0662f, position: [0, y, 0] })
+    }
+    const refMesh = new THREE.Mesh(assemble(ref), vertexColorMaterial({ roughness: 0.6 }))
+    refMesh.castShadow = true
+    refMesh.position.set(refX, terrainHeight(refX, refZ), refZ)
+    refMesh.rotation.y = Math.atan2(nx, nz)
+    this.world.scene.add(refMesh)
+    this.world.addCollider(refX, refZ, 0.32)
 
     // Ein kleines Blitzlicht, das beim Durchfahren angeht.
     const flash = new THREE.PointLight(0xbfe6ff, 0, 9, 2)

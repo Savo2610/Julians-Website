@@ -197,7 +197,6 @@ export const PARK_LANE = makeLane([
   { x: 29.5, z: -22, h: 2.10 },
   { x: 30.5, z: -18, h: 1.55 },
   { x: 28.8, z: -13.8, h: 1.20 },
-  { x: 26.4, z: -9.8, h: 0.95 },
 ], { width: 16, feather: 7, endFade: 4 })
 
 // Der Uebungshang des Kinderlands: vom Muldenrand bei der Huette hinauf auf
@@ -217,7 +216,28 @@ export const KINDER_LANE = makeLane([
   { x: 45.0, z: -3.0, h: 8.14 },
 ], { width: 16, feather: 7, endFade: 6, flat: 0.6 })
 
-const LANES = globalThis.__noLanes ? [] : [SLED_LANE, PARK_LANE, KINDER_LANE]
+// Die Schussstrecke westlich des Kinderlands. Sie hatte oben einen Knick:
+// dort trifft sie auf den Auslauf des Funparks, und was zwei Baender an
+// derselben Stelle verschieden hoch haben wollen, wird eine Stufe. Jetzt hat
+// sie ihr eigenes Band mit gleichmaessigen 8,6 Grad – hauptsaechlich
+// aufgeschuettet, stellenweise ein Vierteler abgetragen.
+//
+// Sie steht als letzte in der Reihe: die Baender werden nacheinander
+// verrechnet, und wo zwei sich ueberlagern, gewinnt in der Mitte das spaetere.
+// Genau das ist hier gewollt – die Strecke soll gerade sein, auch wo der
+// Funpark daneben etwas anderes vorhat.
+// Die sichtbare Strecke – so weit reichen die Leuchtleisten.
+export const SHOOT_RUN = { from: { x: 34.0, z: -9.9 }, to: { x: 20.0, z: 12.0 } }
+
+// Das Band greift an beiden Enden zwei Meter darueber hinaus. Der endFade
+// nimmt dem Band an seinen Enden die Wirkung, und faenge es genau an der
+// Strecke an, laege der erste Meter wieder auf gewachsenem Grund.
+export const SHOOT_LANE = makeLane([
+  { x: 35.07, z: -11.59, h: 4.66 },
+  { x: 18.93, z: 13.69, h: 0.10 },
+], { width: 8, feather: 4, endFade: 1.5 })
+
+const LANES = globalThis.__noLanes ? [] : [SLED_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE]
 
 // --- Figuren im Funpark ------------------------------------------------------
 // Schanzen, Wellen und Kanten sind Gelaende und keine Aufbauten. Nur so faehrt
@@ -327,11 +347,11 @@ function ledge(x, z, f) {
 // aussen begrenzt die flache Breite des Bandes.
 export const PARK_FEATURES = [
   { kind: 'rollers', x: 18.97, z: -44.80, dx: 0.496, dz: 0.868, count: 3, spacing: 4.2, height: 0.7, width: 9 },
-  { kind: 'kicker', x: 24.74, z: -34.28, dx: 0.394, dz: 0.919, length: 5.0, width: 7.0, height: 1.70, landing: 11, dip: 1.0 },
+  { kind: 'kicker', x: 24.74, z: -34.28, dx: 0.394, dz: 0.919, length: 5.0, width: 7.0, height: 1.95, landing: 12.5, dip: 1.1 },
   { kind: 'box', x: 17.85, z: -31.33, dx: 0.394, dz: 0.919, length: 6.6, width: 1.5, height: 0.42, ramp: 1.2 },
   { kind: 'box', x: 20.36, z: -25.30, dx: 0.336, dz: 0.942, length: 8.2, width: 2.0, height: 0.60, ramp: 1.5 },
   { kind: 'ledge', x: 34.49, z: -30.34, dx: 0.336, dz: 0.942, length: 12, width: 2.6, height: 0.85, ramp: 2.2 },
-  { kind: 'kicker', x: 29.70, z: -21.20, dx: 0.243, dz: 0.970, length: 5.5, width: 7.5, height: 2.50, landing: 12, dip: 1.2 },
+  { kind: 'kicker', x: 29.70, z: -21.20, dx: 0.243, dz: 0.970, length: 5.5, width: 7.5, height: 2.85, landing: 12.5, dip: 1.3 },
 ]
 
 // Ist der Punkt im Funpark? Gemessen wird am Band selbst, nicht an einem

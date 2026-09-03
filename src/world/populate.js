@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, PARK_LANE, PARK_FEATURES, KINDER_LANE } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -31,8 +31,8 @@ const CLEARINGS = [
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
   { x: 17.3, z: -60.6, r: 9 }, // Terrasse mit der Apres-Ski-Huette
-  { x: -34.5, z: -34, r: 9 },  // Messstelle des Speedchecks
-  { x: -35.5, z: -25.3, r: 5 }, // Display des Speedchecks
+  { x: -35.8, z: -33.2, r: 8 },  // Lichtschranke des Speedchecks
+  { x: -21.5, z: -24.5, r: 5 },  // Display des Speedchecks
   ...Object.values(STATION_SPOTS).map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
 ]
 
@@ -185,7 +185,7 @@ export function populate(world, sky, registry) {
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
   // Bewuchs und Boden nicht auseinanderlaufen koennen.
-  for (const [lane, r] of [[SLED_LANE, 7.5], [PARK_LANE, 13], [KINDER_LANE, 12]]) {
+  for (const [lane, r] of [[SLED_LANE, 7.5], [PARK_LANE, 13], [KINDER_LANE, 12], [SHOOT_LANE, 7]]) {
     for (let i = 0; i < lane.points.length - 1; i++) {
       const a = lane.points[i]
       const b = lane.points[i + 1]
@@ -621,6 +621,12 @@ export function populate(world, sky, registry) {
   // Die Stelle ist so gewaehlt, dass man vorher gut zwanzig Meter Anlauf hat
   // und die Bahn dort gerade laeuft – eine Messung in der Kurve waere eine
   // Messung des Kurvenradius.
+  //
+  // Die Lichtschranke steht drei Meter links der Pistenachse, also mittig in
+  // dem Korridor, in dem man tatsaechlich faehrt: links begrenzt ihn die
+  // Lifttrasse, rechts der Wald vor der Rodelbahn. Der Gegenpfosten steht
+  // knapp am Rand der Trasse, der Kamerapfosten auf der anderen Seite – man
+  // faehrt zwischen beiden hindurch.
   const speedDir = (() => {
     const [ax, az] = FREE_PISTE[2]
     const [bx, bz] = FREE_PISTE[4]
@@ -628,9 +634,12 @@ export function populate(world, sky, registry) {
     return { dx: (bx - ax) / len, dz: (bz - az) / len }
   })()
   const speedCheck = new SpeedCheck(world, {
-    x: -34.5, z: -34, dx: speedDir.dx, dz: speedDir.dz, width: 10,
+    x: -35.8, z: -33.2, dx: speedDir.dx, dz: speedDir.dz, width: 10,
   })
-  speedCheck.buildDisplay(-35.5, -25.3)
+  // Das Display steht weit unterhalb, seitlich neben dem einzelnen Baum und
+  // dort, wo der Hang endlich flach wird – ein Brett auf zwei Pfosten in
+  // vierzig Grad Hang steht mit einem Bein in der Luft.
+  speedCheck.buildDisplay(-21.5, -24.5)
   speedCheck._draw()
 
   // Die Rail ist ausserdem fahrbar: wer sie oben mit gedrueckter Leertaste

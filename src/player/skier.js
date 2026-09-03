@@ -253,9 +253,9 @@ export class Skier {
           this.airborne = true
           // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
           // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
-          // Deckel liegt bei zwoelf – knapp drei ein halb Meter Scheitelhoehe
-          // und gut eine Sekunde Flug, so lang wie die Landehaenge im Park.
-          this.vy = Math.min(this._rise - G * dt, 12)
+          // Deckel liegt bei dreizehn – knapp vier Meter Scheitelhoehe und
+          // gut eine Sekunde Flug, so lang wie die Landehaenge im Park.
+          this.vy = Math.min(this._rise - G * dt, 13)
           this.height = Math.min(free - groundY, 0.6)
         }
       }

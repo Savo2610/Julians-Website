@@ -2,14 +2,14 @@ import * as THREE from 'three'
 import { KINDER_LANE, terrainHeight } from './heightfield.js'
 import { MagicCarpet } from './magic-carpet.js'
 import { readableYaw } from './props/slalom.js'
-import { snowPaint } from './props/snow-paint.js'
+import { LightRun } from './light-run.js'
+import { createMarker } from '../stations/marker.js'
 import {
   createNoodleArch,
   createCone,
   createFlagLine,
   createSnowTunnel,
   createSnowman,
-  createKinderGate,
   createBuntingFence,
   KINDER_COLORS,
 } from './props/kinderland.js'
@@ -26,6 +26,11 @@ import {
 // Positionen auf dem Hang werden in Bandkoordinaten angegeben: s ist die
 // Strecke von unten, off der seitliche Versatz (negativ = zum Teppich hin).
 // Dadurch wandert die ganze Anlage mit, wenn das Band einmal anders liegt.
+//
+// Westlich davon, ausserhalb der Wimpelkette, faellt der Hang von selbst
+// gleichmaessig mit 8 bis 16 Grad – dort liegt die Leuchtstrecke. Sie braucht
+// kein eigenes Pistenband: ein zweites Band so dicht neben dem ersten wuerde
+// nur dagegen ziehen, und noetig ist es nicht.
 
 // Wo der Teppich auf dem Band liegt und wie weit er reicht.
 const CARPET_OFFSET = -4.2
@@ -37,8 +42,9 @@ const CARPET_TO = 23
 const CAP = { x: 45.5, z: -7.5 }
 
 export class Kinderland {
-  constructor(world) {
+  constructor(world, registry) {
     this.world = world
+    this.registry = registry
     this.lane = KINDER_LANE
     this.reactors = []
     this.animated = []
@@ -51,10 +57,45 @@ export class Kinderland {
       speed: 5.4,
     })
 
+    // Der Teppich meldet sich als Station an. Damit bekommt er denselben
+    // Ring im Schnee und dieselbe Einblendung wie alles andere, das man mit E
+    // benutzt – man muss nicht wissen, dass er faehrt, man sieht es.
+    const marker = this.at(CARPET_FROM - 1.2, CARPET_OFFSET)
+    if (registry) world.scene.add(createMarker(marker.x, marker.z, 5.5, '#2f6bd8'))
+    registry?.add({
+      id: 'zauberteppich',
+      label: 'Zauberteppich',
+      hint: 'Aufsteigen',
+      color: '#2f6bd8',
+      position: { x: marker.x, z: marker.z },
+      radius: 5.5,
+      labelHeight: terrainHeight(marker.x, marker.z) + 2.6,
+      onUse: () => this.carpet.board(this._skier),
+    })
+
     this._buildFence()
     this._buildCap()
     this._buildSlope()
-    this._paint()
+    this._buildLightRun()
+  }
+
+  // Die Leuchtstrecke: gerade, links am Teppich vorbei, aus dem Kinderland
+  // heraus ins Tal. Der Tunnel steht darin – er stand vorher allein auf der
+  // Kuppe und sah dort aus wie hingestellt; hier hat er eine Aufgabe.
+  _buildLightRun() {
+    const top = this.at(26, -13)
+    const bottom = this.at(0, -13)
+    this.lightRun = new LightRun(this.world, {
+      from: { x: top.x, z: top.z },
+      to: { x: bottom.x, z: bottom.z },
+    })
+
+    const mid = this.lightRun.pointAt(this.lightRun.length * 0.5)
+    this.add(createSnowTunnel({ length: 6.0, width: 5.0, height: 2.7 }), mid.x, mid.z, {
+      rotation: this.lightRun.heading,
+      trigger: 3.6,
+      kind: 'tunnel',
+    })
   }
 
   // --- Bandkoordinaten ----------------------------------------------------
@@ -118,30 +159,12 @@ export class Kinderland {
   }
 
   _buildCap() {
-    // Das Tor steht dort, wo man vom Teppich auf die Kuppe faehrt, und zeigt
-    // in die Spielwiese hinein.
-    const exit = this.at(CARPET_TO, CARPET_OFFSET)
-    const toCap = Math.atan2(CAP.x - exit.x, CAP.z - exit.z)
-    this.add(createKinderGate(), 41.8, -5.0, {
-      rotation: readableYaw(toCap),
-      collider: 0,
+    // Drei Nudelboegen im Bogen ueber die Wiese – ein Rhythmus, kein Einzelstueck.
+    this.add(createNoodleArch({ color: KINDER_COLORS[1], span: 5.6 }), 45.6, -6.2, {
+      rotation: readableYaw(Math.atan2(0.72, -0.69)),
+      trigger: 3.2,
+      kind: 'arch',
     })
-    // Die Masten des Tors einzeln, damit man mittendurch faehrt statt daran
-    // haengenzubleiben.
-    for (const sx of [-1, 1]) {
-      const yaw = readableYaw(toCap)
-      this.world.addCollider(41.8 + Math.cos(yaw) * sx * 3.2, -5.0 - Math.sin(yaw) * sx * 3.2, 0.34)
-    }
-
-    // Der Tunnel liegt quer auf der flachsten Stelle der Kuppe. Er zeigt in
-    // die Falllinie, damit man ihn im Vorbeifahren mitnimmt.
-    this.add(createSnowTunnel(), 46.6, -6.6, {
-      rotation: readableYaw(Math.atan2(0.55, -0.84)),
-      trigger: 3.4,
-      kind: 'tunnel',
-    })
-
-    // Zwei Nudelboegen hintereinander – ein Rhythmus, kein Einzelstueck.
     this.add(createNoodleArch({ color: KINDER_COLORS[0] }), 49.2, -9.4, {
       rotation: readableYaw(Math.atan2(0.62, -0.78)),
       trigger: 3.0,
@@ -233,46 +256,12 @@ export class Kinderland {
     }
   }
 
-  // Farbe im Schnee: eine Spur aus Winkeln vom Teppichausstieg auf die Wiese
-  // und wieder zurueck auf den Uebungshang. Ohne sie steht oben eine Sammlung
-  // von Dingen; mit ihr ist es ein Rundweg.
-  _paint() {
-    const paint = snowPaint()
-    const tone = new THREE.Color(KINDER_COLORS[1]).lerp(new THREE.Color(0xffffff), 0.38).getHex()
-
-    const route = [
-      this.at(CARPET_TO, CARPET_OFFSET),
-      { x: 41.8, z: -5.0 },
-      { x: 45.5, z: -7.0 },
-      { x: 48.6, z: -9.6 },
-      { x: 45.6, z: -11.6 },
-      { x: 43.0, z: -9.6 },
-      { x: 43.6, z: -5.4 },
-      this.at(23.5, 0.8),
-    ]
-    // Und weiter den Uebungshang hinunter, mitten durch den Slalom: erst
-    // dadurch liest sich die Reihe aus Huetchen als Strecke.
-    for (const [s, off] of [[22, 0.8], [19.5, 3.0], [16.6, -1.2], [13.9, 3.0], [11, -1.2], [8.3, 1.4], [5.5, 0.8], [2.5, 0.8]]) {
-      route.push(this.at(s, off))
-    }
-    for (let i = 0; i < route.length - 1; i++) {
-      const a = route[i]
-      const b = route[i + 1]
-      const len = Math.hypot(b.x - a.x, b.z - a.z)
-      if (len < 0.5) continue
-      const dx = (b.x - a.x) / len
-      const dz = (b.z - a.z) / len
-      for (let d = len * 0.5; d < len; d += 5.5) {
-        paint.chevron(a.x + dx * d, a.z + dz * d, dx, dz, 2.0, tone)
-      }
-    }
-    this.world.scene.add(paint.build({ name: 'kinderland-spur' }))
-  }
-
   // --- Ablauf -------------------------------------------------------------
 
   update(dt, skier, input) {
+    this._skier = skier
     this.carpet.update(dt, skier, input)
+    this.lightRun.update(dt, skier)
 
     const sx = skier.position.x
     const sz = skier.position.z

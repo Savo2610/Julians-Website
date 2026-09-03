@@ -249,10 +249,10 @@ export class MagicCarpet {
     // benutzbar ist.
     this.beltMap.offset.y -= (this.speed / 1.6) * dt * 0.1
 
-    if (!this.rider) {
-      if (skier && input && input.justPressed('use') && this.canBoard(skier)) this.board(skier)
-      return
-    }
+    // Eingestiegen wird ueber die Station am Fuss – dieselbe Taste und
+    // dieselbe Einblendung wie ueberall sonst. Hier steht nur, was passiert,
+    // solange jemand oben steht.
+    if (!this.rider) return
 
     const r = this.rider
     r.progress += (this.speed / this.length) * dt

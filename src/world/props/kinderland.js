@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { assemble, vertexColorMaterial, labelTexture } from '../../core/geometry.js'
+import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 
 // Die Bauteile des Kinderlands.
 //
@@ -239,13 +239,13 @@ export function createFlagLine({ span = 6, height = 2.1, seed = 0 } = {}) {
 export function createSnowTunnel({ length = 5.2, width = 4.4, height = 2.6 } = {}) {
   const group = new THREE.Group()
   const rings = []
-  const count = 6
+  const count = 7
   const shell = []
 
   for (let i = 0; i < count; i++) {
     const z = (i / (count - 1) - 0.5) * length
     // Der Ring: ein halber Torus, an den Enden etwas dicker.
-    const geo = new THREE.TorusGeometry(width / 2, 0.16, 7, 14, Math.PI)
+    const geo = new THREE.TorusGeometry(width / 2, 0.2, 7, 16, Math.PI)
     const ring = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       color: KINDER_COLORS[i % KINDER_COLORS.length],
       roughness: 0.6,
@@ -260,29 +260,20 @@ export function createSnowTunnel({ length = 5.2, width = 4.4, height = 2.6 } = {
     rings.push(ring)
   }
 
-  // Schneedach ueber den Ringen: schmale Platten zwischen je zwei Ringen,
-  // damit der Tunnel geschlossen wirkt und nicht wie ein Gerippe.
-  for (let i = 0; i < count - 1; i++) {
-    const z = ((i + 0.5) / (count - 1) - 0.5) * length
-    const step = length / (count - 1)
-    for (let k = 0; k < 5; k++) {
-      const a = (k / 5) * Math.PI + Math.PI / 10
-      shell.push({
-        geo: new THREE.BoxGeometry(width * 0.34, 0.1, step * 0.92),
-        color: SNOW,
-        position: [Math.cos(a) * (width / 2 - 0.05), Math.sin(a) * height, z],
-        rotation: [0, 0, a - Math.PI / 2],
-      })
-    }
-  }
-  // Zwei Wangen, die den Tunnel im Schnee verankern.
-  for (const sx of [-1, 1]) {
-    shell.push({
-      geo: new THREE.BoxGeometry(0.5, 0.34, length + 0.4),
-      color: SNOW,
-      position: [sx * (width / 2), 0.17, 0],
-    })
-  }
+  // Die Roehre zwischen den Ringen: ein offener Halbzylinder statt einzelner
+  // Platten. Das ist nicht nur weniger Geometrie – die Kamera steht fest, und
+  // ein Tunnel, dessen Achse in die Blickrichtung zeigt, zeigt von seinen
+  // Ringen nur die Kanten. Erst die geschlossene Schale macht daraus wieder
+  // einen Koerper, den man als Roehre liest.
+  // Der offene Halbzylinder hat seine Achse auf Y und die Schale auf +X.
+  // rotateZ legt die Achse auf X und die Schale nach oben; danach ist Y die
+  // Hoehe und Z die Breite. Erst dann skalieren, sonst vertauscht man beide.
+  const tube = new THREE.CylinderGeometry(1, 1, length, 20, 1, true, 0, Math.PI)
+  tube.rotateZ(Math.PI / 2)
+  tube.scale(1, height, width / 2)
+  // Die letzte Vierteldrehung stellt die Achse auf Z, wo auch die Ringe liegen.
+  shell.push({ geo: tube, color: SNOW, position: [0, 0, 0], rotation: [0, Math.PI / 2, 0] })
+
   const shellMesh = new THREE.Mesh(assemble(shell), vertexColorMaterial({ roughness: 0.85 }))
   shellMesh.castShadow = true
   shellMesh.receiveShadow = true
@@ -412,69 +403,6 @@ export function createSnowman({ scale = 1, hat = 0xe8663a, seed = 0 } = {}) {
     arms[1].rotation.z = -wave * 1.15 + Math.sin(t * 9 + seed) * wave * 0.5
     arms[0].rotation.z = Math.sin(t * 0.7 + seed) * 0.04
   }
-  return group
-}
-
-// --- Torbogen ----------------------------------------------------------------
-// Das Eingangsschild des Kinderlands. Bewusst dieselbe Bauart wie Start und
-// Ziel der Rodelbahn, nur bunt – so bleibt die Welt in einer Sprache.
-
-export function createKinderGate({ span = 6.4, height = 3.0, title = 'KINDERLAND' } = {}) {
-  const group = new THREE.Group()
-  const parts = []
-  const half = span / 2
-
-  for (const sx of [-1, 1]) {
-    parts.push({
-      geo: new THREE.CylinderGeometry(0.1, 0.14, height, 9),
-      color: POST,
-      position: [sx * half, height / 2, 0],
-    })
-    parts.push({
-      geo: new THREE.CylinderGeometry(0.4, 0.48, 0.14, 12),
-      color: SNOW,
-      position: [sx * half, 0.07, 0],
-    })
-  }
-  parts.push({
-    geo: new THREE.BoxGeometry(span + 0.4, 0.18, 0.18),
-    color: POST,
-    position: [0, height - 0.12, 0],
-  })
-  // Wimpel unter dem Querbalken, in den Farben des Kinderlands.
-  for (let i = 0; i < 8; i++) {
-    const u = (i + 0.5) / 8
-    parts.push({
-      geo: new THREE.ConeGeometry(0.19, 0.4, 3),
-      color: KINDER_COLORS[i % KINDER_COLORS.length],
-      position: [(u - 0.5) * span, height - 0.42, 0.05],
-      rotation: [Math.PI, 0, 0],
-    })
-  }
-  parts.push({
-    geo: new THREE.BoxGeometry(span * 0.74, 0.92, 0.08),
-    color: 0x27313b,
-    position: [0, height - 1.12, 0.2],
-    rotation: [-0.5, 0, 0],
-  })
-
-  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
-  mesh.castShadow = true
-  group.add(mesh)
-
-  const tex = labelTexture(title, {
-    width: 512, height: 160, background: null, color: '#ffffff',
-    font: '700 92px ui-rounded, "SF Pro Rounded", system-ui, sans-serif',
-  })
-  const label = new THREE.Mesh(
-    new THREE.PlaneGeometry(span * 0.7, 0.84),
-    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
-  )
-  // Die Tafel ist 0,08 dick – die Schrift muss weiter vor als ihre halbe
-  // Dicke liegen, sonst steckt sie im Brett.
-  label.position.set(0, height - 1.12, 0.28)
-  label.rotation.x = -0.5
-  group.add(label)
   return group
 }
 

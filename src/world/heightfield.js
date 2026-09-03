@@ -165,21 +165,23 @@ export const SLED_LANE = makeLane([
   { x: -2, z: -25, h: 1.55 },
 ], { width: 13, feather: 9, endFade: 8, bank: 1.35, flat: 0.5 })
 
-// Der Funpark auf dem Nordosthang – 7 bis 14 Grad. Flach genug, dass man die
-// Figuren trifft statt sie zu ueberfahren, steil genug, dass man ohne
-// Nachdruecken durchkommt.
+// Der Funpark – 8 bis 12 Grad. Flach genug, dass man die Figuren trifft statt
+// sie zu ueberfahren, steil genug, dass man ohne Nachdruecken durchkommt.
 //
-// Er ist naeher an die Mitte gerueckt: sein Ende liegt jetzt gut zwanzig
-// Meter weiter innen als vorher. Der Berg dahinter ist mitgewandert, sonst
-// muesste das Band Gelaende ausgleichen, das es nicht ausgleichen kann.
+// Er liegt jetzt in der Luecke zwischen Rodelbahn und Kinderland und laeuft
+// nach Norden ins Tal aus, statt quer im Suedosten zu haengen. Das ist eine
+// Frage der Erreichbarkeit: vorher endete er dort, wo sonst nichts ist, jetzt
+// laeuft er genau zwischen den beiden Anlagen hindurch, an denen man ohnehin
+// vorbeikommt. Das Gefaelle liefert nach wie vor die Flanke des Sportbergs im
+// Sueden – deshalb liegt der Einstieg oben im Sueden und nicht im Tal.
 export const PARK_LANE = makeLane([
-  { x: 10, z: -53, h: 8.93 },
-  { x: 15, z: -49, h: 8.10 },
-  { x: 21, z: -45, h: 6.70 },
-  { x: 29, z: -40, h: 4.30 },
-  { x: 37, z: -34, h: 2.30 },
-  { x: 43, z: -27, h: 1.20 },
-], { width: 18, feather: 8, endFade: 8 })
+  { x: 16, z: -50, h: 8.13 },
+  { x: 20, z: -43, h: 6.90 },
+  { x: 24, z: -36, h: 5.20 },
+  { x: 27, z: -29, h: 3.55 },
+  { x: 29.5, z: -22, h: 2.10 },
+  { x: 30.5, z: -18, h: 1.55 },
+], { width: 16, feather: 7, endFade: 8 })
 
 // Der Uebungshang des Kinderlands: vom Muldenrand bei der Huette hinauf auf
 // die Kuppe im Osten. Ein einziges Band traegt beides – den Zauberteppich an
@@ -274,10 +276,10 @@ function ledge(x, z, f) {
 // Laenge. Aneinandergereiht braucht das mehr Platz, als man denkt – deshalb
 // reicht das Band bis ganz hinauf.
 export const PARK_FEATURES = [
-  { kind: 'rollers', x: 17.2, z: -47.6, dx: 0.832, dz: 0.555, count: 3, spacing: 4.2, height: 0.7, width: 9 },
-  { kind: 'kicker', x: 26.4, z: -41.6, dx: 0.848, dz: 0.530, length: 4.5, width: 7.5, height: 1.15 },
-  { kind: 'ledge', x: 33.0, z: -37.0, dx: 0.800, dz: 0.600, length: 7, width: 2.6, height: 0.85, ramp: 2.2 },
-  { kind: 'kicker', x: 39.6, z: -31.0, dx: 0.651, dz: 0.759, length: 5.0, width: 8.5, height: 2.30 },
+  { kind: 'rollers', x: 20.0, z: -43.1, dx: 0.496, dz: 0.868, count: 3, spacing: 4.2, height: 0.7, width: 9 },
+  { kind: 'kicker', x: 24.3, z: -35.2, dx: 0.394, dz: 0.919, length: 4.5, width: 7.5, height: 1.15 },
+  { kind: 'ledge', x: 27.4, z: -27.8, dx: 0.336, dz: 0.942, length: 7, width: 2.6, height: 0.85, ramp: 2.2 },
+  { kind: 'kicker', x: 29.7, z: -21.0, dx: 0.336, dz: 0.942, length: 5.0, width: 8.5, height: 2.30 },
 ]
 
 function parkFeatures(x, z) {

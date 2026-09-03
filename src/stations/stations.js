@@ -30,9 +30,9 @@ export const TRAILS = {
     label: 'BERUF',
     color: '#0a66c2',
     markerColor: 0x3d7fc4,
-    // Nach Osten, in die Mulde mit der Huette und dann am Fuss des
-    // Kinderlands entlang auf die Terrasse dahinter.
-    path: [[7, 27], [17, 24], [27, 20], [35, 21], [44, 21], [52, 19]],
+    // Nach Osten am Wegweiser vorbei in die Mulde mit der Huette und weiter
+    // bis zur Talstation des Zauberteppichs.
+    path: [[7, 27], [14, 26], [20, 23], [26, 21], [31, 19]],
   },
   social: {
     label: 'SOZIALES',
@@ -50,7 +50,7 @@ export const TRAILS = {
     label: 'SPORT',
     color: '#d1552a',
     markerColor: 0xdd7a3c,
-    path: [[9, 22], [17, 11], [23, 0], [24, -13], [19, -25], [12, -35], [7, -44]],
+    path: [[9, 22], [17, 11], [22, 0], [20, -14], [17, -26], [15, -38], [15, -48]],
   },
   tools: {
     label: 'WERKSTATT',
@@ -67,7 +67,10 @@ export const STATION_SPOTS = {
   // Uebungshang die flachste Stelle der Gegend – die Huette wuerde mitten in
   // den Slalom wandern.
   cabin:     { x: 25, z: 21, clearing: 13, footprint: 3.4, search: 3, trail: 'career' },
-  signpostCareer: { x: 52, z: 19, clearing: 8, footprint: 1.2, search: 6, trail: 'career' },
+  // Zwischen Startplateau und Huette, halb im Wald – man faehrt daran vorbei,
+  // statt es am Ende einer Sackgasse zu suchen. Kleiner Suchradius, sonst
+  // rutscht das Schild auf das Plateau.
+  signpostCareer: { x: 13, z: 26, clearing: 6, footprint: 1.2, search: 2.5, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
@@ -93,9 +96,10 @@ export const STATION_SPOTS = {
   // Baeume, der naechste Weg ist 17 Einheiten weg. Die Lichtung ist klein
   // gehalten, sonst raeumt sie sich ihr Versteck selber weg.
   drone:     { x: -15, z: 43, clearing: 4, footprint: 1.2, search: 2, trail: null },
-  // Der Loeschzug stand frueher dort, wo jetzt der Zielraum der Rennstrecke
-  // liegt. Er ist nach Sueden ausgewichen, an den Waldrand hinterm See.
-  firetruck: { x: -30, z: 33, clearing: 10, footprint: 3.2, search: 8, trail: null },
+  // Der Loeschzug steht auf der Terrasse hinter dem Kinderland – die flachste
+  // Stelle der Osthoehe, gut drei Grad. Ein Fahrzeug braucht ebenen Boden,
+  // und von dort schaut man auf die Anlage hinunter.
+  firetruck: { x: 51, z: 20, clearing: 10, footprint: 3.2, search: 4, trail: null },
 }
 
 export function populateStations(world, registry) {

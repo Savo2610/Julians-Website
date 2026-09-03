@@ -278,7 +278,6 @@ export function populate(world, sky, registry) {
   // --- Umgestuerzte Baeume am Waldrand ----------------------------------
   for (const [i, spot] of [
     { x: -8, z: -16, rot: 0.9 },
-    { x: 21, z: 15, rot: 2.4 },
     { x: -46, z: 12, rot: 1.7 },
   ].entries()) {
     const log = createFallenTree(i * 977 + 13)
@@ -502,7 +501,7 @@ export function populate(world, sky, registry) {
   // Spielwiese oben auf der Osthoehe, Uebungshang darunter, Zauberteppich
   // dazwischen. Der Teppich beginnt keine sieben Meter neben der Huette –
   // wer den Weg BERUF faehrt, stolpert von selbst darueber.
-  const kinderland = new Kinderland(world)
+  const kinderland = new Kinderland(world, registry)
 
   // --- See --------------------------------------------------------------
   const lake = createLake(world, {

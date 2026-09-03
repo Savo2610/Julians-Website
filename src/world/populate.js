@@ -25,11 +25,25 @@ const CLEARINGS = [
   ...Object.values(STATION_SPOTS).map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
 ]
 
+// Zusaetzlich zu den runden Lichtungen gibt es Schneisen: Streifen entlang
+// einer Linie, in denen nichts waechst. Die Lifttrasse braucht so eine.
+const LANES = []
+
 function inClearing(x, z, pad = 0) {
   for (const c of CLEARINGS) {
     const dx = x - c.x
     const dz = z - c.z
     const r = c.r + pad
+    if (dx * dx + dz * dz < r * r) return true
+  }
+  for (const l of LANES) {
+    const ax = l.x2 - l.x1
+    const az = l.z2 - l.z1
+    const len2 = ax * ax + az * az
+    const t = Math.max(0, Math.min(1, ((x - l.x1) * ax + (z - l.z1) * az) / len2))
+    const dx = x - (l.x1 + ax * t)
+    const dz = z - (l.z1 + az * t)
+    const r = l.r + pad
     if (dx * dx + dz * dz < r * r) return true
   }
   return false
@@ -97,6 +111,11 @@ export function populate(world, sky, registry) {
   const animatedProps = []
 
   createBackdrop(world.scene, { fogColor: world.scene.fog.color })
+
+  // Lifttrasse als Waldschneise freihalten – ein Schlepplift laeuft nie durch
+  // den Bestand. Muss vor der Bepflanzung feststehen.
+  LANES.length = 0
+  LANES.push({ x1: -28, z1: -14, x2: -61, z2: -55, r: 6.5 })
   const n = new THREE.Vector3()
 
   const steepness = (x, z) => {
@@ -276,9 +295,13 @@ export function populate(world, sky, registry) {
   // Verbindet den Talkessel mit dem Gipfel des Bergarms. Er ist der einzige
   // bequeme Weg nach oben – zu Fuss kommt man nur kriechend hinauf.
   const lift = new DragLift(world, {
-    base: { x: -22, z: -20 },
-    top: { x: -50, z: -55 },
-    speed: 4.4,
+    // Gegenueber der Bildmitte nach links versetzt: rechts der Trasse bleibt
+    // so Platz fuer die Abfahrt, und oben endet der Lift neben dem Gipfel
+    // statt davor. Die Bergstation liegt auf der Gipfelschulter – hoeher
+    // traegt der Hang nicht mehr, der Kamm laeuft dahinter flach aus.
+    base: { x: -28, z: -14 },
+    top: { x: -61, z: -55 },
+    speed: 7.2,
     label: 'GIPFELBAHN',
   })
 
@@ -305,7 +328,7 @@ export function populate(world, sky, registry) {
 
   // Stangen fuer die lange Abfahrt vom Gipfel zurueck ins Tal.
   createPisteMarkers(world, route([
-    [SUMMIT.x + 7, SUMMIT.z + 9], [-44, -46], [-34, -34], [-24, -22], [-14, -10], [-5, 2], [0, 14],
+    [-52, -56], [-42, -49], [-32, -38], [-22, -26], [-12, -14], [-4, -2], [0, 14],
   ], 5.5), { seed: 55, color: 0xe8703a })
 
   // --- Zaeune -------------------------------------------------------------

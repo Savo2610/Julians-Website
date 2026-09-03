@@ -40,7 +40,7 @@ export const TRAILS = {
     // Nach Norden zum Telefon, dann nordwestlich zur Talstation des Lifts.
     // Der letzte Punkt der Reihe liegt oben am Gipfel – dorthin faehrt man
     // mit dem Lift.
-    path: [[0, 20], [1, 8], [0, -2], [-6, -9], [-13, -14], [-19, -18]],
+    path: [[0, 20], [1, 8], [0, -2], [-8, -6], [-17, -7], [-25, -11]],
   },
   tools: {
     label: 'WERKSTATT',
@@ -60,10 +60,11 @@ export const STATION_SPOTS = {
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
   // Die Skikasse steht am Lifteinstieg – dort kauft man schliesslich sein
   // Ticket.
-  vending:   { x: -16, z: -12, clearing: 7, footprint: 1.8, search: 5, trail: 'social' },
-  // Das Fernrohr steht oben am Gipfel: die Aussicht ist die Belohnung fuer
-  // die Liftfahrt.
-  telescope: { x: -53, z: -58, clearing: 7, footprint: 1.2, search: 5, trail: 'social' },
+  vending:   { x: -23, z: -8, clearing: 7, footprint: 1.8, search: 5, trail: 'social' },
+  // Das Fernrohr steht nicht auf der Kuppe, sondern eine Stufe darunter auf
+  // der Talschulter – dort faengt die Abfahrt an und man sieht das ganze
+  // Tal. Der hoechste Punkt bleibt dem Gipfelkreuz.
+  telescope: { x: -47, z: -58, clearing: 7, footprint: 1.2, search: 3, trail: 'social' },
 
   // Weg 3 – Werkzeuge
   pipe:      { x: -19, z: 25, clearing: 8, footprint: 1.4, search: 6, trail: 'tools' },

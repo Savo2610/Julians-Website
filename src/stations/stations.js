@@ -40,7 +40,16 @@ export const TRAILS = {
     // Nach Norden zum Telefon, dann nordwestlich zur Talstation des Lifts.
     // Der letzte Punkt der Reihe liegt oben am Gipfel – dorthin faehrt man
     // mit dem Lift.
-    path: [[0, 20], [1, 8], [0, -2], [-8, -6], [-17, -7], [-25, -11]],
+    path: [[0, 20], [1, 8], [0, -2], [-9, -4], [-19, -4], [-29, -6]],
+  },
+  // Vierter Weg: nach Nordosten ins Sportgelaende. Er endet nicht an einer
+  // Station, sondern am Zielraum der Rennstrecke – das Ziel des Weges ist
+  // das Gelaende selbst.
+  sport: {
+    label: 'SPORT',
+    color: '#d1552a',
+    markerColor: 0xdd7a3c,
+    path: [[9, 22], [17, 11], [23, 0], [26, -12], [27, -24], [25, -33]],
   },
   tools: {
     label: 'WERKSTATT',
@@ -60,7 +69,7 @@ export const STATION_SPOTS = {
   phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
   // Die Skikasse steht am Lifteinstieg – dort kauft man schliesslich sein
   // Ticket.
-  vending:   { x: -23, z: -8, clearing: 7, footprint: 1.8, search: 5, trail: 'social' },
+  vending:   { x: -28, z: -4, clearing: 7, footprint: 1.8, search: 5, trail: 'social' },
   // Das Fernrohr steht nicht auf der Kuppe, sondern eine Stufe darunter auf
   // der Talschulter – dort faengt die Abfahrt an und man sieht das ganze
   // Tal. Der hoechste Punkt bleibt dem Gipfelkreuz.
@@ -77,7 +86,9 @@ export const STATION_SPOTS = {
   // Baeume, der naechste Weg ist 17 Einheiten weg. Die Lichtung ist klein
   // gehalten, sonst raeumt sie sich ihr Versteck selber weg.
   drone:     { x: -15, z: 43, clearing: 4, footprint: 1.2, search: 2, trail: null },
-  firetruck: { x: 33, z: -30, clearing: 10, footprint: 3.2, search: 8, trail: null },
+  // Der Loeschzug stand frueher dort, wo jetzt der Zielraum der Rennstrecke
+  // liegt. Er ist nach Sueden ausgewichen, an den Waldrand hinterm See.
+  firetruck: { x: -30, z: 33, clearing: 10, footprint: 3.2, search: 8, trail: null },
 }
 
 export function populateStations(world, registry) {

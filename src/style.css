@@ -171,3 +171,42 @@ html, body {
   font-size: 11px;
   font-weight: 600;
 }
+
+/* --- Zeitnahme der Rennstrecke -------------------------------------------
+   Erscheint nur waehrend eines Laufs und ein paar Sekunden danach. Der Rest
+   der Welt kommt ohne Anzeige aus, das soll hier auch so bleiben. */
+.race-hud {
+  position: fixed;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 20px 9px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 26px rgba(40, 70, 110, 0.2), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 12;
+  transition: opacity 0.2s ease;
+}
+.race-hud.visible { opacity: 1; }
+
+.race-time {
+  font: 700 30px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #1b2430;
+  letter-spacing: 0.01em;
+}
+.race-hud[data-tone='good'] .race-time { color: #1f7a4d; }
+.race-hud[data-tone='warn'] .race-time { color: #b8501f; }
+
+.race-note {
+  font: 600 12px/1.2 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  color: #5b6a7c;
+  min-height: 14px;
+}

@@ -24,6 +24,8 @@ export class Skier {
     this.crouch = 0
     this.airborne = false
     this.vy = 0
+    this._rise = 0                  // Steiggeschwindigkeit, die der Boden zuletzt vorgab
+    this._prevGroundY = 0
     this.tow = null          // haengt am Schlepplift, wenn gesetzt
     this.towTarget = null
     this.height = 0                 // Hoehe ueber dem Boden
@@ -36,6 +38,7 @@ export class Skier {
     this._trailInit = false
 
     this.position.y = terrainHeight(this.position.x, this.position.z)
+    this._prevGroundY = this.position.y
     this.group.position.copy(this.position)
   }
 
@@ -165,13 +168,33 @@ export class Skier {
     this.position.z = nz
 
     // --- Boden / Luft ---------------------------------------------------
+    const G = 22
     const groundY = terrainHeight(nx, nz)
-    if (input.has('jump') && !this.airborne && this.speed > 1) {
-      this.airborne = true
-      this.vy = 6.4
+    // Wie schnell der Boden den Fahrer gerade anhebt. Auf einer Schanze ist
+    // das die Steiggeschwindigkeit, mit der er ueber die Kante geht.
+    const climb = dt > 0 ? (groundY - this._prevGroundY) / dt : 0
+
+    if (!this.airborne) {
+      if (input.has('jump') && this.speed > 1) {
+        this.airborne = true
+        this.vy = 6.4
+      } else if (this._rise > 3.2) {
+        // Faellt der Boden hinter der Kante schneller weg, als die Schwerkraft
+        // den Fahrer holt, hebt er ab. Kein Sprungknopf noetig – die Schanze
+        // macht die Arbeit, so wie im Gelaende auch.
+        const free = this._prevGroundY + this._rise * dt - 0.5 * G * dt * dt
+        if (free > groundY + 0.03) {
+          this.airborne = true
+          // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
+          // Tempo trifft, soll ihn abheben lassen und nicht abschiessen.
+          this.vy = Math.min(this._rise - G * dt, 11)
+          this.height = Math.min(free - groundY, 0.6)
+        }
+      }
     }
+
     if (this.airborne) {
-      this.vy -= 22 * dt
+      this.vy -= G * dt
       this.height += this.vy * dt
       if (this.height <= 0) {
         this.height = 0
@@ -183,6 +206,10 @@ export class Skier {
       this.landImpact = (this.landImpact || 0) * (1 - damp(6, dt))
       this.height = 0
     }
+    // Die Steigrate merkt man sich nur am Boden – in der Luft gibt der Boden
+    // nichts mehr vor.
+    this._rise = this.airborne ? 0 : Math.min(Math.max(0, climb), 24)
+    this._prevGroundY = groundY
     this.position.y = groundY + this.height
 
     // --- Haltung --------------------------------------------------------
@@ -214,6 +241,8 @@ export class Skier {
     this.position.y = groundY
     this.height = 0
     this.airborne = false
+    this._rise = 0
+    this._prevGroundY = groundY
 
     let diff = target.heading - this.heading
     diff = Math.atan2(Math.sin(diff), Math.cos(diff))

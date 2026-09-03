@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, RACE_LANE, PARK_LANE, PARK_FEATURES } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -14,6 +14,8 @@ import { createMarker } from '../stations/marker.js'
 import { createTorch } from './props/torch.js'
 import { createSummitCross } from './props/summit-cross.js'
 import { DragLift } from './drag-lift.js'
+import { RaceCourse } from './race.js'
+import { createRail, createPadMarker, createParkSign } from './props/funpark.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -28,6 +30,12 @@ const CLEARINGS = [
 // Zusaetzlich zu den runden Lichtungen gibt es Schneisen: Streifen entlang
 // einer Linie, in denen nichts waechst. Die Lifttrasse braucht so eine.
 const LANES = []
+
+// Die Lifttrasse liegt weiter links als frueher – sie schneidet jetzt durch
+// den Wald statt durch den offenen Hang. Dadurch bleibt die grosse Abfahrt
+// frei, und die Trasse quert den Hang sogar weniger schraeg als vorher.
+export const LIFT_BASE = { x: -34, z: -8 }
+export const LIFT_TOP = { x: -63, z: -55 }
 
 function inClearing(x, z, pad = 0) {
   for (const c of CLEARINGS) {
@@ -115,7 +123,17 @@ export function populate(world, sky, registry) {
   // Lifttrasse als Waldschneise freihalten – ein Schlepplift laeuft nie durch
   // den Bestand. Muss vor der Bepflanzung feststehen.
   LANES.length = 0
-  LANES.push({ x1: -28, z1: -14, x2: -61, z2: -55, r: 6.5 })
+  LANES.push({ x1: LIFT_BASE.x, z1: LIFT_BASE.z, x2: LIFT_TOP.x, z2: LIFT_TOP.z, r: 7.5 })
+  // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
+  // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
+  // Bewuchs und Boden nicht auseinanderlaufen koennen.
+  for (const [lane, r] of [[RACE_LANE, 11], [PARK_LANE, 13]]) {
+    for (let i = 0; i < lane.points.length - 1; i++) {
+      const a = lane.points[i]
+      const b = lane.points[i + 1]
+      LANES.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, r })
+    }
+  }
   const n = new THREE.Vector3()
 
   const steepness = (x, z) => {
@@ -295,12 +313,11 @@ export function populate(world, sky, registry) {
   // Verbindet den Talkessel mit dem Gipfel des Bergarms. Er ist der einzige
   // bequeme Weg nach oben – zu Fuss kommt man nur kriechend hinauf.
   const lift = new DragLift(world, {
-    // Gegenueber der Bildmitte nach links versetzt: rechts der Trasse bleibt
-    // so Platz fuer die Abfahrt, und oben endet der Lift neben dem Gipfel
-    // statt davor. Die Bergstation liegt auf der Gipfelschulter – hoeher
-    // traegt der Hang nicht mehr, der Kamm laeuft dahinter flach aus.
-    base: { x: -28, z: -14 },
-    top: { x: -61, z: -55 },
+    // Die Trasse liegt am linken Rand des Bergarms, mitten im Wald. Das ist
+    // nicht nur Platzersparnis: so gemessen quert sie den Hang im Mittel nur
+    // noch mit 18 statt 30 Grad, laeuft also naeher an der Falllinie.
+    base: LIFT_BASE,
+    top: LIFT_TOP,
     speed: 7.2,
     label: 'GIPFELBAHN',
   })
@@ -343,6 +360,56 @@ export function populate(world, sky, registry) {
     { x: 14, z: -46 }, { x: 2, z: -50 }, { x: -12, z: -48 },
   ], { seed: 93 })
 
+  // --- Sportgelaende im Nordosten ----------------------------------------
+  // Rennstrecke mit Zeitnahme und daneben der Funpark. Die Schanzen selbst
+  // sind Gelaende (siehe heightfield.js) – hier stehen nur die Aufbauten.
+  const race = new RaceCourse(world, {})
+
+  {
+    const lane = PARK_LANE
+    const dirAt = (i) => {
+      const a = lane.points[i]
+      const b = lane.points[Math.min(i + 1, lane.points.length - 1)]
+      const len = Math.hypot(b.x - a.x, b.z - a.z) || 1
+      return { dx: (b.x - a.x) / len, dz: (b.z - a.z) / len }
+    }
+
+    // Eingangsschild oben am Band, seitlich versetzt, damit es nicht im Weg
+    // steht.
+    const head = lane.points[0]
+    const d0 = dirAt(0)
+    const signX = head.x + d0.dz * 8.5 + d0.dx * 2
+    const signZ = head.z - d0.dx * 8.5 + d0.dz * 2
+    const sign = createParkSign({ title: 'FUNPARK', sub: 'Wellen, Kicker, Rail' })
+    world.place(sign, signX, signZ, { rotation: Math.PI * 0.25 })
+    world.addCollider(signX, signZ, 0.8)
+
+    // Das Rail liegt auf der Schneekante und laeuft mit ihr.
+    const ledge = PARK_FEATURES.find((f) => f.kind === 'ledge')
+    const rail = createRail({ length: ledge.length - 1.6, height: 0.5 })
+    // align: das Rail muss der Neigung der Kante folgen. Waagerecht steckt ein
+    // Ende im Schnee und das andere haengt in der Luft – die Kante faellt auf
+    // ihrer Laenge fast einen Meter.
+    world.place(rail, ledge.x, ledge.z, {
+      yOffset: ledge.height,
+      rotation: Math.atan2(ledge.dx, ledge.dz),
+      align: 1,
+    })
+
+    // Gepolsterte Marker links und rechts der Figuren – sie machen aus der
+    // Schneeflaeche einen Park.
+    let variant = 0
+    for (const f of PARK_FEATURES) {
+      const half = (f.width ?? 8) * 0.5 + 2.2
+      for (const side of [-1, 1]) {
+        const mx = f.x + f.dz * side * half
+        const mz = f.z - f.dx * side * half
+        const marker = createPadMarker(variant++)
+        world.place(marker, mx, mz, { rotation: rng() * Math.PI * 2 })
+      }
+    }
+  }
+
   // --- See --------------------------------------------------------------
   const lake = createLake(world, {
     fogColor: world.scene.fog.color,
@@ -350,5 +417,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { lake, lift, animated: [...stations.animated, ...animatedProps] }
+  return { lake, lift, race, animated: [...stations.animated, ...animatedProps] }
 }

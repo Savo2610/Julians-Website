@@ -4,12 +4,14 @@
 export const WORLD = {
   size: 230,          // Kantenlaenge der Karte in Einheiten (1 Einheit ~ 1 Meter)
   segments: 448,      // Aufloesung des Terrain-Meshes
-  // Die Spielflaeche ist keine Scheibe, sondern die Vereinigung zweier Kreise:
-  // der urspruengliche Talkessel und ein Bergarm im Nordwesten. So waechst die
-  // Welt, ohne dass in der Mitte Leere entsteht.
+  // Die Spielflaeche ist keine Scheibe, sondern die Vereinigung mehrerer
+  // Kreise. So waechst die Welt, ohne dass in der Mitte Leere entsteht: jeder
+  // neue Kreis ueberlappt den vorigen so weit, dass eine Taille entsteht
+  // statt einer Naht.
   basins: [
     { x: 0, z: 0, radius: 66 },        // Talkessel mit Plateau und den drei Wegen
-    { x: -58, z: -64, radius: 41 },    // Bergarm: lange Abfahrt, spaeter der Lift
+    { x: -58, z: -64, radius: 41 },    // Bergarm im Nordwesten: lange Abfahrt und Lift
+    { x: 46, z: -62, radius: 35 },     // Sportgelaende im Nordosten: Rennhang und Funpark
   ],
   rimWidth: 17,       // wie breit der Gebirgsrand ansteigt
 }

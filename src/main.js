@@ -120,6 +120,9 @@ function advance(dt) {
   sky.sun.position.copy(sky.sunDir).multiplyScalar(90).add(skier.position)
   sky.dome.position.set(skier.position.x, 0, skier.position.z)
 
+  // Rennstrecke: Zeitnahme laeuft mit, ohne dass man etwas starten muesste.
+  props.race.update(dt, skier)
+
   // Stationen: Naehe pruefen, Hinweis nachfuehren, Objekte animieren.
   stations.update(dt, skier)
   stationUI.update(stations.active)

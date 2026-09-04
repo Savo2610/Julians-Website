@@ -15,6 +15,7 @@ import { StationUI } from './stations/ui.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
 import { Spray } from './player/spray.js'
+import { audio } from './audio/audio.js'
 
 const canvas = document.getElementById('scene')
 
@@ -101,6 +102,13 @@ function emitSpray(dt) {
     }
   }
 
+  // Der Aufprall wird gehoert, bevor er gesehen wird – auch der leise, den
+  // die Schneefahne unten nicht mehr wert ist.
+  if (skier.landed) {
+    audio.landung(skier.landed)
+    skier.landed = 0
+  }
+
   if (skier.landImpact > 0.25) {
     for (let i = 0; i < 24; i++) {
       const a = Math.random() * Math.PI * 2
@@ -123,6 +131,22 @@ const trickHud = document.createElement('div')
 trickHud.className = 'trick-hud'
 document.body.appendChild(trickHud)
 let trickTimer = 0
+
+// --- Tonschalter -------------------------------------------------------------
+// Kein dauerhaftes Symbol in der Ecke. Es gibt in dieser Welt keine Leiste,
+// auf der es stehen koennte, und ein Lautsprecher, der immer da ist, sagt
+// nichts, was man nicht schon hoert. Stattdessen ein Wort fuer anderthalb
+// Sekunden, wenn man drueckt.
+const soundHud = document.createElement('div')
+soundHud.className = 'sound-hud'
+document.body.appendChild(soundHud)
+let soundTimer = 0
+
+function tonMelden(aus) {
+  soundHud.textContent = aus ? 'Ton aus' : 'Ton an'
+  soundHud.classList.add('visible')
+  soundTimer = 1.5
+}
 
 // --- Loop --------------------------------------------------------------------
 const clock = new THREE.Clock()
@@ -185,6 +209,19 @@ function advance(dt) {
   // Das Kinderland braucht dt aus demselben Grund: Wackeln und Umfallen sind
   // Ausschwingvorgaenge, keine Funktionen der Uhrzeit.
   props.kinderland.animate(elapsed, dt)
+
+  // --- Ton ------------------------------------------------------------
+  // Schnee und Wind haengen am Fahrer, die Tonleiter an der Leuchtstrecke.
+  // Beides steht am Ende der Schleife, damit es den Zustand nach allen
+  // Bewegungen sieht und nicht den davor.
+  audio.update(dt, skier)
+  const strecke = props.kinderland.lightRun.rider
+  audio.strecke(strecke.inside, strecke.lage)
+  if (input.justPressed('mute')) tonMelden(audio.umschalten())
+  if (soundTimer > 0) {
+    soundTimer -= dt
+    if (soundTimer <= 0) soundHud.classList.remove('visible')
+  }
 
   snowfall.userData.update(dt, elapsed, skier.position)
   props.lake.update(camera)

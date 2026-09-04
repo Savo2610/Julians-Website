@@ -9,6 +9,7 @@ import { createLake } from './props/lake.js'
 import { createBackdrop } from './props/backdrop.js'
 import { createFence, createPisteMarkers } from './props/fence.js'
 import { createSnowCannon } from './props/snow-cannon.js'
+import { audio } from '../audio/audio.js'
 import { createSignpost } from './props/signpost.js'
 import { populateStations, STATION_SPOTS, TRAILS } from '../stations/stations.js'
 import { createMarker } from '../stations/marker.js'
@@ -398,7 +399,7 @@ export function populate(world, sky, registry) {
       const dx = skier.position.x - torch.x
       const dz = skier.position.z - torch.z
       if (dx * dx + dz * dz > 0.36) continue
-      torch.obj.userData.knock(skier.forward.x, skier.forward.z)
+      if (torch.obj.userData.knock(skier.forward.x, skier.forward.z)) audio.klopfen()
     }
     // Dieselbe Regel fuer jede Pistenstange im Gebiet.
     for (const row of markerRows) row?.userData.update(dt, skier)

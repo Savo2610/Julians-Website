@@ -97,8 +97,11 @@ export function createTorch(seed = 0) {
   // Koerper der Gruppe – und die steht bereits um einen Zufallswinkel gedreht.
   // Ohne diese Rueckdrehung faellt jede Fackel in ihre eigene Richtung statt
   // in die, aus der sie getroffen wurde.
+  // Gibt zurueck, ob dieser Stoss wirklich etwas umgeworfen hat. Ohne diese
+  // Auskunft klopfte es sechzigmal in der Sekunde, solange jemand neben einer
+  // schon liegenden Fackel stehenbleibt.
   group.userData.knock = (dirX, dirZ) => {
-    if (fall > 0.4) return
+    if (fall > 0.4) return false
     const len = Math.hypot(dirX, dirZ) || 1
     const a = group.rotation.y
     const wx = dirX / len
@@ -106,6 +109,7 @@ export function createTorch(seed = 0) {
     tipX = wx * Math.cos(a) - wz * Math.sin(a)
     tipZ = wx * Math.sin(a) + wz * Math.cos(a)
     hold = 2.6
+    return true
   }
 
   group.userData.animate = (t, dt = 0) => {

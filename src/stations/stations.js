@@ -115,6 +115,13 @@ export const STATION_SPOTS = {
   firetruck: { x: -15, z: 43, clearing: 10, footprint: 3.2, search: 4, trail: null },
 }
 
+// Die drei Fenster von veerka.mp werden erst geladen, wenn jemand die
+// zugehoerige Station benutzt. Zusammen sind sie 35 Kilobyte, und die
+// allermeisten Besucher fahren einfach Ski.
+const walletDialog = () => import('../dialogs/wallet.js').then((m) => m.oeffnen())
+const uploadDialog = () => import('../dialogs/upload.js').then((m) => m.oeffnen())
+const kurzDialog = () => import('../dialogs/kurz.js').then((m) => m.oeffnen())
+
 export function populateStations(world, registry) {
   const animated = []
 
@@ -177,20 +184,20 @@ export function populateStations(world, registry) {
   const booth = createTicketBooth({ label: 'SKIKASSE', leftColor: 0x2b8ce6, rightColor: 0x9945ff })
   place(booth, STATION_SPOTS.ticket, { rotation: FACING, collider: 1.3 })
   register({
-    id: 'paypal',
+    id: 'kasse',
     label: 'Skikasse',
-    hint: LINKS.paypal || LINKS.solana ? 'PayPal oder Solana' : 'noch nicht verlinkt',
+    hint: 'Trinkgeld',
     color: '#2b8ce6',
     position: STATION_SPOTS.ticket,
     radius: 5.0,
     labelHeight: world.heightAt(STATION_SPOTS.ticket.x, STATION_SPOTS.ticket.z) + 3.6,
-    onUse: () => {
-      const target = LINKS.paypal || LINKS.solana
-      if (target) window.open(target, '_blank', 'noopener,noreferrer')
-    },
     choices: [
       { label: 'PayPal', url: LINKS.paypal, color: '#2b8ce6' },
-      { label: 'Solana', url: LINKS.solana, color: '#9945ff' },
+      // Solana oeffnet kein Ziel, sondern das Fenster von veerka.mp: es
+      // sucht die Wallet-Erweiterung, rechnet SOL in Euro um und schickt die
+      // Ueberweisung. Ein blosser solana:-Link koennte das nicht – am
+      // Rechner tut er schlicht nichts.
+      { label: 'Solana', color: '#9945ff', action: () => walletDialog() },
     ],
   })
 
@@ -231,17 +238,20 @@ export function populateStations(world, registry) {
   place(pipe, STATION_SPOTS.pipe, { rotation: FACING + 0.1, collider: 0.8 })
   register({
     id: 'upload',
-    label: 'Upload',
+    label: 'Rohrpost',
     hint: 'Etwas einwerfen',
     color: '#37b87c',
-    url: LINKS.upload,
     position: STATION_SPOTS.pipe,
     radius: 5,
     labelHeight: world.heightAt(STATION_SPOTS.pipe.x, STATION_SPOTS.pipe.z) + 3.1,
-    // Beim Ausloesen faehrt eine Kapsel aus dem Rohr – siehe upload-pipe.js.
-    onUse: (station) => {
+    // Beim Ausloesen faehrt eine Kapsel aus dem Rohr – siehe upload-pipe.js –
+    // und darueber geht das Fenster auf, in dem man wirklich etwas abgibt.
+    // Die Rohrpost hiess vorher Upload und zeigte nur auf upload.veerka.mp;
+    // ein Rohr, in das man etwas hineinwirft, und eine Seite, auf die man
+    // geschickt wird, waren zwei Gedanken fuer eine Sache.
+    onUse: () => {
       pipe.userData.launch?.()
-      if (LINKS.upload) window.open(LINKS.upload, '_blank', 'noopener,noreferrer')
+      uploadDialog()
     },
   })
 
@@ -259,13 +269,13 @@ export function populateStations(world, registry) {
   }
   register({
     id: 'shortener',
-    label: 'Link-Shortener',
-    hint: 'Abkuerzung nehmen',
+    label: 'Abkuerzung',
+    hint: 'Link kuerzen',
     color: '#5b7fa6',
-    url: LINKS.shortener,
     position: STATION_SPOTS.tunnel,
     radius: 6,
     labelHeight: world.heightAt(STATION_SPOTS.tunnel.x, STATION_SPOTS.tunnel.z) + 4.2,
+    onUse: () => kurzDialog(),
   })
 
   const depot = createGearDepot()
@@ -288,8 +298,9 @@ export function populateStations(world, registry) {
   register({
     id: 'drone',
     label: 'Abgestuerzte Drohne',
-    hint: 'gefunden',
+    hint: 'Uniprojekt ansehen',
     color: '#ff4d3d',
+    url: LINKS.kidrohne,
     position: STATION_SPOTS.drone,
     radius: 4.5,
     labelHeight: world.heightAt(STATION_SPOTS.drone.x, STATION_SPOTS.drone.z) + 1.8,
@@ -300,9 +311,10 @@ export function populateStations(world, registry) {
   place(truck, STATION_SPOTS.firetruck, { rotation: FACING + Math.PI / 2, collider: 1.7 })
   register({
     id: 'firetruck',
-    label: 'Feuerwehr',
-    hint: 'gefunden',
+    label: 'Loeschzug',
+    hint: 'Lernwerkstatt oeffnen',
     color: '#c8352c',
+    url: LINKS.jugendfeuerwehr,
     position: STATION_SPOTS.firetruck,
     radius: 5.5,
     labelHeight: world.heightAt(STATION_SPOTS.firetruck.x, STATION_SPOTS.firetruck.z) + 2.8,

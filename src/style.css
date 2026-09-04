@@ -104,103 +104,125 @@ html, body {
 }
 .hint .sep { opacity: 0.4; margin: 0 6px; }
 
-/* --- Stationen ----------------------------------------------------------- */
+/* --- Stationen -----------------------------------------------------------
+   Der Hinweis an einer Station ist ein Pistenschild und keine Karte: farbiger
+   Kopf mit dem Namen, Emailtafel darunter, Pfosten in den Schnee. Er ist
+   HTML und nicht 3D, damit er bei jeder Zoomstufe scharf bleibt – aber er
+   soll aussehen wie etwas, das dort steht.
+
+   Deshalb keine Transparenz, kein backdrop-filter und kein weicher Schatten.
+   Was ein Blechschild ausmacht, sind harte Kanten, eine Umrandung und eine
+   sichtbare Blechdicke an der Unterkante; genau das machen die zwei
+   Rahmenbreiten. Es ist dieselbe Sprache wie bei den Tastenkappen in der
+   Hinweiszeile unten – die sahen schon vorher nach Gegenstand aus. */
 
 .station-card {
   position: fixed;
   top: 0;
   left: 0;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px 9px 11px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 26px rgba(40, 70, 110, 0.2), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  flex-direction: column;
+  align-items: stretch;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   z-index: 12;
   transition: opacity 0.22s ease;
+  filter: drop-shadow(0 6px 10px rgba(40, 70, 110, 0.22));
 }
 .station-card.visible { opacity: 1; }
-.station-card.pop { animation: cardIn 0.34s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.station-card.pop { animation: cardIn 0.3s cubic-bezier(0.2, 1.4, 0.4, 1); }
 @keyframes cardIn {
-  from { transform-origin: bottom center; scale: 0.82; }
+  from { transform-origin: bottom center; scale: 0.86; }
   to { scale: 1; }
 }
-.station-card.used { animation: cardPulse 0.4s ease; }
-@keyframes cardPulse {
-  0% { box-shadow: 0 8px 26px rgba(40, 70, 110, 0.2), 0 0 0 0 rgba(74, 108, 147, 0.5); }
-  100% { box-shadow: 0 8px 26px rgba(40, 70, 110, 0.2), 0 0 0 18px rgba(74, 108, 147, 0); }
+/* Beim Ausloesen blitzt die Tafel einmal auf – ein Ring waere wieder der
+   Effekt, den jede Web-Oberflaeche benutzt. */
+.station-card.used .station-plate { animation: platePulse 0.4s ease; }
+@keyframes platePulse {
+  0% { background: #ffffff; }
+  100% { background: var(--enamel); }
 }
 
-/* Kleiner Zeiger nach unten zum Objekt. */
-.station-card::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -5px;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.88);
-  transform: rotate(45deg);
+.station-head {
+  padding: 4px 10px 3px;
+  border: 1px solid rgba(20, 30, 42, 0.55);
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+  background: #4a6c93;
 }
-
-.station-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6);
-}
-.station-body { display: flex; flex-direction: column; line-height: 1.25; }
-.station-title { font-size: 13.5px; font-weight: 650; letter-spacing: -0.01em; }
-.station-sub { font-size: 11px; opacity: 0.6; }
-.station-key kbd {
-  display: inline-block;
-  padding: 3px 7px;
-  border-radius: 6px;
-  background: #fff;
-  border: 1px solid rgba(34, 48, 63, 0.2);
-  border-bottom-width: 2px;
-  font: inherit;
+.station-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #fff;
 }
 
-.station-choices {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-left: 2px;
+.station-plate {
+  --enamel: #f6f9fd;
+  padding: 6px 10px 7px;
+  background: var(--enamel);
+  border: 1px solid rgba(20, 30, 42, 0.55);
+  /* Die dickere Unterkante ist die Blechdicke. */
+  border-bottom-width: 3px;
+  border-radius: 0 0 3px 3px;
 }
-.station-choice {
+.station-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--choice, #35485e);
+  gap: 10px;
 }
-.station-choice.off { opacity: 0.35; }
+.station-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #55697f;
+}
+.station-key kbd,
 .station-choice kbd {
   display: inline-block;
   min-width: 9px;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff;
-  border: 1px solid rgba(34, 48, 63, 0.2);
+  border: 1px solid rgba(34, 48, 63, 0.35);
   border-bottom-width: 2px;
   font: inherit;
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 700;
   color: #35485e;
   text-align: center;
 }
+
+/* Der Pfosten. Er steht mittig unter der Tafel und reicht bis zum Objekt
+   hinunter – ohne ihn schwebt das Schild, und schwebende Schilder gibt es
+   auf keiner Piste. */
+.station-post {
+  width: 3px;
+  height: 13px;
+  margin: 0 auto;
+  background: linear-gradient(#8b98a6, #6c7a89);
+  border: 1px solid rgba(20, 30, 42, 0.4);
+  border-top: 0;
+}
+
+/* Zwei Ziele nebeneinander statt untereinander: das Schild bleibt flach,
+   und flach ist die Form, in der ein Pistenschild lesbar ist. */
+.station-choices {
+  display: flex;
+  gap: 12px;
+  margin-top: 5px;
+}
+.station-choices:empty { display: none; }
+.station-choice {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--choice, #35485e);
+}
+.station-choice.off { opacity: 0.35; }
 .station-choice.off kbd { visibility: hidden; }
 
 /* --- Zeitnahme der Rennstrecke -------------------------------------------

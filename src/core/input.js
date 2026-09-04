@@ -29,10 +29,21 @@ export class Input {
     this._bind()
   }
 
+  // Steht eines der Fenster offen, gehoert die Tastatur ihm. Ohne diese
+  // Sperre faehrt der Skifahrer waehrend des Tippens los: W ist vorwaerts,
+  // aber auch der erste Buchstabe von "www". Geprueft wird das Fenster und
+  // nicht das Ziel des Ereignisses – ein modaler Dialog faengt ohnehin alles
+  // ab, und beim Oeffnen sollen auch die schon gedrueckten Tasten losgehen.
+  _blocked() {
+    const open = document.querySelector('dialog[open]')
+    if (open && this.keys.size) this.keys.clear()
+    return !!open
+  }
+
   _bind() {
     window.addEventListener('keydown', (e) => {
       const action = KEY_MAP[e.code]
-      if (!action) return
+      if (!action || this._blocked()) return
       if (e.code === 'Space') e.preventDefault()
       if (!this.keys.has(action)) this.pressed.add(action)
       this.keys.add(action)
@@ -45,12 +56,15 @@ export class Input {
     window.addEventListener('blur', () => this.keys.clear())
 
     this.dom.addEventListener('wheel', (e) => {
+      // Im Fenster scrollt man die Liste der Dateien, nicht die Kamera.
+      if (this._blocked()) return
       e.preventDefault()
       this.zoom = THREE.MathUtils.clamp(this.zoom + e.deltaY * 0.0009, CAMERA.zoomMin, CAMERA.zoomMax)
     }, { passive: false })
   }
 
   has(action) {
+    if (this._blocked()) return false
     return this.keys.has(action)
   }
 

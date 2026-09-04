@@ -56,8 +56,15 @@ export class StationRegistry {
 
     if (index !== null) {
       const choice = s.choices?.[index]
-      if (!choice || !choice.url) return null
-      choice.onPick?.()
+      if (!choice) return null
+      // Ein Ziel ist entweder eine Adresse oder eine Handlung. Solana ist der
+      // Grund fuer die zweite Sorte: dort wird kein Link geoeffnet, sondern
+      // ein Fenster, in dem man einen Betrag eintraegt.
+      if (typeof choice.action === 'function') {
+        choice.action()
+        return s
+      }
+      if (!choice.url) return null
       window.open(choice.url, '_blank', 'noopener,noreferrer')
       return s
     }

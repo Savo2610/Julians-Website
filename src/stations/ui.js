@@ -10,22 +10,28 @@ export class StationUI {
     this.camera = camera
     this.current = null
 
+    // Aufbau wie ein Pistenschild: farbiger Kopf mit dem Namen, darunter die
+    // Emailtafel mit dem Hinweis, darunter der Pfosten. Vorher war es eine
+    // weisse Glaskarte mit weichem Schatten – die sah aus wie jede zweite
+    // Oberflaeche im Netz und nach nichts, was in einem Skigebiet steht.
     this.el = document.createElement('div')
     this.el.className = 'station-card'
     this.el.innerHTML = `
-      <div class="station-dot"></div>
-      <div class="station-body">
-        <div class="station-title"></div>
-        <div class="station-sub"></div>
+      <div class="station-head"><span class="station-title"></span></div>
+      <div class="station-plate">
+        <div class="station-row">
+          <span class="station-sub"></span>
+          <span class="station-key"><kbd>E</kbd></span>
+        </div>
+        <div class="station-choices"></div>
       </div>
-      <div class="station-key"><kbd>E</kbd></div>
-      <div class="station-choices"></div>
+      <span class="station-post"></span>
     `
     container.appendChild(this.el)
 
     this.titleEl = this.el.querySelector('.station-title')
     this.subEl = this.el.querySelector('.station-sub')
-    this.dotEl = this.el.querySelector('.station-dot')
+    this.headEl = this.el.querySelector('.station-head')
     this.keyEl = this.el.querySelector('.station-key')
     this.choicesEl = this.el.querySelector('.station-choices')
 
@@ -40,10 +46,10 @@ export class StationUI {
         // eine Adresse, eine eigene Handlung oder wenigstens eine Auswahl, in
         // der etwas steht.
         const wired = !!(station.url || station.onUse
-          || station.choices?.some((c) => c.url))
+          || station.choices?.some((c) => c.url || c.action))
         this.titleEl.textContent = station.label
         this.subEl.textContent = wired ? station.hint : 'noch nicht verlinkt'
-        this.dotEl.style.background = station.color || '#4a6c93'
+        this.headEl.style.background = station.color || '#4a6c93'
         // Eine Station mit mehreren Zielen zeigt sie beide an, mit der Ziffer
         // davor, mit der man sie waehlt. Der Tastenknopf E entfaellt dann –
         // sonst stuenden drei Tasten auf einer Karte, von denen eine nichts
@@ -77,7 +83,7 @@ export class StationUI {
     if (!station.choices?.length) return
     station.choices.slice(0, 2).forEach((choice, i) => {
       const row = document.createElement('div')
-      row.className = choice.url ? 'station-choice' : 'station-choice off'
+      row.className = choice.url || choice.action ? 'station-choice' : 'station-choice off'
       row.innerHTML = `<kbd>${i + 1}</kbd><span></span>`
       row.querySelector('span').textContent = choice.label
       if (choice.color) row.style.setProperty('--choice', choice.color)

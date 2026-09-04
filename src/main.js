@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import './style.css'
+import './dialogs/dialogs.css'
 
 import { CAMERA, COLORS, SKIER } from './config.js'
 import { Input } from './core/input.js'

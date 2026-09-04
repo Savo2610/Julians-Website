@@ -242,7 +242,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, audio,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

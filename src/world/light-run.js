@@ -46,7 +46,6 @@ export class LightRun {
 
     this.stops = []
     this.phase = 0
-    this.rider = { s: 0, off: 0, inside: false, lage: 0 }
 
     this._build()
   }
@@ -153,12 +152,6 @@ export class LightRun {
     // Nur wer wirklich in der Gasse faehrt, loest die Welle aus. Sonst
     // flackert die Strecke, wenn jemand zwanzig Meter daneben vorbeizieht.
     const inside = Math.abs(off) < SPAN * 0.9 && s > -6 && s < this.length + 6
-
-    // Fuer den Ton dieselbe Messung, die schon das Licht braucht – ein
-    // zweites Mal zu projizieren waere derselbe Rechenweg mit demselben
-    // Ergebnis. `lage` ist der Fortschritt in 0..1; dass er an den Enden
-    // darueber hinauslaeuft, macht nichts, die Tonstufe wird begrenzt.
-    this.rider = { s, off, inside, lage: s / this.length }
 
     const gc = this.glow.instanceColor.array
     const hc = this.halo.instanceColor.array

@@ -59,10 +59,7 @@ function textTexture(lines, { fontSize = 96, lineGap = 1.25, rim = 15 } = {}) {
 function keycapTexture({ cell = 150, gap = 18, radius = 28, rim = 15 } = {}) {
   const pad = 40
   const width = cell * 3 + gap * 2 + pad * 2
-  // Vier Reihen: Kreuz, Leertaste, und darunter die Taste fuer den Ton. Die
-  // letzte Reihe ist flach, damit sie nicht so wichtig aussieht wie das
-  // Kreuz – sie ist ein Schalter und keine Fahrtaste.
-  const height = cell * 3 + gap * 3 + cell * 0.62 + pad * 2
+  const height = cell * 3 + gap * 2 + pad * 2
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -84,10 +81,6 @@ function keycapTexture({ cell = 150, gap = 18, radius = 28, rim = 15 } = {}) {
   // Die Leertaste ist breit und flach – daran erkennt man sie, ohne dass
   // etwas darauf stehen muesste.
   keys.push({ text: 'SPACE', col: 0, row: 2, span: 3, flat: 0.62 })
-  // M schaltet den Ton. Die Note daneben sagt wofuer, ohne ein Wort zu
-  // brauchen – und ein Wort waere in dieser Groesse von oben ohnehin nicht
-  // mehr zu lesen.
-  keys.push({ text: 'M', col: 1, row: 3, flat: 0.62, note: true })
 
   for (const key of keys) {
     const w = cell * (key.span ?? 1) + gap * ((key.span ?? 1) - 1)
@@ -115,19 +108,6 @@ function keycapTexture({ cell = 150, gap = 18, radius = 28, rim = 15 } = {}) {
     ctx.stroke()
     ctx.fillStyle = '#ffff00'
     ctx.fillText(key.text, cx, cy + cell * 0.02)
-
-    // Die Note steht neben der Taste, nicht darauf: auf der Kappe steht, was
-    // man druecken muss, daneben, was dabei herauskommt.
-    if (key.note) {
-      const ny = cy + cell * 0.02
-      const nx = x + w + gap * 1.6
-      ctx.strokeStyle = '#00ff00'
-      ctx.lineWidth = rim * 2
-      ctx.font = `800 ${cell * 0.7}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`
-      ctx.strokeText('♪', nx, ny)
-      ctx.fillStyle = '#ffff00'
-      ctx.fillText('♪', nx, ny)
-    }
   }
 
   const tex = new THREE.CanvasTexture(canvas)
@@ -162,14 +142,8 @@ export function writeIntro(trail) {
     strength: 1,
   })
 
-  // Steuerung: nur die Tasten, kein erklaerender Text. Seit die Reihe mit M
-  // dazugekommen ist, ist der Stempel eine Kachelhoehe laenger. Kleiner
-  // stempeln war der falsche Ausweg – die Spurkarte hat eine feste Aufloesung,
-  // und bei Breite 9.5 zerfiel die unterste Reihe zu einem Fleck. Stattdessen
-  // bleibt die Kachelgroesse und der ganze Stempel rueckt vom Fackelkranz weg
-  // in die Mitte: die unterste Reihe endet dann bei Radius 10.9, der Kranz
-  // steht bei 11.7.
+  // Steuerung: nur das Tastenkreuz, kein erklaerender Text.
   const { texture, aspect } = keycapTexture()
   const width = 11
-  trail.stampDecal(texture, PLATEAU.x + 3.0, PLATEAU.z + 3.0, width, width / aspect, TEXT_ROTATION, 0.95)
+  trail.stampDecal(texture, PLATEAU.x + 4.5, PLATEAU.z + 4.5, width, width / aspect, TEXT_ROTATION, 0.95)
 }

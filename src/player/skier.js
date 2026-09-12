@@ -24,7 +24,6 @@ export class Skier {
     this.crouch = 0
     this.airborne = false
     this.vy = 0
-    this.landed = 0
     this._rise = 0                  // Steiggeschwindigkeit, die der Boden zuletzt vorgab
     this._prevGroundY = 0
     this.tow = null          // haengt am Schlepplift, wenn gesetzt
@@ -281,10 +280,6 @@ export class Skier {
         this.height = 0
         this.airborne = false
         this.landImpact = Math.min(1, -this.vy / 12)
-        // landImpact klingt ueber mehrere Frames ab und taugt deshalb nicht
-        // als Ausloeser. `landed` steht genau in dem Bild, in dem der Schnee
-        // getroffen wird, und wird vom Aufrufer wieder geleert.
-        this.landed = this.landImpact
         this.vy = 0
       }
     } else {

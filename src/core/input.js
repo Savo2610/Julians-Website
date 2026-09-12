@@ -17,7 +17,6 @@ const KEY_MAP = {
   // fuer einen Fall, den es an drei Stellen im Tal gibt.
   Digit1: 'pick1', Numpad1: 'pick1',
   Digit2: 'pick2', Numpad2: 'pick2',
-  KeyM: 'mute',
 }
 
 export class Input {

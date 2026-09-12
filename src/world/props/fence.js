@@ -2,7 +2,6 @@ import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 import { terrainHeight } from '../heightfield.js'
 import { makeRng } from '../../core/rng.js'
-import { audio } from '../../audio/audio.js'
 
 // Weidezaun aus krummen Holzpfosten mit zwei Querlatten. Er folgt dem Gelaende
 // und wird in einem einzigen Mesh zusammengefasst.
@@ -196,7 +195,6 @@ export function createPisteMarkers(world, points, { seed = 12, color = 0xe8703a 
         pole.tipX = skier.forward.x / len
         pole.tipZ = skier.forward.z / len
         pole.hold = KNOCK_HOLD
-        audio.klopfen()
       }
 
       if (pole.hold > 0) {

@@ -32,8 +32,9 @@ gezeichnet. `npm run build` muss durchlaufen, bevor irgendetwas als fertig gilt.
 Diese sind über mehrere Sitzungen entstanden und jeweils teuer bezahlt. Wer sie
 bricht, baut etwas, das zurückgenommen werden muss.
 
-**Die Kamera dreht sich nie.** `CAMERA.azimuth = Math.PI * 0.25`, Elevation
-0.63 rad (≈ 36°). Sie folgt dem Fahrer, sonst nichts. Daraus folgt:
+**Die Kamera dreht sich nie** — mit genau einer Ausnahme, siehe unten.
+`CAMERA.azimuth = Math.PI * 0.25`, Elevation 0.63 rad (≈ 36°). Sie folgt dem
+Fahrer, sonst nichts. Daraus folgt:
 
 - WASD bleibt dauerhaft auf dieselben Himmelsrichtungen gelegt und wird aus
   Sicht des Fahrers gesteuert — klassisch, nicht bildschirmrelativ.
@@ -47,6 +48,12 @@ bricht, baut etwas, das zurückgenommen werden muss.
   höher und dahinter steht. Das ist der Grund, warum die Leuchtstrecke ihre
   Bögen *längs* und nicht quer hat — quer zeigt jeder Bogen fast genau in die
   Blickrichtung und wird zu einem senkrechten Strich.
+
+*Die Ausnahme*: auf der **Nordabfahrt** geht die Kamera hinter den Fahrer und
+dreht mit ihm (`CHASE` in `config.js`, Abschnitt 4). Das war eine ausdrückliche
+Ansage und gilt nur dort. Die Steuerung blieb davon unberührt, weil A/D ohnehin
+aus Sicht des Fahrers lenken — genau deshalb war der Modus überhaupt möglich.
+Wer eine zweite Ausnahme erwägt: erst fragen.
 
 **Es gibt genau eine Höhenfunktion.** `terrainHeight(x, z)` in
 `src/world/heightfield.js` speist das Mesh *und* jede Kollisions- und
@@ -113,8 +120,11 @@ Leuchtsegmente), ist eine `InstancedMesh`.
 
 ## 4. Die Welt
 
-**Geografie** (`config.js` → `WORLD.basins`): drei überlappende Kreise statt
+**Geografie** (`config.js` → `WORLD.basins`): vier überlappende Kreise statt
 einer Scheibe, damit die Welt wachsen kann, ohne in der Mitte leer zu werden.
+Der vierte (−26, −68, Radius 34) ist die Rückseite des Berges. Er ist bewusst
+klein, und die **Kartengröße bleibt bei 230 / 448 Segmenten** — hätte sie
+mitwachsen müssen, wäre die Schneespur-Textur 11 % gröber geworden.
 
 | Element | Ort | Zweck |
 |---|---|---|
@@ -122,6 +132,7 @@ einer Scheibe, damit die Welt wachsen kann, ohne in der Mitte leer zu werden.
 | `SUMMIT` | −58, −64 — Höhe 30 | Bergarm, Liftende, längste Abfahrt |
 | `SPORT_HILL` | 27, −87 — Radius 68 | Flanke im Nordosten: Rennstrecke und Funpark |
 | `LAKE` | −47, 41 — Radius 17 | Zugefrorener See |
+| `NORTH_LANE` | −58,−72 → 6,−65 — 80 m | Nordabfahrt über die Rückseite |
 
 **Pistenbänder** (`makeLane` in `heightfield.js`): ziehen das Gelände entlang
 einer Linie auf ein gleichmäßiges Gefälle. `reach = width*0.5 + feather`,
@@ -142,7 +153,7 @@ Strang zu Ende fahren kann.
 | Werkstatt (Hütte) | 25, 21 | Auswahl: GitHub / LinkedIn |
 | Skikasse | −40, −2 | Auswahl: PayPal / Solana (Wallet-Fenster) |
 | Signal (Notruftelefon) | 2, 0 | signal.me |
-| Instagram (Fernrohr) | −59, −71 | instagram.com |
+| Instagram (Fernrohr) | −66, −74 | instagram.com |
 | Arbeitszeitrechner (Stechuhr) | −15, 23 | stempelt, dann zeit.veerka.mp |
 | Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |
 | Abkürzung (Felstunnel) | −34, 15 | Kurzlink-Fenster |
@@ -158,6 +169,74 @@ eine Auswahl mit Inhalt hat.
 Spur weiterläuft), Zauberteppich im Kinderland, Rail im Funpark, Rennstrecke
 mit Zeitnahme, Speedcheck an der freien Piste, zwei Schneekanonen, Leucht-
 strecke, Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
+
+### Die Nordabfahrt (Rückseite)
+
+Die jüngste und größte Erweiterung. Vom Gipfel führt eine zweite Piste nach
+hinten, dorthin, wo vorher nichts war, und kommt in einem Rechtsbogen oben am
+Funpark wieder heraus. Damit schließt sich eine Runde: Lift → Rückseite →
+Funpark → Tal.
+
+**Das Gelände kommt zuerst, das Band nur zum Glätten.** Derselbe Weg wie bei
+der Rodelbahn: erst wurde die Rückseite mit `ridgeAlong()` (Kamm entlang einer
+Linie, Amplitude je Stützpunkt) so geformt, dass sie von allein fällt —
+`SCHULTER` trägt die Trasse, `GRAT` schließt die Außenseite der Kurve, `KAR`
+ist die Mulde dazwischen. Erst danach zieht `NORTH_LANE` das Band darüber.
+Gemessen bleibt der Eingriff unter 1,5 m (Auftrag ≤ 0,50 m, Abtrag ≤ 1,15 m).
+Wer die Trasse verlegt, muss die Schulter neu rechnen, nicht das Band breiter
+machen — sonst steht dort ein Damm.
+
+**Der Einstieg ist ein Tor, kein Knopf.** `props/start-gate.js` steht quer über
+dem Anfang der Bahn. Wer hindurchfährt, nimmt die Piste — keine Taste, kein
+Menü, die Regel von der minimalen Oberfläche bleibt heil. Die beiden Pfosten
+haben Kollision, das Tor als Ganzes nicht.
+
+**Die Kamera** (`CHASE` in `config.js`, Logik in `player/top-camera.js`) geht
+hinter den Fahrer: Elevation 0.30 rad statt 0.63, Abstand 14 statt 33, FOV 46.
+Umgeschaltet wird nicht, sondern über gut eine Sekunde geblendet (`blende` 2.6).
+Zwei Fallen, beide schon hineingetreten:
+
+- Der Azimut ist ein **fortlaufender** Winkel und wird immer auf dem kürzesten
+  Weg *vom aktuellen Wert aus* nachgezogen (`kuerzerWeg()`). Mischt man statt
+  dessen jedes Bild zwischen festem und mitdrehendem Azimut, kippt das
+  Vorzeichen genau dann, wenn der Fahrer von der festen Kamera wegzeigt, und
+  die Kamera schwenkt einmal ganz herum.
+- Gefolgt wird `heading + swing * 0.3`, nicht `facing`. Der Fahrer pendelt von
+  selbst um bis zu 0.55 rad; diese Bewegung gehört ins Bild, nicht in die
+  Kamera.
+
+Dazu eine Bodenfreiheit von 1,3 m, gewichtet mit der Überblendung — bei 17°
+steht die Kamera nur gut vier Meter über dem Blickpunkt und taucht am Steilstück
+sonst in den Schnee.
+
+**Wann sie greift**, entscheidet `world/north-run.js` an der Bahnmitte und nicht
+am Tor: ein Tor liefert nur einen Moment, aber die Kamera braucht über die ganze
+Fahrt eine Meinung. Hysterese in drei Richtungen — seitlich (ein bei 8 m, aus
+bei 12,5 m), längs (2 m Sicherheitsabstand an beiden Enden) und zeitlich
+(0,4 s Geduld, ein weiter Schwung ist noch kein Ausstieg). Dazu eine Sperre
+`_gefahren`: ohne sie genügte ein Ausrollen im Gegenhang, um am Ziel wieder in
+die Verfolgerkamera zu rutschen (gemessen: zurück auf die feste Kamera, eine
+Dreiviertelsekunde später bei 77 von 80 Metern wieder hinter den Fahrer). Erst
+fünfzehn Meter zurück bergauf zählt als „nochmal".
+
+**Die Klamm** quert die Bahn zwischen Meter 48 und 62, wo das Gefälle auf sieben
+Grad zurückgeht. Sie ist Gelände und schneidet als **letzter** Schritt nach dem
+Pistenband — umgekehrt hätte das Band sie gleich wieder aufgefüllt. Viereinhalb
+Meter tief, Wände mit gut 35°; wer hineingerät, fährt sie wieder hinaus (geprüft)
+— dasselbe Prinzip wie beim See.
+
+Der Steg darüber folgt dem Grundsatz der Funpark-Schanzen: **was man befährt,
+ist Gelände, was man sieht, ist Aufbau.** Ein knapp sechs Meter breiter Streifen
+bleibt ungeschnitten und trägt den Fahrer (`BRUECKE` im Höhenfeld), das Holz aus
+`props/gorge-bridge.js` liegt nur darauf. Gemessen wird der Streifen *längs* der
+Rinne — er ist ein Band quer darüber und kein Kreis. Eine eigene Stangenreihe
+auf der bergseitigen Oberkante trichtert hinein (innen 1 m neben dem Steg, außen
+11 m), und Fels an beiden Kanten macht die Rinne überhaupt erst sichtbar: eine
+Mulde aus Schnee in einem Hang aus Schnee hat aus der festen Kamera keine Kante.
+
+**Charakter**: dichter Wald (Dichte-Aufschlag über `nordDist`), Felsriegel auf
+dem Grat, Wildspuren im Schnee (`stampTrack` in `snow-writing.js`, gestempelt in
+`main.js`). Nichts zum Anklicken — das war die ausdrückliche Wahl.
 
 **Spielereien**: Fackeln und alle Pistenstangen kippen um, wenn man sie
 erwischt, und richten sich nach Sekunden wieder auf (Fackeln verlöschen dabei).
@@ -217,6 +296,21 @@ Weitere Fallen aus der Praxis:
   Singletons prüft man über `window.__ski`, nicht über einen eigenen Import.
 - Für Rechnungen ohne Browser: eine Wegwerfdatei `./_m.mjs` im **Projektwurzel-
   verzeichnis** (node findet `three` aus dem Scratchpad heraus nicht).
+  `heightfield.js` selbst importiert kein `three` und lässt sich deshalb auch
+  aus einem Skript im Scratchpad heraus direkt importieren — der bequemste Weg,
+  Höhen, Quer- und Längsprofile zu messen.
+- **rAF läuft weiter, sobald das Browserfenster sichtbar ist**, und verschiebt
+  den Fahrer zwischen zwei Werkzeugaufrufen. Für reproduzierbare Messungen
+  `window.requestAnimationFrame = () => 0` setzen. Umgekehrt hängt
+  `await new Promise(r => rafOrig(r))` im verborgenen Fenster ewig.
+- Screenshots, die im selben `browser_batch` hinter einem JS-Aufruf stehen,
+  zeigen das **vorige** Bild. JS und Screenshot immer getrennt aufrufen.
+- Die Lenkung im Autopiloten: `forward = (sin h, cos h)`, positiver
+  Winkelfehler heißt Heading **erhöhen**, und das ist **links**. Zweimal
+  falsch herum gebaut.
+- Nach einem Versetzen des Fahrers `_prevGroundY` und `_rise` zurücksetzen,
+  sonst erzeugt der Sprung in der Höhe einen riesigen `_rise` und der Fahrer
+  hebt ab (einmal 94 Bilder Scheinflug gemessen).
 
 ---
 
@@ -277,6 +371,15 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
   `window.__ski` und dem ersten rAF. Verdächtig sind `writeIntro` und
   `renderer.compile`. Nie untersucht.
 - **Umzug auf veerka.mp** steht noch aus.
+- **Der Zweig `rueckseite` ist absichtlich nicht nach `main` gemerged.** Die
+  ganze Nordabfahrt hängt an vier Commits (`bbea97d`, `6f1a356`, `2769ab9`,
+  `f3e3591`); sie war als jederzeit rücknehmbar gefordert. Vor dem Merge fragen.
+- Das Fernrohr steht seit der Nordabfahrt auf **−66, −74** statt −59, −71: es
+  stand sonst 1,4 m neben der neuen Bahnmitte, mitten im Startbogen. Von sechs
+  gemessenen Ausweichplätzen hatte dieser das geringste Relief (0,35).
+- Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
+  Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
+  Standaufnahme schon. Nicht untersucht.
 - `_m.mjs` im Wurzelverzeichnis ist eine Wegwerfdatei aus dem Prüfbetrieb und
   kann weg.
 
@@ -285,6 +388,11 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+f3e3591  Klamm mit Holzsteg auf der Nordabfahrt
+2769ab9  Rueckseite ausgestalten: Wald, Grat, Felsriegel, Wildspuren
+6f1a356  Startbogen und Verfolgerkamera auf der Nordabfahrt
+bbea97d  Rueckseite des Berges: Nordkar und Trasse der neuen Abfahrt
+d40ba74  Uebergabe: HANDOVER.md und CLAUDE.md
 112902f  Ton wieder entfernt
 00075fe  Ton: kein Wind mehr, Stille im Stand, Schnee im Mittenband
 c218775  Sounddesign: Schneeteppich, Landung, Klopfen, Tonleiter

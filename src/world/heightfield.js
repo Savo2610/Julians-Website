@@ -96,10 +96,9 @@ export const SPORT_HILL = { x: 27, z: -87, radius: 68, height: 19 }
 // ueber ihre Laenge von neun auf fuenf Meter Aufbau – dadurch bekommt die Bahn
 // ihr Gefaelle vom Gelaende und muss es nicht selbst schneiden.
 //
-// GRAT schliesst das Kar nach aussen. Er laeuft acht bis zwoelf Meter noerdlich
-// der Piste und geht dort in den Gebirgsrand ueber. Ohne ihn liefe der Blick
-// aus der Kurve heraus ins Leere: die Karte ist hier nur 34 Meter breit, und
-// eine Piste am offenen Kartenrand sieht aus wie ein Brett im Nichts.
+// GRAT schliesst das Kar nach aussen. Ohne ihn liefe der Blick aus der Kurve
+// heraus ins Leere: die Bahn liegt hier hoeher als der Gebirgsrand, und eine
+// Piste am offenen Kartenrand sieht aus wie ein Brett im Nichts.
 //
 // KAR ist die Mulde *innerhalb* des Bogens. Sie ist der Grund, warum die
 // Schulter als Schulter gelesen wird und nicht als Hochflaeche – ohne sie waere
@@ -116,15 +115,30 @@ const SCHULTER = [
   [-58, -72, 0.0], [-57, -81, 0.6], [-51, -87, 3.3], [-42, -88, 5.4],
   [-32, -85, 7.9], [-22, -80, 8.4], [-12, -76, 5.2], [-2, -71, 0.7], [6, -65, 0.0],
 ]
-// Der Grat laeuft zwoelf bis sechzehn Meter ausserhalb der Piste und geht dort
-// in den Gebirgsrand ueber. Er stand zuerst naeher und schmaler – dann schob er
-// die ersten zwanzig Meter der Abfahrt um drei Meter hoch, und aus dem
-// Einstieg wurde eine Ebene mit nicht einmal vier Grad.
-const GRAT = [
-  [-71, -76, 0.0], [-70, -88, 3.5], [-61, -98, 6.5], [-47, -101, 7.5],
-  [-33, -99, 7.0], [-21, -93, 6.0], [-10, -87, 4.5], [0, -80, 2.0], [8, -73, 0.0],
+// Der Grat liegt siebzehn Meter ausserhalb der Bahnmitte – gemessen, nicht
+// geschaetzt. Zwei Fassungen davor waren falsch: bei acht Metern schob er die
+// ersten zwanzig Meter der Abfahrt um drei Meter hoch und machte aus dem
+// Einstieg eine Ebene mit nicht einmal vier Grad; mit den urspruenglichen
+// Hoehen lag sein Kamm drei bis sechs Meter *unter* der Bahn und schloss damit
+// ueberhaupt nichts.
+//
+// Jetzt traegt er dort, wo es noetig ist, und laesst Luft, wo es schoener ist:
+// im grossen Bogen steht er sechs Meter ueber der Bahn und macht daraus einen
+// Karkessel, an zwei Stellen faellt er unter sie ab und gibt den Blick nach
+// Norden frei. Ein Grat, der ueber achtzig Meter gleich hoch bleibt, ist eine
+// Mauer und kein Berg.
+//
+// Sein Radius ist mit 13 kleiner als der der Schulter: bei siebzehn Metern
+// Abstand kommt an der Bahn nichts mehr an, an den Stangen auf 6,2 Metern noch
+// gut ein Meter – gerade genug, dass sie auf einer Kante stehen.
+export const GRAT = [
+  [-75, -74, 10.0], [-72, -88, 7.0], [-58, -102, 16.0], [-40, -105, 17.0],
+  [-26, -101, 12.0], [-15, -96, 7.0], [-5, -92, 5.0], [7, -86, 2.0], [16, -79, 0.0],
 ]
-const KAR = { x: -32, z: -70, radius: 19, depth: 4.2 }
+// Die Mulde liegt weiter innen und ist flacher, seit der Grat aussen traegt.
+// Bei (-32,-70) und 4,2 Metern Tiefe schnitt sie einen Graben zwischen Bahn und
+// Bergflanke – die Bahn lag dann in einer Rinne mit Wall auf beiden Seiten.
+const KAR = { x: -34, z: -66, radius: 21, depth: 2.6 }
 
 // --- Pistenbaender ----------------------------------------------------------
 // Ein Band zieht das Gelaende entlang einer Linie auf ein gleichmaessiges
@@ -544,7 +558,7 @@ export function terrainHeight(x, z) {
   // die neue Abfahrt ihr Gefaelle vom Gelaende bekommt und das Band nur noch
   // glaettet.
   h += ridgeAlong(x, z, SCHULTER, 24)
-  h += ridgeAlong(x, z, GRAT, 15)
+  h += ridgeAlong(x, z, GRAT, 13)
   h += bump(x, z, KAR.x, KAR.z, KAR.radius, -KAR.depth)
 
   // Kuppe im Osten – dort steht das Fernrohr.

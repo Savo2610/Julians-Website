@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -201,10 +201,11 @@ export function populate(world, sky, registry) {
       LANES.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, r })
     }
   }
-  // Abstand zur Rodelbahn – gebraucht fuer das Waldband, das sie einfasst.
-  const sledDist = (x, z) => {
+  // Abstand zu einer Bahnmitte – gebraucht fuer die Waldbaender, die eine Bahn
+  // einfassen. Zwei Bahnen brauchen das inzwischen, deshalb einmal geschrieben
+  // und zweimal gebunden.
+  const abstandZu = (pts) => (x, z) => {
     let best = Infinity
-    const pts = SLED_LANE.points
     for (let i = 0; i < pts.length - 1; i++) {
       const a = pts[i]
       const b = pts[i + 1]
@@ -218,6 +219,8 @@ export function populate(world, sky, registry) {
     }
     return Math.sqrt(best)
   }
+  const sledDist = abstandZu(SLED_LANE.points)
+  const nordDist = abstandZu(NORTH_LANE.points)
 
   const n = new THREE.Vector3()
 
@@ -229,8 +232,11 @@ export function populate(world, sky, registry) {
   // --- Wald ------------------------------------------------------------
   // Dichter Guertel aussen, lockere Gruppen innen: der Wald ist die weiche
   // Talgrenze, bevor die Felswand kommt.
+  // Die Zahl ist mit der Spielflaeche gewachsen: das Nordkar ist neu bepflanzbar,
+  // und bei 880 waere der ganze Wald duenner geworden statt die Rueckseite
+  // dichter – scatter() verteilt eine feste Anzahl auf die angenommene Flaeche.
   const treeSpots = scatter(rng, {
-    count: 880,
+    count: 1010,
     minDist: 3.4,
     accept: (x, z) => {
       const edge = playAreaDistance(x, z)
@@ -253,7 +259,13 @@ export function populate(world, sky, registry) {
       // nicht neben ihm her. Direkt an der Bahn haelt die Schneise frei, ab
       // etwa zehn Metern steht der Wald dann dicht an der Bande.
       const woods = 0.75 * (1 - THREE.MathUtils.smoothstep(sledDist(x, z), 12, 30))
-      const density = Math.min(1, rim * 0.98 + groves * 0.5 + woods) * treeline
+      // Die Rueckseite ist die schattige Seite. Dort steht der Wald dichter und
+      // reicht bis dicht an die Bahn heran – das ist der Unterschied, an dem man
+      // merkt, dass man nicht mehr im Tal ist. Dass er oben trotzdem aufhoert,
+      // besorgt die Baumgrenze von selbst: die Abfahrt beginnt auf 25 Metern und
+      // endet auf 12, sie faehrt also von ueber der Grenze unter sie.
+      const nordkar = 0.9 * (1 - THREE.MathUtils.smoothstep(nordDist(x, z), 11, 36))
+      const density = Math.min(1, rim * 0.98 + groves * 0.5 + woods + nordkar) * treeline
       return rng() < density
     },
   })
@@ -282,7 +294,7 @@ export function populate(world, sky, registry) {
 
   // --- Felsen -----------------------------------------------------------
   const rockSpots = scatter(rng, {
-    count: 210,
+    count: 245,
     minDist: 5.0,
     accept: (x, z) => {
       if (playAreaDistance(x, z) > WORLD.rimWidth - 1) return false
@@ -541,6 +553,37 @@ export function populate(world, sky, registry) {
         seed, color: 0x2f6bd8,
       }))
     }
+
+    // Felsriegel auf dem Grat. Er steht dort, wo der Grat ohnehin schon vier
+    // bis sieben Meter ueber dem Kar aufragt – die Felsen setzen nur die Krone
+    // darauf. Damit bekommt die Aussenseite der Kurve eine Kante, an der der
+    // Blick haengenbleibt, statt ins Weisse zu laufen.
+    //
+    // Naeher als zehn Meter an die Bahnmitte kommt keiner: Felsen bringen
+    // Kollision mit, und ein Felsen am Pistenrand ist etwas anderes als einer
+    // auf der Piste.
+    const felsRng = makeRng(99137)
+    const gratPunkte = route(GRAT.map((g) => [g[0], g[1]]), 5.0)
+    const gratFelsen = []
+    for (const [i, p] of gratPunkte.entries()) {
+      if (felsRng() > 0.62) continue
+      const seitlich = (felsRng() - 0.5) * 7
+      const quer = i > 0 && i < gratPunkte.length - 1
+        ? Math.atan2(gratPunkte[i + 1].z - gratPunkte[i - 1].z, gratPunkte[i + 1].x - gratPunkte[i - 1].x)
+        : 0
+      const x = p.x - Math.sin(quer) * seitlich
+      const z = p.z + Math.cos(quer) * seitlich
+      if (nordDist(x, z) < 10) continue
+      if (playAreaDistance(x, z) > WORLD.rimWidth) continue
+      gratFelsen.push({
+        x, z, variant: i % 3,
+        rotation: felsRng() * Math.PI * 2,
+        scale: 1.5 + felsRng() * felsRng() * 2.6,
+        stretch: 0.7 + felsRng() * 0.5,
+        tilt: felsRng() - 0.5,
+      })
+    }
+    createRocks(world, gratFelsen, 8821)
   }
 
   // Der Rueckweg traegt dieselbe Farbe wie die freie Abfahrt: von unten

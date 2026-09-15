@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -192,7 +192,7 @@ export function populate(world, sky, registry) {
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
   // Bewuchs und Boden nicht auseinanderlaufen koennen.
-  for (const [lane, r] of [[SLED_LANE, 7.5], [PARK_LANE, 13], [KINDER_LANE, 12], [SHOOT_LANE, 7]]) {
+  for (const [lane, r] of [[SLED_LANE, 7.5], [NORTH_LANE, 9], [PARK_LANE, 13], [KINDER_LANE, 12], [SHOOT_LANE, 7]]) {
     for (let i = 0; i < lane.points.length - 1; i++) {
       const a = lane.points[i]
       const b = lane.points[i + 1]

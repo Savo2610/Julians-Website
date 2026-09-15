@@ -81,13 +81,19 @@ export const STATION_SPOTS = {
   // Die Skikasse steht auf dem Weg vom Materialdepot zur Talstation – man
   // kommt daran vorbei, bevor man in den Lift steigt.
   ticket:    { x: -40, z: -2, clearing: 9, footprint: 2.4, search: 2.5, trail: 'social' },
-  // Das Fernrohr stand frueher auf der Talschulter – da beginnt jetzt die
-  // Rodelbahn. Es ist auf die Suedschulter hinter dem Gipfel gewichen: von
-  // dort schaut man ueber die andere Talseite, und wer vom Lift kommt, findet
-  // es, wenn er einmal um das Gipfelkreuz faehrt. Trotz der Lage hinter der
-  // Kuppe ist es sichtbar – bei 36 Grad Kamerawinkel steigt die Sichtlinie
-  // schneller als der Berg dahinter abfaellt.
-  telescope: { x: -59, z: -71, clearing: 7, footprint: 1.2, search: 3, trail: 'social' },
+  // Das Fernrohr ist zum zweiten Mal gewichen. Zuerst stand es auf der
+  // Talschulter – dort beginnt jetzt die Rodelbahn. Dann hinter dem Gipfel auf
+  // (-59,-71) – dort steht jetzt der Startbogen der Nordabfahrt, und zwischen
+  // Fernrohr und Bahnmitte lagen anderthalb Meter. Ein Fernrohr mitten im Tor
+  // ist kein Aussichtspunkt, sondern ein Hindernis.
+  //
+  // Jetzt steht es acht Meter westlich davon auf der Schulter. Das ist von den
+  // sechs geprueften Plaetzen der flachste (Relief 0,35 auf 1,2 Meter
+  // Grundflaeche), er liegt ausserhalb der halben Bahnbreite, und der Blick
+  // geht ueber das Kar – also genau ueber das, was es hier neu zu sehen gibt.
+  // Trotz der Lage hinter der Kuppe ist es sichtbar: bei 36 Grad Kamerawinkel
+  // steigt die Sichtlinie schneller als der Berg dahinter abfaellt.
+  telescope: { x: -66, z: -74, clearing: 7, footprint: 1.2, search: 3, trail: 'social' },
 
   // Weg 3 – Werkzeuge
   // Die Stechuhr steht am Anfang des Weges: man stempelt, bevor man arbeitet.

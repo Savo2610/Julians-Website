@@ -12,6 +12,14 @@ export const WORLD = {
     { x: 0, z: 0, radius: 66 },        // Talkessel mit Plateau und den drei Wegen
     { x: -58, z: -64, radius: 41 },    // Bergarm im Nordwesten: lange Abfahrt und Lift
     { x: 29, z: -45, radius: 32 },     // Sportgelaende im Nordosten: der Funpark
+    // Die Rueckseite des Berges. Sie schliesst die Luecke zwischen Bergarm und
+    // Sportgelaende, durch die bisher der Gebirgsrand lief – dort liegt jetzt
+    // das Nordkar mit der neuen Abfahrt. Der Kreis ist bewusst nur 34 gross:
+    // sein Rand laeuft acht bis zwoelf Meter nordwestlich der Piste vorbei, und
+    // genau dort steigt der Gebirgsrand als Wand auf. Ein groesserer Kreis
+    // haette das Kar nach oben geoeffnet und die Karte nach Norden ausfransen
+    // lassen – die Karte waechst nicht mit, ihre Kantenlaenge bleibt bei 230.
+    { x: -26, z: -68, radius: 34 },
   ],
   rimWidth: 17,       // wie breit der Gebirgsrand ansteigt
 }

@@ -140,6 +140,80 @@ export const GRAT = [
 // Bergflanke – die Bahn lag dann in einer Rinne mit Wall auf beiden Seiten.
 const KAR = { x: -34, z: -66, radius: 21, depth: 2.6 }
 
+// --- Die Klamm ---------------------------------------------------------------
+// Eine Rinne, die quer unter der Abfahrt hindurchlaeuft: von der Bergflanke im
+// Sueden hinunter in den Kessel im Norden. Ueber sie fuehrt eine Bruecke, und
+// die Bruecke ist Gelaende und kein Aufbau – der Holzsteg liegt nur obenauf.
+// Das ist der Grund, warum sie ueberhaupt geht: Boden, Kollision und Kamera
+// lesen dieselbe Funktion, also faehrt man wirklich darueber und nicht
+// hindurch.
+//
+// Sie liegt im flachsten Stueck der Bahn, zwischen Kilometer 48 und 62, wo das
+// Gefaelle auf sieben Grad zurueckgeht. Dort hat die Abfahrt sonst nichts zu
+// erzaehlen.
+//
+// Tief genug, dass man sie sieht, flach genug, dass sie keine Falle ist: viereinhalb
+// Meter, Waende mit gut 35 Grad. Wer neben den Steg geraet, faellt nicht,
+// sondern faehrt hinein und die Rinne nach Norden wieder hinaus – dasselbe
+// Prinzip wie beim zugefrorenen See, in den man hineinfahren koennen soll,
+// ohne in ein Loch zu fallen.
+export const KLAMM = {
+  von: { x: -27, z: -60 },
+  bis: { x: -8, z: -102 },
+  // Tiefe entlang der Rinne, als Bruchteil ihrer Laenge. Oben laeuft sie aus
+  // dem Hang heraus, unten in den Kessel hinein.
+  tiefe: [[0.00, 0.0], [0.20, 2.2], [0.38, 4.5], [0.62, 4.5], [0.85, 2.4], [1.00, 0.0]],
+  weite: 6.4,     // halbe Breite an der Oberkante
+  sohle: 1.5,     // halbe Breite des flachen Grundes
+}
+
+// Der Steg. Er liegt auf der Bahnmitte und ist knapp sechs Meter breit – schmal
+// genug, dass man ihn als Bauwerk wahrnimmt, breit genug, dass man nicht zielen
+// muss. Der Saum daneben ist kein Abbruch, sondern eine kurze Schraege: eine
+// senkrechte Kante im Hoehenfeld gibt kaputte Normalen und einen Fahrer, der
+// daran haengenbleibt.
+export const BRUECKE = { x: -17.4, z: -78.3, halb: 2.9, saum: 1.7 }
+
+function klammTiefe(u) {
+  const t = KLAMM.tiefe
+  if (u <= 0 || u >= 1) return 0
+  for (let i = 0; i < t.length - 1; i++) {
+    if (u <= t[i + 1][0]) {
+      const f = (u - t[i][0]) / (t[i + 1][0] - t[i][0])
+      return t[i][1] + (t[i + 1][1] - t[i][1]) * smooth(f)
+    }
+  }
+  return 0
+}
+
+function klammAt(x, z) {
+  const ax = KLAMM.bis.x - KLAMM.von.x
+  const az = KLAMM.bis.z - KLAMM.von.z
+  const len2 = ax * ax + az * az
+  let u = ((x - KLAMM.von.x) * ax + (z - KLAMM.von.z) * az) / len2
+  if (u < 0 || u > 1) return 0
+  const px = KLAMM.von.x + ax * u
+  const pz = KLAMM.von.z + az * u
+  const d = Math.hypot(x - px, z - pz)
+  if (d >= KLAMM.weite) return 0
+
+  const tief = klammTiefe(u)
+  if (tief <= 0) return 0
+  // Querprofil: flache Sohle, dann die Wand hoch. Quadriert statt linear,
+  // damit die Oberkante gerundet ist und die Sohle breit bleibt.
+  const q = Math.max(0, (d - KLAMM.sohle) / (KLAMM.weite - KLAMM.sohle))
+  const schnitt = tief * (1 - smooth(q))
+
+  // Wo der Steg liegt, wird nicht geschnitten. Gemessen wird der Abstand quer
+  // zur Rinne, also entlang der Bahn – der Steg ist ein Streifen und kein Kreis.
+  const bd = Math.abs((x - BRUECKE.x) * (ax / Math.sqrt(len2)) + (z - BRUECKE.z) * (az / Math.sqrt(len2)))
+  const steg = bd <= BRUECKE.halb ? 1
+    : bd >= BRUECKE.halb + BRUECKE.saum ? 0
+    : 1 - smooth((bd - BRUECKE.halb) / BRUECKE.saum)
+
+  return -schnitt * (1 - steg)
+}
+
 // --- Pistenbaender ----------------------------------------------------------
 // Ein Band zieht das Gelaende entlang einer Linie auf ein gleichmaessiges
 // Gefaelle. In der Mitte wirkt es voll, zu den Seiten und an beiden Enden
@@ -598,6 +672,10 @@ export function terrainHeight(x, z) {
   // Die Figuren im Funpark sitzen auf dem geglaetteten Band – deshalb erst
   // hier, nach der Bandformung.
   h += parkFeatures(x, z)
+
+  // Die Klamm schneidet zuletzt – sie muss durch das fertige Band hindurch,
+  // sonst fuellte das Band sie gleich wieder auf.
+  h += klammAt(x, z)
 
   // Startplateau: eine flache Terrasse, die sich weich ins Gelaende einfuegt.
   {

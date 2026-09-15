@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -25,6 +25,7 @@ import { snowPaint } from './props/snow-paint.js'
 import { Kinderland } from './kinderland.js'
 import { NorthRun } from './north-run.js'
 import { createStartGate } from './props/start-gate.js'
+import { createGorgeBridge } from './props/gorge-bridge.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -548,10 +549,89 @@ export function populate(world, sky, registry) {
       const L = Math.hypot(dx, dz) || 1
       return [p.x - (dz / L) * versatz, p.z + (dx / L) * versatz]
     })
+    // Der Steg ueber die Klamm. Die Richtung nimmt er von der Bahn: seine
+    // Laengsachse ist die Fahrtrichtung, quer dazu liegt die Rinne.
+    const bruecke = createGorgeBridge()
+    {
+      let vor = P[0]
+      let nach = P[1]
+      for (let i = 0; i < P.length - 1; i++) {
+        if ((BRUECKE.x - P[i].x) * (P[i + 1].x - P[i].x) + (BRUECKE.z - P[i].z) * (P[i + 1].z - P[i].z) > 0
+            && (BRUECKE.x - P[i + 1].x) * (P[i].x - P[i + 1].x) + (BRUECKE.z - P[i + 1].z) * (P[i].z - P[i + 1].z) > 0) {
+          vor = P[i]; nach = P[i + 1]
+        }
+      }
+      // Lokales +X der Gruppe zeigt nach (cos, -sin) – daher dieses atan2 und
+      // nicht das sonst uebliche atan2(dx, dz).
+      const dreh = Math.atan2(-(nach.z - vor.z), nach.x - vor.x)
+      world.place(bruecke, BRUECKE.x, BRUECKE.z, { rotation: dreh, yOffset: 0.1 })
+    }
+
+    // Stangen, die in der Klamm stuenden, faellt weg. Eine Pistenstange, die
+    // vier Meter unter der Bahn im Graben steht, sieht nicht nach Absperrung
+    // aus, sondern nach Fehler.
+    const inKlamm = (p) => Math.hypot(p.x - BRUECKE.x, p.z - BRUECKE.z) < 9
     for (const [versatz, seed] of [[6.2, 71], [-6.2, 73]]) {
-      markerRows.push(createPisteMarkers(world, route(seite(versatz), 5.4), {
+      markerRows.push(createPisteMarkers(world, route(seite(versatz), 5.4).filter((p) => !inKlamm(p)), {
         seed, color: 0x2f6bd8,
       }))
+    }
+
+    // An ihrer Stelle steht eine eigene Reihe auf der Oberkante der bergseitigen
+    // Klammwand. Sechs Meter vor der Rinnenmitte liegt der Bruch: dort misst das
+    // Gelaende noch 15,7 und damit Bahnhoehe, einen Meter weiter schon 14,2.
+    //
+    // Die Reihe sperrt nicht nur, sie trichtert. Innen steht sie einen Meter
+    // neben dem Steg, aussen elf – wer zwischen den innersten beiden Stangen
+    // hindurchfaehrt, trifft ihn, und das sieht man schon von oben am Tor.
+    {
+      const ax = KLAMM.bis.x - KLAMM.von.x
+      const az = KLAMM.bis.z - KLAMM.von.z
+      const la = Math.hypot(ax, az)
+      const laengs = { x: ax / la, z: az / la }
+      const quer = { x: -az / la * 6, z: ax / la * 6 }
+      // Welche Seite bergseitig ist, wird gemessen und nicht angenommen: wird
+      // die Klamm einmal verlegt, kippt die Reihe sonst auf die falsche Seite.
+      const bergauf = terrainHeight(BRUECKE.x + quer.x, BRUECKE.z + quer.z)
+        > terrainHeight(BRUECKE.x - quer.x, BRUECKE.z - quer.z) ? 1 : -1
+      const lippe = [-10.6, -8.2, -5.8, -3.9, 3.9, 5.8, 8.2, 10.6].map((s) => ({
+        x: BRUECKE.x + quer.x * bergauf + laengs.x * s,
+        z: BRUECKE.z + quer.z * bergauf + laengs.z * s,
+      }))
+      markerRows.push(createPisteMarkers(world, lippe, { seed: 77, color: 0x2f6bd8 }))
+
+      // Fels in der Klamm. Ohne ihn liest sie sich aus der festen Kamera als
+      // heller Fleck im hellen Hang: gemessen viereinhalb Meter tief und
+      // trotzdem kaum zu sehen, weil Schnee auf Schnee keine Kante hat. Der
+      // Fels gibt ihr die Kante – auf beiden Oberkanten und vereinzelt auf der
+      // Sohle, also dort, wo das Gestein liegt, das so eine Rinne ueberhaupt
+      // erst ausgewaschen hat.
+      //
+      // Sieben Meter um den Steg herum bleibt er weg: Felsen bringen Kollision
+      // mit, und der Trichter aus Stangen muss frei bleiben.
+      const klammRng = makeRng(30514)
+      const klammFelsen = []
+      for (let u = 0.1; u <= 0.93; u += 0.022) {
+        const mx = KLAMM.von.x + (KLAMM.bis.x - KLAMM.von.x) * u
+        const mz = KLAMM.von.z + (KLAMM.bis.z - KLAMM.von.z) * u
+        if (Math.abs((mx - BRUECKE.x) * laengs.x + (mz - BRUECKE.z) * laengs.z) < 7) continue
+        for (const seite of [-1, 1]) {
+          if (klammRng() > 0.5) continue
+          // Meist auf der Oberkante, jeder sechste unten in der Sohle.
+          const ab = klammRng() < 0.17 ? klammRng() * 1.2 : 4.1 + klammRng() * 1.9
+          const x = mx + (quer.x / 6) * ab * seite
+          const z = mz + (quer.z / 6) * ab * seite
+          if (playAreaDistance(x, z) > WORLD.rimWidth) continue
+          klammFelsen.push({
+            x, z, variant: klammFelsen.length % 3,
+            rotation: klammRng() * Math.PI * 2,
+            scale: 1.0 + klammRng() * klammRng() * 1.9,
+            stretch: 0.6 + klammRng() * 0.6,
+            tilt: klammRng() - 0.5,
+          })
+        }
+      }
+      createRocks(world, klammFelsen, 30515)
     }
 
     // Felsriegel auf dem Grat. Er steht dort, wo der Grat ohnehin schon vier

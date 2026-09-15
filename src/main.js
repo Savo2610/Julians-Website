@@ -141,6 +141,10 @@ function advance(dt) {
   skier.update(dt, input, trail)
   emitSpray(dt)
   spray.update(dt)
+  // Die Nordabfahrt entscheidet vor der Kamera, ob sie hinter den Fahrer geht.
+  // Sie muss nach skier.update() laufen, sonst urteilt sie ueber die Position
+  // des vorigen Bildes – und am Tor waere das genau ein Bild zu spaet.
+  chase.verfolgen(props.northRun.update(dt, skier))
   chase.update(dt, skier, input)
 
   // Schattenkamera dem Fahrer nachfuehren, damit die Aufloesung dort liegt,

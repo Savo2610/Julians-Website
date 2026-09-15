@@ -83,6 +83,32 @@ export const CAMERA = {
   aimLerp: 5.0,
 }
 
+// Der Verfolgermodus – er gilt ausschliesslich auf der Nordabfahrt.
+//
+// Die feste Kamera ist sonst eine der Grundregeln dieser Welt, und das bleibt
+// sie auch: sie ist der Grund, warum WASD ueberall dieselben Himmelsrichtungen
+// bedeutet und warum jedes Schild der Kamera zugewandt steht. Die Rueckseite
+// des Berges ist die eine Ausnahme, und sie funktioniert nur, weil die
+// Steuerung sie nicht bemerkt – A und D drehen den Fahrer seit jeher aus
+// *seiner* Sicht und nicht aus der des Bildschirms. Die Kamera darf sich also
+// hinter ihn stellen, ohne dass eine einzige Taste etwas anderes bedeutet.
+//
+// Flacher, naeher und weitwinkliger als die feste Kamera: aus 17 Grad statt 36
+// sieht man den Hang auf sich zukommen, und 46 Grad Bildwinkel geben bei 14
+// Metern Abstand das Tempo zurueck, das der kleine Ausschnitt sonst schluckt.
+export const CHASE = {
+  elevation: 0.30,    // rad ueber dem Horizont, ~17 Grad
+  distance: 14,
+  fov: 46,
+  lookHeight: 1.5,    // Blickpunkt auf Brusthoehe, nicht auf die Ski
+  lead: 3.0,          // die Kamera zeigt ohnehin nach vorn – weniger Vorlauf noetig
+  // Wieviel vom Schwung des Fahrers die Kamera mitnimmt. Ganz ohne wirkt sie
+  // wie auf einer Schiene, ganz mit pendelt das Bild im Takt der Schwuenge und
+  // macht seekrank – der Fahrer schlaegt um bis zu 0,55 rad aus.
+  swingAnteil: 0.3,
+  blende: 2.6,        // wie schnell zwischen den beiden Kameras ueberblendet wird
+}
+
 export const TRAIL = {
   resolution: 2560,   // Spur-Textur ueber die ganze Karte
   depth: 0.34,        // wie tief die Rille ins Terrain gedrueckt wird

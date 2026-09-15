@@ -23,6 +23,8 @@ import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
 import { snowPaint } from './props/snow-paint.js'
 import { Kinderland } from './kinderland.js'
+import { NorthRun } from './north-run.js'
+import { createStartGate } from './props/start-gate.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -501,6 +503,46 @@ export function populate(world, sky, registry) {
   // eingeschnittenes Band – die Piste soll offen bleiben.
   markerRows.push(createPisteMarkers(world, route(FREE_PISTE, 5.5), { seed: 55, color: 0xe8703a }))
 
+  // --- Nordabfahrt --------------------------------------------------------
+  // Die Bahn selbst ist Gelaende (NORTH_LANE im Hoehenfeld). Hier stehen nur
+  // das Tor am Anfang und die Stangen an den Raendern – und der Zustand, an
+  // dem die Kamera haengt.
+  const northRun = new NorthRun()
+  {
+    const P = NORTH_LANE.points
+    // Richtung der Bahn am Start. Das Tor steht quer dazu, seine Tafel zeigt
+    // dem entgegen, der ankommt.
+    const richtung = Math.atan2(P[1].x - P[0].x, P[1].z - P[0].z)
+    const tor = createStartGate({ titel: 'NORDKAR', unter: 'Rueckseite' })
+    world.place(tor, P[0].x, P[0].z, { rotation: richtung + Math.PI })
+    // Kollision nur fuer die beiden Pfosten, nicht fuer das Tor als Ganzes.
+    const halb = tor.userData.postOffset
+    for (const sx of [-1, 1]) {
+      world.addCollider(
+        P[0].x + Math.cos(richtung) * halb * sx,
+        P[0].z - Math.sin(richtung) * halb * sx,
+        0.34,
+      )
+    }
+
+    // Stangen an beiden Raendern. Eine versetzte Linie braucht je Punkt eine
+    // Querrichtung; genommen wird die Richtung der beiden Nachbarn, damit an
+    // den Knicken kein Knick in der Stangenreihe entsteht.
+    const seite = (versatz) => P.map((p, i) => {
+      const a = P[Math.max(0, i - 1)]
+      const b = P[Math.min(P.length - 1, i + 1)]
+      const dx = b.x - a.x
+      const dz = b.z - a.z
+      const L = Math.hypot(dx, dz) || 1
+      return [p.x - (dz / L) * versatz, p.z + (dx / L) * versatz]
+    })
+    for (const [versatz, seed] of [[6.2, 71], [-6.2, 73]]) {
+      markerRows.push(createPisteMarkers(world, route(seite(versatz), 5.4), {
+        seed, color: 0x2f6bd8,
+      }))
+    }
+  }
+
   // Der Rueckweg traegt dieselbe Farbe wie die freie Abfahrt: von unten
   // gesehen ist beides derselbe Weg zurueck an den Lift.
   // Die Stangen in der Farbe der freien Abfahrt sagen genug; ein Schild am
@@ -719,5 +761,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { lake, lift, race, kinderland, railRide, speedCheck, animated: [...stations.animated, ...animatedProps] }
+  return { lake, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
 }

@@ -399,9 +399,10 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
   `window.__ski` und dem ersten rAF. Verdächtig sind `writeIntro` und
   `renderer.compile`. Nie untersucht.
 - **Umzug auf veerka.mp** steht noch aus.
-- **Der Zweig `rueckseite` ist absichtlich nicht nach `main` gemerged.** Die
-  ganze Nordabfahrt hängt an vier Commits (`bbea97d`, `6f1a356`, `2769ab9`,
-  `f3e3591`); sie war als jederzeit rücknehmbar gefordert. Vor dem Merge fragen.
+- Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit
+  `--no-ff`, damit sie an einem einzigen Commit hängt: `git revert -m 1 b3fcf57`
+  nimmt sie komplett wieder ab. Das war die Bedingung, unter der sie gebaut
+  wurde; der Zweig `rueckseite` kann stehenbleiben.
 - Das Fernrohr steht seit der Nordabfahrt auf **−66, −74** statt −59, −71: es
   stand sonst 1,4 m neben der neuen Bahnmitte, mitten im Startbogen. Von sechs
   gemessenen Ausweichplätzen hatte dieser das geringste Relief (0,35).
@@ -421,6 +422,8 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+b3fcf57  Nordabfahrt ueber die Rueckseite des Berges (Merge, --no-ff)
+a7fa99a  Uebergabe: richtige Commit-Nummer im Verlauf
 4a92a7a  Steg auf das Gelaende gelegt, zweiter Gipfel weg, Tor ohne Namen
 f3e3591  Klamm mit Holzsteg auf der Nordabfahrt
 2769ab9  Rueckseite ausgestalten: Wald, Grat, Felsriegel, Wildspuren

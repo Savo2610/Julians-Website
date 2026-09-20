@@ -191,6 +191,13 @@ dem Anfang der Bahn. Wer hindurchfährt, nimmt die Piste — keine Taste, kein
 Menü, die Regel von der minimalen Oberfläche bleibt heil. Die beiden Pfosten
 haben Kollision, das Tor als Ganzes nicht.
 
+Es **trägt keinen Namen**. Unter dem Bogen hing eine Tafel mit der Aufschrift
+NORDKAR; sie ist auf Ansage wieder verschwunden. Bogen und blauer Punkt sagen,
+was zu sagen ist. Die Pfosten bekommen ihre Länge von `populate`
+(`fuss: [links, rechts]`): der Start liegt auf einem gerundeten Rücken, das
+Gelände fällt auf den 4,75 Metern bis zu den Pfosten um 0,85 und 0,70 Meter ab,
+und ohne diese Zahlen schwebte das Tor mit beiden Beinen.
+
 **Die Kamera** (`CHASE` in `config.js`, Logik in `player/top-camera.js`) geht
 hinter den Fahrer: Elevation 0.30 rad statt 0.63, Abstand 14 statt 33, FOV 46.
 Umgeschaltet wird nicht, sondern über gut eine Sekunde geblendet (`blende` 2.6).
@@ -230,9 +237,30 @@ ist Gelände, was man sieht, ist Aufbau.** Ein knapp sechs Meter breiter Streife
 bleibt ungeschnitten und trägt den Fahrer (`BRUECKE` im Höhenfeld), das Holz aus
 `props/gorge-bridge.js` liegt nur darauf. Gemessen wird der Streifen *längs* der
 Rinne — er ist ein Band quer darüber und kein Kreis. Eine eigene Stangenreihe
-auf der bergseitigen Oberkante trichtert hinein (innen 1 m neben dem Steg, außen
-11 m), und Fels an beiden Kanten macht die Rinne überhaupt erst sichtbar: eine
-Mulde aus Schnee in einem Hang aus Schnee hat aus der festen Kamera keine Kante.
+acht Meter davor trichtert hinein — sie lässt genau vor dem Steg 7,8 Meter einer
+vierzehn Meter breiten Piste offen — und Fels an beiden Kanten macht die Rinne
+überhaupt erst sichtbar: eine Mulde aus Schnee in einem Hang aus Schnee hat aus
+der festen Kamera keine Kante.
+
+**Drei Dinge am Steg sind Bedingung**, und alle drei waren erst falsch — der
+Fahrer fuhr sichtbar durch das Holz:
+
+1. Die Deckfläche liegt auf der lokalen Höhe **null**. Die Ski des Fahrers
+   liegen auf der Geländehöhe, und die *ist* hier die Deckfläche. Lag das Deck
+   bei +0,1, stand er bis zur Wade darin.
+2. Der Steg wird **geneigt** gebaut (`neigung`, aus einer Ausgleichsgeraden
+   durch fünfzehn Geländeproben in `populate`). Die Bahn fällt dort mit 8,95°;
+   auf 14,5 Metern Länge sind das 2,2 Meter. Waagerecht steckte er oben einen
+   Meter im Hang und schwebte unten einen Meter darüber.
+3. Der Steg ist **breiter als der Streifen, der trägt** — 8,2 gegen 5,8 Meter.
+   Nur deshalb ist überhaupt Holz zu sehen: im Streifen liegt das Gelände auf
+   Deckhöhe, und jedes Brett dort oben zerschneidet sich mit dem Mesh zu Fetzen.
+   Außen fällt der Saum ab, dort steht das Holz frei. Zu sehen ist am Ende eine
+   Schneespur zwischen zwei hölzernen Randbohlen.
+
+Rest: das Gelände weicht von der Ausgleichsgeraden um gut fünf Zentimeter nach
+oben wie nach unten ab. Bei fünf Zentimeter dicken Ski und dreiunddreißig Metern
+Kamerahöhe ist das nicht mehr zu sehen.
 
 **Charakter**: dichter Wald (Dichte-Aufschlag über `nordDist`), Felsriegel auf
 dem Grat, Wildspuren im Schnee (`stampTrack` in `snow-writing.js`, gestempelt in
@@ -377,6 +405,11 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 - Das Fernrohr steht seit der Nordabfahrt auf **−66, −74** statt −59, −71: es
   stand sonst 1,4 m neben der neuen Bahnmitte, mitten im Startbogen. Von sechs
   gemessenen Ausweichplätzen hatte dieser das geringste Relief (0,35).
+- **Aufbauten auf gewölbtem Gelände** stehen mit einem Bein in der Luft, wenn
+  sie nur an einem Punkt platziert werden: `world.place()` kennt genau eine
+  Höhe. Das Tor hat es getroffen (0,85 m Luft), der Steg auch (1 m). Wer etwas
+  Breites oder Langes setzt, misst das Gelände an dessen Enden und gibt es dem
+  Bauteil mit — so wie `fuss` beim Tor und `neigung` beim Steg.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.
@@ -388,6 +421,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+75dbed8  Steg auf das Gelaende gelegt, zweiter Gipfel weg, Tor ohne Namen
 f3e3591  Klamm mit Holzsteg auf der Nordabfahrt
 2769ab9  Rueckseite ausgestalten: Wald, Grat, Felsriegel, Wildspuren
 6f1a356  Startbogen und Verfolgerkamera auf der Nordabfahrt

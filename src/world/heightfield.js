@@ -131,8 +131,15 @@ const SCHULTER = [
 // Sein Radius ist mit 13 kleiner als der der Schulter: bei siebzehn Metern
 // Abstand kommt an der Bahn nichts mehr an, an den Stangen auf 6,2 Metern noch
 // gut ein Meter – gerade genug, dass sie auf einer Kante stehen.
+//
+// Der erste Stuetzpunkt traegt nichts mehr. Mit seinen urspruenglichen zehn
+// Metern stand links neben dem Startbogen eine zweite Kuppe von 30,4 Metern –
+// hoeher als der Gipfel selbst mit 30 – und der Berg hatte zwei Spitzen. Ohne
+// ihn faellt das Gelaende vom Gipfel nach Westen durchweg ab (gemessen 27,7
+// am Gipfel, 21,0 bei −74, 14,6 bei −82), und der Grat beginnt erst dort, wo
+// er hingehoert: hinten, auf Hoehe der Kurve.
 export const GRAT = [
-  [-75, -74, 10.0], [-72, -88, 7.0], [-58, -102, 16.0], [-40, -105, 17.0],
+  [-75, -74, 0.0], [-72, -88, 7.0], [-58, -102, 16.0], [-40, -105, 17.0],
   [-26, -101, 12.0], [-15, -96, 7.0], [-5, -92, 5.0], [7, -86, 2.0], [16, -79, 0.0],
 ]
 // Die Mulde liegt weiter innen und ist flacher, seit der Grat aussen traegt.

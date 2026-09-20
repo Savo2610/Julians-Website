@@ -523,20 +523,24 @@ export function populate(world, sky, registry) {
   const northRun = new NorthRun()
   {
     const P = NORTH_LANE.points
-    // Richtung der Bahn am Start. Das Tor steht quer dazu, seine Tafel zeigt
-    // dem entgegen, der ankommt.
-    const richtung = Math.atan2(P[1].x - P[0].x, P[1].z - P[0].z)
-    const tor = createStartGate({ titel: 'NORDKAR', unter: 'Rueckseite' })
-    world.place(tor, P[0].x, P[0].z, { rotation: richtung + Math.PI })
+    // Richtung der Bahn am Start; das Tor steht quer dazu.
+    const drehung = Math.atan2(P[1].x - P[0].x, P[1].z - P[0].z) + Math.PI
+    const weite = 9.5
+    const halb = weite / 2
+    const pfostenOrt = (sx) => [
+      P[0].x + Math.cos(drehung) * halb * sx,
+      P[0].z - Math.sin(drehung) * halb * sx,
+    ]
+    // Wie tief der Boden unter den Pfosten liegt, in der Reihenfolge, in der
+    // das Tor sie baut. Der Start liegt auf einem gerundeten Ruecken: auf den
+    // 4,75 Metern bis zu den Pfosten faellt das Gelaende um 0,85 und 0,70
+    // Meter ab, und ohne diese Zahlen schwebt das Tor mit beiden Beinen.
+    const mitte = terrainHeight(P[0].x, P[0].z)
+    const fuss = [-1, 1].map((sx) => mitte - terrainHeight(...pfostenOrt(sx)))
+    const tor = createStartGate({ weite, fuss })
+    world.place(tor, P[0].x, P[0].z, { rotation: drehung })
     // Kollision nur fuer die beiden Pfosten, nicht fuer das Tor als Ganzes.
-    const halb = tor.userData.postOffset
-    for (const sx of [-1, 1]) {
-      world.addCollider(
-        P[0].x + Math.cos(richtung) * halb * sx,
-        P[0].z - Math.sin(richtung) * halb * sx,
-        0.34,
-      )
-    }
+    for (const sx of [-1, 1]) world.addCollider(...pfostenOrt(sx), 0.34)
 
     // Stangen an beiden Raendern. Eine versetzte Linie braucht je Punkt eine
     // Querrichtung; genommen wird die Richtung der beiden Nachbarn, damit an
@@ -551,7 +555,6 @@ export function populate(world, sky, registry) {
     })
     // Der Steg ueber die Klamm. Die Richtung nimmt er von der Bahn: seine
     // Laengsachse ist die Fahrtrichtung, quer dazu liegt die Rinne.
-    const bruecke = createGorgeBridge()
     {
       let vor = P[0]
       let nach = P[1]
@@ -564,7 +567,36 @@ export function populate(world, sky, registry) {
       // Lokales +X der Gruppe zeigt nach (cos, -sin) – daher dieses atan2 und
       // nicht das sonst uebliche atan2(dx, dz).
       const dreh = Math.atan2(-(nach.z - vor.z), nach.x - vor.x)
-      world.place(bruecke, BRUECKE.x, BRUECKE.z, { rotation: dreh, yOffset: 0.1 })
+
+      // Neigung und Hoehe nimmt der Steg vom Gelaende ab, nicht von den
+      // Stuetzpunkten der Bahn: was der Fahrer befaehrt, ist das Hoehenfeld,
+      // und nur dessen Sehne durch die beiden Stegenden zaehlt. Waagerecht
+      // hingelegt steckte er oben einen Meter im Hang und schwebte unten einen
+      // Meter darueber – der Fahrer fuhr sichtbar durch das Holz.
+      const laenge = 14.5
+      const ll = Math.hypot(nach.x - vor.x, nach.z - vor.z)
+      const ux = (nach.x - vor.x) / ll
+      const uz = (nach.z - vor.z) / ll
+      // Ausgleichsgerade durch fuenfzehn Proben und nicht Sehne durch die
+      // beiden Enden: das Gelaende haengt gegen so eine Sehne um bis zu acht
+      // Zentimeter durch, und die Ausgleichsgerade verteilt den Rest von selbst
+      // auf beide Seiten. Uebrig bleiben gut fuenf Zentimeter – bei einem Ski
+      // von fuenf Zentimetern Dicke und dreiunddreissig Metern Kamerahoehe
+      // nicht mehr zu sehen.
+      const N = 15
+      let summeH = 0, summeOH = 0, summeOO = 0
+      for (let i = 0; i < N; i++) {
+        const o = (i / (N - 1) - 0.5) * laenge
+        const h = terrainHeight(BRUECKE.x + ux * o, BRUECKE.z + uz * o)
+        summeH += h
+        summeOH += o * h
+        summeOO += o * o
+      }
+      const neigung = Math.atan(-summeOH / summeOO)
+      const hoehe = summeH / N - terrainHeight(BRUECKE.x, BRUECKE.z)
+
+      const bruecke = createGorgeBridge({ laenge, neigung })
+      world.place(bruecke, BRUECKE.x, BRUECKE.z, { rotation: dreh, yOffset: hoehe })
     }
 
     // Stangen, die in der Klamm stuenden, faellt weg. Eine Pistenstange, die
@@ -577,19 +609,21 @@ export function populate(world, sky, registry) {
       }))
     }
 
-    // An ihrer Stelle steht eine eigene Reihe auf der Oberkante der bergseitigen
-    // Klammwand. Sechs Meter vor der Rinnenmitte liegt der Bruch: dort misst das
-    // Gelaende noch 15,7 und damit Bahnhoehe, einen Meter weiter schon 14,2.
+    // An ihrer Stelle steht eine eigene Reihe quer vor der Klamm, acht Meter vor
+    // der Rinnenmitte. Naeher geht nicht: der Steg reicht mit seiner halben
+    // Laenge 7,25 Meter dorthin, und eine Stange auf dem Deck waere eine Stange
+    // im Weg. Acht Meter ist ausserdem noch sicherer Grund – die Rinne greift
+    // nur 6,4 Meter weit.
     //
-    // Die Reihe sperrt nicht nur, sie trichtert. Innen steht sie einen Meter
-    // neben dem Steg, aussen elf – wer zwischen den innersten beiden Stangen
+    // Die Reihe sperrt nicht nur, sie trichtert. Sie laesst genau vor dem Steg
+    // eine Luecke von 7,8 Metern in einer vierzehn Meter breiten Piste; wer
     // hindurchfaehrt, trifft ihn, und das sieht man schon von oben am Tor.
     {
       const ax = KLAMM.bis.x - KLAMM.von.x
       const az = KLAMM.bis.z - KLAMM.von.z
       const la = Math.hypot(ax, az)
       const laengs = { x: ax / la, z: az / la }
-      const quer = { x: -az / la * 6, z: ax / la * 6 }
+      const quer = { x: -az / la * 8, z: ax / la * 8 }
       // Welche Seite bergseitig ist, wird gemessen und nicht angenommen: wird
       // die Klamm einmal verlegt, kippt die Reihe sonst auf die falsche Seite.
       const bergauf = terrainHeight(BRUECKE.x + quer.x, BRUECKE.z + quer.z)

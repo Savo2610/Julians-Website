@@ -421,7 +421,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-75dbed8  Steg auf das Gelaende gelegt, zweiter Gipfel weg, Tor ohne Namen
+4a92a7a  Steg auf das Gelaende gelegt, zweiter Gipfel weg, Tor ohne Namen
 f3e3591  Klamm mit Holzsteg auf der Nordabfahrt
 2769ab9  Rueckseite ausgestalten: Wald, Grat, Felsriegel, Wildspuren
 6f1a356  Startbogen und Verfolgerkamera auf der Nordabfahrt

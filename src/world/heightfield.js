@@ -19,6 +19,42 @@ function bump(x, z, cx, cz, radius, amp) {
   return amp * f * f
 }
 
+// Derselbe Buckel, aber entlang einer Linie statt um einen Punkt: der Abstand
+// zaehlt zum naechsten Punkt der Polylinie. Damit laesst sich ein gekruemmter
+// Ruecken in einem Stueck schreiben. Aus einer Kette einzelner Buckel wuerde
+// dasselbe nur mit Diele dazwischen – an jeder Naht zwischen zwei Buckeln
+// faellt der Kamm ein, und aus einem Grat wird eine Perlenschnur.
+//
+// Jeder Stuetzpunkt bringt seine eigene Hoehe mit: [x, z, amp]. Ein Ruecken,
+// der ueberall gleich hoch ist, waere eine Mauer – dieser darf anschwellen und
+// wieder auslaufen. Zwischen zwei Punkten wird die Hoehe linear entlang des
+// Abschnitts gemischt, nicht ueber den Punktindex: sonst haengt das Ergebnis
+// davon ab, wie eng man die Stuetzpunkte setzt.
+function ridgeAlong(x, z, pts, radius) {
+  let bestD2 = Infinity
+  let bestAmp = 0
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]
+    const b = pts[i + 1]
+    const ax = b[0] - a[0]
+    const az = b[1] - a[1]
+    const len2 = ax * ax + az * az
+    let t = ((x - a[0]) * ax + (z - a[1]) * az) / len2
+    t = t < 0 ? 0 : t > 1 ? 1 : t
+    const dx = x - (a[0] + ax * t)
+    const dz = z - (a[1] + az * t)
+    const d2 = dx * dx + dz * dz
+    if (d2 < bestD2) {
+      bestD2 = d2
+      bestAmp = a[2] + (b[2] - a[2]) * t
+    }
+  }
+  const d2 = bestD2 / (radius * radius)
+  if (d2 >= 1) return 0
+  const f = 1 - d2
+  return bestAmp * f * f
+}
+
 // Weiche Senke mit flachem Boden – fuer den zugefrorenen See.
 function basin(x, z, cx, cz, radius, depth, flat) {
   const dx = (x - cx) / radius
@@ -47,6 +83,143 @@ export const SUMMIT = { x: -58, z: -64, height: 30 }
 // beginnt die Flanke schon frueh im Tal und laeuft ueber eine lange Strecke
 // aus, statt als Kegel am Kartenrand zu kleben.
 export const SPORT_HILL = { x: 27, z: -87, radius: 68, height: 19 }
+
+// --- Die Rueckseite des Berges -----------------------------------------------
+// Hinter dem Gipfel hoerte der Berg bisher einfach auf: das Gelaende fiel in
+// dreissig Metern um vierzehn ab, und danach kam der Gebirgsrand. Jetzt zieht
+// sich der Berg als breite Schulter nach Norden und dreht in einem grossen
+// Bogen nach Osten ab, bis er ueber dem Funpark endet.
+//
+// Drei Teile, und jeder hat eine Aufgabe:
+//
+// SCHULTER traegt die Abfahrt. Sie liegt als Ruecken unter der Piste und faellt
+// ueber ihre Laenge von neun auf fuenf Meter Aufbau – dadurch bekommt die Bahn
+// ihr Gefaelle vom Gelaende und muss es nicht selbst schneiden.
+//
+// GRAT schliesst das Kar nach aussen. Ohne ihn liefe der Blick aus der Kurve
+// heraus ins Leere: die Bahn liegt hier hoeher als der Gebirgsrand, und eine
+// Piste am offenen Kartenrand sieht aus wie ein Brett im Nichts.
+//
+// KAR ist die Mulde *innerhalb* des Bogens. Sie ist der Grund, warum die
+// Schulter als Schulter gelesen wird und nicht als Hochflaeche – ohne sie waere
+// die ganze Rueckseite eine schiefe Ebene.
+//
+// Die Zahlen der Schulter sind nicht gegriffen, sondern die gemessene Luecke:
+// der gewachsene Boden faellt hinter dem Gipfel von 26 auf 8 Meter und bleibt
+// dann flach, der Funpark-Einstieg liegt aber bei 11,2. Eine Abfahrt, die
+// unterwegs unter ihr eigenes Ziel faellt, gibt es nicht. Genau diese Differenz
+// – hoechstens sechseinhalb Meter, an beiden Enden null – schuettet die
+// Schulter auf. Mehr waere ein Damm quer durchs Kar gewesen; ein erster
+// Entwurf mit vierzehn Metern war genau das.
+const SCHULTER = [
+  [-58, -72, 0.0], [-57, -81, 0.6], [-51, -87, 3.3], [-42, -88, 5.4],
+  [-32, -85, 7.9], [-22, -80, 8.4], [-12, -76, 5.2], [-2, -71, 0.7], [6, -65, 0.0],
+]
+// Der Grat liegt siebzehn Meter ausserhalb der Bahnmitte – gemessen, nicht
+// geschaetzt. Zwei Fassungen davor waren falsch: bei acht Metern schob er die
+// ersten zwanzig Meter der Abfahrt um drei Meter hoch und machte aus dem
+// Einstieg eine Ebene mit nicht einmal vier Grad; mit den urspruenglichen
+// Hoehen lag sein Kamm drei bis sechs Meter *unter* der Bahn und schloss damit
+// ueberhaupt nichts.
+//
+// Jetzt traegt er dort, wo es noetig ist, und laesst Luft, wo es schoener ist:
+// im grossen Bogen steht er sechs Meter ueber der Bahn und macht daraus einen
+// Karkessel, an zwei Stellen faellt er unter sie ab und gibt den Blick nach
+// Norden frei. Ein Grat, der ueber achtzig Meter gleich hoch bleibt, ist eine
+// Mauer und kein Berg.
+//
+// Sein Radius ist mit 13 kleiner als der der Schulter: bei siebzehn Metern
+// Abstand kommt an der Bahn nichts mehr an, an den Stangen auf 6,2 Metern noch
+// gut ein Meter – gerade genug, dass sie auf einer Kante stehen.
+//
+// Der erste Stuetzpunkt traegt nichts mehr. Mit seinen urspruenglichen zehn
+// Metern stand links neben dem Startbogen eine zweite Kuppe von 30,4 Metern –
+// hoeher als der Gipfel selbst mit 30 – und der Berg hatte zwei Spitzen. Ohne
+// ihn faellt das Gelaende vom Gipfel nach Westen durchweg ab (gemessen 27,7
+// am Gipfel, 21,0 bei −74, 14,6 bei −82), und der Grat beginnt erst dort, wo
+// er hingehoert: hinten, auf Hoehe der Kurve.
+export const GRAT = [
+  [-75, -74, 0.0], [-72, -88, 7.0], [-58, -102, 16.0], [-40, -105, 17.0],
+  [-26, -101, 12.0], [-15, -96, 7.0], [-5, -92, 5.0], [7, -86, 2.0], [16, -79, 0.0],
+]
+// Die Mulde liegt weiter innen und ist flacher, seit der Grat aussen traegt.
+// Bei (-32,-70) und 4,2 Metern Tiefe schnitt sie einen Graben zwischen Bahn und
+// Bergflanke – die Bahn lag dann in einer Rinne mit Wall auf beiden Seiten.
+const KAR = { x: -34, z: -66, radius: 21, depth: 2.6 }
+
+// --- Die Klamm ---------------------------------------------------------------
+// Eine Rinne, die quer unter der Abfahrt hindurchlaeuft: von der Bergflanke im
+// Sueden hinunter in den Kessel im Norden. Ueber sie fuehrt eine Bruecke, und
+// die Bruecke ist Gelaende und kein Aufbau – der Holzsteg liegt nur obenauf.
+// Das ist der Grund, warum sie ueberhaupt geht: Boden, Kollision und Kamera
+// lesen dieselbe Funktion, also faehrt man wirklich darueber und nicht
+// hindurch.
+//
+// Sie liegt im flachsten Stueck der Bahn, zwischen Kilometer 48 und 62, wo das
+// Gefaelle auf sieben Grad zurueckgeht. Dort hat die Abfahrt sonst nichts zu
+// erzaehlen.
+//
+// Tief genug, dass man sie sieht, flach genug, dass sie keine Falle ist: viereinhalb
+// Meter, Waende mit gut 35 Grad. Wer neben den Steg geraet, faellt nicht,
+// sondern faehrt hinein und die Rinne nach Norden wieder hinaus – dasselbe
+// Prinzip wie beim zugefrorenen See, in den man hineinfahren koennen soll,
+// ohne in ein Loch zu fallen.
+export const KLAMM = {
+  von: { x: -27, z: -60 },
+  bis: { x: -8, z: -102 },
+  // Tiefe entlang der Rinne, als Bruchteil ihrer Laenge. Oben laeuft sie aus
+  // dem Hang heraus, unten in den Kessel hinein.
+  tiefe: [[0.00, 0.0], [0.20, 2.2], [0.38, 4.5], [0.62, 4.5], [0.85, 2.4], [1.00, 0.0]],
+  weite: 6.4,     // halbe Breite an der Oberkante
+  sohle: 1.5,     // halbe Breite des flachen Grundes
+}
+
+// Der Steg. Er liegt auf der Bahnmitte und ist knapp sechs Meter breit – schmal
+// genug, dass man ihn als Bauwerk wahrnimmt, breit genug, dass man nicht zielen
+// muss. Der Saum daneben ist kein Abbruch, sondern eine kurze Schraege: eine
+// senkrechte Kante im Hoehenfeld gibt kaputte Normalen und einen Fahrer, der
+// daran haengenbleibt.
+export const BRUECKE = { x: -17.4, z: -78.3, halb: 2.9, saum: 1.7 }
+
+function klammTiefe(u) {
+  const t = KLAMM.tiefe
+  if (u <= 0 || u >= 1) return 0
+  for (let i = 0; i < t.length - 1; i++) {
+    if (u <= t[i + 1][0]) {
+      const f = (u - t[i][0]) / (t[i + 1][0] - t[i][0])
+      return t[i][1] + (t[i + 1][1] - t[i][1]) * smooth(f)
+    }
+  }
+  return 0
+}
+
+function klammAt(x, z) {
+  const ax = KLAMM.bis.x - KLAMM.von.x
+  const az = KLAMM.bis.z - KLAMM.von.z
+  const len2 = ax * ax + az * az
+  let u = ((x - KLAMM.von.x) * ax + (z - KLAMM.von.z) * az) / len2
+  if (u < 0 || u > 1) return 0
+  const px = KLAMM.von.x + ax * u
+  const pz = KLAMM.von.z + az * u
+  const d = Math.hypot(x - px, z - pz)
+  if (d >= KLAMM.weite) return 0
+
+  const tief = klammTiefe(u)
+  if (tief <= 0) return 0
+  // Querprofil: flache Sohle, dann die Wand hoch. Quadriert statt linear,
+  // damit die Oberkante gerundet ist und die Sohle breit bleibt.
+  const q = Math.max(0, (d - KLAMM.sohle) / (KLAMM.weite - KLAMM.sohle))
+  const schnitt = tief * (1 - smooth(q))
+
+  // Wo der Steg liegt, wird nicht geschnitten. Gemessen wird der Abstand quer
+  // zur Rinne, also entlang der Bahn – der Steg ist ein Streifen und kein Kreis.
+  const bd = Math.abs((x - BRUECKE.x) * (ax / Math.sqrt(len2)) + (z - BRUECKE.z) * (az / Math.sqrt(len2)))
+  const steg = bd <= BRUECKE.halb ? 1
+    : bd >= BRUECKE.halb + BRUECKE.saum ? 0
+    : 1 - smooth((bd - BRUECKE.halb) / BRUECKE.saum)
+
+  return -schnitt * (1 - steg)
+}
 
 // --- Pistenbaender ----------------------------------------------------------
 // Ein Band zieht das Gelaende entlang einer Linie auf ein gleichmaessiges
@@ -165,6 +338,35 @@ export const SLED_LANE = makeLane([
   { x: -2, z: -25, h: 1.55 },
 ], { width: 13, feather: 9, endFade: 8, bank: 1.35, flat: 0.5 })
 
+// Die Nordabfahrt ueber die Rueckseite. Sie beginnt hinter dem Gipfel, faellt
+// nach Norden ab und dreht dann in einem langen Rechtsbogen ueber das Kar nach
+// Osten, bis sie oben am Funpark ankommt. Von dort faehrt man weiter in den
+// Park und ins Tal – die Runde schliesst sich also: Lift, Rueckseite, Funpark.
+//
+// Achtzig Meter, knapp dreizehn Meter Fall, im Mittel 9,1 Grad. Das Profil ist
+// bewusst ungleich: oben 13 bis 15 Grad als Einfahrt hinter dem Gipfel, danach
+// sieben bis zehn Grad ueber den ganzen Bogen, zuletzt eine flache Schulter vor
+// dem Funpark. Gleichmaessige neun Grad ueber achtzig Meter waeren eine Rampe
+// und keine Abfahrt.
+//
+// Die Hoehen sind – wie bei der Rodelbahn – ein geglaettetes, streng fallendes
+// Abbild des gewachsenen Bodens, nicht eine gerechnete Gerade. Weil die
+// Schulter vorher schon fast genau unter der Bahn liegt, bleibt der groesste
+// Auftrag bei 0,50 und der groesste Abtrag bei 1,15 Metern. Wer die Zahlen
+// aendert, muss beides nachmessen: sobald daraus Meter werden, steht hier ein
+// Damm im Kar.
+export const NORTH_LANE = makeLane([
+  { x: -58, z: -72, h: 25.17 },
+  { x: -57, z: -81, h: 23.05 },
+  { x: -51, z: -87, h: 20.78 },
+  { x: -42, z: -88, h: 19.15 },
+  { x: -32, z: -85, h: 17.71 },
+  { x: -22, z: -80, h: 16.21 },
+  { x: -12, z: -76, h: 14.48 },
+  { x: -2, z: -71, h: 13.06 },
+  { x: 6, z: -65, h: 12.32 },
+], { width: 14, feather: 9, endFade: 7, bank: 1.2, flat: 0.5 })
+
 // Der Funpark – 8 bis 12 Grad. Flach genug, dass man die Figuren trifft statt
 // sie zu ueberfahren, steil genug, dass man ohne Nachdruecken durchkommt.
 //
@@ -245,7 +447,11 @@ export const SHOOT_LANE = makeLane([
   { x: 18.93, z: 13.69, h: 0.10 },
 ], { width: 8, feather: 4, endFade: 1.5 })
 
-const LANES = globalThis.__noLanes ? [] : [SLED_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE]
+// Die Reihenfolge entscheidet, wer sich an einer Ueberlagerung durchsetzt: das
+// spaetere Band gewinnt auf seiner eigenen Mittellinie. NORTH_LANE steht vor
+// PARK_LANE, weil beide sich oben am Funpark auf sieben Metern begegnen und
+// dort der Funpark-Einstieg stimmen muss, nicht die Zufahrt.
+const LANES = globalThis.__noLanes ? [] : [SLED_LANE, NORTH_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE]
 
 // --- Figuren im Funpark ------------------------------------------------------
 // Schanzen, Wellen und Kanten sind Gelaende und keine Aufbauten. Nur so faehrt
@@ -429,6 +635,13 @@ export function terrainHeight(x, z) {
   // Eine Mulde als natuerliche Leitlinie der Abfahrt.
   h += bump(x, z, -44, -34, 17, -3.2)
 
+  // Die Rueckseite: Schulter, Grat und Kar. Sie stehen vor den Baendern, damit
+  // die neue Abfahrt ihr Gefaelle vom Gelaende bekommt und das Band nur noch
+  // glaettet.
+  h += ridgeAlong(x, z, SCHULTER, 24)
+  h += ridgeAlong(x, z, GRAT, 13)
+  h += bump(x, z, KAR.x, KAR.z, KAR.radius, -KAR.depth)
+
   // Kuppe im Osten – dort steht das Fernrohr.
   h += bump(x, z, 48, -8, 27, 7.2)
 
@@ -466,6 +679,10 @@ export function terrainHeight(x, z) {
   // Die Figuren im Funpark sitzen auf dem geglaetteten Band – deshalb erst
   // hier, nach der Bandformung.
   h += parkFeatures(x, z)
+
+  // Die Klamm schneidet zuletzt – sie muss durch das fertige Band hindurch,
+  // sonst fuellte das Band sie gleich wieder auf.
+  h += klammAt(x, z)
 
   // Startplateau: eine flache Terrasse, die sich weich ins Gelaende einfuegt.
   {

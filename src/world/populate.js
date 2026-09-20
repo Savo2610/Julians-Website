@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -23,6 +23,9 @@ import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
 import { snowPaint } from './props/snow-paint.js'
 import { Kinderland } from './kinderland.js'
+import { NorthRun } from './north-run.js'
+import { createStartGate } from './props/start-gate.js'
+import { createGorgeBridge } from './props/gorge-bridge.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -192,17 +195,18 @@ export function populate(world, sky, registry) {
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
   // Bewuchs und Boden nicht auseinanderlaufen koennen.
-  for (const [lane, r] of [[SLED_LANE, 7.5], [PARK_LANE, 13], [KINDER_LANE, 12], [SHOOT_LANE, 7]]) {
+  for (const [lane, r] of [[SLED_LANE, 7.5], [NORTH_LANE, 9], [PARK_LANE, 13], [KINDER_LANE, 12], [SHOOT_LANE, 7]]) {
     for (let i = 0; i < lane.points.length - 1; i++) {
       const a = lane.points[i]
       const b = lane.points[i + 1]
       LANES.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, r })
     }
   }
-  // Abstand zur Rodelbahn – gebraucht fuer das Waldband, das sie einfasst.
-  const sledDist = (x, z) => {
+  // Abstand zu einer Bahnmitte – gebraucht fuer die Waldbaender, die eine Bahn
+  // einfassen. Zwei Bahnen brauchen das inzwischen, deshalb einmal geschrieben
+  // und zweimal gebunden.
+  const abstandZu = (pts) => (x, z) => {
     let best = Infinity
-    const pts = SLED_LANE.points
     for (let i = 0; i < pts.length - 1; i++) {
       const a = pts[i]
       const b = pts[i + 1]
@@ -216,6 +220,8 @@ export function populate(world, sky, registry) {
     }
     return Math.sqrt(best)
   }
+  const sledDist = abstandZu(SLED_LANE.points)
+  const nordDist = abstandZu(NORTH_LANE.points)
 
   const n = new THREE.Vector3()
 
@@ -227,8 +233,11 @@ export function populate(world, sky, registry) {
   // --- Wald ------------------------------------------------------------
   // Dichter Guertel aussen, lockere Gruppen innen: der Wald ist die weiche
   // Talgrenze, bevor die Felswand kommt.
+  // Die Zahl ist mit der Spielflaeche gewachsen: das Nordkar ist neu bepflanzbar,
+  // und bei 880 waere der ganze Wald duenner geworden statt die Rueckseite
+  // dichter – scatter() verteilt eine feste Anzahl auf die angenommene Flaeche.
   const treeSpots = scatter(rng, {
-    count: 880,
+    count: 1010,
     minDist: 3.4,
     accept: (x, z) => {
       const edge = playAreaDistance(x, z)
@@ -251,7 +260,13 @@ export function populate(world, sky, registry) {
       // nicht neben ihm her. Direkt an der Bahn haelt die Schneise frei, ab
       // etwa zehn Metern steht der Wald dann dicht an der Bande.
       const woods = 0.75 * (1 - THREE.MathUtils.smoothstep(sledDist(x, z), 12, 30))
-      const density = Math.min(1, rim * 0.98 + groves * 0.5 + woods) * treeline
+      // Die Rueckseite ist die schattige Seite. Dort steht der Wald dichter und
+      // reicht bis dicht an die Bahn heran – das ist der Unterschied, an dem man
+      // merkt, dass man nicht mehr im Tal ist. Dass er oben trotzdem aufhoert,
+      // besorgt die Baumgrenze von selbst: die Abfahrt beginnt auf 25 Metern und
+      // endet auf 12, sie faehrt also von ueber der Grenze unter sie.
+      const nordkar = 0.9 * (1 - THREE.MathUtils.smoothstep(nordDist(x, z), 11, 36))
+      const density = Math.min(1, rim * 0.98 + groves * 0.5 + woods + nordkar) * treeline
       return rng() < density
     },
   })
@@ -280,7 +295,7 @@ export function populate(world, sky, registry) {
 
   // --- Felsen -----------------------------------------------------------
   const rockSpots = scatter(rng, {
-    count: 210,
+    count: 245,
     minDist: 5.0,
     accept: (x, z) => {
       if (playAreaDistance(x, z) > WORLD.rimWidth - 1) return false
@@ -501,6 +516,190 @@ export function populate(world, sky, registry) {
   // eingeschnittenes Band – die Piste soll offen bleiben.
   markerRows.push(createPisteMarkers(world, route(FREE_PISTE, 5.5), { seed: 55, color: 0xe8703a }))
 
+  // --- Nordabfahrt --------------------------------------------------------
+  // Die Bahn selbst ist Gelaende (NORTH_LANE im Hoehenfeld). Hier stehen nur
+  // das Tor am Anfang und die Stangen an den Raendern – und der Zustand, an
+  // dem die Kamera haengt.
+  const northRun = new NorthRun()
+  {
+    const P = NORTH_LANE.points
+    // Richtung der Bahn am Start; das Tor steht quer dazu.
+    const drehung = Math.atan2(P[1].x - P[0].x, P[1].z - P[0].z) + Math.PI
+    const weite = 9.5
+    const halb = weite / 2
+    const pfostenOrt = (sx) => [
+      P[0].x + Math.cos(drehung) * halb * sx,
+      P[0].z - Math.sin(drehung) * halb * sx,
+    ]
+    // Wie tief der Boden unter den Pfosten liegt, in der Reihenfolge, in der
+    // das Tor sie baut. Der Start liegt auf einem gerundeten Ruecken: auf den
+    // 4,75 Metern bis zu den Pfosten faellt das Gelaende um 0,85 und 0,70
+    // Meter ab, und ohne diese Zahlen schwebt das Tor mit beiden Beinen.
+    const mitte = terrainHeight(P[0].x, P[0].z)
+    const fuss = [-1, 1].map((sx) => mitte - terrainHeight(...pfostenOrt(sx)))
+    const tor = createStartGate({ weite, fuss })
+    world.place(tor, P[0].x, P[0].z, { rotation: drehung })
+    // Kollision nur fuer die beiden Pfosten, nicht fuer das Tor als Ganzes.
+    for (const sx of [-1, 1]) world.addCollider(...pfostenOrt(sx), 0.34)
+
+    // Stangen an beiden Raendern. Eine versetzte Linie braucht je Punkt eine
+    // Querrichtung; genommen wird die Richtung der beiden Nachbarn, damit an
+    // den Knicken kein Knick in der Stangenreihe entsteht.
+    const seite = (versatz) => P.map((p, i) => {
+      const a = P[Math.max(0, i - 1)]
+      const b = P[Math.min(P.length - 1, i + 1)]
+      const dx = b.x - a.x
+      const dz = b.z - a.z
+      const L = Math.hypot(dx, dz) || 1
+      return [p.x - (dz / L) * versatz, p.z + (dx / L) * versatz]
+    })
+    // Der Steg ueber die Klamm. Die Richtung nimmt er von der Bahn: seine
+    // Laengsachse ist die Fahrtrichtung, quer dazu liegt die Rinne.
+    {
+      let vor = P[0]
+      let nach = P[1]
+      for (let i = 0; i < P.length - 1; i++) {
+        if ((BRUECKE.x - P[i].x) * (P[i + 1].x - P[i].x) + (BRUECKE.z - P[i].z) * (P[i + 1].z - P[i].z) > 0
+            && (BRUECKE.x - P[i + 1].x) * (P[i].x - P[i + 1].x) + (BRUECKE.z - P[i + 1].z) * (P[i].z - P[i + 1].z) > 0) {
+          vor = P[i]; nach = P[i + 1]
+        }
+      }
+      // Lokales +X der Gruppe zeigt nach (cos, -sin) – daher dieses atan2 und
+      // nicht das sonst uebliche atan2(dx, dz).
+      const dreh = Math.atan2(-(nach.z - vor.z), nach.x - vor.x)
+
+      // Neigung und Hoehe nimmt der Steg vom Gelaende ab, nicht von den
+      // Stuetzpunkten der Bahn: was der Fahrer befaehrt, ist das Hoehenfeld,
+      // und nur dessen Sehne durch die beiden Stegenden zaehlt. Waagerecht
+      // hingelegt steckte er oben einen Meter im Hang und schwebte unten einen
+      // Meter darueber – der Fahrer fuhr sichtbar durch das Holz.
+      const laenge = 14.5
+      const ll = Math.hypot(nach.x - vor.x, nach.z - vor.z)
+      const ux = (nach.x - vor.x) / ll
+      const uz = (nach.z - vor.z) / ll
+      // Ausgleichsgerade durch fuenfzehn Proben und nicht Sehne durch die
+      // beiden Enden: das Gelaende haengt gegen so eine Sehne um bis zu acht
+      // Zentimeter durch, und die Ausgleichsgerade verteilt den Rest von selbst
+      // auf beide Seiten. Uebrig bleiben gut fuenf Zentimeter – bei einem Ski
+      // von fuenf Zentimetern Dicke und dreiunddreissig Metern Kamerahoehe
+      // nicht mehr zu sehen.
+      const N = 15
+      let summeH = 0, summeOH = 0, summeOO = 0
+      for (let i = 0; i < N; i++) {
+        const o = (i / (N - 1) - 0.5) * laenge
+        const h = terrainHeight(BRUECKE.x + ux * o, BRUECKE.z + uz * o)
+        summeH += h
+        summeOH += o * h
+        summeOO += o * o
+      }
+      const neigung = Math.atan(-summeOH / summeOO)
+      const hoehe = summeH / N - terrainHeight(BRUECKE.x, BRUECKE.z)
+
+      const bruecke = createGorgeBridge({ laenge, neigung })
+      world.place(bruecke, BRUECKE.x, BRUECKE.z, { rotation: dreh, yOffset: hoehe })
+    }
+
+    // Stangen, die in der Klamm stuenden, faellt weg. Eine Pistenstange, die
+    // vier Meter unter der Bahn im Graben steht, sieht nicht nach Absperrung
+    // aus, sondern nach Fehler.
+    const inKlamm = (p) => Math.hypot(p.x - BRUECKE.x, p.z - BRUECKE.z) < 9
+    for (const [versatz, seed] of [[6.2, 71], [-6.2, 73]]) {
+      markerRows.push(createPisteMarkers(world, route(seite(versatz), 5.4).filter((p) => !inKlamm(p)), {
+        seed, color: 0x2f6bd8,
+      }))
+    }
+
+    // An ihrer Stelle steht eine eigene Reihe quer vor der Klamm, acht Meter vor
+    // der Rinnenmitte. Naeher geht nicht: der Steg reicht mit seiner halben
+    // Laenge 7,25 Meter dorthin, und eine Stange auf dem Deck waere eine Stange
+    // im Weg. Acht Meter ist ausserdem noch sicherer Grund – die Rinne greift
+    // nur 6,4 Meter weit.
+    //
+    // Die Reihe sperrt nicht nur, sie trichtert. Sie laesst genau vor dem Steg
+    // eine Luecke von 7,8 Metern in einer vierzehn Meter breiten Piste; wer
+    // hindurchfaehrt, trifft ihn, und das sieht man schon von oben am Tor.
+    {
+      const ax = KLAMM.bis.x - KLAMM.von.x
+      const az = KLAMM.bis.z - KLAMM.von.z
+      const la = Math.hypot(ax, az)
+      const laengs = { x: ax / la, z: az / la }
+      const quer = { x: -az / la * 8, z: ax / la * 8 }
+      // Welche Seite bergseitig ist, wird gemessen und nicht angenommen: wird
+      // die Klamm einmal verlegt, kippt die Reihe sonst auf die falsche Seite.
+      const bergauf = terrainHeight(BRUECKE.x + quer.x, BRUECKE.z + quer.z)
+        > terrainHeight(BRUECKE.x - quer.x, BRUECKE.z - quer.z) ? 1 : -1
+      const lippe = [-10.6, -8.2, -5.8, -3.9, 3.9, 5.8, 8.2, 10.6].map((s) => ({
+        x: BRUECKE.x + quer.x * bergauf + laengs.x * s,
+        z: BRUECKE.z + quer.z * bergauf + laengs.z * s,
+      }))
+      markerRows.push(createPisteMarkers(world, lippe, { seed: 77, color: 0x2f6bd8 }))
+
+      // Fels in der Klamm. Ohne ihn liest sie sich aus der festen Kamera als
+      // heller Fleck im hellen Hang: gemessen viereinhalb Meter tief und
+      // trotzdem kaum zu sehen, weil Schnee auf Schnee keine Kante hat. Der
+      // Fels gibt ihr die Kante – auf beiden Oberkanten und vereinzelt auf der
+      // Sohle, also dort, wo das Gestein liegt, das so eine Rinne ueberhaupt
+      // erst ausgewaschen hat.
+      //
+      // Sieben Meter um den Steg herum bleibt er weg: Felsen bringen Kollision
+      // mit, und der Trichter aus Stangen muss frei bleiben.
+      const klammRng = makeRng(30514)
+      const klammFelsen = []
+      for (let u = 0.1; u <= 0.93; u += 0.022) {
+        const mx = KLAMM.von.x + (KLAMM.bis.x - KLAMM.von.x) * u
+        const mz = KLAMM.von.z + (KLAMM.bis.z - KLAMM.von.z) * u
+        if (Math.abs((mx - BRUECKE.x) * laengs.x + (mz - BRUECKE.z) * laengs.z) < 7) continue
+        for (const seite of [-1, 1]) {
+          if (klammRng() > 0.5) continue
+          // Meist auf der Oberkante, jeder sechste unten in der Sohle.
+          const ab = klammRng() < 0.17 ? klammRng() * 1.2 : 4.1 + klammRng() * 1.9
+          const x = mx + (quer.x / 6) * ab * seite
+          const z = mz + (quer.z / 6) * ab * seite
+          if (playAreaDistance(x, z) > WORLD.rimWidth) continue
+          klammFelsen.push({
+            x, z, variant: klammFelsen.length % 3,
+            rotation: klammRng() * Math.PI * 2,
+            scale: 1.0 + klammRng() * klammRng() * 1.9,
+            stretch: 0.6 + klammRng() * 0.6,
+            tilt: klammRng() - 0.5,
+          })
+        }
+      }
+      createRocks(world, klammFelsen, 30515)
+    }
+
+    // Felsriegel auf dem Grat. Er steht dort, wo der Grat ohnehin schon vier
+    // bis sieben Meter ueber dem Kar aufragt – die Felsen setzen nur die Krone
+    // darauf. Damit bekommt die Aussenseite der Kurve eine Kante, an der der
+    // Blick haengenbleibt, statt ins Weisse zu laufen.
+    //
+    // Naeher als zehn Meter an die Bahnmitte kommt keiner: Felsen bringen
+    // Kollision mit, und ein Felsen am Pistenrand ist etwas anderes als einer
+    // auf der Piste.
+    const felsRng = makeRng(99137)
+    const gratPunkte = route(GRAT.map((g) => [g[0], g[1]]), 5.0)
+    const gratFelsen = []
+    for (const [i, p] of gratPunkte.entries()) {
+      if (felsRng() > 0.62) continue
+      const seitlich = (felsRng() - 0.5) * 7
+      const quer = i > 0 && i < gratPunkte.length - 1
+        ? Math.atan2(gratPunkte[i + 1].z - gratPunkte[i - 1].z, gratPunkte[i + 1].x - gratPunkte[i - 1].x)
+        : 0
+      const x = p.x - Math.sin(quer) * seitlich
+      const z = p.z + Math.cos(quer) * seitlich
+      if (nordDist(x, z) < 10) continue
+      if (playAreaDistance(x, z) > WORLD.rimWidth) continue
+      gratFelsen.push({
+        x, z, variant: i % 3,
+        rotation: felsRng() * Math.PI * 2,
+        scale: 1.5 + felsRng() * felsRng() * 2.6,
+        stretch: 0.7 + felsRng() * 0.5,
+        tilt: felsRng() - 0.5,
+      })
+    }
+    createRocks(world, gratFelsen, 8821)
+  }
+
   // Der Rueckweg traegt dieselbe Farbe wie die freie Abfahrt: von unten
   // gesehen ist beides derselbe Weg zurueck an den Lift.
   // Die Stangen in der Farbe der freien Abfahrt sagen genug; ein Schild am
@@ -719,5 +918,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { lake, lift, race, kinderland, railRide, speedCheck, animated: [...stations.animated, ...animatedProps] }
+  return { lake, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
 }

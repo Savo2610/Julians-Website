@@ -8,7 +8,7 @@ import { SnowTrail } from './world/snow-trail.js'
 import { World } from './world/world.js'
 import { createSky } from './world/sky.js'
 import { createSnowfall } from './world/weather.js'
-import { writeIntro } from './world/snow-writing.js'
+import { writeIntro, stampTrack } from './world/snow-writing.js'
 import { populate, skierRef } from './world/populate.js'
 import { StationRegistry } from './stations/registry.js'
 import { StationUI } from './stations/ui.js'
@@ -141,6 +141,10 @@ function advance(dt) {
   skier.update(dt, input, trail)
   emitSpray(dt)
   spray.update(dt)
+  // Die Nordabfahrt entscheidet vor der Kamera, ob sie hinter den Fahrer geht.
+  // Sie muss nach skier.update() laufen, sonst urteilt sie ueber die Position
+  // des vorigen Bildes – und am Tor waere das genau ein Bild zu spaet.
+  chase.verfolgen(props.northRun.update(dt, skier))
   chase.update(dt, skier, input)
 
   // Schattenkamera dem Fahrer nachfuehren, damit die Aufloesung dort liegt,
@@ -222,6 +226,16 @@ window.addEventListener('resize', () => {
 
 // Die Schrift im Schnee wird einmalig eingestempelt und bleibt dann liegen.
 writeIntro(trail)
+
+// Wildspuren auf der Rueckseite. Zwei queren die Nordabfahrt, eine zieht unten
+// am Grat entlang. Sie stehen hier und nicht in populate, weil sie in den
+// Schnee gestempelt werden und nicht in die Szene gestellt – und die Spurkarte
+// gehoert dem Hauptmodul.
+for (const [von, nach] of [
+  [[-28, -70], [-16, -89]],
+  [[-4, -65], [-15, -83]],
+  [[-38, -99], [-52, -91]],
+]) stampTrack(trail, von, nach)
 
 // Ein Frame vorrendern, damit beim Einblenden nichts ruckelt.
 renderer.compile(scene, camera)

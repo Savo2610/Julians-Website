@@ -626,7 +626,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-         Werkstatt naeher am Start, Loeschzug am Waldrand
+46fd15d  Werkstatt naeher am Start, Loeschzug am Waldrand
 7edb46f  Slalom: vier Tore streng im Wechsel
 2423356  LinkedIn vorn, Slalom, Lenkrad auf der Nordabfahrt, Steg eben
 cf0e3cf  Kontaktposten, Stechuhr hinter die Abkuerzung, Seebank, Tastatur

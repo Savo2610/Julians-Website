@@ -18,34 +18,32 @@ import { createHalo } from './props/screens.js'
 // nur auf den geraden Stuecken wechseln die Tore die Seite und erzeugen den
 // Rhythmus.
 
-// Die Tore stehen in einem Rhythmus statt in gleichen Abstaenden: zehn,
-// zehn, neun, acht Meter. Gleiche Abstaende fahren sich nach dem zweiten Tor
-// von selbst; werden sie kuerzer, muss man den Schwung frueher ansetzen, und
-// genau dort verliert man Zeit oder ein Tor. Frueher waren es drei Tore auf
-// 53 Metern mit 14 Metern Abstand – das war eine Abfahrt mit Deko.
+// Vier Tore, streng im Wechsel links und rechts, gleiche Abstaende. Ein
+// Versuch mit fuenf Toren im kuerzer werdenden Rhythmus und Toren, die in
+// Kurven nach innen wanderten, war zu unruhig: zweimal dieselbe Seite liest
+// sich im Vorbeifahren wie ein Fehler. Frueher waren es drei Tore auf 53
+// Metern mit 14 Metern Abstand – das war eine Abfahrt mit Deko.
 const GATE_START = 7        // erstes Tor, Abstand vom Start
-const GATE_GAPS = [10, 10, 9, 8]
+const GATE_COUNT = 4
 // Versatz und Nachsicht zusammen entscheiden, ob die Tore etwas verlangen.
 // Frueher 3,4 Versatz bei 3,1 halber Fensterbreite: wer in der Mitte blieb,
 // verfehlte das Tor um einen halben Meter. Jetzt 4,6 bei 2,7 – von einem Tor
-// zum naechsten sind mindestens 3,8 Meter quer zu schaffen, auf 8 bis 10
-// Metern Fahrt. Das geht nur mit einem echten Schwung, und die Bahn ist
-// dafuer auf 17 Meter verbreitert (heightfield.js).
+// zum naechsten sind mindestens 3,8 Meter quer zu schaffen. Das geht nur mit
+// einem echten Schwung, und die Bahn ist dafuer auf 17 Meter verbreitert
+// (heightfield.js).
 const GATE_OFFSET = 4.6
-const BEND_OFFSET = 5.0     // in der Kurve steht das Tor noch weiter innen
 const GATE_TOLERANCE = 0.5  // etwas Nachsicht an den Stangen
-// Ab dieser Kruemmung gilt ein Stueck als Kurve und das Tor wandert nach innen.
-const BEND = 0.022          // rad pro Meter, entspricht etwa 45 m Radius
 const PENALTY = 2           // s je verfehltem Tor
 
-// Medaillen, gemessen mit einem Testfahrer, der mit sechs bis zehn Metern
+// Medaillen, gemessen mit einem Testfahrer, der mit vier bis zehn Metern
 // Vorausschau auf der Linie durch die Tormitten faehrt: sein bester sauberer
-// Lauf war 3,12 s, ein langsamer sauberer 3,90. Gold verlangt also fast die
-// ideale Linie. Ein verfehltes Tor kostet 2 s und damit jede Medaille.
+// Lauf war 3,58 s, ein vorsichtiger 4,05. Mit mehr Vorausschau wurde er
+// schneller, schnitt aber Tore – ein verfehltes Tor kostet 2 s und damit
+// jede Medaille. Gold verlangt also fast die ideale Linie.
 export const MEDALS = [
-  { name: 'Gold', time: 3.2 },
-  { name: 'Silber', time: 3.45 },
-  { name: 'Bronze', time: 3.9 },
+  { name: 'Gold', time: 3.6 },
+  { name: 'Silber', time: 3.85 },
+  { name: 'Bronze', time: 4.2 },
 ]
 
 const STORE = 'skiportfolio.slalom'
@@ -133,15 +131,6 @@ export class RaceCourse {
     return { s, v, d: bestD }
   }
 
-  // Kruemmung bei s: Richtungsaenderung pro Meter, positiv = Rechtskurve.
-  curvatureAt(s) {
-    const a = this.pointAt(Math.max(0, s - 5))
-    const b = this.pointAt(Math.min(this.lane.total, s + 5))
-    let d = Math.atan2(b.dx, b.dz) - Math.atan2(a.dx, a.dz)
-    d = Math.atan2(Math.sin(d), Math.cos(d))
-    return d / 10
-  }
-
   _build() {
     const group = new THREE.Group()
     this.group = group
@@ -174,29 +163,14 @@ export class RaceCourse {
     }
 
     // --- Tore ----------------------------------------------------------
-    // Die letzte Torhoehe muss vor dem Ziel liegen, sonst haengt ein Tor im
-    // Zielbogen.
-    let alternate = -1
-    let i = 0
-    let s = this.startS + GATE_START
-    while (s < this.finishS - 6) {
+    // Die Tore verteilen sich gleichmaessig zwischen erstem Tor und sechs
+    // Metern vor dem Ziel, damit keines im Zielbogen haengt.
+    const first = this.startS + GATE_START
+    const gap = (this.finishS - 6 - first) / (GATE_COUNT - 1)
+    for (let i = 0; i < GATE_COUNT; i++) {
+      const s = first + i * gap
       const p = this.pointAt(s)
-      const bend = this.curvatureAt(s)
-      // In der Kurve nach innen, auf der Geraden im Wechsel. Innen heisst:
-      // auf die Seite, zu der die Bahn dreht – dorthin faehrt man ohnehin.
-      let side
-      const curved = Math.abs(bend) > BEND
-      if (curved) {
-        side = Math.sign(bend)
-      } else {
-        side = alternate
-        alternate = -alternate
-      }
-      // Nach einer Kurve soll der Wechsel weitergehen, nicht die Seite
-      // wiederholen, auf der man gerade schon war.
-      if (curved) alternate = -side
-
-      const offset = side * (curved ? BEND_OFFSET : GATE_OFFSET)
+      const offset = (i % 2 === 0 ? -1 : 1) * GATE_OFFSET
       const x = p.x + p.dz * offset
       const z = p.z - p.dx * offset
       const red = i % 2 === 0
@@ -213,8 +187,6 @@ export class RaceCourse {
       group.add(glow)
 
       this.gates.push({ s, offset, index: i, passed: false, missed: false, glow, flash: 0 })
-      i++
-      s += GATE_GAPS[Math.min(i - 1, GATE_GAPS.length - 1)]
     }
 
     this.world.scene.add(group)

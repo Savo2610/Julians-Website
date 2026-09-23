@@ -437,7 +437,7 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
 hoch (vorher einmal `npx wrangler login`). `public/_headers` gibt `/assets/*`
 ein Jahr Cache (Dateinamen tragen einen Hash) und `index.html` `no-cache`. Der
 Produktiv-Worker `website` bleibt davon unberührt. Geplant war test.veerka.mp —
-dort hing noch ein A-Eintrag auf einen gekündigten Server.
+dort hing noch ein A-Eintrag auf einen gekündigten Server (inzwischen gelöscht).
 
 Auf beta gilt der Produktionszweig der Fenster. Geprüft am 23.09. von
 beta.veerka.mp aus:
@@ -593,13 +593,14 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
   höre"), Komoot als Gipfelbuch am Gipfelkreuz („Wandern & Radfahren").
 - **Die Rodelbahn als Slalom** (`race.js`): 17 statt 13 m breit, zwei
   Stützpunkte 1 m nach links gerückt (rechts Fels und Wald bei 8 m), die
-  Pistenkanone 3,2 m auf die Piste versetzt. Fünf statt drei Tore im Rhythmus
-  10/10/9/8 m, 4,6 aus der Mitte (in Kurven 5,0), Nachsicht 0,5 — vorher traf
-  man sie, indem man in der Rinne blieb. Das nächste Tor glimmt im Schnee,
+  Pistenkanone 3,2 m auf die Piste versetzt. Vier Tore, streng im Wechsel
+  links/rechts, gleichmäßig verteilt (≈ 13 m), 4,6 aus der Mitte, Nachsicht
+  0,5 — vorher traf man sie, indem man in der Rinne blieb. (Fünf Tore im
+  kürzer werdenden Rhythmus, in Kurven nach innen, waren zu unruhig.) Das nächste Tor glimmt im Schnee,
   getroffen blitzt grün, verfehlt rot (+2 s). Zwischenzeiten gegen die
   Bestzeit, Bestzeit in `localStorage` (`skiportfolio.slalom`). Medaillen
-  aus einem Testfahrer mit Vorausschau: bester sauberer Lauf 3,12 s → Gold
-  3,20 / Silber 3,45 / Bronze 3,90. **Die Strecke dauert nur gut drei
+  aus einem Testfahrer mit Vorausschau: bester sauberer Lauf 3,58 s → Gold
+  3,60 / Silber 3,85 / Bronze 4,20. **Die Strecke dauert nur gut drei
   Sekunden** — länger ginge nur mit einer neuen Trasse.
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe

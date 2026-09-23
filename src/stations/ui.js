@@ -24,6 +24,8 @@ const GLYPHS = {
   github: '<svg viewBox="0 0 24 24"><path d="M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   linkedin: '<svg viewBox="0 0 24 24"><rect x="4" y="9.5" width="3.2" height="10" rx=".6" fill="currentColor"/><circle cx="5.6" cy="5.6" r="1.9" fill="currentColor"/><path d="M10.4 19.5v-10h3v1.6c.7-1.2 1.9-1.9 3.4-1.9 2.4 0 3.6 1.5 3.6 4.3v6h-3.1v-5.5c0-1.4-.6-2.2-1.7-2.2-1.2 0-2 .9-2 2.4v5.3z" fill="currentColor"/></svg>',
   paypal: '<svg viewBox="0 0 24 24"><path d="M7.2 20.5 9.6 4h6.1c3.3 0 5 1.8 4.5 4.6-.6 3.3-3 4.9-6.3 4.9h-2.3l-1 7z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/></svg>',
+  signal: '<svg viewBox="0 0 24 24"><path d="M12 3.6a8.4 8.4 0 0 0-7.2 12.7L3.8 20.2l3.9-1a8.4 8.4 0 1 0 4.3-15.6z" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3.2 1.6" stroke-linejoin="round"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24"><rect x="3.8" y="3.8" width="16.4" height="16.4" rx="4.8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16.9" cy="7.1" r="1.2" fill="currentColor"/></svg>',
   solana: '<svg viewBox="0 0 24 24"><path d="M6.5 6h13l-2 2.6h-13zM4.5 10.7h13l2 2.6h-13zM6.5 15.4h13l-2 2.6h-13z" fill="currentColor"/></svg>',
 }
 

@@ -20,7 +20,7 @@ const VERSTECKT = new Set(['talplan', 'drone', 'firetruck'])
 // Welche Station an welchem Weg liegt – fuer die Farbe in der Liste.
 const WEG = {
   werkstatt: 'career',
-  signal: 'social', kasse: 'social', instagram: 'social',
+  kontakt: 'social', kasse: 'social',
   worktime: 'tools', upload: 'tools', shortener: 'tools', packlist: 'tools',
 }
 
@@ -196,12 +196,15 @@ export class MapMenu {
   }
 
   // true = verbraucht. Solange die Karte offen ist, gehoert ihr jede Taste.
+  // Am Ende der Liste bleibt die Auswahl stehen, statt nach oben zu springen:
+  // bei fuenfzehn Zielen sah der Umlauf aus, als haette die Liste sich
+  // verschluckt, weil der Sprung ausserhalb des sichtbaren Teils passiert.
   press(action) {
     if (!this.open) return false
-    const n = this.items.length
+    const last = this.items.length - 1
     switch (action) {
-      case 'forward': case 'left': this._select((this.selected + n - 1) % n); break
-      case 'brake': case 'right': this._select((this.selected + 1) % n); break
+      case 'forward': case 'left': this._select(Math.max(0, this.selected - 1)); break
+      case 'brake': case 'right': this._select(Math.min(last, this.selected + 1)); break
       case 'use': this.travel(this.selected); break
       case 'back': case 'map': this.close(); break
       default: break

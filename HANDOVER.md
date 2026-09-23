@@ -159,11 +159,10 @@ Strang zu Ende fahren kann.
 |---|---|---|
 | Werkstatt (Hütte) | 25, 21 | Auswahl: GitHub / LinkedIn |
 | Skikasse | −40, −2 | Auswahl: PayPal / Solana (Wallet-Fenster) |
-| Signal (Notruftelefon) | 2, 0 | signal.me |
-| Instagram (Fernrohr) | −66, −74 | instagram.com |
-| Arbeitszeitrechner (Stechuhr) | −15, 23 | stempelt, dann zeit.veerka.mp |
+| Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
 | Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |
 | Abkürzung (Felstunnel) | −34, 15 | Kurzlink-Fenster |
+| Arbeitszeitrechner (Stechuhr) | −41, 13 | stempelt, dann zeit.veerka.mp |
 | Packlisten-App (Depot) | −48, 0 | packliste.veerka.mp |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | jf.veerka.mp |
@@ -187,6 +186,14 @@ Schneerücken (≤ 2,8 m), drei Bodenwellen und drei Nebenstrecken, **vor** den
 Pistenbändern in `terrainHeight()` addiert. Stützpunkte aller Pistenbänder
 blieben dabei auf den Zentimeter gleich. Dazu Felsquelle, Uferbank und
 Schneeschauer an Hainbäumen (180 Partikel, Auslösung innerhalb 3,6 m).
+
+**Die Uferbank** (`props/lake-bench.js`) schaut aufs Eis, nicht zur Kamera, und
+**zerbricht** ab 5 m/s (Grundtempo 13, Kanten 6,5 — wer bremsend kommt, lässt
+sie stehen). Zehn Teile fliegen in Fahrtrichtung, legen sich im Schnee flach
+(über die Längsachse, nicht über Eulerwinkel — die rasteten schräg nicht ein,
+ein Pfosten blieb bei 50° stecken) und setzen sich nach 12 s wieder zusammen,
+sobald der Fahrer ≥ 14 m weg ist. Die Kollision ist solange aus (`c.off` in
+`World.resolve`); dort hängt auch das erste echte `onHit`.
 
 **Hütte und See**: Die Après-Ski-Hütte steht rechts bei (23, −64), Front zur
 Kamera, mit neuneckig zugeschnittener Terrasse, drei Sitzgruppen und
@@ -308,7 +315,7 @@ schwebt eine Glasblase mit Name, einem Wort und dem ⏎-Zeichen.
 
 - Station mit **einem Ziel**: Enter öffnet es sofort.
 - Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
-  GitHub/LinkedIn): Enter **zoomt heran**. Der Fahrer bleibt stehen
+  GitHub/LinkedIn, Kontakt: Signal/Instagram): Enter **zoomt heran**. Der Fahrer bleibt stehen
   (`input.locked`), unten klappt eine Glas-Auswahl auf, ←/→ (auch A/D)
   wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
   gehen weiterhin direkt. Das 3D-Objekt zeigt die Wahl mit: das gewählte
@@ -339,8 +346,18 @@ Hütte selbst um 0,28 rad gedreht steht. Bildschirme sind Canvas-Zeichnungen
 auf unbeleuchteten Flächen (`props/screens.js`); der Schein dahinter ist eine
 additive Scheibe statt eines PointLights.
 
+**Der Kontaktposten** (`props/contact-post.js`) hat Signal und Instagram
+zusammengeholt: vorher Telefon unten am Weg, Fernrohr hinter dem Gipfel —
+ein Gedanke an zwei Enden des Tals. Jetzt ein Holzpodest am Waldrand, wo der
+soziale Weg nach Westen abknickt: links das gelbe Notruftelefon, rechts ein
+pinkes Aussichtsfernglas, vorn zwei Tafeln wie an der Kasse. Gewählt hebt
+sich der Hörer und über dem Kasten tippt eine Sprechblase; das Fernglas,
+das sonst über den Wald schwenkt, dreht sich um und schaut einen an und
+blitzt beim Öffnen. Lichtung nur 4,5 m, damit die Tannen dahinter bleiben.
+
 **Die drei Fenster** (Solana, Briefkasten, Kurzlink) tragen dasselbe Glas
-(`dialogs.css` neu geschrieben, Code und Ids wie auf veerka.mp).
+(`dialogs.css` neu geschrieben, Code und Ids wie auf veerka.mp) und gehen
+ohne Maus, siehe Abschnitt 7.
 
 **Das Glas** (`.glass` in `style.css`) ist hell getönt, weil der Hintergrund
 fast immer Schnee ist — klares Glas auf Weiß ist unsichtbar. Es ersetzt das
@@ -361,8 +378,10 @@ rund 450 ms beim Aufbau); Pult (`boardMap`: Papiergrund, Titel, Ortsnamen) und
 Das Pult ist eine Station (`id: 'talplan'`, `map: base`). **Enter am Pult oder
 `M` überall** öffnet die Übersicht (`stations/map-menu.js`): links die Karte mit
 Pins und „Du“, rechts die Ziele (Stationen, dann Orte: Start, Gipfel, Funpark,
-Hütte, See). ↑↓/←→ wählen, Enter reist, Esc/M schließen; am Handy Ziel oder
-Pin antippen. **Drohne und Löschzug fehlen absichtlich** — sie sollen gefunden
+Hütte, See). ↑↓/←→ wählen (am Ende bleibt die Auswahl stehen — der
+Sprung nach oben passierte außerhalb des sichtbaren Teils und sah aus wie
+ein Fehler), Enter reist, Esc/M schließen; am Handy Ziel oder Pin antippen,
+geöffnet über den Kartenknopf. **Drohne und Löschzug fehlen absichtlich** — sie sollen gefunden
 werden. Die Reise ist ein Versetzen hinter einer hellen Blende, keine Fahrt;
 man steht mit dem Rücken zur Kamera vor der Station, der Ankunftspunkt weicht
 Kollisionskreisen aus (Werkbank vor der Werkstatt). Alle 15 Ziele geprüft:
@@ -388,6 +407,12 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
   Pointer-Ereignissen: oben/rechts/unten-links kommen als oben/rechts/
   unten-links an.
 - **Sprungknopf** nur im Funpark oder auf der Rail, gehalten statt getippt.
+- **Kartenknopf** oben rechts, nur am Handy (dort gibt es kein `M`), weg,
+  solange Karte, Auswahl oder Lift offen sind. Das einzige Bedienelement,
+  das immer da ist — auf ausdrücklichen Wunsch.
+- **Solana** öffnet am Handy wie auf veerka.mp direkt die Wallet-App
+  (`solana:`-Link); bleibt die Seite 1,6 s sichtbar, weil keine App da ist,
+  kommt doch das Fenster mit der Empfehlung.
 - **Zwei Finger** zoomen. Ein Tipp in den Schnee schließt eine offene Auswahl.
 - Im Schnee steht statt WASD ein Stickzeichen, unten einmal ein Hinweis, der
   beim ersten Berühren verschwindet.
@@ -506,6 +531,15 @@ Skiportfolios, und in `kurz.js` steht Turnstile auf `theme: 'light'`. Beim
 Abgleich die JS-Dateien tauschen, `dialogs.css` nicht. Die drei `<dialog>`-Elemente stehen in `index.html`, geladen werden die
 Module erst beim Benutzen der Station.
 
+**Tastatur** (`dialogs/keyboard.js`, nur hier, nicht auf veerka.mp): wird
+nach dem Öffnen darübergelegt, damit die übernommenen Dateien wortgleich
+bleiben. Fokus gleich im Feld (Betrag, Dateiwahl, Adresse) statt auf dem
+Schließen-Knopf; Enter sendet im Betrag, ↑↓ gehen die Betragsvorschläge
+durch, ⌘/Strg+Enter sendet im Textfeld der Rohrpost, Esc schließt. Unten eine
+Tastenzeile wie unter der Stationsauswahl. Beim Schließen wird der Fokus
+abgegeben — sonst löste das nächste Enter im Spiel den Knopf erneut aus. Am
+Handy kein Autofokus, sonst klappt sofort die Tastatur hoch.
+
 Auf localhost zeigen Upload und Kurzlink auf `localhost:8788`/`8790` und melden
 `ERR_CONNECTION_REFUSED` — das ist ihr gewollter Entwicklungszweig und löst sich
 auf veerka.mp von selbst.
@@ -557,9 +591,6 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
   `--no-ff`, damit sie an einem einzigen Commit hängt: `git revert -m 1 b3fcf57`
   nimmt sie komplett wieder ab. Der Zweig `rueckseite` ist gelöscht (er war
   vollständig in `main`).
-- Das Fernrohr steht seit der Nordabfahrt auf **−66, −74** statt −59, −71: es
-  stand sonst 1,4 m neben der neuen Bahnmitte, mitten im Startbogen. Von sechs
-  gemessenen Ausweichplätzen hatte dieser das geringste Relief (0,35).
 - **Aufbauten auf gewölbtem Gelände** stehen mit einem Bein in der Luft, wenn
   sie nur an einem Punkt platziert werden: `world.place()` kennt genau eine
   Höhe. Das Tor hat es getroffen (0,85 m Luft), der Steg auch (1 m). Wer etwas
@@ -574,7 +605,10 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-         Hosting auf beta.veerka.mp
+         Kontaktposten, Stechuhr hinter die Abkuerzung, Seebank, Tastatur
+24841cc  Talkarte aus der Welt gemalt, Schnellreise-Menue
+debe2c1  Fenster im Glas, toter Solana-Ersatzknoten entfernt
+69349de  Hosting auf beta.veerka.mp
 7845cc0  Aufraeumen, Hosting vorbereitet
 805b372  Enter statt Ziffern: Glas, Heranzoomen, Safari-Fix, Handymodus
 493ad64  Wegenetz, Landschaft, Huettenensemble und Seebucht

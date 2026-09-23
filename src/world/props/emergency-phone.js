@@ -40,20 +40,6 @@ export function createEmergencyPhone() {
   // Vertiefte Nische mit dem Hoerer.
   parts.push({ geo: new THREE.BoxGeometry(0.44, 0.5, 0.1), color: DARK, position: [0, boxY + 0.02, 0.2] })
 
-  // Hoerer: Griff plus zwei Muscheln.
-  parts.push({
-    geo: new THREE.BoxGeometry(0.09, 0.34, 0.09),
-    color: DARK,
-    position: [-0.02, boxY + 0.02, 0.29],
-  })
-  for (const dy of [0.2, -0.2]) {
-    parts.push({
-      geo: new THREE.CylinderGeometry(0.075, 0.085, 0.11, 8),
-      color: DARK,
-      position: [-0.02, boxY + 0.02 + dy, 0.31],
-      rotation: [Math.PI / 2, 0, 0],
-    })
-  }
   // Spiralkabel
   const curve = new THREE.CatmullRomCurve3(
     Array.from({ length: 26 }, (_, i) => {
@@ -88,6 +74,24 @@ export function createEmergencyPhone() {
   body.receiveShadow = true
   group.add(body)
 
+  // Hoerer: Griff plus zwei Muscheln, als eigenes Stueck, damit er sich vom
+  // Haken heben kann – am Kontaktposten tut er das, sobald Signal gewaehlt ist.
+  const handset = new THREE.Mesh(
+    assemble([
+      { geo: new THREE.BoxGeometry(0.09, 0.34, 0.09), color: DARK },
+      ...[0.2, -0.2].map((dy) => ({
+        geo: new THREE.CylinderGeometry(0.075, 0.085, 0.11, 8),
+        color: DARK,
+        position: [0, dy, 0.02],
+        rotation: [Math.PI / 2, 0, 0],
+      })),
+    ]),
+    vertexColorMaterial({ roughness: 0.5 }),
+  )
+  handset.position.set(-0.02, boxY + 0.02, 0.29)
+  handset.castShadow = true
+  group.add(handset)
+
   // Das Blinklicht bekommt ein eigenes, leuchtendes Material.
   const lampGeo = tint(
     transformed(new THREE.SphereGeometry(0.062, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.55), {
@@ -118,10 +122,15 @@ export function createEmergencyPhone() {
   drift.receiveShadow = true
   group.add(drift)
 
+  // alarm in [0, 1]: 0 ist Standby, 1 blinkt es wie bei einem Anruf.
+  group.userData.alarm = 0
+  group.userData.handset = handset
+  group.userData.handsetHome = handset.position.clone()
   group.userData.animate = (t) => {
     // Langsames Pulsieren, wie ein echtes Notruf-Blinklicht im Standby.
-    const pulse = 0.5 + 0.5 * Math.pow(Math.max(0, Math.sin(t * 1.6)), 6)
-    lampMat.emissiveIntensity = 0.35 + pulse * 2.6
+    const a = group.userData.alarm
+    const pulse = 0.5 + 0.5 * Math.pow(Math.max(0, Math.sin(t * (1.6 + a * 7))), 6 - a * 4)
+    lampMat.emissiveIntensity = 0.35 + pulse * (2.6 + a * 1.5)
   }
 
   return group

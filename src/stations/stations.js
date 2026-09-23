@@ -1,9 +1,8 @@
 import * as THREE from 'three'
 import { LINKS } from './links.js'
 import { createMarker } from './marker.js'
-import { createEmergencyPhone } from '../world/props/emergency-phone.js'
+import { createContactPost } from '../world/props/contact-post.js'
 import { createUploadPipe } from '../world/props/upload-pipe.js'
-import { createTelescope } from '../world/props/telescope.js'
 import { createCabin } from '../world/props/cabin.js'
 import { createDrone } from '../world/props/drone.js'
 import { createFireTruck } from '../world/props/firetruck.js'
@@ -13,6 +12,7 @@ import { createWorkbench } from '../world/props/workbench.js'
 import { createTicketBooth } from '../world/props/ticket-booth.js'
 import { createTimeClock } from '../world/props/time-clock.js'
 import { CAMERA } from '../config.js'
+import { TOUCH } from '../core/device.js'
 import { findFlatSpot } from '../world/heightfield.js'
 
 // Die Kamera blickt immer aus derselben Richtung. Objekte mit einer
@@ -40,31 +40,26 @@ export const STATION_SPOTS = {
   cabin:     { x: 25, z: 21, clearing: 13, footprint: 3.4, search: 3, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
-  phone:     { x: 2, z: 0, clearing: 7, footprint: 1.2, search: 7, trail: 'social' },
+  // Signal und Instagram teilen sich den Kontaktposten am Waldrand, dort, wo
+  // der Weg nach Westen abknickt – siehe props/contact-post.js. Vorher stand
+  // hier nur das Telefon, und das Fernrohr fuer Instagram hinter dem Gipfel.
+  // Ein paar Meter nach Norden geschoben, damit die Tannen dahinter die
+  // Kulisse sind; die Lichtung ist mit 4,5 Metern kleiner als vorher (7),
+  // sonst waeren genau die weggeraeumt worden.
+  kontakt:   { x: 2, z: -3.5, clearing: 4.5, footprint: 3.0, search: 2, trail: 'social' },
   // Die Skikasse steht auf dem Weg vom Materialdepot zur Talstation – man
   // kommt daran vorbei, bevor man in den Lift steigt.
   ticket:    { x: -40, z: -2, clearing: 9, footprint: 2.4, search: 2.5, trail: 'social' },
-  // Das Fernrohr ist zum zweiten Mal gewichen. Zuerst stand es auf der
-  // Talschulter – dort beginnt jetzt die Rodelbahn. Dann hinter dem Gipfel auf
-  // (-59,-71) – dort steht jetzt der Startbogen der Nordabfahrt, und zwischen
-  // Fernrohr und Bahnmitte lagen anderthalb Meter. Ein Fernrohr mitten im Tor
-  // ist kein Aussichtspunkt, sondern ein Hindernis.
-  //
-  // Jetzt steht es acht Meter westlich davon auf der Schulter. Das ist von den
-  // sechs geprueften Plaetzen der flachste (Relief 0,35 auf 1,2 Meter
-  // Grundflaeche), er liegt ausserhalb der halben Bahnbreite, und der Blick
-  // geht ueber das Kar – also genau ueber das, was es hier neu zu sehen gibt.
-  // Trotz der Lage hinter der Kuppe ist es sichtbar: bei 36 Grad Kamerawinkel
-  // steigt die Sichtlinie schneller als der Berg dahinter abfaellt.
-  telescope: { x: -66, z: -74, clearing: 7, footprint: 1.2, search: 3, trail: 'social' },
 
   // Weg 3 – Werkzeuge
-  // Die Stechuhr steht am Anfang des Weges: man stempelt, bevor man arbeitet.
-  // Nicht direkt am Wegweiser – acht Meter weiter unten, wo der Hang mit sechs
-  // Grad flach genug fuer einen Pfosten ist und noch sechs Meter Luft bis zur
-  // Rohrpost bleiben. Der Suchradius ist klein, sonst rutscht sie auf das
-  // Startplateau zurueck; das ist weit und breit die flachste Flaeche.
-  clock:     { x: -15, z: 23, clearing: 5, footprint: 1.4, search: 1.5, trail: 'tools' },
+  // Die Stechuhr stand am Anfang des Weges und war damit das Erste, was man
+  // von den Werkzeugen sah – das langweiligste zuerst. Jetzt steht sie
+  // hinter der Abkuerzung am linken Rand, an der Waldkante zum See hin,
+  // gut drei Meter neben dem Weg: wer ihn zu Ende faehrt, sieht sie, aber
+  // sie draengt sich nicht vor Rohrpost und Abkuerzung. Die Lichtung ist
+  // mit drei Metern klein, damit die Baeume dahinter stehen bleiben – sie
+  // sind der Rand, an dem sie lehnt. Gefaelle dort 0,07.
+  clock:     { x: -41, z: 13, clearing: 3, footprint: 1.4, search: 1, trail: 'tools' },
   pipe:      { x: -19, z: 25, clearing: 8, footprint: 1.4, search: 6, trail: 'tools' },
   tunnel:    { x: -34, z: 15, clearing: 9, footprint: 2.0, search: 6, trail: 'tools' },
   depot:     { x: -48, z: 0, clearing: 8, footprint: 2.0, search: 7, trail: 'tools' },
@@ -92,9 +87,32 @@ export const STATION_SPOTS = {
 // Meter Luft zwischen Bank und Wand – eng genug, dass beide zusammengehoeren.
 const BENCH_AHEAD = 3.4
 
-const walletDialog = () => import('../dialogs/wallet.js').then((m) => m.oeffnen())
-const uploadDialog = () => import('../dialogs/upload.js').then((m) => m.oeffnen())
-const kurzDialog = () => import('../dialogs/kurz.js').then((m) => m.oeffnen())
+// Die Tastaturbedienung liegt obendrauf, siehe dialogs/keyboard.js.
+const fenster = (laden, id) => () => Promise.all([laden(), import('../dialogs/keyboard.js')])
+  .then(([m, k]) => { m.oeffnen(); k.mitTastatur(id) })
+const walletDialog = fenster(() => import('../dialogs/wallet.js'), 'sol-dialog')
+const uploadDialog = fenster(() => import('../dialogs/upload.js'), 'up-dialog')
+const kurzDialog = fenster(() => import('../dialogs/kurz.js'), 'kz-dialog')
+
+// Am Handy oeffnet Solana wie auf veerka.mp direkt die Wallet-App: der
+// solana:-Link ist dort die Uebergabe an die App, und ein Dialog, der nach
+// einer Browser-Erweiterung sucht, findet am Handy keine. Geht keine App auf
+// – weil keine installiert ist –, bleibt die Seite sichtbar, und nach 1,6 s
+// kommt doch der Dialog mit seinem Hinweis. Nur die Sichtbarkeit zaehlt,
+// nicht 'blur': Safari nimmt den Fokus auch fuer seinen eigenen Hinweis
+// "Adresse ungueltig", und genau dann soll der Dialog kommen.
+function solanaApp() {
+  let weg = false
+  const merken = () => { weg = true }
+  addEventListener('pagehide', merken, { once: true })
+  addEventListener('visibilitychange', merken, { once: true })
+  location.href = LINKS.solana
+  setTimeout(() => {
+    removeEventListener('pagehide', merken)
+    removeEventListener('visibilitychange', merken)
+    if (!weg && document.visibilityState === 'visible') walletDialog()
+  }, 1600)
+}
 
 export function populateStations(world, registry) {
   const animated = []
@@ -154,17 +172,29 @@ export function populateStations(world, registry) {
   })
 
   // --- Weg 2: Soziales und Bezahlen ---------------------------------------
-  const phone = createEmergencyPhone()
-  place(phone, STATION_SPOTS.phone, { rotation: FACING - 0.2, collider: 0.7 })
+  const post = createContactPost()
+  place(post, STATION_SPOTS.kontakt, { rotation: FACING })
+  for (const c of post.userData.colliders) {
+    world.addCollider(
+      STATION_SPOTS.kontakt.x + c.dx * Math.cos(FACING) + c.dz * Math.sin(FACING),
+      STATION_SPOTS.kontakt.z - c.dx * Math.sin(FACING) + c.dz * Math.cos(FACING),
+      c.r,
+    )
+  }
   register({
-    id: 'signal',
-    label: 'Signal',
-    hint: 'Hörer abnehmen',
-    color: '#3a76f0',
-    url: LINKS.signal,
-    position: STATION_SPOTS.phone,
-    radius: 5.5,
-    labelHeight: world.heightAt(STATION_SPOTS.phone.x, STATION_SPOTS.phone.z) + 3.1,
+    id: 'kontakt',
+    label: 'Kontakt',
+    hint: 'Signal und Instagram',
+    color: '#935976',
+    position: STATION_SPOTS.kontakt,
+    radius: 6,
+    labelHeight: world.heightAt(STATION_SPOTS.kontakt.x, STATION_SPOTS.kontakt.z) + 3.6,
+    object: post,
+    focus: { abstand: 9, hoehe: 1.2, vor: 1.1 },
+    choices: [
+      { label: 'Signal', sub: 'Nachricht schreiben', glyph: 'signal', url: LINKS.signal, color: '#3a76f0' },
+      { label: 'Instagram', sub: '@juliansebv', glyph: 'instagram', url: LINKS.instagram, color: '#d62976' },
+    ],
   })
 
   // Die Skikasse ist jetzt das Haeuschen selbst. Der Automat daneben war die
@@ -184,47 +214,17 @@ export function populateStations(world, registry) {
     focus: { abstand: 9.5, hoehe: 1.3, vor: 1.4 },
     choices: [
       { label: 'PayPal', sub: 'paypal.me/juliansebv', glyph: 'paypal', url: LINKS.paypal, color: '#2b8ce6' },
-      // Solana oeffnet kein Ziel, sondern das Fenster von veerka.mp: es
-      // sucht die Wallet-Erweiterung, rechnet SOL in Euro um und schickt die
-      // Ueberweisung. Ein blosser solana:-Link koennte das nicht – am
-      // Rechner tut er schlicht nichts.
-      { label: 'Solana', sub: 'Wallet verbinden', glyph: 'solana', color: '#9945ff', action: () => walletDialog() },
+      // Solana oeffnet am Rechner kein Ziel, sondern das Fenster von
+      // veerka.mp: es sucht die Wallet-Erweiterung, rechnet SOL in Euro um
+      // und schickt die Ueberweisung. Ein blosser solana:-Link tut dort
+      // schlicht nichts – am Handy dagegen ist er genau richtig.
+      TOUCH
+        ? { label: 'Solana', sub: 'Wallet-App öffnen', glyph: 'solana', color: '#9945ff', action: solanaApp }
+        : { label: 'Solana', sub: 'Wallet verbinden', glyph: 'solana', color: '#9945ff', action: () => walletDialog() },
     ],
   })
 
-  const telescope = createTelescope()
-  place(telescope, STATION_SPOTS.telescope, { rotation: FACING + 0.4, collider: 0.6 })
-  register({
-    id: 'instagram',
-    label: 'Instagram',
-    hint: 'Durchschauen',
-    color: '#c13584',
-    url: LINKS.instagram,
-    position: STATION_SPOTS.telescope,
-    radius: 5,
-    labelHeight: world.heightAt(STATION_SPOTS.telescope.x, STATION_SPOTS.telescope.z) + 2.6,
-  })
-
   // --- Weg 3: Werkzeuge ---------------------------------------------------
-  const clock = createTimeClock()
-  place(clock, STATION_SPOTS.clock, { rotation: FACING, collider: 0.5 })
-  register({
-    id: 'worktime',
-    label: 'Arbeitszeitrechner',
-    hint: LINKS.worktime ? 'Stempeln' : 'noch nicht verlinkt',
-    color: '#37b87c',
-    position: STATION_SPOTS.clock,
-    radius: 4.5,
-    labelHeight: world.heightAt(STATION_SPOTS.clock.x, STATION_SPOTS.clock.z) + 3.2,
-    // Erst stempelt sie, dann oeffnet sie. Die Karte faehrt auch dann heraus,
-    // wenn noch keine Adresse hinterlegt ist – das Geraet funktioniert, nur
-    // der Link fehlt, und das soll man am Geraet sehen und nicht raten.
-    onUse: () => {
-      clock.userData.stamp?.()
-      if (LINKS.worktime) window.open(LINKS.worktime, '_blank', 'noopener,noreferrer')
-    },
-  })
-
   const pipe = createUploadPipe()
   place(pipe, STATION_SPOTS.pipe, { rotation: FACING + 0.1, collider: 0.8 })
   register({
@@ -267,6 +267,25 @@ export function populateStations(world, registry) {
     radius: 6,
     labelHeight: world.heightAt(STATION_SPOTS.tunnel.x, STATION_SPOTS.tunnel.z) + 4.2,
     onUse: () => kurzDialog(),
+  })
+
+  const clock = createTimeClock()
+  place(clock, STATION_SPOTS.clock, { rotation: FACING, collider: 0.5 })
+  register({
+    id: 'worktime',
+    label: 'Arbeitszeitrechner',
+    hint: LINKS.worktime ? 'Stempeln' : 'noch nicht verlinkt',
+    color: '#37b87c',
+    position: STATION_SPOTS.clock,
+    radius: 4.5,
+    labelHeight: world.heightAt(STATION_SPOTS.clock.x, STATION_SPOTS.clock.z) + 3.2,
+    // Erst stempelt sie, dann oeffnet sie. Die Karte faehrt auch dann heraus,
+    // wenn noch keine Adresse hinterlegt ist – das Geraet funktioniert, nur
+    // der Link fehlt, und das soll man am Geraet sehen und nicht raten.
+    onUse: () => {
+      clock.userData.stamp?.()
+      if (LINKS.worktime) window.open(LINKS.worktime, '_blank', 'noopener,noreferrer')
+    },
   })
 
   const depot = createGearDepot()

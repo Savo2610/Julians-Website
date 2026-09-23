@@ -18,12 +18,13 @@ const DEAD = 0.18          // Anteil am Radius, unter dem nichts passiert
 const GAIN = 2.1           // Lenkeinschlag je rad Winkelfehler
 
 export class TouchControls {
-  constructor(input, dom, { camera, skier, jumpVisible }) {
+  constructor(input, dom, { camera, skier, jumpVisible, onMap = null, mapVisible = () => true }) {
     this.input = input
     this.dom = dom
     this.camera = camera
     this.skier = skier
     this.jumpVisible = jumpVisible
+    this.mapVisible = mapVisible
     this._stick = null         // { id, ox, oy, x, y }
     this._pinch = null         // { a, b, dist, zoom }
     this._pointers = new Map()
@@ -56,6 +57,22 @@ export class TouchControls {
     this.jump.addEventListener('pointerup', up)
     this.jump.addEventListener('pointercancel', up)
     this.jump.addEventListener('pointerleave', up)
+
+    // Der Kartenknopf. Am Rechner oeffnet M die Karte von ueberall; am Handy
+    // gibt es kein M, und ohne Knopf kaeme man nur am Pult am Startplatz an
+    // die Schnellreise. Er ist das einzige Bedienelement, das immer da ist,
+    // deshalb klein, oben rechts und aus demselben Glas wie alles andere.
+    this.map = document.createElement('button')
+    this.map.type = 'button'
+    this.map.className = 'glass touch-map'
+    this.map.setAttribute('aria-label', 'Talkarte')
+    this.map.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3.5 6.2 9 4l6 2.2L20.5 4v13.8L15 20l-6-2.2-5.5 2.2z M9 4v13.8 M15 6.2V20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>'
+    // Im Klick und nicht im naechsten Bild – dieselbe Regel wie ueberall.
+    this.map.addEventListener('click', (e) => {
+      e.preventDefault()
+      onMap?.()
+    })
+    document.body.appendChild(this.map)
 
     this.hint = document.createElement('div')
     this.hint.className = 'glass touch-hint'
@@ -138,6 +155,7 @@ export class TouchControls {
   // Jedes Bild: aus dem Daumenvektor Lenkung und Schub machen.
   update() {
     this.jump.classList.toggle('visible', !!this.jumpVisible())
+    this.map.classList.toggle('visible', !!this.mapVisible())
     const s = this._stick
     if (!s) return
     const dx = s.x - s.ox

@@ -32,7 +32,7 @@ export const TRAILS = {
     label: 'TOOLS',
     color: '#477d68',
     markerColor: 0x62967e,
-    // Nach Westen, an der Stechuhr, der Rohrpost und dem Felsdurchgang
+    // Nach Westen, an der Rohrpost, dem Felsdurchgang und der Stechuhr
     // vorbei. Er heisst nicht mehr WERKSTATT: die Werkstatt ist inzwischen ein
     // Haus im Osten, und zwei Dinge desselben Namens an verschiedenen Enden
     // des Tals sind einer zuviel.

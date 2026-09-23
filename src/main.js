@@ -70,6 +70,8 @@ const touch = TOUCH
     camera: chase,
     skier,
     jumpVisible: () => inFunpark(skier.position.x, skier.position.z) || !!props.railRide.rider,
+    onMap: () => interaction.press('map'),
+    mapVisible: () => !mapMenu.open && !interaction.focus && !skier.tow,
   })
   : null
 if (TOUCH) document.documentElement.classList.add('touch')

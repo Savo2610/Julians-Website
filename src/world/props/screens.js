@@ -1,6 +1,8 @@
 import * as THREE from 'three'
+import { TOUCH } from '../../core/device.js'
 
-// Bildschirme fuer die Stationen mit Auswahl: Skikasse und Werkstatt.
+// Bildschirme fuer die Stationen mit Auswahl: Skikasse, Werkstatt und der
+// Kontaktposten.
 //
 // Jeder Bildschirm ist eine Canvas-Zeichnung auf einer unbeleuchteten
 // Flaeche – er leuchtet also selbst und braucht kein Licht. Gewaehlt,
@@ -90,7 +92,7 @@ export function solanaScreen() {
   ctx.fillText('Solana', 214, 138)
   ctx.font = `600 34px ${FONT}`
   ctx.fillStyle = 'rgba(210,255,236,0.85)'
-  ctx.fillText('Wallet verbinden', 46, 290)
+  ctx.fillText(TOUCH ? 'Wallet öffnen' : 'Wallet verbinden', 46, 290)
   ctx.fillStyle = '#14f195'
   ctx.beginPath()
   ctx.arc(452, 290, 14, 0, Math.PI * 2)
@@ -183,6 +185,70 @@ export function linkedinScreen() {
   ctx.fillStyle = '#ffffff'
   ctx.font = `700 26px ${FONT}`
   ctx.fillText('Vernetzen', 64, 337)
+  return finish(c)
+}
+
+// Signal: die Sprechblase mit dem gestrichelten Rand auf Blau.
+export function signalScreen() {
+  const [c, ctx] = canvas(512, 384)
+  const g = ctx.createLinearGradient(0, 0, 512, 384)
+  g.addColorStop(0, '#2c5fd6')
+  g.addColorStop(1, '#4f8bff')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, 512, 384)
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 12
+  ctx.setLineDash([22, 12])
+  ctx.beginPath()
+  ctx.arc(118, 136, 70, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.setLineDash([])
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  ctx.arc(118, 136, 50, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(62, 186)
+  ctx.lineTo(50, 222)
+  ctx.lineTo(92, 206)
+  ctx.fill()
+  ctx.textBaseline = 'middle'
+  ctx.font = `800 76px ${FONT}`
+  ctx.fillText('Signal', 214, 138)
+  ctx.font = `600 34px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.8)'
+  ctx.fillText('Nachricht schreiben', 46, 296)
+  return finish(c)
+}
+
+// Instagram: der Verlauf von Gelb ueber Pink nach Violett und die Kamera
+// als abgerundetes Quadrat mit Linse.
+export function instagramScreen() {
+  const [c, ctx] = canvas(512, 384)
+  const g = ctx.createLinearGradient(0, 384, 512, 0)
+  g.addColorStop(0, '#f9ce34')
+  g.addColorStop(0.45, '#ee2a7b')
+  g.addColorStop(1, '#6228d7')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, 512, 384)
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 13
+  ctx.beginPath()
+  ctx.roundRect(56, 74, 124, 124, 36)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(118, 136, 30, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  ctx.arc(152, 102, 9, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.textBaseline = 'middle'
+  ctx.font = `800 64px ${FONT}`
+  ctx.fillText('Instagram', 206, 138)
+  ctx.font = `600 34px ${FONT}`
+  ctx.fillStyle = 'rgba(255,255,255,0.85)'
+  ctx.fillText('@juliansebv', 46, 296)
   return finish(c)
 }
 

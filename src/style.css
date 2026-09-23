@@ -406,6 +406,26 @@ html.touch, html.touch body {
 .touch-jump.down { scale: 0.9; }
 .touch-jump svg { width: 30px; height: 30px; }
 
+.touch-map {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #13212f;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 11;
+  transition: opacity 0.25s ease, scale 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.touch-map.visible { opacity: 1; pointer-events: auto; }
+.touch-map:active { scale: 0.9; }
+.touch-map svg { width: 23px; height: 23px; }
+
 .touch-hint {
   position: fixed;
   left: 50%;

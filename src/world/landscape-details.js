@@ -1,9 +1,9 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../core/geometry.js'
 import { makeRng } from '../core/rng.js'
-import { terrainHeight } from './heightfield.js'
+import { terrainHeight, LAKE } from './heightfield.js'
 import { createRocks } from './props/rocks.js'
-import { CAMERA } from '../config.js'
+import { createLakeBench } from './props/lake-bench.js'
 
 export function createLandscapeDetails(world, trees) {
   const rng = makeRng(210927)
@@ -31,25 +31,10 @@ export function createLandscapeDetails(world, trees) {
   ice.castShadow = true
   world.scene.add(ice)
 
-  // Eine Bank macht das Ufer zum Ziel. Alle vier Fuesse nehmen die lokale
-  // Hoehe ab; ein gemeinsamer Bodenwert liess solche Aufbauten schweben.
-  const bx = -34, bz = 25, yaw = CAMERA.azimuth
-  const base = terrainHeight(bx, bz)
-  const bench = []
-  for (const x of [-1, 1]) for (const z of [-0.28, 0.28]) {
-    const ground = terrainHeight(bx + x * Math.cos(yaw) + z * Math.sin(yaw), bz - x * Math.sin(yaw) + z * Math.cos(yaw)) - base
-    const top = 0.8
-    bench.push({ geo: new THREE.BoxGeometry(0.14, top - ground, 0.15), color: 0x604737, position: [x, (top + ground) / 2, z] })
-  }
-  for (const z of [-0.22, 0, 0.22]) bench.push({ geo: new THREE.BoxGeometry(2.7, 0.12, 0.19), color: 0x9b7150, position: [0, 0.83, z] })
-  for (const x of [-1, 1]) bench.push({ geo: new THREE.BoxGeometry(0.13, 0.95, 0.13), color: 0x604737, position: [x, 1.05, -0.34] })
-  bench.push({ geo: new THREE.BoxGeometry(2.7, 0.32, 0.12), color: 0x9b7150, position: [0, 1.36, -0.34] })
-  bench.push({ geo: new THREE.BoxGeometry(2.72, 0.08, 0.16), color: 0xf8f4eb, position: [0, 1.56, -0.34] })
-  const seat = new THREE.Mesh(assemble(bench), vertexColorMaterial())
-  seat.name = 'uferbank'
-  seat.castShadow = true
-  world.place(seat, bx, bz, { rotation: yaw })
-  world.addCollider(bx, bz, 1.4)
+  // Eine Bank macht das Ufer zum Ziel. Sie schaut aufs Eis und zerbricht,
+  // wenn man hineinfaehrt – siehe props/lake-bench.js.
+  const bx = -34, bz = 25
+  const bench = createLakeBench(world, { x: bx, z: bz, yaw: Math.atan2(LAKE.x - bx, LAKE.z - bz) })
 
   // Ein gemeinsamer Partikelpuffer fuer alle Haine statt eines Effekts je
   // Baum. Die Sperre verhindert Dauerschnee, wenn jemand darunter parkt.
@@ -88,7 +73,9 @@ export function createLandscapeDetails(world, trees) {
   return {
     get bursts() { return bursts },
     get treeCount() { return sources.length },
+    bench,
     update(dt, skier) {
+      bench.update(dt, skier)
       if (!skier) return
       for (const tree of sources) {
         tree.cooldown = Math.max(0, tree.cooldown - dt)

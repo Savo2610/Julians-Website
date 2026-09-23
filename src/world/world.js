@@ -53,6 +53,8 @@ export class World {
     let pushZ = 0
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i]
+      // Ausgeschaltet: die zerlegte Seebank, siehe props/lake-bench.js.
+      if (c.off) continue
       const dx = x - c.x
       const dz = z - c.z
       const min = c.r + radius

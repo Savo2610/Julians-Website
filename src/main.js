@@ -17,6 +17,7 @@ import { populate, skierRef } from './world/populate.js'
 import { StationRegistry } from './stations/registry.js'
 import { StationUI } from './stations/ui.js'
 import { StationInteraction } from './stations/interaction.js'
+import { MapMenu } from './stations/map-menu.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
 import { Spray } from './player/spray.js'
@@ -58,7 +59,8 @@ const chase = new TopCamera(camera)
 const spray = new Spray()
 scene.add(spray.points)
 
-const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier })
+const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase })
+const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu })
 input.onAction = (action) => interaction.press(action)
 
 // Handymodus: Daumenstick, Sprungknopf und Zwei-Finger-Zoom. Ein Tipp in den
@@ -227,22 +229,18 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)
     draw()
     return skier.position.toArray().map((v) => +v.toFixed(2))
   },
-  // Stellt den Fahrer vor eine Station. _prevGroundY und _rise muessen mit
-  // zurueck, sonst haelt er den Hoehensprung fuer eine Schanze.
+  // Stellt den Fahrer vor eine Station.
   goto(id, dx = 2.5, dz = 2.5) {
     const s = stations.stations.find((st) => st.id === id)
     if (!s) return null
-    skier.position.set(s.position.x + dx, world.heightAt(s.position.x + dx, s.position.z + dz), s.position.z + dz)
-    skier.speed = 0
-    skier._prevGroundY = null
-    skier._rise = 0
+    skier.versetzen(s.position.x + dx, s.position.z + dz)
     return this.step(30)
   },
 }

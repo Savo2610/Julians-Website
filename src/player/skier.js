@@ -464,6 +464,27 @@ export class Skier {
     torso.rotation.y = this.turn * 0.28
   }
 
+  // Setzt den Fahrer an einen anderen Ort (Schnellreise, Pruefwerkzeug).
+  // Drei Dinge muessen mit zurueck: die Spurkette, sonst zieht er eine Linie
+  // quer durchs Tal; _prevGroundY und _rise, sonst haelt er den Hoehensprung
+  // fuer eine Schanze (einmal 94 Bilder Scheinflug gemessen). _prevGroundY
+  // auf die neue Bodenhoehe, nicht auf null: null zaehlt als 0, und an 9 von
+  // 15 Reisezielen hob der Fahrer nach der Ankunft ab.
+  versetzen(x, z, heading = this.heading) {
+    this.position.set(x, this.world.heightAt(x, z), z)
+    this.speed = 0
+    this.airborne = false
+    this.vy = 0
+    this.heading = heading
+    this.facing = heading
+    this._prevFacing = heading
+    this.swing = 0
+    this.forward.set(Math.sin(heading), 0, Math.cos(heading))
+    this._prevGroundY = this.position.y
+    this._rise = 0
+    this._trailInit = false
+  }
+
   _stampTrail(trail, groundY) {
     if (!trail || this.airborne || this.speed < 0.25 || !isSnowSurface(this.position.x, this.position.z, 1.2)) {
       this._trailInit = false

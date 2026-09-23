@@ -13,6 +13,8 @@ const KEY_MAP = {
   Space: 'jump',
   KeyE: 'use', Enter: 'use', NumpadEnter: 'use',
   Escape: 'back', Backspace: 'back',
+  // Die Talkarte von ueberall. Am Pult oeffnet sie auch Enter.
+  KeyM: 'map',
   // Stationen mit mehr als einem Ziel: die Karte zeigt die Ziffern an, mit
   // denen man waehlt. Ein zweiter Bestaetigungsknopf waere eine Taste mehr
   // fuer einen Fall, den es an drei Stellen im Tal gibt.

@@ -339,9 +339,38 @@ Hütte selbst um 0,28 rad gedreht steht. Bildschirme sind Canvas-Zeichnungen
 auf unbeleuchteten Flächen (`props/screens.js`); der Schein dahinter ist eine
 additive Scheibe statt eines PointLights.
 
+**Die drei Fenster** (Solana, Briefkasten, Kurzlink) tragen dasselbe Glas
+(`dialogs.css` neu geschrieben, Code und Ids wie auf veerka.mp).
+
 **Das Glas** (`.glass` in `style.css`) ist hell getönt, weil der Hintergrund
 fast immer Schnee ist — klares Glas auf Weiß ist unsichtbar. Es ersetzt das
 frühere Pistenschild auf ausdrücklichen Wunsch.
+
+## 4a′. Talkarte und Schnellreise
+
+Am Startplatz (4, 24) steht ein **Kartenpult** (`props/map-board.js`):
+Schneehaube auf dem Rahmen, Eiszapfen, Schneewehen an den Pfosten, Neigung
+0,9 rad. Die Karte ist **aus der Welt gemalt** (`world/valley-map.js`): Relief
+aus `terrainHeight()` mit Licht von oben links und Höhenlinien alle 2,5 m,
+Wald aus den echten Baumstandorten, See, Pisten, Wege, Lift. Gedreht wie die
+feste Kamera, nach unten um 0,72 gestaucht. Gemalt wird **einmal** (1200 × 900,
+rund 450 ms beim Aufbau); Pult (`boardMap`: Papiergrund, Titel, Ortsnamen) und
+Übersicht teilen das Grundbild — vorher kostete das erste Öffnen noch einmal
+461 ms, jetzt 4 ms.
+
+Das Pult ist eine Station (`id: 'talplan'`, `map: base`). **Enter am Pult oder
+`M` überall** öffnet die Übersicht (`stations/map-menu.js`): links die Karte mit
+Pins und „Du“, rechts die Ziele (Stationen, dann Orte: Start, Gipfel, Funpark,
+Hütte, See). ↑↓/←→ wählen, Enter reist, Esc/M schließen; am Handy Ziel oder
+Pin antippen. **Drohne und Löschzug fehlen absichtlich** — sie sollen gefunden
+werden. Die Reise ist ein Versetzen hinter einer hellen Blende, keine Fahrt;
+man steht mit dem Rücken zur Kamera vor der Station, der Ankunftspunkt weicht
+Kollisionskreisen aus (Werkbank vor der Werkstatt). Alle 15 Ziele geprüft:
+richtige Station aktiv, kein Hindernis, 0 Bilder in der Luft.
+
+`Skier.versetzen(x, z, heading)` ist der eine Weg, den Fahrer umzusetzen:
+Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
+`null` zählt als 0, und an 9 von 15 Zielen hob der Fahrer ab), `_rise` null.
 
 ## 4b. Handymodus
 
@@ -383,11 +412,13 @@ beta.veerka.mp aus:
   `~/Documents/Claude/kurz` ist nachgezogen — dort stand nur `s.veerka.mp`,
   live schon drei Hosts; ein Deploy aus dem Repo hätte veerka.mp still
   ausgesperrt. Turnstile löst sich auf beta, der Knopf wird „Kürzen".
-- **Solana**: RPC publicnode, CoinGecko und Binance antworten mit CORS.
-  Der Ersatz-RPC leorpc scheitert — auch von veerka.mp aus, also kein
-  beta-Problem, aber ein toter Fallback in `wallet.js` (wortgleich mit
-  veerka.mp, dort mitändern).
-- **Upload** nicht geprüft.
+- **Solana**: RPC publicnode, CoinGecko und Binance antworten mit CORS. Der
+  tote Ersatz-RPC leorpc ist hier und auf veerka.mp entfernt; ohne Schlüssel
+  trägt sonst keiner (mainnet-beta 403, drpc 400, onfinality 429).
+- **Upload**: `https://beta.veerka.mp` steht in `CORS_HERKUNFT` des Workers
+  `upload` (Repo `Savo2610/file-uploader`, vorher Build gegen Live-Code
+  verglichen: identisch). Preflight von beta: 204 mit Freigabe, fremde
+  Herkunft weiter 405.
 
 ## 5. Fahrmodell
 
@@ -470,7 +501,9 @@ Weitere Fallen aus der Praxis:
 von veerka.mp übernommen**, damit beide Seiten jederzeit abgeglichen werden
 können. Nicht umbauen, nur austauschen. `dialogs.css` ist dieselbe CSS-Datei mit
 der Palette auf `.dialog` statt `:root` und `'Space Mono'` durch `var(--mono)`
-ersetzt. Die drei `<dialog>`-Elemente stehen in `index.html`, geladen werden die
+ersetzt — **inzwischen nicht mehr**: `dialogs.css` ist das Glas des
+Skiportfolios, und in `kurz.js` steht Turnstile auf `theme: 'light'`. Beim
+Abgleich die JS-Dateien tauschen, `dialogs.css` nicht. Die drei `<dialog>`-Elemente stehen in `index.html`, geladen werden die
 Module erst beim Benutzen der Station.
 
 Auf localhost zeigen Upload und Kurzlink auf `localhost:8788`/`8790` und melden

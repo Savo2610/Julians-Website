@@ -376,7 +376,7 @@ export function populate(world, sky, registry) {
   }
 
   // --- Orientierung ------------------------------------------------------
-  createWayfinding(world)
+  createWayfinding(world, { registry, trees: placements, lift: { base: LIFT_BASE, top: LIFT_TOP } })
 
   // --- Wegfuehrung --------------------------------------------------------
   // Jeder der vier Wege bekommt Pistenstangen in seiner Farbe. Sie haben keine

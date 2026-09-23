@@ -72,6 +72,11 @@ export class TopCamera {
     this._will = an ? 1 : 0
   }
 
+  // Nach einer Schnellreise: nicht hinfahren, sondern dort sein.
+  snap() {
+    this._initialised = false
+  }
+
   addShake(amount) {
     this._shake = Math.min(1, this._shake + amount)
   }

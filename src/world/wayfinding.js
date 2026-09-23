@@ -1,12 +1,13 @@
 import * as THREE from 'three'
-import { LANDSCAPE_PATHS } from './landscape-layout.js'
 import { CAMERA } from '../config.js'
-import { assemble, vertexColorMaterial } from '../core/geometry.js'
-import { terrainHeight, NORTH_LANE, PARK_LANE } from './heightfield.js'
-import { TRAILS, CONNECTIONS } from './paths.js'
+import { terrainHeight } from './heightfield.js'
+import { TRAILS } from './paths.js'
 import { createSignpost } from './props/signpost.js'
+import { createMapBoard } from './props/map-board.js'
+import { paintValleyMap, boardMap } from './valley-map.js'
+import { createMarker } from '../stations/marker.js'
+import { TOUCH } from '../core/device.js'
 
-const WOOD = 0x6b4a35
 const INK = '#294842'
 
 // Pfeile meinen die sichtbare Richtung. Die Tafeln selbst bleiben zur Kamera
@@ -19,71 +20,7 @@ function arrow(x, z, target) {
   return ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][(sector + 8) % 8]
 }
 
-function createValleyMap() {
-  const canvas = document.createElement('canvas')
-  canvas.width = 1024
-  canvas.height = 768
-  const ctx = canvas.getContext('2d')
-  ctx.fillStyle = '#f5f1e5'
-  ctx.fillRect(0, 0, 1024, 768)
-  ctx.fillStyle = INK
-  ctx.font = '700 72px system-ui, sans-serif'
-  ctx.fillText('JULIANS TAL', 52, 85)
-  ctx.font = '32px system-ui, sans-serif'
-  ctx.fillText('Projekte entdecken. Eigene Spuren ziehen.', 54, 136)
-
-  // Dieselbe Projektion wie die feste Kamera: links auf der Karte bedeutet
-  // links im Tal. Der See und der Gipfel dienen auch ohne Text als Anker.
-  const project = ([x, z]) => [490 + (x - z) * 3.65, 390 + (x + z) * 1.65]
-  const line = (path, color, width) => {
-    ctx.beginPath()
-    path.forEach((p, i) => { const [x, y] = project(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y) })
-    ctx.strokeStyle = color
-    ctx.lineWidth = width
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-    ctx.stroke()
-  }
-  const [lx, ly] = project([-47, 41])
-  ctx.fillStyle = '#c4dce0'
-  ctx.beginPath(); ctx.ellipse(lx, ly, 46, 22, -0.15, 0, Math.PI * 2); ctx.fill()
-  for (const path of [...CONNECTIONS, ...LANDSCAPE_PATHS]) line(path.path, '#b5c5bd', 6)
-  for (const trail of Object.values(TRAILS)) line(trail.path, trail.color, 9)
-  line([[-34, -8], [-63, -55], [-58, -64]], INK, 4)
-  line([...NORTH_LANE.points, ...PARK_LANE.points].map(p => [p.x, p.z]), '#a8b7bb', 5)
-  const label = (point, text, ox, oy) => {
-    const [x, y] = project(point)
-    ctx.fillStyle = INK
-    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill()
-    ctx.font = '600 44px system-ui, sans-serif'
-    ctx.fillText(text, x + ox, y + oy)
-  }
-  label([-58, -64], 'Gipfel', -86, -19)
-  label([10, -59], 'Park', 14, -8)
-  label([-34, -8], 'Lift', -51, -18)
-  label([-32, 17], 'Tools', -75, -16)
-  label([25, 21], 'Code & Profil', 15, 12)
-  label([2, 0], 'Kontakt', 12, -16)
-  ctx.font = '36px system-ui, sans-serif'
-  ctx.fillText('See', lx - 19, ly + 44)
-  const [hx, hy] = project([0, 30])
-  ctx.fillStyle = '#bc713e'
-  ctx.beginPath(); ctx.arc(hx, hy, 11, 0, Math.PI * 2); ctx.fill()
-  ctx.font = '700 40px system-ui, sans-serif'
-  ctx.fillText('START', hx - 65, hy + 80)
-  ctx.fillStyle = INK
-  ctx.fillRect(52, 585, 920, 2)
-  ctx.font = '600 38px system-ui, sans-serif'
-  ctx.fillText('Den Wegen folgen. Oder abbiegen.', 54, 638)
-  ctx.font = '36px system-ui, sans-serif'
-  ctx.fillText('An den Stationen: E · Bremsen: S / Shift', 54, 694)
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.colorSpace = THREE.SRGBColorSpace
-  texture.anisotropy = 4
-  return texture
-}
-
-export function createWayfinding(world) {
+export function createWayfinding(world, { registry, trees = [], lift = null } = {}) {
   // Sechs Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln
   // stehen seitlich; ihr Ziel ist immer ein vorhandener Weg oder dessen Ende.
   const junctions = [
@@ -102,28 +39,52 @@ export function createWayfinding(world) {
     world.addCollider(x, z, 0.35)
   }
 
-  // Das Pult am Platz ist Teil der Welt, keine dauerhafte Bedienoberflaeche.
-  // Beide Beine reichen bis zu ihrem eigenen Bodenpunkt statt zu schweben.
+  // Das Kartenpult am Platz: gemaltes Relief im Schnee, und eine Station –
+  // Enter oeffnet die Uebersicht mit Schnellreise (stations/map-menu.js).
   const x = 4, z = 24, yaw = CAMERA.azimuth
-  const base = terrainHeight(x, z)
-  const group = new THREE.Group()
-  group.name = 'talplan'
-  const parts = []
+  const ground = terrainHeight(x, z)
+  const postX = 4.4 / 2 - 0.35
+  const fuss = [-1, 1].map((side) =>
+    terrainHeight(x + Math.cos(yaw) * side * postX, z - Math.sin(yaw) * side * postX) - ground)
+  const base = paintValleyMap({ trees, lift })
+  const canvas = boardMap(base, {
+    paper: ['#eef3f7', '#d7e2ec'],
+    title: { text: 'JULIANS TAL', sub: TOUCH ? 'Antippen: Karte & Schnellreise' : '⏎  Karte & Schnellreise' },
+    labels: [
+      { x: 0, z: 30, text: 'Start', color: '#bc713e' },
+      { x: -58, z: -64, text: 'Gipfel' },
+      { x: -47, z: 41, text: 'See', color: '#4f8fa8' },
+      { x: 20, z: -45, text: 'Funpark', color: TRAILS.sport.color },
+      { x: 23, z: -64, text: 'Hütte', color: TRAILS.sport.color },
+      { x: 25, z: 21, text: 'Werkstatt', color: TRAILS.career.color },
+      { x: -34, z: 15, text: 'Tools', color: TRAILS.tools.color },
+    ],
+  })
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 8
+  const board = createMapBoard(texture, { fuss })
+  world.place(board, x, z, { rotation: yaw })
   for (const side of [-1, 1]) {
-    const localX = side * 1.7
-    const floor = terrainHeight(x + Math.cos(yaw) * localX, z - Math.sin(yaw) * localX) - base
-    const height = 1.4 - floor
-    parts.push({ geo: new THREE.BoxGeometry(0.19, height, 0.22), color: WOOD, position: [localX, floor + height / 2, 0] })
-    world.addCollider(x + Math.cos(yaw) * localX, z - Math.sin(yaw) * localX, 0.2)
+    world.addCollider(x + Math.cos(yaw) * side * postX, z - Math.sin(yaw) * side * postX, 0.3)
   }
-  parts.push({ geo: new THREE.BoxGeometry(4.6, 3.5, 0.16), color: WOOD, position: [0, 1.5, 0], rotation: [-1.05, 0, 0] })
-  const body = new THREE.Mesh(assemble(parts), vertexColorMaterial())
-  body.castShadow = true
-  group.add(body)
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(4.35, 3.26), new THREE.MeshStandardMaterial({ map: createValleyMap(), roughness: 0.9 }))
-  face.rotation.x = -1.05
-  face.position.set(0, 1.5 + Math.sin(1.05) * 0.09, Math.cos(1.05) * 0.09)
-  group.add(face)
-  world.place(group, x, z, { rotation: yaw })
-  world.addCollider(x, z, 1.1)
+  world.addCollider(x, z, 1.0)
+
+  if (registry) {
+    const marker = createMarker(x, z, 6, '#346782')
+    world.scene.add(marker)
+    registry.add({
+      id: 'talplan',
+      label: 'Talkarte',
+      hint: 'Schnellreise',
+      color: '#346782',
+      position: { x, z },
+      radius: 6,
+      labelHeight: ground + 3.4,
+      groundY: ground,
+      marker,
+      // Das Grundbild der Karte, fuer die Uebersicht wiederverwendet.
+      map: base,
+    })
+  }
 }

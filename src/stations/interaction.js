@@ -13,7 +13,8 @@ import { CAMERA } from '../config.js'
 // Ereignis.
 
 export class StationInteraction {
-  constructor({ registry, ui, input, camera, skier }) {
+  constructor({ registry, ui, input, camera, skier, map = null }) {
+    this.map = map
     this.registry = registry
     this.ui = ui
     this.input = input
@@ -30,6 +31,12 @@ export class StationInteraction {
 
   // true = die Aktion ist hier verbraucht und bewegt den Fahrer nicht.
   press(action) {
+    if (this.map?.open) return this.map.press(action)
+    if (action === 'map' && this.map && !this.skier.tow) {
+      this.leave()
+      this.map.show()
+      return true
+    }
     if (this.focus) {
       const n = this.focus.choices.length
       switch (action) {
@@ -50,7 +57,8 @@ export class StationInteraction {
     // Am Lift und am Teppich gehoert Enter dem Ausstieg.
     if (!s || this.skier.tow) return false
     if (action === 'use') {
-      if (s.choices?.length) this.enter(s)
+      if (s.map && this.map) this.map.show()
+      else if (s.choices?.length) this.enter(s)
       else {
         this.registry.trigger()
         this.ui.flash()

@@ -84,7 +84,7 @@ export class StationUI {
     if (station !== this.current) {
       this.current = station
       if (station) {
-        const wired = !!(station.url || station.onUse
+        const wired = !!(station.url || station.onUse || station.map
           || station.choices?.some((c) => c.url || c.action))
         this.titleEl.textContent = station.label
         this.subEl.textContent = wired ? station.hint : 'noch nicht verlinkt'

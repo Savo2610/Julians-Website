@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { isSnowSurface } from './surfaces.js'
+import { pathPreparation } from './paths.js'
 import { WORLD, TRAIL, COLORS } from '../config.js'
 import { terrainHeight, terrainNormal } from './heightfield.js'
 
@@ -17,10 +19,13 @@ function buildGeometry() {
   const normals = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
   const uvs = new Float32Array(count * 2)
+  const preparation = new Float32Array(count)
+  const snowSurface = new Float32Array(count)
 
   const snowLit = new THREE.Color(COLORS.snowLit)
   const snowShade = new THREE.Color(COLORS.snowShade)
   const rock = new THREE.Color(COLORS.rock)
+  const prepared = new THREE.Color(0xc5dce5)
   const tmp = new THREE.Color()
   const n = new THREE.Vector3()
 
@@ -32,6 +37,7 @@ function buildGeometry() {
     for (let ix = 0; ix < side; ix++) {
       const x = -half + ix * step
       const y = terrainHeight(x, z)
+      snowSurface[iz * side + ix] = isSnowSurface(x, z, 1) ? 1 : 0
 
       positions[p] = x
       positions[p + 1] = y
@@ -48,6 +54,11 @@ function buildGeometry() {
       const rockMix = THREE.MathUtils.smoothstep(steep, 0.28, 0.62)
       const shadeMix = THREE.MathUtils.smoothstep(steep, 0.02, 0.3) * 0.55
       tmp.copy(snowLit).lerp(snowShade, shadeMix).lerp(rock, rockMix * 0.85)
+      // Ein gemeinsamer kuehler Schneeton verbindet die Stationen. Auf steilen
+      // Flanken bleibt der Fels sichtbar, damit die Wege kein Relief kaschieren.
+      const groomed = pathPreparation(x, z) * (1 - rockMix)
+      preparation[iz * side + ix] = groomed
+      tmp.lerp(prepared, groomed * 0.6)
       colors[c] = tmp.r
       colors[c + 1] = tmp.g
       colors[c + 2] = tmp.b
@@ -79,6 +90,8 @@ function buildGeometry() {
   }
 
   const geo = new THREE.BufferGeometry()
+  geo.setAttribute('snowSurface', new THREE.BufferAttribute(snowSurface, 1))
+  geo.setAttribute('preparation', new THREE.BufferAttribute(preparation, 1))
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
   geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
@@ -105,17 +118,20 @@ function patchMaterial(material, trailTexture) {
         '#include <common>',
         /* glsl */ `
         #include <common>
+        attribute float preparation;
+        attribute float snowSurface;
         uniform sampler2D uTrail;
         uniform float uWorldSize;
         uniform float uDepth;
         uniform float uRim;
         varying vec2 vTerrainXZ;
+        varying float vPreparation;
 
         // Rille eindruecken, am Rand den verdraengten Schnee aufwerfen.
         float trailDisplace(vec2 world) {
           vec2 uv = world / uWorldSize + 0.5;
           vec4 t = texture2D(uTrail, uv);
-          return -uDepth * t.r + uRim * max(0.0, t.g - t.r);
+          return (-uDepth * t.r + uRim * max(0.0, t.g - t.r)) * snowSurface;
         }
       `,
       )
@@ -137,6 +153,7 @@ function patchMaterial(material, trailTexture) {
         #include <begin_vertex>
         transformed.y += trailDisplace(position.xz);
         vTerrainXZ = position.xz;
+        vPreparation = preparation;
       `,
       )
 
@@ -150,6 +167,7 @@ function patchMaterial(material, trailTexture) {
         uniform float uDepth;
         uniform float uRim;
         varying vec2 vTerrainXZ;
+        varying float vPreparation;
 
         float snowHash(vec2 p) {
           return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -170,7 +188,7 @@ function patchMaterial(material, trailTexture) {
         float snowRelief(vec2 p) {
           float drift = snowFbm(vec2(p.x * 0.16 + p.y * 0.05, p.y * 0.42));
           float grain = snowFbm(p * 1.6 + 17.0);
-          return drift * 0.72 + grain * 0.16;
+          return drift * 0.34 + grain * 0.10;
         }
       `,
       )
@@ -188,7 +206,7 @@ function patchMaterial(material, trailTexture) {
           // Innerhalb der Spur ist der Schnee glattgedrueckt.
           float packed = texture2D(uTrail, wp / uWorldSize + 0.5).r;
           vec3 rough = normalize(normal + (bump - vec3(0.0, 1.0, 0.0)) * 1.35);
-          normal = normalize(mix(rough, normal, packed * 0.8));
+          normal = normalize(mix(rough, normal, max(packed * 0.8, vPreparation * 0.94)));
         }
       `,
       )
@@ -236,7 +254,7 @@ function patchMaterial(material, trailTexture) {
   }
 
   // Erzwingt einen eigenen Programm-Cache-Eintrag.
-  material.customProgramCacheKey = () => 'snow-terrain-v3'
+  material.customProgramCacheKey = () => 'snow-terrain-v4'
   return material
 }
 

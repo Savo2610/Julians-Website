@@ -32,7 +32,7 @@ const frag = /* glsl */ `
     float main = 1.0 - smoothstep(0.0, 0.09, abs(t - 0.9 * breath));
     float echo = 1.0 - smoothstep(0.0, 0.16, abs(t - 0.55 * breath));
 
-    float alpha = (main * 0.85 + echo * 0.28) * (0.35 + uProximity * 0.65);
+    float alpha = (main * 0.85 + echo * 0.28) * (0.08 + uProximity * 0.92);
     if (alpha < 0.004) discard;
     gl_FragColor = vec4(uColor, alpha);
     #include <tonemapping_fragment>

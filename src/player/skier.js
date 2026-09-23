@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, WORLD } from '../config.js'
 import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark } from '../world/heightfield.js'
 import { createSkierModel } from './skier-model.js'
@@ -464,7 +465,7 @@ export class Skier {
   }
 
   _stampTrail(trail, groundY) {
-    if (!trail || this.airborne || this.speed < 0.25) {
+    if (!trail || this.airborne || this.speed < 0.25 || !isSnowSurface(this.position.x, this.position.z, 1.2)) {
       this._trailInit = false
       return
     }
@@ -480,7 +481,7 @@ export class Skier {
       const prev = this._trailPrev[i]
       if (this._trailInit) {
         const width = 0.5 + this.carving * 0.5 + Math.abs(this.turn) * 0.3
-        trail.stamp(prev.x, prev.y, wx, wz, width)
+        if (isSnowSurface((prev.x + wx) / 2, (prev.y + wz) / 2, width)) trail.stamp(prev.x, prev.y, wx, wz, width)
       }
       prev.set(wx, wz)
     }

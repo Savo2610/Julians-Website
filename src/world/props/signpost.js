@@ -4,7 +4,7 @@ import { assemble, vertexColorMaterial, labelTexture } from '../../core/geometry
 // Pistenschild an einem Stahlpfosten. Ein bis drei beschriftete Tafeln, wie
 // die Wegweiser an Kreuzungen im Skigebiet.
 
-const POST = 0x9099a3
+const POST = 0x6b4a35
 const SNOW = 0xf7fbff
 
 // Die Tafeln sind leicht nach oben geneigt. Aus der Draufsicht der Kamera
@@ -29,7 +29,7 @@ export function createSignpost(boards, { height = 2.3 } = {}) {
     position: [0, height + 0.02, 0],
   })
 
-  const body = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.55, metalness: 0.3 }))
+  const body = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.85, metalness: 0 }))
   body.castShadow = true
   body.receiveShadow = true
   group.add(body)
@@ -51,14 +51,9 @@ export function createSignpost(boards, { height = 2.3 } = {}) {
 
     const plate = new THREE.Mesh(
       new THREE.BoxGeometry(w, h, 0.05),
-      [
-        new THREE.MeshStandardMaterial({ color: board.background ?? 0x1c64c4, roughness: 0.45 }),
-        new THREE.MeshStandardMaterial({ color: board.background ?? 0x1c64c4, roughness: 0.45 }),
-        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.45 }),
-        new THREE.MeshStandardMaterial({ color: board.background ?? 0x1c64c4, roughness: 0.45 }),
-        new THREE.MeshStandardMaterial({ map: tex, roughness: 0.42 }),
-        new THREE.MeshStandardMaterial({ map: tex, roughness: 0.42 }),
-      ],
+      // Eine Texturmaterial-Gruppe statt sechs: jede neue Wegtafel kostete
+      // sonst sechs Draw Calls, obwohl nur ihre Vorderseite gelesen wird.
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 }),
     )
     plate.position.set(w * 0.42, y, 0)
     plate.rotation.set(BOARD_TILT, board.rotation ?? 0, 0, 'YXZ')

@@ -9,6 +9,9 @@ export const WORLD = {
   // neue Kreis ueberlappt den vorigen so weit, dass eine Taille entsteht
   // statt einer Naht.
   basins: [
+    // Die Seebucht gehoert zur Spielflaeche. Bisher hob der Gebirgsrand
+    // das aeussere Eis um bis zu 7,86 m an und drueckte Fahrer zurueck.
+    { x: -47, z: 41, radius: 20 },
     { x: 0, z: 0, radius: 66 },        // Talkessel mit Plateau und den drei Wegen
     { x: -58, z: -64, radius: 41 },    // Bergarm im Nordwesten: lange Abfahrt und Lift
     { x: 29, z: -45, radius: 32 },     // Sportgelaende im Nordosten: der Funpark
@@ -119,11 +122,11 @@ export const TRAIL = {
 
 export const COLORS = {
   snowLit:    0xfdfcff,
-  snowShade:  0x9fb4d8,
+  snowShade:  0xa7b7d7,
   snowDeep:   0x6f8ec4,
   sky:        0x86b9e8,
   skyHorizon: 0xf6e6d4,
-  sun:        0xfff0da,
+  sun:        0xffe4bd,
   ambient:    0x8fb0dc,
   fog:        0xd6e6f5,
   pine:       0x2c4a44,

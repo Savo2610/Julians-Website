@@ -3,7 +3,7 @@ import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 import { makeRng } from '../../core/rng.js'
 import { COLORS } from '../../config.js'
 
-// Tannen in drei Silhouetten. Jede Variante ist eine einzige gemergte
+// Drei Tannensilhouetten und eine kahle Laerche. Jede Variante ist eine gemergte
 // Geometrie mit Vertex-Farben und wird als InstancedMesh hunderfach gesetzt.
 
 function firGeometry(variant) {
@@ -25,11 +25,12 @@ function firGeometry(variant) {
       color: i % 2 === 0 ? COLORS.pine : COLORS.pineDark,
       position: [0, y + height * 0.5, 0],
     })
-    // Schneekappe: flacher Kegel knapp ueber dem Nadelkranz.
+    // Laengere Schneekappen verbinden die Etagen; bei 42 % Hoehe wirkten
+    // sie wie lose Scheiben statt wie Schnee auf zusammenhaengenden Aesten.
     parts.push({
-      geo: new THREE.ConeGeometry(radius * 0.94, height * 0.42, variant.sides, 1),
+      geo: new THREE.ConeGeometry(radius * 0.86, height * 0.68, variant.sides, 1),
       color: 0xf7fbff,
-      position: [0, y + height * 0.78, 0],
+      position: [0, y + height * 0.70, 0],
     })
     y += height * variant.overlap
   }
@@ -43,10 +44,35 @@ function firGeometry(variant) {
   return assemble(parts)
 }
 
+// Kahle Laerchen brechen die gleichfoermige Tannensilhouette. Nur in den
+// kleinen Talhainen, damit der dichte Bergwald seinen eigenen Charakter haelt.
+function larchGeometry() {
+  const parts = []
+  const branch = (from, to, radius, color) => {
+    const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to)
+    const direction = b.clone().sub(a)
+    const geo = new THREE.CylinderGeometry(radius * 0.45, radius, direction.length(), 5)
+    geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize()))
+    parts.push({ geo, color, position: a.add(b).multiplyScalar(0.5).toArray() })
+  }
+  branch([0, 0, 0], [0.12, 4.2, 0], 0.17, 0x8e6c53)
+  for (let i = 0; i < 9; i++) {
+    const angle = i * 2.4
+    const y = 1 + i * 0.32, reach = 1.45 - i * 0.10
+    const end = [Math.cos(angle) * reach, y + 0.35, Math.sin(angle) * reach]
+    branch([0, y, 0], end, 0.065, 0x795d49)
+    branch([end[0] * 0.68, y + 0.24, end[2] * 0.68], [end[0] * 1.12, y + 0.78, end[2] * 1.12], 0.035, 0x947359)
+    branch([0, y + 0.08, 0], [end[0] * 0.8, y + 0.36, end[2] * 0.8], 0.07, 0xf7f7ef)
+  }
+  return assemble(parts)
+}
+
 const VARIANTS = [
+  // Die drei bisherigen Indizes bleiben fuer den Bergwald stabil.
   { trunk: 1.1, tiers: 4, radius: 1.5, tierHeight: 1.9, sides: 7, overlap: 0.52, collide: 0.7 },
   { trunk: 0.9, tiers: 3, radius: 1.15, tierHeight: 1.6, sides: 6, overlap: 0.55, collide: 0.55 },
   { trunk: 1.5, tiers: 5, radius: 1.8, tierHeight: 2.1, sides: 8, overlap: 0.5, collide: 0.85 },
+  { bare: true, collide: 0.35 },
 ]
 
 export function createForest(world, placements) {
@@ -61,7 +87,7 @@ export function createForest(world, placements) {
   VARIANTS.forEach((variant, vi) => {
     const list = groups[vi]
     if (!list.length) return
-    const geo = firGeometry(variant)
+    const geo = variant.bare ? larchGeometry() : firGeometry(variant)
     const mesh = new THREE.InstancedMesh(geo, material, list.length)
     mesh.castShadow = true
     mesh.receiveShadow = true

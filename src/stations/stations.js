@@ -23,46 +23,8 @@ const FACING = CAMERA.azimuth
 // einer eigenen Lichtung stehen und von der vorigen aus sichtbar sein, damit
 // man von selbst weiterfaehrt.
 
-// Drei Wege fuehren vom Startplateau weg. Jede Station liegt an genau einem
-// davon, damit man einen Strang zu Ende fahren kann, ohne etwas zu verpassen.
-export const TRAILS = {
-  career: {
-    label: 'BERUF',
-    color: '#0a66c2',
-    markerColor: 0x3d7fc4,
-    // Nach Osten am Wegweiser vorbei in die Mulde mit der Huette und weiter
-    // bis zur Talstation des Zauberteppichs.
-    path: [[7, 27], [14, 26], [20, 23], [26, 21], [31, 19]],
-  },
-  social: {
-    label: 'SOZIALES',
-    color: '#c13584',
-    markerColor: 0xd06098,
-    // Nach Norden zum Telefon, dann nordwestlich zur Talstation des Lifts.
-    // Der letzte Punkt der Reihe liegt oben am Gipfel – dorthin faehrt man
-    // mit dem Lift.
-    path: [[0, 20], [1, 8], [0, -2], [-9, -4], [-19, -4], [-29, -6]],
-  },
-  // Vierter Weg: nach Nordosten ins Sportgelaende. Er endet nicht an einer
-  // Station, sondern am Zielraum der Rennstrecke – das Ziel des Weges ist
-  // das Gelaende selbst.
-  sport: {
-    label: 'SPORT',
-    color: '#d1552a',
-    markerColor: 0xdd7a3c,
-    path: [[9, 22], [17, 11], [22, 0], [20, -14], [17, -26], [15, -38], [15, -48]],
-  },
-  tools: {
-    label: 'TOOLS',
-    color: '#37b87c',
-    markerColor: 0x46b98a,
-    // Nach Westen, an der Stechuhr, der Rohrpost und dem Felsdurchgang
-    // vorbei. Er heisst nicht mehr WERKSTATT: die Werkstatt ist inzwischen ein
-    // Haus im Osten, und zwei Dinge desselben Namens an verschiedenen Enden
-    // des Tals sind einer zuviel.
-    path: [[-8, 27], [-18, 25], [-28, 21], [-36, 14], [-44, 6], [-49, -4]],
-  },
-}
+import { TRAILS } from '../world/paths.js'
+export { TRAILS } from '../world/paths.js'
 
 export const STATION_SPOTS = {
   // Weg 1 – beruflich

@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { isSnowSurface } from './world/surfaces.js'
 import './style.css'
 import './dialogs/dialogs.css'
 
@@ -56,7 +57,10 @@ scene.add(snowfall)
 // --- Schneestaub aus den Ski ------------------------------------------------
 let sprayAccum = 0
 function emitSpray(dt) {
-  if (skier.airborne || skier.speed < 1) return
+  if (skier.airborne || skier.speed < 1 || !isSnowSurface(skier.position.x, skier.position.z, 0.7)) {
+    sprayAccum = 0
+    return
+  }
   const intensity = skier.carving * 1.6 + Math.abs(skier.turn) * 1.1 + (skier.speed / SKIER.boostSpeed) * 0.35
   sprayAccum += intensity * 130 * dt
   const count = Math.floor(sprayAccum)

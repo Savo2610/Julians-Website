@@ -187,7 +187,9 @@ export function createParkSign({ title = 'FUNPARK', sub = null } = {}) {
     new THREE.PlaneGeometry(W * 0.9, 1.06),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
   )
-  label.position.set(0, boardY, 0.21)
+  // 6,5 cm entlang der Brettnormalen: 5 cm nur in Z lagen bei
+  // 30 Grad Neigung noch innerhalb der 9 cm dicken Tafel.
+  label.position.set(0, boardY - Math.sin(TILT) * 0.065, 0.16 + Math.cos(TILT) * 0.065)
   label.rotation.x = TILT
   group.add(label)
 

@@ -1,4 +1,8 @@
 import * as THREE from 'three'
+import { LANDSCAPE_PATHS, GROVES } from './landscape-layout.js'
+import { createLandscapeDetails } from './landscape-details.js'
+import { CONNECTIONS } from './paths.js'
+import { createWayfinding } from './wayfinding.js'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
@@ -19,6 +23,8 @@ import { RaceCourse } from './race.js'
 import { RailRide } from './rail-ride.js'
 import { SpeedCheck } from './speed-check.js'
 import { createRail, createPadMarker, createParkSign, createParkBox, createLipMarker } from './props/funpark.js'
+import { APRES } from './apres-layout.js'
+import { createApresTerrace } from './apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
 import { snowPaint } from './props/snow-paint.js'
@@ -30,20 +36,18 @@ import { createGorgeBridge } from './props/gorge-bridge.js'
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
 const CLEARINGS = [
+  // Die Quelle braucht ein freies Vorfeld; sonst verdecken die Ufertannen
+  // den neuen Blickfang komplett aus der festen Kamerarichtung.
+  { x: -58.5, z: 25, r: 5.5 },
   { x: PLATEAU.x, z: PLATEAU.z, r: PLATEAU.radius + 5 },   // Startplateau
   { x: LAKE.x, z: LAKE.z, r: LAKE.radius * 1.02 },
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
-  { x: 17.3, z: -60.6, r: 9 }, // Terrasse mit der Apres-Ski-Huette
+  { x: 24, z: -60, r: 12 }, // Terrasse mit der Apres-Ski-Huette
   { x: -33.0, z: -25.0, r: 8 },  // Lichtschranke des Speedchecks
   { x: -32.2, z: -37.6, r: 6 },  // Schneekanone darueber
   { x: -21.5, z: -24.5, r: 5 },  // Display des Speedchecks
-  // Angehaengte Plaetze wie die Tafel an der Werkstatt bringen keine eigene
-  // Lichtung mit – sie liegen in der ihres Bezugsobjekts, und ihre
-  // Koordinaten stehen an dieser Stelle ohnehin noch auf null.
-  ...Object.values(STATION_SPOTS)
-    .filter((s) => s.clearing)
-    .map((s) => ({ x: s.x, z: s.z, r: s.clearing })),
+
 ]
 
 // Zusaetzlich zu den runden Lichtungen gibt es Schneisen: Streifen entlang
@@ -69,10 +73,6 @@ const RETURN_PATH = [
   [-4, -27], [-10, -24], [-17, -21], [-23, -18], [-27, -15],
 ]
 
-// Die Apres-Ski-Huette oben am Funpark. Sie steht seitlich neben der
-// Terrasse, nicht mitten darauf – die Einfahrt bleibt frei.
-const APRES = { x: 17.3, z: -60.6 }
-
 const FREE_PISTE = [
   [-44, -52], [-41, -46], [-38, -40], [-34.5, -34],
   [-31, -28], [-28.5, -22], [-27, -14],
@@ -84,6 +84,9 @@ function inClearing(x, z, pad = 0) {
     const dz = z - c.z
     const r = c.r + pad
     if (dx * dx + dz * dz < r * r) return true
+  }
+  for (const spot of Object.values(STATION_SPOTS)) {
+    if (Math.hypot(x - spot.x, z - spot.z) < spot.clearing + pad) return true
   }
   for (const l of LANES) {
     const ax = l.x2 - l.x1
@@ -159,6 +162,10 @@ export function populate(world, sky, registry) {
   const rng = makeRng(20260902)
   const animatedProps = []
 
+  // Erst die flachen Stationsplaetze bestimmen: sonst bleibt der Wald an
+  // den alten Koordinaten frei und waechst in den tatsaechlichen Vorplatz.
+  const stations = populateStations(world, registry)
+
   createBackdrop(world.scene, { fogColor: world.scene.fog.color })
 
   // Lifttrasse als Waldschneise freihalten – ein Schlepplift laeuft nie durch
@@ -169,11 +176,11 @@ export function populate(world, sky, registry) {
   // selbst, weil dort kaum Wald stand – seit der Wald dichter ist, muessen
   // sie es ausdruecklich sein. Ein markierter Weg, der von Baeumen versperrt
   // wird, ist schlimmer als gar keiner.
-  for (const trail of Object.values(TRAILS)) {
+  for (const trail of [...Object.values(TRAILS), ...CONNECTIONS, ...LANDSCAPE_PATHS]) {
     for (let i = 0; i < trail.path.length - 1; i++) {
       const [x1, z1] = trail.path[i]
       const [x2, z2] = trail.path[i + 1]
-      LANES.push({ x1, z1, x2, z2, r: 5 })
+      LANES.push({ x1, z1, x2, z2, r: trail.width ? trail.width / 2 + 1 : 5 })
     }
   }
   // Die freie Abfahrt braucht keine Gelaendeformung, aber eine Schneise –
@@ -229,6 +236,8 @@ export function populate(world, sky, registry) {
     terrainNormal(x, z, n)
     return 1 - n.y
   }
+
+  let apresTerrace
 
   // --- Wald ------------------------------------------------------------
   // Dichter Guertel aussen, lockere Gruppen innen: der Wald ist die weiche
@@ -291,7 +300,24 @@ export function populate(world, sky, registry) {
   // ohne Anlass, und der Hang zwischen Plateau und Kinderland ist mit ihm
   // wieder frei zu befahren.
 
+  // Kleine Gruppen auf den Ruecken rahmen die neuen Fahrpassagen ein.
+  // Sie nutzen dieselben Freizonen wie der Wald, damit kein Astweg zuwaechst.
+  const groveRng = makeRng(210926)
+  const groveTrees = []
+  for (const grove of GROVES) {
+    for (let i = 0; i < grove.count * 8 && groveTrees.filter(p => p.grove === grove).length < grove.count; i++) {
+      const angle = groveRng() * Math.PI * 2
+      const radius = Math.sqrt(groveRng()) * grove.radius
+      const x = grove.x + Math.cos(angle) * radius, z = grove.z + Math.sin(angle) * radius
+      if (inClearing(x, z, -0.4)) continue
+      if ([...placements, ...groveTrees].some(p => Math.hypot(p.x - x, p.z - z) < 2.3)) continue
+      groveTrees.push({ x, z, grove, variant: i % 4, rotation: angle, scale: 0.65 + groveRng() * 0.35, shade: groveRng() })
+    }
+  }
+  placements.push(...groveTrees)
   createForest(world, placements)
+  const landscape = createLandscapeDetails(world, groveTrees)
+  animatedProps.push((t, dt) => landscape.update(dt, skierRef.current))
 
   // --- Felsen -----------------------------------------------------------
   const rockSpots = scatter(rng, {
@@ -304,7 +330,10 @@ export function populate(world, sky, registry) {
       // Felsen brechen bevorzugt aus steilen Flanken heraus, und oberhalb der
       // Baumgrenze praegen sie den Gipfel.
       const alpine = terrainHeight(x, z) > 20 ? 0.3 : 0
-      return rng() < 0.16 + s * 1.4 + alpine
+      // Im Tal bilden Findlinge Gruppen am Waldrand; einzelne Zufallssteine
+      // zwischen Stationen wirkten wie verstreute Requisiten.
+      const edge = THREE.MathUtils.smoothstep(playAreaDistance(x, z), -24, -5)
+      return rng() < 0.025 + edge * 0.16 + s * 1.4 + alpine
     },
   })
   createRocks(
@@ -335,7 +364,7 @@ export function populate(world, sky, registry) {
 
   // --- Umgestuerzte Baeume am Waldrand ----------------------------------
   for (const [i, spot] of [
-    { x: -8, z: -16, rot: 0.9 },
+    { x: -2, z: -10, rot: 0.9 },
     { x: -46, z: 12, rot: 1.7 },
   ].entries()) {
     const log = createFallenTree(i * 977 + 13)
@@ -346,11 +375,11 @@ export function populate(world, sky, registry) {
     }
   }
 
-  // --- Stationen ---------------------------------------------------------
-  const stations = populateStations(world, registry)
+  // --- Orientierung ------------------------------------------------------
+  createWayfinding(world)
 
   // --- Wegfuehrung --------------------------------------------------------
-  // Jeder der drei Wege bekommt Pistenstangen in seiner Farbe. Sie haben keine
+  // Jeder der vier Wege bekommt Pistenstangen in seiner Farbe. Sie haben keine
   // Kollision – sie sind Einladung, kein Zaun.
   const route = (waypoints, spacing) => {
     const curve = new THREE.CatmullRomCurve3(
@@ -369,7 +398,7 @@ export function populate(world, sky, registry) {
   const markerRows = []
 
   for (const [key, trail] of Object.entries(TRAILS)) {
-    markerRows.push(createPisteMarkers(world, route(trail.path, 4.6), {
+    markerRows.push(createPisteMarkers(world, route(trail.path, 9), {
       seed: key.length * 137 + 5,
       color: trail.markerColor,
     }))
@@ -391,7 +420,7 @@ export function populate(world, sky, registry) {
   // gegen die eigene Kulisse gefahren. Jetzt faehrt man hindurch und legt
   // dabei um, was im Weg war; nach ein paar Sekunden steht es wieder.
   const torches = []
-  const torchCount = 18
+  const torchCount = 10
   for (let i = 0; i < torchCount; i++) {
     const angle = (i / torchCount) * Math.PI * 2
     if (nearExit(angle)) continue
@@ -440,7 +469,7 @@ export function populate(world, sky, registry) {
     const sz = PLATEAU.z + Math.cos(angle) * (torchRadius - 0.4) - Math.sin(angle) * 2.2
 
     const sign = createSignpost([
-      { text: trail.label, background: trail.color, width: 2.3, height: 0.6, rotation: angle - Math.PI * 0.25 },
+      { text: trail.label, background: trail.color, width: 3.2, height: 0.65, rotation: 0 },
     ], { height: 2.6 })
     world.place(sign, sx, sz, { rotation: Math.PI * 0.25 })
     world.addCollider(sx, sz, 0.45)
@@ -469,7 +498,7 @@ export function populate(world, sky, registry) {
         const dx = (x2 - x1) / len
         const dz = (z2 - z1) / len
         for (let d = carry; d < len; d += 16) {
-          paint.chevron(x1 + dx * d, z1 + dz * d, dx, dz, 2.2, tone)
+          paint.chevron(x1 + dx * d, z1 + dz * d, dx, dz, 1.5, tone)
         }
         carry = Math.max(0, carry - len) || (16 - ((len - carry) % 16))
       }
@@ -604,7 +633,7 @@ export function populate(world, sky, registry) {
     // aus, sondern nach Fehler.
     const inKlamm = (p) => Math.hypot(p.x - BRUECKE.x, p.z - BRUECKE.z) < 9
     for (const [versatz, seed] of [[6.2, 71], [-6.2, 73]]) {
-      markerRows.push(createPisteMarkers(world, route(seite(versatz), 5.4).filter((p) => !inKlamm(p)), {
+      markerRows.push(createPisteMarkers(world, route(seite(versatz), 5.4).filter((p) => !inKlamm(p) && !(p.x > 17 && p.x < 32 && p.z > -68 && p.z < -49)), {
         seed, color: 0x2f6bd8,
       }))
     }
@@ -721,7 +750,8 @@ export function populate(world, sky, registry) {
     { x: 29.8, z: 50.9 }, { x: 23.5, z: 54.1 },
   ], { seed: 41 })
   createFence(world, [
-    { x: -24, z: 44 }, { x: -30, z: 52 }, { x: -42, z: 54 },
+    // Am Ufer statt auf dem Eis: der letzte Pfosten lag 2 m im See.
+    { x: -26, z: 47 }, { x: -32, z: 56 }, { x: -42, z: 60 },
   ], { seed: 77 })
   createFence(world, [
     { x: 14, z: -46 }, { x: 2, z: -50 }, { x: -12, z: -48 },
@@ -746,25 +776,25 @@ export function populate(world, sky, registry) {
 
     // Eingangsschild an der Einfahrt in den Park – dort, wo die Terrasse
     // endet und es steil wird, nicht am obersten Ende des Bandes.
-    const drop = lane.points[2]
-    const dDrop = dirAt(2)
-    const signX = drop.x + dDrop.dz * 8.5 + dDrop.dx * 1.5
-    const signZ = drop.z - dDrop.dx * 8.5 + dDrop.dz * 1.5
+    const signX = 13
+    const signZ = -49
     const sign = createParkSign({ title: 'FUNPARK', sub: 'Wellen, Kicker, Boxen' })
     world.place(sign, signX, signZ, { rotation: Math.PI * 0.25 })
     world.addCollider(signX, signZ, 0.8)
 
     // --- Apres-Ski auf der Terrasse ---------------------------------------
-    // Oben liegt jetzt ein Absatz mit sieben Grad, davor geht es mit gut
-    // zwanzig hinein. Genau dort steht die Huette: an der einzigen Stelle im
-    // Park, an der man von selbst stehenbleibt.
-    const apres = createApresSki({ label: 'APRES-SKI' })
-    world.place(apres, APRES.x, APRES.z, { rotation: Math.PI * 0.25 })
-    // Das Haus ist ein Block, die Terrasse davor eine Flaeche – zwei Kreise
-    // reichen, damit man nicht hindurchfaehrt.
-    world.addCollider(APRES.x, APRES.z, 2.4)
-    world.addCollider(APRES.x + 3.2, APRES.z + 3.2, 2.6)
+    // Das Haus steht auf der rechten Hangschulter. Nur der flache Vorplatz
+    // liegt in der Verbindung zwischen Nordabfahrt und Park.
+    const apres = createApresSki()
+    world.place(apres, APRES.house.x, APRES.house.z, { rotation: APRES.house.yaw })
+    world.addCollider(APRES.house.x, APRES.house.z, 2.4)
+    for (const [x, z, r] of [[-2.6, 1.2, 0.45], [2.6, 1.2, 0.45], [-2.8, 2.25, 0.25]]) {
+      const c = Math.cos(APRES.house.yaw), s = Math.sin(APRES.house.yaw)
+      world.addCollider(APRES.house.x + x * c + z * s, APRES.house.z - x * s + z * c, r)
+    }
+    apresTerrace = createApresTerrace(world)
     animatedProps.push(apres.userData.animate)
+    animatedProps.push((t, dt) => apresTerrace.update(dt, skierRef.current))
 
     // Das Rail liegt auf der Schneekante und laeuft mit ihr. Es ist jetzt
     // laenger und an den rechten Rand des Bandes gerueckt – zwischen den
@@ -918,5 +948,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { lake, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
+  return { apresTerrace, landscape, lake, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
 }

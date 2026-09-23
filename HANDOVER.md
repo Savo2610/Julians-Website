@@ -7,6 +7,155 @@ gewählte, und ist es nicht.
 
 ---
 
+## Korrektur nach Rueckmeldung: Oberflaechen und Huettenensemble 22.09.2026
+
+Diese Fassung ersetzt die rechteckige Terrasse und den westlichen Standort
+im folgenden Eintrag. Die Huette steht jetzt **rechts bei (23, -64)**, weiterhin
+mit der Front zur festen Kamera. Ein gemeinsamer lokaler Grundriss verbindet
+Haustuer und asymmetrischen Terrassenfluegel zur Piste. Die Dielen werden an
+der neuneckigen Kontur zugeschnitten; keine frei liegende rechteckige Platte.
+Drei Sitzgruppen, zwei an der Fassade angeschlossene Lichterketten und nur
+hangseitige Bruestungen bilden einen zusammenhaengenden Vorplatz. Die linke
+Piste bleibt frei. Funparkschild aus dem Vorplatz an die Piste versetzt und
+seine im Brett verschwundene Beschriftung korrigiert; Wegweiser trennt jetzt
+Huette und Park mit passenden Pfeilen.
+
+**Ursache der weissen Spuren:** Der Fahrer stempelte auch auf Eis und Holz
+in die Schneetextur. Deren aufgeworfener Rand ragte durch die nur 1,2 cm hoeheren
+Belagsmeshes. `surfaces.js` teilt jetzt die echten See- und Terrassenkonturen
+mit Spurerzeugung, Schneestaub und Terrain-Displacement. Sicherheitsabstand
+fuer Skibreite und Spurrand; die Spurkette wird beim Materialwechsel getrennt.
+Der Shader sperrt Verformung unter festen Oberflaechen zusaetzlich. Eisfarbe
+staerker abgesetzt; kein Schneestaub auf Eis oder Holz.
+
+Verifikation: `node --test tests/surfaces.test.js` (drei Regressionstests)
+prueft Materialgrenzen, unterbrochene Spuren und bewegliche Moebel. Im Browser
+mit echtem Fahrmodell und echten gerenderten Spuren gefahren: Eis und Holz
+jeweils **0 Stempel**, Schneestrecke **98 Stempel**. Zu- und Ausfahrt erreichen
+ihr Ziel; die Ausfahrt endet auf den Parkwellen (0,43 m Airtime), Eis/Holz/
+Zufahrt bleiben am Boden. Sichtpruefung nach den Fahrten: kein weisser Belag
+auf dem Holz, umgefahrene Moebel reagieren. Produktionsbuild und Diffpruefung
+bestanden. Temporaere Browser-Pruefseite wieder entfernt.
+
+---
+
+## Huette, Terrasse und Seebucht 22.09.2026
+
+Die Huette steht jetzt am westlichen Rand des Parkzugangs bei (0, -63),
+mit unveraenderter Schauseite zur festen Kamera. Die alte erhoehte Terrasse
+und ihre grosse Kollisionsscheibe sind entfernt. `apres-layout.js` legt eine
+13 × 11 m grosse, leicht geneigte Bodenflaeche fest. `apresGround()` formt sie
+nach den Pistenbaendern; der Holzbelag folgt derselben Hoehenfunktion mit
+1,2 cm Abstand. Vier Schneezungen, getragene Lichterketten, ein sichtbares
+Fenster und eine Tuer verbinden Haus und Vorplatz. Zwei sichtbare Musikboxen;
+kein Ton, entsprechend der bestehenden Entscheidung.
+
+`apres-terrace.js` baut drei Tische und sechs Baenke. Fahrtkontakt wird auf dem
+letzten Bewegungssegment geprueft; Moebel rutschen und kippen entsprechend
+Fahrtrichtung und Tempo. Gedrehte Stuetzpunkte nehmen das lokale Gelaende ab.
+Die Moebel bleiben zehn Sekunden liegen und richten sich erst wieder auf,
+wenn der Fahrer mindestens sieben Meter von Objekt und Stellplatz entfernt
+ist. Keine neue Physikbibliothek. Ruhende Moebel ueberspringen Hoehenproben.
+Debug: `window.__ski.props.apresTerrace.bodies` und `.hits`.
+
+Die Seeoberflaeche lag bisher ueber unebenem Boden; zusaetzlich hob der
+Gebirgsrand Teile des Eises um bis zu 7,86 m an. Eine eigene kleine Seebucht
+in `WORLD.basins` macht das gesamte Eis befahrbar. `lakeRadius()` teilt die
+unregelmaessige Uferkontur zwischen Mesh und Hoehenfeld, Seehoehe -3 m,
+weicher vier Meter breiter Ufersaum. Der Uferzaun steht jetzt ausserhalb des
+Eises. Pistenstangen im Huettenbereich und der Wegweiser wurden versetzt bzw.
+ausgespart, damit sie nicht in Haus und Durchfahrt stehen.
+
+Pruefung: sechs Fahrten mit echtem `Skier.update()` und Weltkollision im
+Browser; alle Ziele in 0,85–2,78 s erreicht, keine ungewollte Airtime.
+Die freie Spur (7,8/-66 → 7,8/-53) hat null Moebeltreffer. Gezielte Fahrten
+bewegen alle neun Moebel, Rueckstellung nach Entfernung mit < 1e-10 m Fehler.
+Separat geprueft: kein Treffer vier Meter ueber dem Tisch; keine Rueckstellung
+neben dem wartenden Fahrer. Radiale Seeproben: exakt 0 m Hoehenabweichung zum
+Eisniveau (ausgenommen 1,2 cm sichtbarer Belag). Huette und See visuell im
+Browser geprueft. `npm run build` und `git diff --check` erfolgreich.
+Kein Git-Remote konfiguriert; externer Versionsabgleich weiterhin unmoeglich.
+
+---
+
+## Landschaftsupdate 21.09.2026
+
+Auf Wunsch nach mehr Fahr- und Entdeckungslust (Referenz: Bruno Simons
+befahrbares Portfolio) ist jetzt auch die Landschaft selbst gestaltet:
+
+- `landscape-layout.js`: sechs niedrige Schneeruecken, drei sanfte Bodenwellen
+  und drei Nebenstrecken (Waldpassage, Sonnenrunde hinter der Werkstatt,
+  Uferweg). Die Formen sind maximal 2,8 m hoch und werden **vor** den
+  bestehenden Pistenbaendern in `terrainHeight()` addiert.
+- Die Nebenstrecken teilen Wald-Freihaltung und Schnee-Praeparierung mit dem
+  Wegenetz. Der Talplan zeigt sie ebenfalls, weitere Schilder brauchen sie
+  nicht. 20 gezielt gesetzte Baeume gliedern die sechs kleinen Haine; kahle
+  Laerchen ergaenzen die Tannen. Die Schneekappen der Tannen sind laenger und
+  weniger scheibenfoermig.
+- `landscape-details.js`: gefrorene Felsquelle am oberen Seeufer, Bank am
+  Uferweg und reaktive Schneeschauer an den Hainbaeumen. Ein gemeinsamer
+  Puffer mit 180 Partikeln, Ausloesung bei Fahrt innerhalb 3,6 m, danach 12 s
+  Sperre. `window.__ski.props.landscape` liefert `treeCount` und `bursts`.
+- Waermeres Sonnenlicht, etwas kuerzere Schatten, ruhigere Schnee-Normalen und
+  700 statt 1400 Wetterflocken lassen die Formen deutlicher lesen.
+
+Pruefung im Browser: alle drei Wege in beide Richtungen mit echtem
+`Skier.update()` und automatischer Lenkung befahren. Alle sechs Fahrten kamen
+in 3,3–4,4 s ohne Kollision an. Dabei wurden vier Schneeschauer ausgeloest.
+Zusaetzlich alle Mittellinien alle 0,5 m gegen die echten Kollisionskreise plus
+0,55 m Fahrerbreite geprueft: keine Treffer. Der umgefallene Stamm musste aus
+der Waldpassage auf den angrenzenden Ruecken weichen, die Uferbank neben die
+Fahrspur. Die Quelle erhielt eine Lichtung, weil sie sonst ganz verdeckt war.
+
+Hoehenvergleich gegen `HEAD`: Stuetzpunkte plus 3-m-Nachbarschaften aller fuenf
+Pistenbaender unveraendert; auch die Stegmitte hat exakt dieselbe Hoehe.
+Laengsprofile der neuen Wege maximal 25,4 / 35,5 / 7,9 Grad (die Sonnenrunde
+quert auch den bestehenden Plateaurand). Diese Zahlen sind Stichproben und
+keine Aussage ueber jeden Quadratmeter des Gelaendes.
+Sichtkontrolle von Talmitte, Quelle/Ufer und Sonnenrunde; dort rund 302–361
+Draw Calls und 840–854 k Dreiecke. Build und Diff-Pruefung erfolgreich.
+Kamera, Fahrmodell, Stationsziele und die stillgelegten Ideen bleiben erhalten.
+
+---
+
+## Gestaltungsupdate 21.09.2026
+
+Ausgangspunkt: lokales `main` auf `4851caa`. Kein Remote konfiguriert; ein
+Abgleich mit einem externen Repository war daher nicht moeglich.
+
+Das Tal hat jetzt ein gemeinsames Wegenetz statt vier isolierter Arme:
+`src/world/paths.js` enthaelt die bisherigen `TRAILS` und sechs Verbindungen.
+Werkstatt, Kontakt, Tools und Lift sind verbunden; schmalere Abzweige fuehren
+zum See/Loeschzug und zur Drohne. Gipfelzugang und Parkanschluss folgen den
+vorhandenen Haengen. Die Mittellinien steuern sowohl Waldschneisen als auch
+die Praeparierung im Terrainmaterial (kuehlerer, glatterer Schnee mit weichem
+Rand). Keine zweite Hoehenquelle, keine neue Kameraregel.
+
+`src/world/wayfinding.js` baut einen niedrigen Talplan am Start und sechs
+Wegweiser an Entscheidungen. Die Karte folgt der festen Kameraprojektion;
+Pfeile beziehen sich ebenfalls auf die sichtbare Richtung. Alle Tafeln schauen
+zur Kamera. Gedeckte Wegfarben und Holzpfosten ersetzen die bunteren Schilder;
+Stangen stehen alle 9 statt 4,6 Meter, Bodenpfeile sind 1,5 statt 2,2 Meter
+gross. Stationsringe treten erst beim Annaehern deutlich hervor. Der
+Fackelkranz ist ausgeduennt, zufaellige Felsen konzentrieren sich staerker auf
+Flanken und Waldrand.
+
+Stationen werden jetzt **vor** der Bepflanzung auf flache Plaetze verschoben.
+Ihre Lichtungen benutzen die korrigierten Koordinaten, nicht mehr die alten.
+Neue Verbindungen enden vor den Stationsobjekten und umrunden den Loeschzug
+sowie den westlichen Pfosten des Nordtors.
+
+Pruefung: Startplatz, Tools/See-Abzweig und Nordabfahrt/Park im Browser
+angesehen. Alle sechs neuen Verbindungen mit 0,5-m-Schritten gegen die echten
+Kollisionskreise inklusive 0,55 m Fahrerbreite geprueft: keine Treffer.
+Startansicht bei 1280 × 800: 339 Draw Calls, rund 837.000 Dreiecke.
+Schildtafeln verwenden ein Material statt sechs, damit die neue Orientierung
+nicht sechs Draw Calls pro Tafel kostet. Build und `git diff --check` erfolgreich.
+Der temporaere Browser-Pruefeinstieg wurde wieder entfernt. Die im Browser
+vorhandenen Three.js-Deprecation-Warnungen bleiben ein separates Thema.
+
+---
+
 ## 1. Was das ist
 
 Ein Three.js-Skigebiet, durch das man fährt, um Julians Links zu finden. Es

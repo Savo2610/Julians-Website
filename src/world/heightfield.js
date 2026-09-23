@@ -1,3 +1,5 @@
+import { apresGround } from './apres-layout.js'
+import { landscapeHeight } from './landscape-layout.js'
 import { WORLD } from '../config.js'
 import { fbm } from '../core/noise.js'
 
@@ -55,17 +57,19 @@ function ridgeAlong(x, z, pts, radius) {
   return bestAmp * f * f
 }
 
-// Weiche Senke mit flachem Boden – fuer den zugefrorenen See.
-function basin(x, z, cx, cz, radius, depth, flat) {
-  const dx = (x - cx) / radius
-  const dz = (z - cz) / radius
-  const d = Math.sqrt(dx * dx + dz * dz)
-  if (d >= 1) return 0
-  const edge = smooth(Math.min(1, Math.max(0, (1 - d) / (1 - flat))))
-  return -depth * edge
+// Eine gemeinsame Uferkontur fuer Hoehenfeld und Eis verhindert, dass die
+// Ski unter der sichtbaren Flaeche fahren. Vier Meter Saum runden den Einstieg.
+export const LAKE = { x: -47, z: 41, radius: 17, level: -3.0 }
+export function lakeRadius(angle) {
+  return LAKE.radius * (0.92 + Math.sin(angle * 5) * 0.035 + Math.sin(angle * 9 + 2) * 0.022)
 }
-
-export const LAKE = { x: -47, z: 41, radius: 17, level: -1.2 }
+function lakeGround(x, z, height) {
+  const dx = x - LAKE.x, dz = z - LAKE.z
+  const distance = Math.hypot(dx, dz) - lakeRadius(Math.atan2(dz, dx))
+  if (distance >= 4) return height
+  const blend = smooth(Math.max(0, Math.min(1, 1 - distance / 4)))
+  return height + (LAKE.level - height) * blend
+}
 
 // Der Startplatz ist ein echtes Plateau: flach genug zum Abstecken, leicht
 // erhoeht, damit man von dort in die drei Taeler blickt.
@@ -655,9 +659,13 @@ export function terrainHeight(x, z) {
   // Mulde, in der die Huette steht.
   h += bump(x, z, 33, 17, 19, -2.6)
 
+  // Handgeformte Ruecken und Wellen gliedern die bisher leeren Talraeume.
+  // Vor den Pistenbaendern, damit bestehende Anlagen ihre Hoehen behalten.
+  h += landscapeHeight(x, z)
+
   // Zugefrorener See. Bewusst flach: man soll hineinfahren koennen, ohne in
   // ein Loch zu fallen.
-  h += basin(x, z, LAKE.x, LAKE.z, LAKE.radius, 2.4, 0.5)
+  h = lakeGround(x, z, h)
 
   // Renn- und Funparkband: ziehen ihren Streifen auf gleichmaessiges Gefaelle.
   // Das feine Rauschen kommt danach wieder drauf, damit die Bahn nicht wie
@@ -675,6 +683,10 @@ export function terrainHeight(x, z) {
     }
     h = h * (1 - hit.weight) + (target + grain) * hit.weight
   }
+
+  // Die befahrbare Terrasse gliedert den Uebergang ein. Ihre Ebene kommt
+  // nach den Baendern, damit Holz und Ski dieselbe Hoehe bekommen.
+  h = apresGround(x, z, h)
 
   // Die Figuren im Funpark sitzen auf dem geglaetteten Band – deshalb erst
   // hier, nach der Bandformung.

@@ -60,7 +60,9 @@ const skyFrag = /* glsl */ `
 `
 
 export function createSky(scene, renderer) {
-  const sunDir = new THREE.Vector3(-0.55, 0.34, 0.76).normalize()
+  // Etwas hoeher: die Waldschatten sollen die kleinen Talwellen nicht
+  // vollstaendig verschlucken, waehrend der warme Gegenlichtcharakter bleibt.
+  const sunDir = new THREE.Vector3(-0.55, 0.42, 0.76).normalize()
 
   const geo = new THREE.SphereGeometry(WORLD.size * 2.2, 32, 20)
   const mat = new THREE.ShaderMaterial({
@@ -83,7 +85,7 @@ export function createSky(scene, renderer) {
 
   scene.fog = new THREE.FogExp2(COLORS.fog, 0.0052)
 
-  const sun = new THREE.DirectionalLight(COLORS.sun, 2.5)
+  const sun = new THREE.DirectionalLight(COLORS.sun, 2.7)
   sun.position.copy(sunDir).multiplyScalar(90)
   sun.castShadow = true
   sun.shadow.mapSize.set(2048, 2048)
@@ -99,12 +101,12 @@ export function createSky(scene, renderer) {
   scene.add(sun)
   scene.add(sun.target)
 
-  const hemi = new THREE.HemisphereLight(COLORS.sky, COLORS.ambient, 1.35)
+  const hemi = new THREE.HemisphereLight(COLORS.sky, COLORS.ambient, 1.1)
   scene.add(hemi)
 
   // Kaltes Fuell-Licht aus der Gegenrichtung, damit Schattenseiten blau
   // statt schwarz werden.
-  const fill = new THREE.DirectionalLight(COLORS.ambient, 0.8)
+  const fill = new THREE.DirectionalLight(COLORS.ambient, 0.6)
   fill.position.set(sunDir.x * -70, 40, sunDir.z * -70)
   scene.add(fill)
 

@@ -1,10 +1,9 @@
 import * as THREE from 'three'
-import { LAKE, terrainHeight } from '../heightfield.js'
-import { makeRng } from '../../core/rng.js'
+import { LAKE, lakeRadius } from '../heightfield.js'
 
 // Zugefrorener See: eine leicht unregelmaessige Scheibe aus Eis, darauf
 // Schneeverwehungen und ein paar Risse. Man kann darueber fahren – das Eis
-// ist glatter als Schnee, was man beim Lenken merkt.
+// liegt auf derselben Hoehe wie der befahrbare Boden.
 
 const iceVert = /* glsl */ `
   varying vec2 vXZ;
@@ -54,21 +53,21 @@ const iceFrag = /* glsl */ `
     // Risse: scharfe Adern aus gefaltetem Rauschen.
     float veins = abs(fbm(vXZ * 0.22) - 0.5) * 2.0;
     float crack = 1.0 - smoothstep(0.02, 0.10, veins);
-    col = mix(col, uCrack, crack * 0.55);
+    col = mix(col, uCrack, crack * 0.3);
 
     // Verwehter Schnee auf dem Eis.
     float drift = smoothstep(0.52, 0.78, fbm(vXZ * 0.13 + 21.0));
     drift = max(drift, smoothstep(0.72, 1.0, r));
-    col = mix(col, vec3(0.96, 0.98, 1.0), drift * 0.9);
+    col = mix(col, vec3(0.96, 0.98, 1.0), drift * 0.65);
 
     // Glanz: sehr flacher, breiter Highlight-Streifen.
     vec3 V = normalize(uCameraPos - vWorld);
     vec3 H = normalize(V + normalize(uSunDir));
     float spec = pow(max(H.y, 0.0), 90.0) * (1.0 - drift * 0.85);
-    col += vec3(1.0, 0.97, 0.9) * spec * 0.7;
+    col += vec3(1.0, 0.97, 0.9) * spec * 0.24;
 
     float fres = pow(1.0 - max(V.y, 0.0), 3.0) * (1.0 - drift);
-    col = mix(col, vec3(0.86, 0.93, 1.0), fres * 0.5);
+    col = mix(col, vec3(0.86, 0.93, 1.0), fres * 0.22);
 
     float d = length(uCameraPos - vWorld);
     float fogAmount = 1.0 - exp(-uFogDensity * uFogDensity * d * d);
@@ -81,26 +80,23 @@ const iceFrag = /* glsl */ `
 `
 
 export function createLake(world, { fogColor, fogDensity, sunDir }) {
-  const rng = makeRng(9182)
   const segments = 96
-  const geo = new THREE.CircleGeometry(LAKE.radius * 0.94, segments)
-  // Rand leicht ausfransen, damit die Eiskante nicht wie ein Zirkel aussieht.
+  const geo = new THREE.CircleGeometry(1, segments)
+  geo.rotateX(-Math.PI / 2)
   const pos = geo.attributes.position
   for (let i = 1; i < pos.count; i++) {
-    const x = pos.getX(i)
-    const y = pos.getY(i)
-    const a = Math.atan2(y, x)
-    const wobble = 1 + Math.sin(a * 5.3) * 0.035 + Math.sin(a * 11.1 + 2) * 0.022 + (rng() - 0.5) * 0.02
-    pos.setXY(i, x * wobble, y * wobble)
+    const angle = Math.atan2(pos.getZ(i), pos.getX(i))
+    const radius = lakeRadius(angle)
+    pos.setXYZ(i, Math.cos(angle) * radius, 0, Math.sin(angle) * radius)
   }
-  geo.rotateX(-Math.PI / 2)
+  geo.computeBoundingSphere()
 
   const material = new THREE.ShaderMaterial({
     vertexShader: iceVert,
     fragmentShader: iceFrag,
     uniforms: {
-      uDeep: { value: new THREE.Color(0x6fa3c4) },
-      uShallow: { value: new THREE.Color(0xa9cfe2) },
+      uDeep: { value: new THREE.Color(0x397d94) },
+      uShallow: { value: new THREE.Color(0x83b8c8) },
       uCrack: { value: new THREE.Color(0xe6f3fa) },
       uRadius: { value: LAKE.radius },
       uSunDir: { value: sunDir.clone() },
@@ -112,7 +108,7 @@ export function createLake(world, { fogColor, fogDensity, sunDir }) {
 
   const mesh = new THREE.Mesh(geo, material)
   // Eishoehe: knapp ueber dem Beckenboden, damit der Uferrand sauber ansetzt.
-  const level = terrainHeight(LAKE.x, LAKE.z) + 0.55
+  const level = LAKE.level + 0.012
   mesh.position.set(LAKE.x, level, LAKE.z)
   mesh.receiveShadow = true
   mesh.name = 'lake'
@@ -127,7 +123,7 @@ export function createLake(world, { fogColor, fogDensity, sunDir }) {
     contains(x, z) {
       const dx = x - LAKE.x
       const dz = z - LAKE.z
-      return dx * dx + dz * dz < LAKE.radius * LAKE.radius * 0.88
+      return Math.hypot(dx, dz) < lakeRadius(Math.atan2(dz, dx))
     },
   }
 }

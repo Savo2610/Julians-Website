@@ -4,7 +4,7 @@ import * as THREE from 'three'
 // der dem Fahrer folgt und sich an den Raendern wiederholt – so reichen wenige
 // tausend Punkte fuer den Eindruck, dass es im ganzen Tal schneit.
 
-const COUNT = 1400
+const COUNT = 700
 const BOX = 46
 const HEIGHT = 26
 

@@ -245,6 +245,48 @@
       min-height: 1.4em;
     }
 
+    /* Hinweis auf das Skiportfolio, das diese Seite einmal ablösen soll.
+       Er sitzt im Kopf und nicht zwischen den Kacheln: die Tool-Spalte ist
+       auf vier Kacheln ausgelegt, eine fünfte hätte sie länger gemacht als
+       die Social-Media-Spalte daneben. Der Kopf misst seine Höhe selbst
+       nach (--kopf-h), darunter springt also nichts. */
+    .beta-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+      padding: 0.42rem 0.9rem 0.42rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+      text-decoration: none;
+      background: rgba(15,15,26,0.7);
+      border: 1px solid rgba(124,111,255,0.45);
+      box-shadow: 0 0 0 0 rgba(124,111,255,0.35);
+      pointer-events: auto;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .beta-link:hover,
+    .beta-link:focus-visible {
+      border-color: var(--accent3);
+      box-shadow: 0 0 22px rgba(111,255,212,0.25);
+      transform: translateY(-1px);
+      outline: none;
+    }
+    .beta-marke {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.5rem;
+      border-radius: 999px;
+      color: var(--bg);
+      background: linear-gradient(135deg, var(--accent3), var(--accent));
+    }
+    .beta-pfeil { color: var(--muted); transition: transform 0.25s ease; }
+    .beta-link:hover .beta-pfeil { transform: translateX(3px); color: var(--accent3); }
+
     /* Typing cursor */
     .cursor {
       display: inline-block;
@@ -973,6 +1015,11 @@
     </div>
     <h1>Julian Veerkamp</h1>
     <p class="tagline"><span id="typed"></span><span class="cursor"></span></p>
+    <a class="beta-link" href="https://beta.veerka.mp" target="_blank" rel="noopener">
+      <span class="beta-marke">Beta</span>
+      <span>⛷️ Mein Skiportfolio ausprobieren</span>
+      <span class="beta-pfeil" aria-hidden="true">→</span>
+    </a>
   </header>
   <div class="hero-platz" aria-hidden="true"></div>
 

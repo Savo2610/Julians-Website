@@ -13,11 +13,12 @@ import { schliessbar } from './dialog.js';
 export const EMPFAENGER = 'BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da';
 
 // Nur für den Blockhash. Gesendet wird über die Wallet, nicht über uns.
-// api.mainnet-beta.solana.com fällt aus: der Endpunkt antwortet Browsern
-// mit 403.
+// Am 23.09.2026 aus dem Browser geprüft: nur publicnode antwortet ohne
+// Schlüssel. api.mainnet-beta.solana.com gibt Browsern 403, drpc 400,
+// onfinality 429, leorpc und blastapi antworten gar nicht mehr. Die Liste
+// bleibt eine Liste, damit ein zweiter Knoten nur eine Zeile ist.
 const RPCS = [
   'https://solana-rpc.publicnode.com',
-  'https://solana.leorpc.com/?api_key=FREE',
 ];
 
 const LAMPORTS = 1_000_000_000;

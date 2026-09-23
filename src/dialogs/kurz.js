@@ -52,7 +52,7 @@ function skriptLaden(sitekey) {
       widget = turnstile.render('#kz-ts', {
         sitekey,
         action: 'shorten',
-        theme: 'dark',
+        theme: 'light',
         appearance: 'interaction-only',
         callback: (t) => { token = t; },
         'expired-callback': () => { token = null; },

@@ -1,26 +1,25 @@
-/* Die drei Dialoge von veerka.mp – Solana, Briefkasten, Kurzlink.
+/* Die drei Fenster von veerka.mp – Solana, Briefkasten, Kurzlink – im Glas
+ * des Skiportfolios.
  *
- * Die Regeln sind von dort uebernommen und absichtlich fast unveraendert
- * geblieben: der Code in src/dialogs/ ist derselbe wie auf der Website, und
- * beide Seiten sollen sich weiter abgleichen lassen, ohne dass man jede
- * Klasse zweimal denkt.
+ * Das Markup in index.html und der Code in src/dialogs/ sind weiterhin die
+ * von der Website; alle Klassen und Ids sind geblieben. Neu ist nur, wie sie
+ * aussehen: frueher das dunkle Violett von veerka.mp, jetzt dasselbe helle
+ * Glas wie die Stationsauswahl (.glass in style.css). Ein dunkles Fenster
+ * ueber einem Schneetal war der einzige Bruch im Bild.
  *
- * Zwei Dinge sind angepasst. Erstens liegt die Palette auf `.dialog` statt
- * auf `:root` – das Skiportfolio ist hell und hat eine eigene, und ein
- * globales `--text: #e8e8f0` haette hier alles kaputtgemacht. Zweitens
- * stehen statt der Webfonts der Website Systemschriften: fuer drei Fenster
- * zwei Schriftdateien nachzuladen, waere teurer als der Unterschied wert
- * ist, und die feste Breite fuer Adressen kann jedes System selbst.
+ * Wer veerka.mp abgleicht: den Code weiter tauschen, diese Datei nicht.
  */
 
 .dialog {
-  --surface: #0f0f1a;
-  --border: #1e1e2e;
-  --accent: #7c6fff;
-  --accent2: #ff6fb0;
-  --accent3: #6fffd4;
-  --text: #e8e8f0;
-  --muted: #6b6b8a;
+  --ink: #13212f;
+  --muted: #56697e;
+  --line: rgba(40, 70, 105, 0.16);
+  --field: rgba(255, 255, 255, 0.55);
+  --field-focus: rgba(255, 255, 255, 0.85);
+  --accent: #2b6fd6;
+  --accent2: #d0453a;
+  --accent3: #1f8a5b;
+  --glow: rgba(43, 111, 214, 0.35);
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
   font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
@@ -32,457 +31,408 @@
 .dialog *::before,
 .dialog *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .dialog {
-      width: min(24rem, calc(100vw - 2rem));
-      /* Der Reset ganz oben nimmt <dialog> das margin:auto, mit dem der
-         Browser sonst zentriert. Hier wieder her. */
-      margin: auto;
-      max-height: calc(100dvh - 2rem);
-      overflow-y: auto;
-      padding: 1.4rem;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: rgba(15,15,26,0.92);
-      -webkit-backdrop-filter: blur(18px) saturate(1.3);
-      backdrop-filter: blur(18px) saturate(1.3);
-      color: var(--text);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
-      position: relative;
-    }
+.dialog {
+  width: min(25rem, calc(100vw - 1.5rem));
+  /* Der Reset nimmt <dialog> das margin:auto, mit dem der Browser
+     zentriert. Hier wieder her. */
+  margin: auto;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.35rem;
+  border-radius: 26px;
+  color: var(--ink);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(233, 243, 252, 0.46) 55%, rgba(214, 231, 248, 0.52));
+  -webkit-backdrop-filter: blur(22px) saturate(1.9) brightness(1.04);
+  backdrop-filter: blur(22px) saturate(1.9) brightness(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px rgba(120, 160, 200, 0.18),
+    0 30px 70px -18px rgba(28, 58, 96, 0.45),
+    0 3px 10px rgba(28, 58, 96, 0.12);
+  position: relative;
+}
 
-    .dialog::backdrop {
-      background: rgba(8,8,16,0.72);
-      -webkit-backdrop-filter: blur(3px);
-      backdrop-filter: blur(3px);
-    }
+.dialog[open] { animation: dialogIn 0.42s cubic-bezier(0.2, 1.25, 0.3, 1); }
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+}
 
-    .dialog-zu {
-      position: absolute;
-      top: 0.7rem;
-      right: 0.8rem;
-      background: none;
-      border: 0;
-      color: var(--muted);
-      font-size: 1.4rem;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0.2rem 0.4rem;
-      border-radius: 8px;
-    }
+/* Das Tal bleibt hinter dem Fenster sichtbar, nur weicher – man ist noch
+   dort, wo man war. */
+.dialog::backdrop {
+  background: rgba(190, 214, 236, 0.28);
+  -webkit-backdrop-filter: blur(5px) saturate(1.2);
+  backdrop-filter: blur(5px) saturate(1.2);
+}
 
-    .dialog-zu:hover { color: var(--text); }
+.dialog-zu {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 #fff;
+  color: #3b4f64;
+  font: 500 1.2rem/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.dialog-zu:hover { background: rgba(255, 255, 255, 0.85); }
 
-    .dialog-kopf {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      /* rechts Platz für den Schließen-Knopf, der darüber liegt */
-      padding-right: 1.4rem;
-      margin-bottom: 1.1rem;
-    }
+.dialog-kopf {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-right: 2.2rem;
+  margin-bottom: 1.1rem;
+}
 
-    .dialog-symbol {
-      font-size: 1.6rem;
-      width: 2.6rem;
-      height: 2.6rem;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: linear-gradient(135deg, rgba(124,111,255,0.18), rgba(111,255,212,0.12));
-      flex: none;
-    }
+/* Farbige Kachel wie bei den Zielen der Stationsauswahl. */
+.dialog-symbol {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: #fff;
+  font-size: 1.3rem;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--tile, #4a6c93) 75%, #fff), var(--tile, #4a6c93));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 10px -3px color-mix(in srgb, var(--tile, #4a6c93) 60%, transparent);
+}
+.dialog-symbol svg { width: 1.35rem; height: 1.35rem; }
+#sol-dialog { --tile: #9945ff; --accent: #7b3fe0; --glow: rgba(153, 69, 255, 0.35); }
+#up-dialog { --tile: #37b87c; --accent: #23905f; --glow: rgba(55, 184, 124, 0.35); }
+#kz-dialog { --tile: #5b7fa6; --accent: #3f6690; --glow: rgba(91, 127, 166, 0.35); }
 
-    .dialog-kopf strong { font-size: 1rem; }
+.dialog-kopf strong { font-size: 1.05rem; font-weight: 780; }
 
-    /* Eigene display-Regeln stechen sonst das hidden-Attribut aus. */
-    .dialog [hidden] { display: none; }
+/* Eigene display-Regeln stechen sonst das hidden-Attribut aus. */
+.dialog [hidden] { display: none; }
 
-    .dialog-block { margin-top: 1.1rem; }
+.dialog-block { margin-top: 1.05rem; }
 
-    .dialog-label {
-      display: block;
-      font-family: var(--mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.45rem;
-    }
+.dialog-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--muted);
+  margin: 0 0 0.4rem 0.2rem;
+}
 
-    .dialog-los {
-      width: 100%;
-      margin-top: 0.9rem;
-      padding: 0.7rem;
-      border: 0;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: filter 0.2s ease;
-    }
+/* Alles, was man anfasst oder beschreibt, ist eine hellere Glasschicht im
+   Glas: Adresse, Betrag, Liste, Textfeld. */
+.sol-adresse,
+.sol-betrag,
+.sol-wahl,
+.up-datei,
+.up-notiz,
+.kz-feld,
+.kz-out {
+  background: var(--field);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 2px rgba(40, 70, 105, 0.08);
+  border-radius: 14px;
+  color: var(--ink);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.sol-betrag:focus-within,
+.up-notiz:focus,
+.kz-feld:focus,
+.sol-adresse:hover {
+  background: var(--field-focus);
+  box-shadow: inset 0 1px 2px rgba(40, 70, 105, 0.08), 0 0 0 3px var(--glow);
+}
 
-    .dialog-los:hover { filter: brightness(1.12); }
-    .dialog-los:disabled { filter: grayscale(0.7) brightness(0.7); cursor: default; }
+.dialog-los {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 0;
+  border-radius: 16px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 720;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 20px -8px var(--glow);
+  transition: transform 0.2s cubic-bezier(0.2, 1.4, 0.4, 1), filter 0.2s ease;
+}
+.dialog-los:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.dialog-los:active { transform: scale(0.98); }
+.dialog-los:disabled { filter: grayscale(0.6) opacity(0.55); transform: none; cursor: default; }
 
-    .dialog-text {
-      font-size: 0.78rem;
-      font-weight: 300;
-      color: var(--muted);
-      line-height: 1.55;
-    }
+.dialog-text {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.dialog a {
+  color: var(--accent);
+  font-weight: 650;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 3px;
+}
 
-    .dialog-text a {
-      color: var(--accent3);
-      text-decoration-color: rgba(111,255,212,0.4);
-      text-underline-offset: 3px;
-    }
+.dialog-status {
+  margin-top: 0.9rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.45);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted);
+  word-break: break-word;
+}
+.dialog-status[data-art="fehler"] { color: var(--accent2); background: rgba(255, 235, 232, 0.7); }
+.dialog-status[data-art="gut"] { color: var(--accent3); background: rgba(228, 248, 238, 0.75); }
 
-    .dialog-status {
-      margin-top: 0.9rem;
-      font-size: 0.75rem;
-      font-weight: 300;
-      line-height: 1.5;
-      color: var(--muted);
-      word-break: break-word;
-    }
+/* --- Solana ---------------------------------------------------------------- */
 
-    .dialog-status a { color: var(--accent3); }
-    .dialog-status[data-art="fehler"] { color: var(--accent2); }
-    .dialog-status[data-art="gut"] { color: var(--accent3); }
+.sol-adresse {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  cursor: pointer;
+  font: inherit;
+}
+.sol-adresse code {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sol-adresse span {
+  flex: none;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
+}
 
-    /* --- Solana-Dialog --- */
+.sol-betrag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+}
+.sol-betrag input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.sol-einheit {
+  flex: none;
+  padding: 0.25rem 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: default;
+}
+/* Nur mit Kurs ist die Einheit wirklich ein Knopf. */
+.sol-einheit[data-tauschbar] { cursor: pointer; color: var(--accent); }
+.sol-einheit[data-tauschbar]::after { content: ' ⇄'; opacity: 0.6; }
 
-    .sol-adresse {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.6rem;
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: rgba(8,8,16,0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      cursor: pointer;
-      transition: border-color 0.2s ease;
-    }
+.sol-umrechnung {
+  margin: 0.4rem 0 0 0.2rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
 
-    .sol-adresse:hover { border-color: rgba(124,111,255,0.4); }
+.sol-chips {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+.sol-chips button {
+  flex: 1;
+  padding: 0.45rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.sol-chips button:hover { background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 2px var(--glow); }
 
-    .sol-adresse code {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+.sol-wahl {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
 
-    .sol-adresse span {
-      font-family: var(--mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      flex: none;
-    }
+/* --- Briefkasten ------------------------------------------------------------ */
 
-    .sol-betrag {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.55rem 0.75rem;
-      background: rgba(8,8,16,0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-    }
+.up-zone {
+  position: relative;
+  display: block;
+  padding: 1.4rem 1rem;
+  text-align: center;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.up-zone:hover,
+.up-zone:focus-within,
+.up-zone[data-zieht] {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.7);
+}
+/* Das Eingabefeld selbst deckt die Flaeche ab: ein Klick irgendwo in der
+   Zone oeffnet die Dateiauswahl, und die Tastatur kommt auch hin. */
+.up-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.up-zone-text { display: block; font-size: 0.92rem; font-weight: 700; }
+.up-zone-klein { display: block; margin-top: 0.3rem; font-size: 0.72rem; color: var(--muted); }
 
-    .sol-betrag:focus-within { border-color: rgba(124,111,255,0.5); }
+.up-liste {
+  list-style: none;
+  margin-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.up-datei { padding: 0.55rem 0.7rem; }
+.up-kopfzeile { display: flex; align-items: center; gap: 0.5rem; }
+.up-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.up-groesse { flex: none; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
+.up-weg {
+  flex: none;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0 0.15rem;
+  cursor: pointer;
+}
+.up-weg:hover { color: var(--ink); }
 
-    .sol-betrag input {
-      flex: 1;
-      min-width: 0;
-      background: none;
-      border: 0;
-      outline: none;
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 1rem;
-    }
+/* Der Balken kommt erst, wenn diese Datei wirklich unterwegs ist. */
+.up-balken {
+  height: 4px;
+  margin-top: 0.45rem;
+  border-radius: 2px;
+  background: rgba(40, 70, 105, 0.1);
+  overflow: hidden;
+}
+.up-balken i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+.up-datei[data-stand="fertig"] .up-balken i { background: var(--accent3); }
+.up-datei[data-stand="fehler"] .up-balken i { background: var(--accent2); }
 
-    .sol-einheit {
-      flex: none;
-      background: none;
-      border: 0;
-      padding: 0.15rem 0;
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      color: var(--muted);
-      cursor: default;
-    }
+.up-notiz {
+  width: 100%;
+  min-height: 3.4rem;
+  resize: vertical;
+  padding: 0.6rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  outline: none;
+}
+.up-notiz::placeholder, .kz-feld::placeholder { color: #8698ab; }
 
-    /* Nur mit Kurs ist die Einheit wirklich ein Knopf. */
-    .sol-einheit[data-tauschbar] {
-      cursor: pointer;
-      color: var(--accent3);
-    }
+.up-fuss { margin-top: 0.9rem; font-size: 0.74rem; }
 
-    .sol-einheit[data-tauschbar]::after {
-      content: ' ⇄';
-      opacity: 0.6;
-    }
+/* Auf dem Handy zieht niemand etwas irgendwohin. */
+@media (pointer: coarse) {
+  .up-ziehen { display: none; }
+}
 
-    .sol-umrechnung {
-      margin-top: 0.4rem;
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
+/* --- Kurzlink --------------------------------------------------------------- */
 
-    .sol-chips {
-      display: flex;
-      gap: 0.4rem;
-      margin-top: 0.55rem;
-    }
+.kz-feld {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+}
 
-    .sol-chips button {
-      flex: 1;
-      padding: 0.35rem 0;
-      background: rgba(8,8,16,0.5);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      cursor: pointer;
-      transition: color 0.2s ease, border-color 0.2s ease;
-    }
+/* Turnstile zeigt sich nur, wenn es wirklich nachfragen will. Solange es
+   schweigt, ist der Kasten unsichtbar und soll keinen Platz kosten. */
+.kz-ts { display: flex; justify-content: center; }
 
-    .sol-chips button:hover {
-      color: var(--text);
-      border-color: rgba(124,111,255,0.4);
-    }
-
-    .sol-wahl {
-      width: 100%;
-      margin-top: 0.75rem;
-      padding: 0.5rem 0.6rem;
-      background: rgba(8,8,16,0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.82rem;
-    }
-
-    /* --- Upload-Dialog --- */
-
-    .up-zone {
-      position: relative;
-      display: block;
-      padding: 1.3rem 1rem;
-      text-align: center;
-      border: 1px dashed var(--border);
-      border-radius: 12px;
-      background: rgba(8,8,16,0.5);
-      cursor: pointer;
-      transition: border-color 0.2s ease, background 0.2s ease;
-    }
-
-    .up-zone:hover,
-    .up-zone:focus-within,
-    .up-zone[data-zieht] {
-      border-color: rgba(124,111,255,0.5);
-      background: rgba(124,111,255,0.07);
-    }
-
-    /* Das Eingabefeld selbst deckt die Fläche ab: damit öffnet ein Klick
-       irgendwo in der Zone die Dateiauswahl, und die Tastatur kommt auch hin. */
-    .up-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
-
-    .up-zone-text {
-      display: block;
-      font-size: 0.85rem;
-    }
-
-    .up-zone-klein {
-      display: block;
-      margin-top: 0.3rem;
-      font-family: var(--mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-    }
-
-    .up-liste {
-      list-style: none;
-      margin-top: 0.8rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .up-datei {
-      padding: 0.5rem 0.6rem;
-      background: rgba(8,8,16,0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-    }
-
-    .up-kopfzeile {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .up-name {
-      flex: 1;
-      min-width: 0;
-      font-size: 0.76rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .up-groesse {
-      flex: none;
-      font-family: var(--mono);
-      font-size: 0.62rem;
-      color: var(--muted);
-    }
-
-    .up-weg {
-      flex: none;
-      background: none;
-      border: 0;
-      color: var(--muted);
-      font-size: 1rem;
-      line-height: 1;
-      padding: 0 0.15rem;
-      cursor: pointer;
-    }
-
-    .up-weg:hover { color: var(--text); }
-
-    /* Der Balken kommt erst, wenn diese Datei wirklich unterwegs ist. */
-    .up-balken {
-      height: 3px;
-      margin-top: 0.45rem;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.08);
-      overflow: hidden;
-    }
-
-    .up-balken i {
-      display: block;
-      height: 100%;
-      width: 0;
-      border-radius: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      transition: width 0.2s ease;
-    }
-
-    .up-datei[data-stand="fertig"] .up-balken i { background: var(--accent3); }
-    .up-datei[data-stand="fehler"] .up-balken i { background: var(--accent2); }
-
-    .up-notiz {
-      width: 100%;
-      min-height: 3.2rem;
-      resize: vertical;
-      padding: 0.55rem 0.7rem;
-      background: rgba(8,8,16,0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.82rem;
-      line-height: 1.5;
-      outline: none;
-    }
-
-    .up-notiz:focus { border-color: rgba(124,111,255,0.5); }
-    .up-notiz::placeholder { color: var(--muted); }
-
-    .up-fuss { margin-top: 0.9rem; font-size: 0.7rem; }
-
-    /* Auf dem Handy zieht niemand etwas irgendwohin. */
-    @media (pointer: coarse) {
-      .up-ziehen { display: none; }
-    }
-
-    /* --- Kurzlink-Dialog --- */
-
-    .kz-feld {
-      width: 100%;
-      padding: 0.6rem 0.7rem;
-      background: rgba(8,8,16,0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.82rem;
-      outline: none;
-    }
-
-    .kz-feld:focus { border-color: rgba(124,111,255,0.5); }
-    .kz-feld::placeholder { color: var(--muted); }
-
-    /* Turnstile zeigt sich nur, wenn es wirklich nachfragen will. Solange es
-       schweigt, ist der Kasten unsichtbar und soll keinen Platz kosten – den
-       Abstand nach unten macht ohnehin der Knopf. */
-    .kz-ts {
-      display: flex;
-      justify-content: center;
-    }
-
-    .kz-out {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 0.9rem;
-      padding: 0.55rem 0.7rem;
-      background: rgba(8,8,16,0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-    }
-
-    .kz-kurz {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      color: var(--accent3);
-      text-decoration-color: rgba(111,255,212,0.4);
-      text-underline-offset: 3px;
-    }
-
-    .kz-kopieren {
-      flex: none;
-      padding: 0.32rem 0.55rem;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--muted);
-      font-family: inherit;
-      font-size: 0.7rem;
-      cursor: pointer;
-    }
-
-    .kz-kopieren:hover {
-      color: var(--text);
-      border-color: rgba(124,111,255,0.4);
-    }
-
+.kz-out {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding: 0.55rem 0.55rem 0.55rem 0.8rem;
+}
+.kz-kurz {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+.kz-kopieren {
+  flex: none;
+  padding: 0.38rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.kz-kopieren:hover { filter: brightness(1.08); }

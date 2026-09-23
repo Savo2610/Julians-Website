@@ -179,9 +179,24 @@ export class TouchControls {
     err = Math.atan2(Math.sin(err), Math.cos(err))
     // Positiver Fehler heisst Heading erhoehen, und das ist links – also
     // negatives steer.
+    const screen = THREE.MathUtils.clamp(-err * GAIN, -1, 1)
+
+    // Auf der Nordabfahrt steht die Kamera hinter dem Fahrer und dreht mit.
+    // Dort geht "Daumen nach rechts = im Bild nach rechts" nicht: jede
+    // Lenkung dreht das Bild mit, das Ziel wandert mit, und ein Daumen, der
+    // rechts liegen bleibt, lenkt immer weiter – der Fahrer drehte sich im
+    // Kreis. Hinter dem Fahrer ist der Stick deshalb ein Lenkrad: die
+    // Seitenlage des Daumens ist der Einschlag, in der Mitte wird er weich,
+    // damit man kleine Korrekturen fahren kann. Nach unten gezogen rollt man
+    // aus statt zu schieben. Uebergeblendet mit derselben Kurve wie die
+    // Kamera, damit am Anfang der Abfahrt nichts springt.
+    const behind = this.camera.verfolgt ?? 0
+    const x = THREE.MathUtils.clamp(dx / RADIUS, -1, 1)
+    const wheel = x * (0.35 + 0.65 * Math.abs(x))
+    const pulledBack = dy > RADIUS * 0.45
     this.input.stick = {
-      steer: THREE.MathUtils.clamp(-err * GAIN, -1, 1),
-      throttle: mag > 0.35 ? 1 : 0,
+      steer: screen * (1 - behind) + wheel * behind,
+      throttle: mag > 0.35 && !(behind > 0.5 && pulledBack) ? 1 : 0,
     }
   }
 }

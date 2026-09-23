@@ -7,8 +7,8 @@ import { githubScreen, linkedinScreen, createScreen, createHalo } from './screen
 // Die Huette selbst steht um 0,28 rad gegen die Kamera verdreht, damit sie
 // nicht wie eine Kulisse wirkt – Bildschirme darin laesen sich dann schief.
 // Die Bank steht deshalb als eigenes Stueck davor und schaut gerade zur
-// Kamera. Links der Monitor mit Quelltext (GitHub), rechts das Profil
-// (LinkedIn), beide mit Pultneigung. Dazwischen, was auf einer Werkbank
+// Kamera. Links das Profil (LinkedIn), rechts der Monitor mit Quelltext
+// (GitHub), beide mit Pultneigung. Dazwischen, was auf einer Werkbank
 // liegt: Schraubstock, Hammer, eine Tasse. Eine Lampe am Gelenkarm stand
 // auch schon da – aus 36 Grad ragte sie genau in den linken Bildschirm.
 
@@ -62,8 +62,9 @@ export function createWorkbench() {
 
   // --- Die beiden Bildschirme ---------------------------------------------
   const screens = []
-  const tex = [githubScreen(), linkedinScreen()]
-  const tint = [0x2b3137, 0x0a66c2]
+  // LinkedIn zuerst: links und vorausgewaehlt, siehe stations.js.
+  const tex = [linkedinScreen(), githubScreen()]
+  const tint = [0x0a66c2, 0x2b3137]
   const tilt = -0.55
   for (let i = 0; i < 2; i++) {
     const m = new THREE.Group()
@@ -90,7 +91,7 @@ export function createWorkbench() {
     const screen = createScreen(tex[i], 0.92, 0.69)
     screen.position.z = 0.032
     head.add(screen)
-    const halo = createHalo(i === 0 ? 0x7ee787 : 0x3d8fe0, 2.1)
+    const halo = createHalo(i === 0 ? 0x3d8fe0 : 0x7ee787, 2.1)
     halo.position.z = -0.08
     head.add(halo)
     m.add(head)

@@ -4,7 +4,7 @@ import { LANDSCAPE_PATHS } from './landscape-layout.js'
 // davon, damit man einen Strang zu Ende fahren kann, ohne etwas zu verpassen.
 export const TRAILS = {
   career: {
-    label: 'CODE & PROFIL',
+    label: 'PROFIL & CODE',
     color: '#346782',
     markerColor: 0x527f99,
     // Nach Osten am Wegweiser vorbei in die Mulde mit der Huette und weiter

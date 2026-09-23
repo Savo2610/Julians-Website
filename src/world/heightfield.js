@@ -183,7 +183,35 @@ export const KLAMM = {
 // muss. Der Saum daneben ist kein Abbruch, sondern eine kurze Schraege: eine
 // senkrechte Kante im Hoehenfeld gibt kaputte Normalen und einen Fahrer, der
 // daran haengenbleibt.
-export const BRUECKE = { x: -17.4, z: -78.3, halb: 2.9, saum: 1.7 }
+//
+// Im tragenden Streifen liegt das Gelaende exakt auf der Ebene des Stegs
+// (`ebene`). Vorher war es dort nur "nicht ausgeschnitten", und das darunter
+// liegende Band ist quer nicht eben: gegen die Deckflaeche wich es um -13 bis
+// +16 Zentimeter ab. Wo es tiefer lag, stand der Fahrer bis ueber die Ski im
+// Schneebelag des Stegs. Die Zahlen sind die Ausgleichsebene, auf der der
+// Steg vorher schon lag (Mitte, Richtung und Gefaelle), damit das Holz nicht
+// wandert; populate.js misst sie ohnehin vom Gelaende nach.
+export const BRUECKE = {
+  x: -17.4, z: -78.3, halb: 2.9, saum: 1.7,
+  ebene: { y: 15.4233, ux: 0.92848, uz: 0.37139, gefaelle: -0.15741, laenge: 14.5 },
+}
+
+// Zieht das Gelaende unter dem Steg auf seine Ebene. Quer blendet es mit
+// demselben Saum aus wie der Schnitt der Klamm, laengs anderthalb Meter vor
+// den Stegenden, wo er auf festem Grund aufliegt.
+function stegEbene(x, z, h) {
+  const e = BRUECKE.ebene
+  const rx = x - BRUECKE.x
+  const rz = z - BRUECKE.z
+  const laengs = rx * e.ux + rz * e.uz
+  const quer = Math.abs(-rx * e.uz + rz * e.ux)
+  const halbL = e.laenge / 2
+  if (Math.abs(laengs) >= halbL || quer >= BRUECKE.halb + BRUECKE.saum) return h
+  const wq = quer <= BRUECKE.halb ? 1 : 1 - smooth((quer - BRUECKE.halb) / BRUECKE.saum)
+  const wl = 1 - smooth(Math.max(0, (Math.abs(laengs) - (halbL - 1.5)) / 1.5))
+  const w = wq * wl
+  return h + (e.y + e.gefaelle * laengs - h) * w
+}
 
 function klammTiefe(u) {
   const t = KLAMM.tiefe
@@ -330,17 +358,25 @@ function laneAt(x, z, lane) {
 // bleibt der groesste Auf- oder Abtrag unter anderthalb Metern – haette man
 // eine Gerade erzwungen, waere unten ein fuenf Meter hoher Damm noetig
 // gewesen. Oben 19 bis 31 Grad, unten Auslauf.
+//
+// Breite 17 statt 13: in dreizehn Metern standen die Tore 3,4 aus der Mitte,
+// und wer einfach geradeaus in der Rinne blieb, traf fast jedes. Mit vier
+// Metern mehr koennen sie weit genug auseinander stehen, dass man
+// wirklich von Tor zu Tor schwingen muss. Rechts stehen Fels und Wald bei
+// 8 Metern; der dritte und vierte Stuetzpunkt sind deshalb einen Meter nach
+// links (hangseitig zur freien Piste) gerueckt, damit die Bande nicht durch
+// den Felsen laeuft.
 export const SLED_LANE = makeLane([
   { x: -53, z: -56, h: 27.50 },
   { x: -45, z: -61, h: 24.90 },
-  { x: -36, z: -60, h: 20.23 },
-  { x: -29, z: -54, h: 15.50 },
+  { x: -36.4, z: -59.1, h: 20.23 },
+  { x: -29.8, z: -53.4, h: 15.50 },
   { x: -26, z: -45, h: 10.79 },
   { x: -18, z: -41, h: 5.24 },
   { x: -11, z: -36, h: 2.34 },
   { x: -6, z: -30, h: 1.90 },
   { x: -2, z: -25, h: 1.55 },
-], { width: 13, feather: 9, endFade: 8, bank: 1.35, flat: 0.5 })
+], { width: 17, feather: 9, endFade: 8, bank: 1.35, flat: 0.5 })
 
 // Die Nordabfahrt ueber die Rueckseite. Sie beginnt hinter dem Gipfel, faellt
 // nach Norden ab und dreht dann in einem langen Rechtsbogen ueber das Kar nach
@@ -693,7 +729,9 @@ export function terrainHeight(x, z) {
   h += parkFeatures(x, z)
 
   // Die Klamm schneidet zuletzt – sie muss durch das fertige Band hindurch,
-  // sonst fuellte das Band sie gleich wieder auf.
+  // sonst fuellte das Band sie gleich wieder auf. Vorher wird der Streifen
+  // unter dem Steg eben gezogen.
+  h = stegEbene(x, z, h)
   h += klammAt(x, z)
 
   // Startplateau: eine flache Terrasse, die sich weich ins Gelaende einfuegt.

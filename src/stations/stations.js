@@ -157,27 +157,35 @@ export function populateStations(world, registry) {
   register({
     id: 'werkstatt',
     label: 'Werkstatt',
-    hint: 'Code und Profil',
-    color: '#2b3137',
+    hint: 'Profil und Code',
+    color: '#0a66c2',
     position: STATION_SPOTS.cabin,
     radius: 7.5,
     labelHeight: world.heightAt(STATION_SPOTS.cabin.x, STATION_SPOTS.cabin.z) + 4.2,
     object: bench,
     // Herangezoomt wird auf die Bank, nicht auf die Huettenmitte.
     focus: { abstand: 8.5, hoehe: 1.0, vor: BENCH_AHEAD + 0.9 },
+    // LinkedIn zuerst: wer an die Werkstatt faehrt, sucht meist den Menschen
+    // und erst dann den Quelltext. Die erste Wahl ist die, auf der Enter
+    // ohne Pfeiltaste landet.
     choices: [
-      { label: 'GitHub', sub: 'Quelltext · Savo2610', glyph: 'github', url: LINKS.github, color: '#2b3137' },
       { label: 'LinkedIn', sub: 'Lebenslauf · jsveerkamp', glyph: 'linkedin', url: LINKS.linkedin, color: '#0a66c2' },
+      { label: 'GitHub', sub: 'Quelltext · Savo2610', glyph: 'github', url: LINKS.github, color: '#2b3137' },
     ],
   })
 
   // --- Weg 2: Soziales und Bezahlen ---------------------------------------
+  // Um 45 Grad im Uhrzeigersinn aus der Kameraachse gedreht: gerade zur
+  // Kamera stand das Podest quer vor dem Waldrand und stach heraus, so
+  // laeuft es mit der Kante des Waldstuecks. Die Tafeln sind dafuer von
+  // schraeg zu lesen; cos 45 Grad laesst ihnen gut 70 Prozent ihrer Breite.
+  const postYaw = FACING - Math.PI / 4
   const post = createContactPost()
-  place(post, STATION_SPOTS.kontakt, { rotation: FACING })
+  place(post, STATION_SPOTS.kontakt, { rotation: postYaw })
   for (const c of post.userData.colliders) {
     world.addCollider(
-      STATION_SPOTS.kontakt.x + c.dx * Math.cos(FACING) + c.dz * Math.sin(FACING),
-      STATION_SPOTS.kontakt.z - c.dx * Math.sin(FACING) + c.dz * Math.cos(FACING),
+      STATION_SPOTS.kontakt.x + c.dx * Math.cos(postYaw) + c.dz * Math.sin(postYaw),
+      STATION_SPOTS.kontakt.z - c.dx * Math.sin(postYaw) + c.dz * Math.cos(postYaw),
       c.r,
     )
   }

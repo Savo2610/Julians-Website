@@ -157,7 +157,7 @@ Strang zu Ende fahren kann.
 
 | Station | Ort | Ziel |
 |---|---|---|
-| Werkstatt (Hütte) | 25, 21 | Auswahl: GitHub / LinkedIn |
+| Werkstatt (Hütte) | 25, 21 | Auswahl: LinkedIn / GitHub |
 | Skikasse | −40, −2 | Auswahl: PayPal / Solana (Wallet-Fenster) |
 | Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
 | Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |
@@ -292,9 +292,13 @@ Fahrer fuhr sichtbar durch das Holz:
    Außen fällt der Saum ab, dort steht das Holz frei. Zu sehen ist am Ende eine
    Schneespur zwischen zwei hölzernen Randbohlen.
 
-Rest: das Gelände weicht von der Ausgleichsgeraden um gut fünf Zentimeter nach
-oben wie nach unten ab. Bei fünf Zentimeter dicken Ski und dreiunddreißig Metern
-Kamerahöhe ist das nicht mehr zu sehen.
+Rest war: das Gelände wich quer über die Spur um −13 bis +16 cm von der
+Deckfläche ab (auf der Mittellinie nur 5 cm, deshalb lange übersehen) — wo es
+tiefer lag, stand der Fahrer bis über die Ski im Schneebelag. Seit
+`stegEbene()` in `heightfield.js` liegt das Gelände im tragenden Streifen
+**exakt auf der Ebene des Stegs** (`BRUECKE.ebene`: Mitte, Richtung, Gefälle
+als feste Zahlen, quer mit dem Saum, längs 1,5 m vor den Enden ausgeblendet).
+Gemessen: ±1 cm.
 
 **Charakter**: dichter Wald (Dichte-Aufschlag über `nordDist`), Felsriegel auf
 dem Grat, Wildspuren im Schnee (`stampTrack` in `snow-writing.js`, gestempelt in
@@ -315,7 +319,7 @@ schwebt eine Glasblase mit Name, einem Wort und dem ⏎-Zeichen.
 
 - Station mit **einem Ziel**: Enter öffnet es sofort.
 - Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
-  GitHub/LinkedIn, Kontakt: Signal/Instagram): Enter **zoomt heran**. Der Fahrer bleibt stehen
+  LinkedIn/GitHub, Kontakt: Signal/Instagram): Enter **zoomt heran**. Der Fahrer bleibt stehen
   (`input.locked`), unten klappt eine Glas-Auswahl auf, ←/→ (auch A/D)
   wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
   gehen weiterhin direkt. Das 3D-Objekt zeigt die Wahl mit: das gewählte
@@ -354,6 +358,7 @@ pinkes Aussichtsfernglas, vorn zwei Tafeln wie an der Kasse. Gewählt hebt
 sich der Hörer und über dem Kasten tippt eine Sprechblase; das Fernglas,
 das sonst über den Wald schwenkt, dreht sich um und schaut einen an und
 blitzt beim Öffnen. Lichtung nur 4,5 m, damit die Tannen dahinter bleiben.
+Um 45° im Uhrzeigersinn aus der Kameraachse gedreht, entlang der Waldkante.
 
 **Die drei Fenster** (Solana, Briefkasten, Kurzlink) tragen dasselbe Glas
 (`dialogs.css` neu geschrieben, Code und Ids wie auf veerka.mp) und gehen
@@ -401,8 +406,13 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
   berührt, und lenkt **bildschirmbezogen** — Daumen nach oben heißt im Bild
   nach oben. Mit fester Kamera ist ein Wohin auf dem Bildschirm genau eine
   Himmelsrichtung; der Stick regelt nur den Winkelfehler zur Fahrtrichtung
-  aus (`GAIN` 2.1). Auf der Nordabfahrt nimmt er den mitdrehenden Azimut
-  (`chase.azimuthNow`). Schub ab 35 % Ausschlag, loslassen = ausrollen. Zieht
+  aus (`GAIN` 2.1). **Auf der Nordabfahrt ist er ein Lenkrad**: dort dreht
+  die Kamera mit, und bildschirmbezogen hieß jeder seitliche Daumen „weiter
+  drehen“ — das Ziel wanderte mit dem Bild, man fuhr Kreise. Hinter dem
+  Fahrer ist die Seitenlage der Einschlag (weich in der Mitte: 15 px ≈
+  0,45 rad/s, voll ≈ 3,9 rad/s), nach unten gezogen rollt man aus;
+  übergeblendet mit `chase.verfolgt`. Schub ab 35 % Ausschlag, loslassen =
+  ausrollen. Zieht
   der Daumen weit hinaus, wandert der Stick mit. Geprüft mit echten
   Pointer-Ereignissen: oben/rechts/unten-links kommen als oben/rechts/
   unten-links an.
@@ -581,6 +591,16 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
   Vom Nutzer ausdrücklich zurückgestellt, aber noch zu tun. Vorschlag aus der
   letzten Sitzung: Spotify auf die Terrasse der Après-Ski-Hütte („Höre was ich
   höre"), Komoot als Gipfelbuch am Gipfelkreuz („Wandern & Radfahren").
+- **Die Rodelbahn als Slalom** (`race.js`): 17 statt 13 m breit, zwei
+  Stützpunkte 1 m nach links gerückt (rechts Fels und Wald bei 8 m), die
+  Pistenkanone 3,2 m auf die Piste versetzt. Fünf statt drei Tore im Rhythmus
+  10/10/9/8 m, 4,6 aus der Mitte (in Kurven 5,0), Nachsicht 0,5 — vorher traf
+  man sie, indem man in der Rinne blieb. Das nächste Tor glimmt im Schnee,
+  getroffen blitzt grün, verfehlt rot (+2 s). Zwischenzeiten gegen die
+  Bestzeit, Bestzeit in `localStorage` (`skiportfolio.slalom`). Medaillen
+  aus einem Testfahrer mit Vorausschau: bester sauberer Lauf 3,12 s → Gold
+  3,20 / Silber 3,45 / Bronze 3,90. **Die Strecke dauert nur gut drei
+  Sekunden** — länger ginge nur mit einer neuen Trasse.
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
@@ -605,6 +625,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+         LinkedIn vorn, Slalom, Lenkrad auf der Nordabfahrt, Steg eben
 cf0e3cf  Kontaktposten, Stechuhr hinter die Abkuerzung, Seebank, Tastatur
 24841cc  Talkarte aus der Welt gemalt, Schnellreise-Menue
 debe2c1  Fenster im Glas, toter Solana-Ersatzknoten entfernt

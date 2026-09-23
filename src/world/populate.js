@@ -912,9 +912,13 @@ export function populate(world, sky, registry) {
   // zeigt sie quer, sieht sie den Fahrer erst, wenn er schon neben ihr ist,
   // und blaest ihm hinterher. So bekommt sie ihn zwanzig Meter vorher ins
   // Feld und laeuft an, waehrend er noch anfaehrt.
+  //
+  // Seit die Rodelbahn 17 statt 13 Meter breit ist, stand sie mit 7,7 Metern
+  // Abstand zur Bahnmitte innerhalb der Bande. Sie ist 3,2 Meter quer zur
+  // Bahn auf die Piste gerueckt; zur Lichtschranke sind es jetzt 11,5 Meter.
   const pisteCannon = createSnowCannon({ heading: Math.atan2(-0.88, 0.47) })
-  world.place(pisteCannon, -32.2, -37.6, {})
-  world.addCollider(-32.2, -37.6, 1.0)
+  world.place(pisteCannon, -35.1, -36.3, {})
+  world.addCollider(-35.1, -36.3, 1.0)
   animatedProps.push((t, dt) => {
     const skier = skierRef.current
     if (!skier) return

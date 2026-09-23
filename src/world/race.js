@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { terrainHeight, SLED_LANE } from './heightfield.js'
 import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readableYaw } from './props/slalom.js'
+import { createHalo } from './props/screens.js'
 
 // Die Zeitnahme einer Bahn: Start, Ziel, Tore – und die Farbe im Schnee, die
 // sagt, wo man langfahren soll.
@@ -17,25 +18,47 @@ import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readab
 // nur auf den geraden Stuecken wechseln die Tore die Seite und erzeugen den
 // Rhythmus.
 
-const GATE_START = 8        // erstes Tor, Abstand vom Start
-// Weniger Tore mit mehr Luft dazwischen: bei neun Metern Abstand ging der
-// Rhythmus in Hektik ueber, man haengte von einem Tor ins naechste, ohne den
-// Bogen je fertig zu fahren. Vierzehn Meter lassen den Schwung auslaufen –
-// aus sechs Toren werden vier, und die vier zaehlen dann auch.
-const GATE_SPACING = 14
-// Versatz und Abstand haengen zusammen: um von Tor zu Tor zu kommen, muss der
-// Fahrer 2*Versatz seitlich schaffen, waehrend er den Abstand faehrt. Bei
-// Tempo 15 und einer Drehrate von 3,1 rad/s ist bei diesen Werten ein sauberer
-// Rhythmus moeglich – enger wird es in der Rinne unfahrbar.
-// Der Versatz muss groesser sein als halbe Torbreite plus Nachsicht, sonst
-// trifft man jedes Tor allein dadurch, dass man in der Rinne bleibt – die
-// Tore waeren dann Dekoration. Bei 3,4 zu 3,1 muss man sich bewegen, aber nur
-// gut einen halben Meter aus der Mitte.
-const GATE_OFFSET = 3.4
-const GATE_TOLERANCE = 0.9  // etwas Nachsicht an den Stangen
+// Die Tore stehen in einem Rhythmus statt in gleichen Abstaenden: zehn,
+// zehn, neun, acht Meter. Gleiche Abstaende fahren sich nach dem zweiten Tor
+// von selbst; werden sie kuerzer, muss man den Schwung frueher ansetzen, und
+// genau dort verliert man Zeit oder ein Tor. Frueher waren es drei Tore auf
+// 53 Metern mit 14 Metern Abstand – das war eine Abfahrt mit Deko.
+const GATE_START = 7        // erstes Tor, Abstand vom Start
+const GATE_GAPS = [10, 10, 9, 8]
+// Versatz und Nachsicht zusammen entscheiden, ob die Tore etwas verlangen.
+// Frueher 3,4 Versatz bei 3,1 halber Fensterbreite: wer in der Mitte blieb,
+// verfehlte das Tor um einen halben Meter. Jetzt 4,6 bei 2,7 – von einem Tor
+// zum naechsten sind mindestens 3,8 Meter quer zu schaffen, auf 8 bis 10
+// Metern Fahrt. Das geht nur mit einem echten Schwung, und die Bahn ist
+// dafuer auf 17 Meter verbreitert (heightfield.js).
+const GATE_OFFSET = 4.6
+const BEND_OFFSET = 5.0     // in der Kurve steht das Tor noch weiter innen
+const GATE_TOLERANCE = 0.5  // etwas Nachsicht an den Stangen
 // Ab dieser Kruemmung gilt ein Stueck als Kurve und das Tor wandert nach innen.
 const BEND = 0.022          // rad pro Meter, entspricht etwa 45 m Radius
+const PENALTY = 2           // s je verfehltem Tor
 
+// Medaillen, gemessen mit einem Testfahrer, der mit sechs bis zehn Metern
+// Vorausschau auf der Linie durch die Tormitten faehrt: sein bester sauberer
+// Lauf war 3,12 s, ein langsamer sauberer 3,90. Gold verlangt also fast die
+// ideale Linie. Ein verfehltes Tor kostet 2 s und damit jede Medaille.
+export const MEDALS = [
+  { name: 'Gold', time: 3.2 },
+  { name: 'Silber', time: 3.45 },
+  { name: 'Bronze', time: 3.9 },
+]
+
+const STORE = 'skiportfolio.slalom'
+function loadBest() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORE))
+    if (Number.isFinite(data?.best)) return data
+  } catch { /* privat, gesperrt oder leer */ }
+  return null
+}
+function saveBest(data) {
+  try { localStorage.setItem(STORE, JSON.stringify(data)) } catch { /* egal */ }
+}
 
 export class RaceCourse {
   // startFade ist der Abstand des Startbogens vom oberen Ende des Bandes.
@@ -49,7 +72,12 @@ export class RaceCourse {
     this.gates = []
     this.state = 'idle'
     this.time = 0
-    this.best = null
+    // Die Bestzeit ueberlebt das Neuladen: ohne sie gibt es nichts, wogegen
+    // man faehrt. Mit ihr die Zwischenzeiten an jedem Tor.
+    const saved = loadBest()
+    this.best = saved?.best ?? null
+    this.bestSplits = saved?.splits ?? null
+    this.splits = []
     this.missed = 0
     this.lastRun = null
     this._prevS = null
@@ -150,13 +178,15 @@ export class RaceCourse {
     // Zielbogen.
     let alternate = -1
     let i = 0
-    for (let s = this.startS + GATE_START; s < this.finishS - 6; s += GATE_SPACING) {
+    let s = this.startS + GATE_START
+    while (s < this.finishS - 6) {
       const p = this.pointAt(s)
       const bend = this.curvatureAt(s)
       // In der Kurve nach innen, auf der Geraden im Wechsel. Innen heisst:
       // auf die Seite, zu der die Bahn dreht – dorthin faehrt man ohnehin.
       let side
-      if (Math.abs(bend) > BEND) {
+      const curved = Math.abs(bend) > BEND
+      if (curved) {
         side = Math.sign(bend)
       } else {
         side = alternate
@@ -164,17 +194,27 @@ export class RaceCourse {
       }
       // Nach einer Kurve soll der Wechsel weitergehen, nicht die Seite
       // wiederholen, auf der man gerade schon war.
-      if (Math.abs(bend) > BEND) alternate = -side
+      if (curved) alternate = -side
 
-      const offset = side * GATE_OFFSET
+      const offset = side * (curved ? BEND_OFFSET : GATE_OFFSET)
       const x = p.x + p.dz * offset
       const z = p.z - p.dx * offset
       const red = i % 2 === 0
       const gate = createSlalomGate({ color: red ? 'red' : 'blue', number: i + 1 })
       place(gate, x, z, Math.atan2(p.dx, p.dz))
 
-      this.gates.push({ s, offset, index: i, passed: false, missed: false })
+      // Schein im Schnee zwischen den Stangen: das naechste Tor glimmt,
+      // ein getroffenes blitzt gruen, ein verfehltes rot.
+      const glow = createHalo(0xffffff, 1)
+      glow.scale.set(GATE_WIDTH + 1.2, 2.2, 1)
+      glow.rotation.x = -Math.PI / 2
+      glow.position.set(x, terrainHeight(x, z) + 0.06, z)
+      glow.rotation.z = Math.atan2(p.dx, p.dz)
+      group.add(glow)
+
+      this.gates.push({ s, offset, index: i, passed: false, missed: false, glow, flash: 0 })
       i++
+      s += GATE_GAPS[Math.min(i - 1, GATE_GAPS.length - 1)]
     }
 
     this.world.scene.add(group)
@@ -208,6 +248,7 @@ export class RaceCourse {
     const { s, v, d } = this.project(skier.position.x, skier.position.z)
     const prev = this._prevS
     this._prevS = s
+    this._glow(dt)
 
     if (this.state === 'running') {
       this.time += dt
@@ -224,6 +265,13 @@ export class RaceCourse {
               gate.missed = true
               this.missed++
             }
+            gate.flash = 1
+            // Zwischenzeit: die Zeit am Tor plus die bisherigen Strafen,
+            // gegen dieselbe Zahl der Bestzeit.
+            const split = this.time + this.missed * PENALTY
+            this.splits[gate.index] = split
+            const ref = this.bestSplits?.[gate.index]
+            this._split = Number.isFinite(ref) ? { delta: split - ref, hold: 1.4 } : null
           }
         }
       }
@@ -235,8 +283,16 @@ export class RaceCourse {
         // stilles Zuruecksetzen.
         this._reset()
       } else {
-        const note = this.missed ? `${this.missed} Tor${this.missed > 1 ? 'e' : ''} verfehlt` : ''
-        this._showHud(this.time.toFixed(2), note, this.missed ? 'warn' : '')
+        let note = this.missed ? `${this.missed} Tor${this.missed > 1 ? 'e' : ''} verfehlt · +${this.missed * PENALTY}s` : ''
+        let tone = this.missed ? 'warn' : ''
+        if (this._split) {
+          this._split.hold -= dt
+          const dl = this._split.delta
+          note = `${dl <= 0 ? '−' : '+'}${Math.abs(dl).toFixed(2)} zur Bestzeit`
+          tone = dl <= 0 ? 'good' : 'warn'
+          if (this._split.hold <= 0) this._split = null
+        }
+        this._showHud(this.time.toFixed(2), note, tone)
       }
       return
     }
@@ -259,32 +315,59 @@ export class RaceCourse {
       this.state = 'running'
       this.time = 0
       this.missed = 0
+      this.splits = []
+      this._split = null
       for (const gate of this.gates) {
         gate.passed = false
         gate.missed = false
       }
       this._hold = 0
-      this._showHud('0.00', '', '')
+      this._showHud('0.00', this.best !== null ? `Bestzeit ${this.best.toFixed(2)}` : `Gold unter ${MEDALS[0].time.toFixed(2)}`, '')
+    }
+  }
+
+  // Das naechste offene Tor glimmt im Schnee, damit man die Linie vorher
+  // sieht; ein eben durchfahrenes blitzt gruen oder rot und verblasst.
+  _glow(dt) {
+    const running = this.state === 'running'
+    const next = running ? this.gates.find((g) => !g.passed && !g.missed) : null
+    for (const g of this.gates) {
+      g.flash = Math.max(0, g.flash - dt * 1.3)
+      const m = g.glow.material
+      if (g.flash > 0) {
+        m.color.setHex(g.missed ? 0xff4a3a : 0x3dff8c)
+        m.opacity = g.flash * 0.9
+      } else if (g === next) {
+        m.color.setHex(0xfff2c0)
+        m.opacity = 0.28 + Math.sin(performance.now() * 0.008) * 0.1
+      } else {
+        m.opacity = 0
+      }
     }
   }
 
   _finish() {
     const clean = this.missed === 0
-    // Verfehlte Tore kosten zwei Sekunden – das ist ueberschaubar und macht
-    // den Unterschied zwischen durchfahren und Kurve fahren spuerbar.
-    const total = this.time + this.missed * 2
+    const total = this.time + this.missed * PENALTY
     this.state = 'idle'
     this.lastRun = { time: this.time, missed: this.missed, total }
 
-    let note
+    const medal = MEDALS.find((m) => total <= m.time)
+    const next = medal ? MEDALS[MEDALS.indexOf(medal) - 1] : MEDALS[MEDALS.length - 1]
+    const parts = []
+    if (medal) parts.push(medal.name)
     if (this.best === null || total < this.best) {
       this.best = total
-      note = clean ? 'Bestzeit' : `Bestzeit (+${this.missed * 2}s Strafe)`
+      this.bestSplits = [...this.splits]
+      saveBest({ best: this.best, splits: this.bestSplits })
+      parts.push('Bestzeit')
     } else {
-      note = clean ? `Beste: ${this.best.toFixed(2)}` : `+${this.missed * 2}s Strafe`
+      parts.push(`Beste ${this.best.toFixed(2)}`)
     }
-    this._showHud(total.toFixed(2), note, clean ? 'good' : 'warn')
-    this._hold = 5
+    if (!clean) parts.push(`+${this.missed * PENALTY}s Strafe`)
+    else if (next) parts.push(`${next.name} unter ${next.time.toFixed(2)}`)
+    this._showHud(total.toFixed(2), parts.join(' · '), medal && clean ? 'good' : clean ? '' : 'warn')
+    this._hold = 6
   }
 
   _reset() {

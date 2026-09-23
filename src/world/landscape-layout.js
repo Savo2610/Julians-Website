@@ -31,6 +31,11 @@ export const GROVES = [
   { x: 26, z: 31, radius: 4.2, count: 6 },
   { x: 15, z: 45, radius: 3.8, count: 5 },
   { x: -57, z: 21, radius: 4.5, count: 6 },
+  // Um den Loeschzug (-16,4 / 41,9): hinter ihm, von der Kamera weg, und an
+  // beiden Seiten. Vorn bleibt frei, damit man ihn zwischen den Staemmen sieht.
+  { x: -21, z: 37, radius: 4.2, count: 7 },
+  { x: -22, z: 46, radius: 3.4, count: 4 },
+  { x: -12, z: 36.5, radius: 3.0, count: 3 },
 ]
 
 const forms = [...SNOW_FORMS, ...MEADOW_ROLLERS].map(f => ({

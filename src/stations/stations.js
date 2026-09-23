@@ -37,7 +37,14 @@ export const STATION_SPOTS = {
   // Tuer – beides blieb ein zweites Schild fuer denselben Menschen am selben
   // Ort. Zwei Zeilen auf der Karte der Huette sagen dasselbe und stehen
   // niemandem im Weg.
-  cabin:     { x: 25, z: 21, clearing: 13, footprint: 3.4, search: 3, trail: 'career' },
+  //
+  // Sie stand bei (25, 21) neben dem Zauberteppich, 25 Meter vom Start und
+  // am Bildrand – gerade die Station, die Firmen suchen, war die
+  // versteckteste. Jetzt steht sie 16 Meter vom Start auf dem flachen Stueck
+  // am Weg (Relief 0,6 auf vier Metern), und der Weg fuehrt direkt an der
+  // Werkbank vorbei. Die Lichtung ist kleiner (9 statt 13), sonst raeumte sie
+  // den Hang bis zum Plateau leer.
+  cabin:     { x: 15, z: 21, clearing: 9, footprint: 3.4, search: 1.5, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
   // Signal und Instagram teilen sich den Kontaktposten am Waldrand, dort, wo
@@ -76,7 +83,11 @@ export const STATION_SPOTS = {
   // und nicht bei den Koordinaten: der Loeschzug braucht seine ebenen zehn
   // Meter, die Drohne haette sich damit ihr Versteck selbst weggeraeumt.
   drone:     { x: 51, z: 20, clearing: 4, footprint: 1.2, search: 2, trail: null },
-  firetruck: { x: -15, z: 43, clearing: 10, footprint: 3.2, search: 4, trail: null },
+  // Der Loeschzug stand auf zehn Metern Lichtung allein im Schnee und war
+  // damit das Gegenteil eines Fundstuecks. Die Lichtung ist jetzt 4,5 Meter,
+  // und hinten und an den Seiten stehen eigene Baumgruppen (GROVES in
+  // landscape-layout.js) – nach vorn zur Kamera bleibt er sichtbar.
+  firetruck: { x: -15, z: 43, clearing: 4.5, footprint: 3.2, search: 4, trail: null },
 }
 
 // Die drei Fenster von veerka.mp werden erst geladen, wenn jemand die

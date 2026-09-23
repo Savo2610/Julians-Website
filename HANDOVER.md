@@ -157,7 +157,7 @@ Strang zu Ende fahren kann.
 
 | Station | Ort | Ziel |
 |---|---|---|
-| Werkstatt (Hütte) | 25, 21 | Auswahl: LinkedIn / GitHub |
+| Werkstatt (Hütte) | 15, 21 | Auswahl: LinkedIn / GitHub |
 | Skikasse | −40, −2 | Auswahl: PayPal / Solana (Wallet-Fenster) |
 | Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
 | Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |
@@ -165,7 +165,7 @@ Strang zu Ende fahren kann.
 | Arbeitszeitrechner (Stechuhr) | −41, 13 | stempelt, dann zeit.veerka.mp |
 | Packlisten-App (Depot) | −48, 0 | packliste.veerka.mp |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
-| Löschzug (Feuerwehrauto) | −15, 43 | jf.veerka.mp |
+| Löschzug (Feuerwehrauto) | −15, 43 | jf.veerka.mp (am Waldrand, eigene Baumgruppen) |
 
 Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
 mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
@@ -626,6 +626,8 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+         Werkstatt naeher am Start, Loeschzug am Waldrand
+7edb46f  Slalom: vier Tore streng im Wechsel
 2423356  LinkedIn vorn, Slalom, Lenkrad auf der Nordabfahrt, Steg eben
 cf0e3cf  Kontaktposten, Stechuhr hinter die Abkuerzung, Seebank, Tastatur
 24841cc  Talkarte aus der Welt gemalt, Schnellreise-Menue

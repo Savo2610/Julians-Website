@@ -45,7 +45,7 @@ const CLEARINGS = [
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
   { x: 24, z: -60, r: 12 }, // Terrasse mit der Apres-Ski-Huette
   { x: -33.0, z: -25.0, r: 8 },  // Lichtschranke des Speedchecks
-  { x: -32.2, z: -37.6, r: 6 },  // Schneekanone darueber
+  { x: -35.1, z: -36.3, r: 6 },  // Schneekanone darueber
   { x: -21.5, z: -24.5, r: 5 },  // Display des Speedchecks
 
 ]

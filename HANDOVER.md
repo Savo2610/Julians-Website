@@ -625,7 +625,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-         LinkedIn vorn, Slalom, Lenkrad auf der Nordabfahrt, Steg eben
+2423356  LinkedIn vorn, Slalom, Lenkrad auf der Nordabfahrt, Steg eben
 cf0e3cf  Kontaktposten, Stechuhr hinter die Abkuerzung, Seebank, Tastatur
 24841cc  Talkarte aus der Welt gemalt, Schnellreise-Menue
 debe2c1  Fenster im Glas, toter Solana-Ersatzknoten entfernt

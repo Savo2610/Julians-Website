@@ -605,7 +605,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-         Kontaktposten, Stechuhr hinter die Abkuerzung, Seebank, Tastatur
+cf0e3cf  Kontaktposten, Stechuhr hinter die Abkuerzung, Seebank, Tastatur
 24841cc  Talkarte aus der Welt gemalt, Schnellreise-Menue
 debe2c1  Fenster im Glas, toter Solana-Ersatzknoten entfernt
 69349de  Hosting auf beta.veerka.mp

@@ -1,0 +1,117 @@
+import { CAMERA } from '../config.js'
+
+// Was an einer Station passiert, wenn man Enter drueckt (oder tippt).
+//
+// Eine Station mit einem Ziel oeffnet es sofort. Eine mit mehreren – die
+// Skikasse, die Werkstatt – zoomt heran: der Fahrer bleibt stehen, die Kamera
+// faehrt auf das Objekt zu, unten klappt die Auswahl auf, und die Pfeiltasten
+// wechseln zwischen den Zielen. Das Objekt zeigt mit, welches gewaehlt ist.
+//
+// Alles hier laeuft *im* Tasten- oder Klickereignis und nicht im naechsten
+// Bild. Das ist der Grund, warum Safari die Links jetzt oeffnet: dort zaehlt
+// window.open nur waehrend einer Nutzergeste, und eine Geste endet mit ihrem
+// Ereignis.
+
+export class StationInteraction {
+  constructor({ registry, ui, input, camera, skier }) {
+    this.registry = registry
+    this.ui = ui
+    this.input = input
+    this.camera = camera
+    this.skier = skier
+    this.focus = null
+    this.selected = 0
+
+    ui.onUse = () => this.press('use')
+    ui.onPick = (i) => this._open(i)
+    ui.onHover = (i) => this._select(i)
+    ui.onClose = () => this.leave()
+  }
+
+  // true = die Aktion ist hier verbraucht und bewegt den Fahrer nicht.
+  press(action) {
+    if (this.focus) {
+      const n = this.focus.choices.length
+      switch (action) {
+        case 'left': this._select((this.selected + n - 1) % n); return true
+        case 'right': this._select((this.selected + 1) % n); return true
+        case 'use': this._open(this.selected); return true
+        case 'pick1': this._open(0); return true
+        case 'pick2': this._open(1); return true
+        case 'back': this.leave(); return true
+        // W und S fuehren aus der Auswahl hinaus – und W faehrt gleich los,
+        // deshalb wird es nicht verbraucht.
+        case 'forward': case 'brake': this.leave(); return false
+        default: return false
+      }
+    }
+
+    const s = this.registry.active
+    // Am Lift und am Teppich gehoert Enter dem Ausstieg.
+    if (!s || this.skier.tow) return false
+    if (action === 'use') {
+      if (s.choices?.length) this.enter(s)
+      else {
+        this.registry.trigger()
+        this.ui.flash()
+      }
+      return true
+    }
+    if ((action === 'pick1' || action === 'pick2') && s.choices) {
+      this.registry.trigger(action === 'pick1' ? 0 : 1)
+      this.ui.flash()
+      return true
+    }
+    return false
+  }
+
+  enter(station) {
+    this.focus = station
+    this.selected = 0
+    this.input.locked = true
+    const f = station.focus ?? {}
+    // Der Blickpunkt rueckt ein Stueck zur Kamera hin. Dadurch steht das
+    // Objekt im oberen Teil des Bildes und nicht hinter der Auswahl.
+    const vor = f.vor ?? 1.2
+    this.camera.fokus({
+      x: station.position.x + Math.sin(CAMERA.azimuth) * vor,
+      y: station.groundY + (f.hoehe ?? 1.2),
+      z: station.position.z + Math.cos(CAMERA.azimuth) * vor,
+      abstand: f.abstand ?? 10,
+    })
+    this.ui.openSheet(station, this.selected)
+    station.object?.userData.select?.(this.selected)
+  }
+
+  leave() {
+    if (!this.focus) return
+    this.focus.object?.userData.select?.(null)
+    this.focus = null
+    this.input.locked = false
+    this.camera.fokus(null)
+    this.ui.closeSheet()
+  }
+
+  _select(i) {
+    if (!this.focus || i === this.selected) return
+    this.selected = i
+    this.ui.select(i)
+    this.focus.object?.userData.select?.(i)
+  }
+
+  _open(i) {
+    if (!this.focus) return
+    this._select(i)
+    if (this.registry.trigger(i)) {
+      this.ui.flash(i)
+      this.focus.object?.userData.press?.(i)
+    }
+  }
+
+  // Jedes Bild: faehrt der Fahrer doch irgendwie weg (Lift, Rutschen), klappt
+  // die Auswahl von selbst zu.
+  update() {
+    if (this.focus && this.registry.active !== this.focus) this.leave()
+    this.ui.update(this.registry.active)
+  }
+}

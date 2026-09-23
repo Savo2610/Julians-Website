@@ -117,6 +117,54 @@ function keycapTexture({ cell = 150, gap = 18, radius = 28, rim = 15 } = {}) {
   return { texture: tex, aspect: width / height }
 }
 
+// Am Handy gibt es kein Tastenkreuz, also steht dort der Daumenstick im
+// Schnee: ein Ring, ein Knopf darin und vier Pfeile nach aussen. Dieselbe
+// Zeichensprache wie die Tasten – Wall in Gruen, Rille in Gelb.
+function stickTexture({ size = 520, rim = 15 } = {}) {
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, 0, size, size)
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  const c = size / 2
+  const ring = size * 0.3
+  const knob = size * 0.11
+  const draw = (color, extra) => {
+    ctx.strokeStyle = color
+    ctx.fillStyle = color
+    ctx.lineWidth = rim + extra
+    ctx.beginPath()
+    ctx.arc(c, c, ring, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(c, c, knob + extra / 2, 0, Math.PI * 2)
+    ctx.fill()
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 2
+      const r0 = ring + size * 0.07
+      const tip = ring + size * 0.14
+      const w = size * 0.05
+      const ux = Math.cos(a)
+      const uy = Math.sin(a)
+      ctx.beginPath()
+      ctx.moveTo(c + ux * r0 - uy * w, c + uy * r0 + ux * w)
+      ctx.lineTo(c + ux * tip, c + uy * tip)
+      ctx.lineTo(c + ux * r0 + uy * w, c + uy * r0 - ux * w)
+      ctx.stroke()
+    }
+  }
+  draw('#00ff00', rim)
+  draw('#ffff00', 0)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.NoColorSpace
+  tex.minFilter = THREE.LinearFilter
+  tex.generateMipmaps = false
+  return { texture: tex, aspect: 1 }
+}
+
 // Der Text soll aus der festen Kameraperspektive waagerecht stehen. Die
 // Textur-Achsen der Spurkarte entsprechen X und Z der Welt, also muss die
 // Schrift um den Kamera-Azimut gedreht liegen.
@@ -130,7 +178,7 @@ export function writeInSnow(trail, lines, { x, z, width, rotation = TEXT_ROTATIO
 }
 
 // Alles, was beim Start im Schnee steht.
-export function writeIntro(trail) {
+export function writeIntro(trail, { touch = false } = {}) {
   // Signatur, gross ueber dem Plateau – zwei Zeilen, Nachname etwas kleiner.
   writeInSnow(trail, [
     { text: 'JULIAN', scale: 1 },
@@ -143,8 +191,8 @@ export function writeIntro(trail) {
   })
 
   // Steuerung: nur das Tastenkreuz, kein erklaerender Text.
-  const { texture, aspect } = keycapTexture()
-  const width = 11
+  const { texture, aspect } = touch ? stickTexture() : keycapTexture()
+  const width = touch ? 8 : 11
   trail.stampDecal(texture, PLATEAU.x + 4.5, PLATEAU.z + 4.5, width, width / aspect, TEXT_ROTATION, 0.95)
 }
 

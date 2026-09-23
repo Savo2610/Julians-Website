@@ -5,6 +5,9 @@ import './dialogs/dialogs.css'
 
 import { CAMERA, COLORS, SKIER } from './config.js'
 import { Input } from './core/input.js'
+import { TOUCH } from './core/device.js'
+import { TouchControls } from './core/touch.js'
+import { inFunpark } from './world/heightfield.js'
 import { SnowTrail } from './world/snow-trail.js'
 import { World } from './world/world.js'
 import { createSky } from './world/sky.js'
@@ -13,6 +16,7 @@ import { writeIntro, stampTrack } from './world/snow-writing.js'
 import { populate, skierRef } from './world/populate.js'
 import { StationRegistry } from './stations/registry.js'
 import { StationUI } from './stations/ui.js'
+import { StationInteraction } from './stations/interaction.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
 import { Spray } from './player/spray.js'
@@ -24,7 +28,10 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
   powerPreference: 'high-performance',
 })
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+// Auf dem Handy hoechstens 1,5: bei 3 (iPhone) rechnet die Grafik sonst
+// viermal so viele Pixel wie bei 1,5, fuer einen Unterschied, den man auf
+// sechs Zoll nicht sieht.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, TOUCH ? 1.5 : 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -50,6 +57,21 @@ scene.add(skier.group)
 const chase = new TopCamera(camera)
 const spray = new Spray()
 scene.add(spray.points)
+
+const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier })
+input.onAction = (action) => interaction.press(action)
+
+// Handymodus: Daumenstick, Sprungknopf und Zwei-Finger-Zoom. Ein Tipp in den
+// Schnee klappt eine offene Auswahl wieder zu – das ist am Handy das Esc.
+const touch = TOUCH
+  ? new TouchControls(input, canvas, {
+    camera: chase,
+    skier,
+    jumpVisible: () => inFunpark(skier.position.x, skier.position.z) || !!props.railRide.rider,
+  })
+  : null
+if (TOUCH) document.documentElement.classList.add('touch')
+canvas.addEventListener('pointerdown', () => interaction.leave())
 
 const snowfall = createSnowfall()
 scene.add(snowfall)
@@ -142,6 +164,7 @@ function advance(dt) {
   props.kinderland.update(dt, skier, input)
   // Und die Rail im Funpark – dieselbe Mechanik, nur abwaerts und schneller.
   props.railRide.update(dt, skier, input)
+  touch?.update()
   skier.update(dt, input, trail)
   emitSpray(dt)
   spray.update(dt)
@@ -174,19 +197,10 @@ function advance(dt) {
   props.speedCheck.update(dt, skier)
 
   // Stationen: Naehe pruefen, Hinweis nachfuehren, Objekte animieren.
+  // Ausgeloest wird nicht hier, sondern im Tastenereignis selbst – siehe
+  // stations/interaction.js, warum.
   stations.update(dt, skier)
-  stationUI.update(stations.active)
-  if (input.justPressed('use') && stations.active) {
-    stations.trigger()
-    stationUI.flash()
-  }
-  // Stationen mit zwei Zielen – die Werkstatt und die Skikasse – waehlt man
-  // mit den Ziffern, die auf der Karte stehen.
-  for (const [key, index] of [['pick1', 0], ['pick2', 1]]) {
-    if (input.justPressed(key) && stations.active?.choices) {
-      if (stations.trigger(index)) stationUI.flash()
-    }
-  }
+  interaction.update()
   // dt kommt mit, weil inzwischen nicht mehr alles eine Funktion der Uhrzeit
   // ist – umgestossene Fackeln richten sich ueber eine Dauer wieder auf.
   for (const animate of props.animated) animate(elapsed, dt)
@@ -213,12 +227,23 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)
     draw()
     return skier.position.toArray().map((v) => +v.toFixed(2))
+  },
+  // Stellt den Fahrer vor eine Station. _prevGroundY und _rise muessen mit
+  // zurueck, sonst haelt er den Hoehensprung fuer eine Schanze.
+  goto(id, dx = 2.5, dz = 2.5) {
+    const s = stations.stations.find((st) => st.id === id)
+    if (!s) return null
+    skier.position.set(s.position.x + dx, world.heightAt(s.position.x + dx, s.position.z + dz), s.position.z + dz)
+    skier.speed = 0
+    skier._prevGroundY = null
+    skier._rise = 0
+    return this.step(30)
   },
 }
 
@@ -229,7 +254,7 @@ window.addEventListener('resize', () => {
 })
 
 // Die Schrift im Schnee wird einmalig eingestempelt und bleibt dann liegen.
-writeIntro(trail)
+writeIntro(trail, { touch: TOUCH })
 
 // Wildspuren auf der Rueckseite. Zwei queren die Nordabfahrt, eine zieht unten
 // am Grat entlang. Sie stehen hier und nicht in populate, weil sie in den

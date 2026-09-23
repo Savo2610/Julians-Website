@@ -9,6 +9,7 @@ import { createDrone } from '../world/props/drone.js'
 import { createFireTruck } from '../world/props/firetruck.js'
 import { createShortcutTunnel } from '../world/props/shortcut-tunnel.js'
 import { createGearDepot } from '../world/props/gear-depot.js'
+import { createWorkbench } from '../world/props/workbench.js'
 import { createTicketBooth } from '../world/props/ticket-booth.js'
 import { createTimeClock } from '../world/props/time-clock.js'
 import { CAMERA } from '../config.js'
@@ -86,6 +87,11 @@ export const STATION_SPOTS = {
 // Die drei Fenster von veerka.mp werden erst geladen, wenn jemand die
 // zugehoerige Station benutzt. Zusammen sind sie 35 Kilobyte, und die
 // allermeisten Besucher fahren einfach Ski.
+// Abstand der Werkbank vor der Huettenmitte, zur Kamera hin. Die Huette ist
+// 2,4 tief und hat einen Kollisionskreis von 2,1; bei 3,4 bleibt ein knapper
+// Meter Luft zwischen Bank und Wand – eng genug, dass beide zusammengehoeren.
+const BENCH_AHEAD = 3.4
+
 const walletDialog = () => import('../dialogs/wallet.js').then((m) => m.oeffnen())
 const uploadDialog = () => import('../dialogs/upload.js').then((m) => m.oeffnen())
 const kurzDialog = () => import('../dialogs/kurz.js').then((m) => m.oeffnen())
@@ -112,12 +118,24 @@ export function populateStations(world, registry) {
   const register = (station) => {
     const marker = createMarker(station.position.x, station.position.z, station.radius ?? 6, station.color)
     world.scene.add(marker)
-    registry.add({ ...station, marker })
+    const groundY = world.heightAt(station.position.x, station.position.z)
+    registry.add({ ...station, marker, groundY })
   }
 
   // --- Weg 1: beruflich ---------------------------------------------------
   const cabin = createCabin({ label: 'WERKSTATT' })
   place(cabin, STATION_SPOTS.cabin, { rotation: FACING + 0.28, collider: 2.1 })
+  // Die Werkbank steht zwischen Huette und Kamera, gerade zu ihr ausgerichtet
+  // – dort liegen GitHub und LinkedIn, siehe props/workbench.js.
+  const bench = createWorkbench()
+  const benchSpot = {
+    x: STATION_SPOTS.cabin.x + Math.sin(FACING) * BENCH_AHEAD,
+    z: STATION_SPOTS.cabin.z + Math.cos(FACING) * BENCH_AHEAD,
+  }
+  place(bench, benchSpot, { rotation: FACING })
+  for (const along of [-0.75, 0.75]) {
+    world.addCollider(benchSpot.x + Math.cos(FACING) * along, benchSpot.z - Math.sin(FACING) * along, 0.62)
+  }
   register({
     id: 'werkstatt',
     label: 'Werkstatt',
@@ -126,9 +144,12 @@ export function populateStations(world, registry) {
     position: STATION_SPOTS.cabin,
     radius: 7.5,
     labelHeight: world.heightAt(STATION_SPOTS.cabin.x, STATION_SPOTS.cabin.z) + 4.2,
+    object: bench,
+    // Herangezoomt wird auf die Bank, nicht auf die Huettenmitte.
+    focus: { abstand: 8.5, hoehe: 1.0, vor: BENCH_AHEAD + 0.9 },
     choices: [
-      { label: 'GitHub', url: LINKS.github, color: '#2b3137' },
-      { label: 'LinkedIn', url: LINKS.linkedin, color: '#0a66c2' },
+      { label: 'GitHub', sub: 'Quelltext · Savo2610', glyph: 'github', url: LINKS.github, color: '#2b3137' },
+      { label: 'LinkedIn', sub: 'Lebenslauf · jsveerkamp', glyph: 'linkedin', url: LINKS.linkedin, color: '#0a66c2' },
     ],
   })
 
@@ -138,7 +159,7 @@ export function populateStations(world, registry) {
   register({
     id: 'signal',
     label: 'Signal',
-    hint: 'Hoerer abnehmen',
+    hint: 'Hörer abnehmen',
     color: '#3a76f0',
     url: LINKS.signal,
     position: STATION_SPOTS.phone,
@@ -149,7 +170,7 @@ export function populateStations(world, registry) {
   // Die Skikasse ist jetzt das Haeuschen selbst. Der Automat daneben war die
   // zweite Kasse fuer dieselbe Sache; seine beiden Zahlwege sind als Tafeln
   // in die Front des Hauses gewandert.
-  const booth = createTicketBooth({ label: 'SKIKASSE', leftColor: 0x2b8ce6, rightColor: 0x9945ff })
+  const booth = createTicketBooth({ label: 'SKIKASSE' })
   place(booth, STATION_SPOTS.ticket, { rotation: FACING, collider: 1.3 })
   register({
     id: 'kasse',
@@ -159,13 +180,15 @@ export function populateStations(world, registry) {
     position: STATION_SPOTS.ticket,
     radius: 5.0,
     labelHeight: world.heightAt(STATION_SPOTS.ticket.x, STATION_SPOTS.ticket.z) + 3.6,
+    object: booth,
+    focus: { abstand: 9.5, hoehe: 1.3, vor: 1.4 },
     choices: [
-      { label: 'PayPal', url: LINKS.paypal, color: '#2b8ce6' },
+      { label: 'PayPal', sub: 'paypal.me/juliansebv', glyph: 'paypal', url: LINKS.paypal, color: '#2b8ce6' },
       // Solana oeffnet kein Ziel, sondern das Fenster von veerka.mp: es
       // sucht die Wallet-Erweiterung, rechnet SOL in Euro um und schickt die
       // Ueberweisung. Ein blosser solana:-Link koennte das nicht – am
       // Rechner tut er schlicht nichts.
-      { label: 'Solana', color: '#9945ff', action: () => walletDialog() },
+      { label: 'Solana', sub: 'Wallet verbinden', glyph: 'solana', color: '#9945ff', action: () => walletDialog() },
     ],
   })
 
@@ -237,8 +260,8 @@ export function populateStations(world, registry) {
   }
   register({
     id: 'shortener',
-    label: 'Abkuerzung',
-    hint: 'Link kuerzen',
+    label: 'Abkürzung',
+    hint: 'Link kürzen',
     color: '#5b7fa6',
     position: STATION_SPOTS.tunnel,
     radius: 6,
@@ -265,7 +288,7 @@ export function populateStations(world, registry) {
   place(drone, STATION_SPOTS.drone, { yOffset: 0.16, collider: 0.5 })
   register({
     id: 'drone',
-    label: 'Abgestuerzte Drohne',
+    label: 'Abgestürzte Drohne',
     hint: 'Uniprojekt ansehen',
     color: '#ff4d3d',
     url: LINKS.kidrohne,
@@ -279,8 +302,8 @@ export function populateStations(world, registry) {
   place(truck, STATION_SPOTS.firetruck, { rotation: FACING + Math.PI / 2, collider: 1.7 })
   register({
     id: 'firetruck',
-    label: 'Loeschzug',
-    hint: 'Lernwerkstatt oeffnen',
+    label: 'Löschzug',
+    hint: 'Lernwerkstatt öffnen',
     color: '#c8352c',
     url: LINKS.jugendfeuerwehr,
     position: STATION_SPOTS.firetruck,

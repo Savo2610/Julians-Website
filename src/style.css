@@ -104,126 +104,223 @@ html, body {
 }
 .hint .sep { opacity: 0.4; margin: 0 6px; }
 
-/* --- Stationen -----------------------------------------------------------
-   Der Hinweis an einer Station ist ein Pistenschild und keine Karte: farbiger
-   Kopf mit dem Namen, Emailtafel darunter, Pfosten in den Schnee. Er ist
-   HTML und nicht 3D, damit er bei jeder Zoomstufe scharf bleibt – aber er
-   soll aussehen wie etwas, das dort steht.
+/* --- Glas -------------------------------------------------------------------
+   Alles, was ueber der Welt schwebt, ist aus demselben Glas: hell getoent,
+   weil der Hintergrund fast immer Schnee ist und klares Glas auf Weiss
+   verschwindet; stark verwischt und gesaettigt, damit Himmel, Tannen und
+   Stationsfarben durchscheinen; oben eine Lichtkante, unten ein weicher
+   Schlagschatten. Die Glanzlinie (::before) ist das, was es vom Milchglas
+   jeder zweiten Webseite unterscheidet. */
 
-   Deshalb keine Transparenz, kein backdrop-filter und kein weicher Schatten.
-   Was ein Blechschild ausmacht, sind harte Kanten, eine Umrandung und eine
-   sichtbare Blechdicke an der Unterkante; genau das machen die zwei
-   Rahmenbreiten. Es ist dieselbe Sprache wie bei den Tastenkappen in der
-   Hinweiszeile unten – die sahen schon vorher nach Gegenstand aus. */
+.glass {
+  position: relative;
+  color: #13212f;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.62), rgba(233, 243, 252, 0.34) 55%, rgba(214, 231, 248, 0.42));
+  -webkit-backdrop-filter: blur(16px) saturate(1.9) brightness(1.04);
+  backdrop-filter: blur(16px) saturate(1.9) brightness(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px rgba(120, 160, 200, 0.18),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.35),
+    0 12px 32px -8px rgba(28, 58, 96, 0.32),
+    0 2px 6px rgba(28, 58, 96, 0.12);
+}
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 18% -10%, rgba(255, 255, 255, 0.75), transparent 55%),
+    linear-gradient(180deg, transparent 60%, rgba(255, 255, 255, 0.22));
+  mix-blend-mode: soft-light;
+}
 
-.station-card {
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 7px;
+  font: 700 11px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  color: #1c2c3d;
+  background: linear-gradient(#ffffff, #eef4fa);
+  border: 1px solid rgba(40, 70, 105, 0.22);
+  box-shadow: 0 1.5px 0 rgba(40, 70, 105, 0.22), inset 0 1px 0 #fff;
+}
+kbd.k-enter { font-size: 13px; min-width: 28px; }
+
+/* --- Einladung an der Station -------------------------------------------- */
+
+.station-prompt {
   position: fixed;
   top: 0;
   left: 0;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px 7px 8px;
+  border-radius: 999px;
+  font: inherit;
+  text-align: left;
   white-space: nowrap;
+  cursor: pointer;
   pointer-events: none;
   opacity: 0;
   z-index: 12;
   transition: opacity 0.22s ease;
-  filter: drop-shadow(0 6px 10px rgba(40, 70, 110, 0.22));
+  -webkit-tap-highlight-color: transparent;
 }
-.station-card.visible { opacity: 1; }
-.station-card.pop { animation: cardIn 0.3s cubic-bezier(0.2, 1.4, 0.4, 1); }
-@keyframes cardIn {
-  from { transform-origin: bottom center; scale: 0.86; }
-  to { scale: 1; }
+.station-prompt.visible { opacity: 1; pointer-events: auto; }
+.station-prompt.hidden { opacity: 0; pointer-events: none; }
+.station-prompt.pop { animation: promptIn 0.38s cubic-bezier(0.2, 1.5, 0.4, 1); }
+@keyframes promptIn {
+  from { scale: 0.8; translate: 0 6px; }
+  to { scale: 1; translate: 0 0; }
 }
-/* Beim Ausloesen blitzt die Tafel einmal auf – ein Ring waere wieder der
-   Effekt, den jede Web-Oberflaeche benutzt. */
-.station-card.used .station-plate { animation: platePulse 0.4s ease; }
-@keyframes platePulse {
-  0% { background: #ffffff; }
-  100% { background: var(--enamel); }
+.station-prompt.used { animation: glassPulse 0.35s ease; }
+@keyframes glassPulse {
+  40% { scale: 0.94; }
+  100% { scale: 1; }
 }
+/* Ein Farbpunkt vorn statt eines farbigen Kopfes: die Station hat ihre
+   Farbe, aber das Glas bleibt Glas. Ohne Enter-Taste (Handy) steht er
+   allein am Anfang. */
+.station-prompt::after {
+  content: '';
+  order: -1;
+  width: 8px;
+  height: 8px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.station-prompt kbd { order: 0; }
+.prompt-text { display: flex; flex-direction: column; line-height: 1.15; }
+.prompt-title { font-size: 13px; font-weight: 750; letter-spacing: 0.01em; }
+.prompt-sub { font-size: 11px; font-weight: 550; color: #4a5f75; }
+.station-prompt.dead { opacity: 0.7; }
+.station-prompt.dead kbd { display: none; }
 
-.station-head {
-  padding: 4px 10px 3px;
-  border: 1px solid rgba(20, 30, 42, 0.55);
-  border-bottom: 0;
-  border-radius: 3px 3px 0 0;
-  background: #4a6c93;
-}
-.station-title {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: #fff;
-}
+/* --- Auswahl nach dem Heranzoomen ---------------------------------------- */
 
-.station-plate {
-  --enamel: #f6f9fd;
-  padding: 6px 10px 7px;
-  background: var(--enamel);
-  border: 1px solid rgba(20, 30, 42, 0.55);
-  /* Die dickere Unterkante ist die Blechdicke. */
-  border-bottom-width: 3px;
-  border-radius: 0 0 3px 3px;
+.station-sheet {
+  position: fixed;
+  left: 50%;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: min(480px, calc(100vw - 24px));
+  padding: 14px 14px 12px;
+  border-radius: 26px;
+  translate: -50% 24px;
+  scale: 0.96;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 13;
+  transition: opacity 0.25s ease, translate 0.45s cubic-bezier(0.2, 1.2, 0.3, 1), scale 0.45s cubic-bezier(0.2, 1.2, 0.3, 1);
 }
-.station-row {
+.station-sheet.visible { opacity: 1; translate: -50% 0; scale: 1; pointer-events: auto; }
+
+.sheet-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 4px 10px;
+}
+.sheet-dot {
+  align-self: center;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.sheet-title { font-size: 16px; font-weight: 780; }
+.sheet-sub { font-size: 12.5px; font-weight: 550; color: #4a5f75; }
+.sheet-close {
+  margin-left: auto;
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  font: 500 19px/1 system-ui, sans-serif;
+  color: #3b4f64;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+
+.sheet-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 10px;
 }
-.station-sub {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: #55697f;
-}
-.station-key kbd,
-.station-choice kbd {
-  display: inline-block;
-  min-width: 9px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #fff;
-  border: 1px solid rgba(34, 48, 63, 0.35);
-  border-bottom-width: 2px;
-  font: inherit;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #35485e;
-  text-align: center;
-}
-
-/* Der Pfosten. Er steht mittig unter der Tafel und reicht bis zum Objekt
-   hinunter – ohne ihn schwebt das Schild, und schwebende Schilder gibt es
-   auf keiner Piste. */
-.station-post {
-  width: 3px;
-  height: 13px;
-  margin: 0 auto;
-  background: linear-gradient(#8b98a6, #6c7a89);
-  border: 1px solid rgba(20, 30, 42, 0.4);
-  border-top: 0;
-}
-
-/* Zwei Ziele nebeneinander statt untereinander: das Schild bleibt flach,
-   und flach ist die Form, in der ein Pistenschild lesbar ist. */
-.station-choices {
-  display: flex;
-  gap: 12px;
-  margin-top: 5px;
-}
-.station-choices:empty { display: none; }
-.station-choice {
+.sheet-option {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 650;
-  color: var(--choice, #35485e);
+  gap: 11px;
+  min-width: 0;
+  padding: 11px 12px;
+  border-radius: 18px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: background 0.2s ease, box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+  -webkit-tap-highlight-color: transparent;
 }
-.station-choice.off { opacity: 0.35; }
-.station-choice.off kbd { visibility: hidden; }
+.sheet-option.selected {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 2px var(--c),
+    0 8px 22px -6px color-mix(in srgb, var(--c) 55%, transparent);
+  transform: translateY(-2px);
+}
+.sheet-option.used { animation: glassPulse 0.35s ease; }
+.sheet-option.off { opacity: 0.4; pointer-events: none; }
+.opt-glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 78%, #fff), var(--c));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 3px 8px -2px color-mix(in srgb, var(--c) 60%, transparent);
+}
+.opt-glyph svg { width: 22px; height: 22px; }
+.opt-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.opt-label { font-size: 14.5px; font-weight: 750; }
+.opt-sub { font-size: 11.5px; font-weight: 550; color: #4a5f75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opt-go {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--c);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.sheet-option.selected .opt-go { opacity: 1; }
+
+.sheet-keys {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-top: 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4a5f75;
+}
+.sheet-keys kbd { height: 20px; min-width: 20px; font-size: 10.5px; }
+.sheet-keys i { width: 3px; height: 3px; margin: 0 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
 
 /* --- Zeitnahme der Rennstrecke -------------------------------------------
    Erscheint nur waehrend eines Laufs und ein paar Sekunden danach. Der Rest
@@ -288,3 +385,100 @@ html, body {
   opacity: 1;
   transform: translate(-50%, -6px);
 }
+
+/* --- Handymodus -------------------------------------------------------------
+   Nur mit html.touch. Kein dauerhaftes Bedienfeld: der Stick erscheint unter
+   dem Daumen und verschwindet mit ihm, der Sprungknopf nur im Funpark. */
+
+html.touch, html.touch body {
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.touch-stick {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 11;
+  transition: opacity 0.18s ease;
+}
+.touch-stick.visible { opacity: 1; }
+.touch-knob {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(225, 238, 250, 0.85));
+  box-shadow: 0 6px 16px -4px rgba(28, 58, 96, 0.45), inset 0 1px 0 #fff;
+}
+
+.touch-jump {
+  position: fixed;
+  right: max(22px, env(safe-area-inset-right));
+  bottom: max(34px, calc(env(safe-area-inset-bottom) + 18px));
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #13212f;
+  opacity: 0;
+  scale: 0.8;
+  pointer-events: none;
+  z-index: 11;
+  touch-action: none;
+  transition: opacity 0.25s ease, scale 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.touch-jump.visible { opacity: 1; scale: 1; pointer-events: auto; }
+.touch-jump.down { scale: 0.9; }
+.touch-jump svg { width: 30px; height: 30px; }
+
+.touch-hint {
+  position: fixed;
+  left: 50%;
+  bottom: max(28px, calc(env(safe-area-inset-bottom) + 14px));
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 11;
+  animation: hintIn 0.6s 1.2s both ease;
+  transition: opacity 0.5s ease;
+}
+.touch-hint.gone { opacity: 0; }
+@keyframes hintIn { from { opacity: 0; translate: -50% 10px; } }
+.touch-hint-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.45), 0 2px 6px rgba(28, 58, 96, 0.35);
+  animation: thumb 1.8s ease-in-out infinite;
+}
+@keyframes thumb {
+  0%, 100% { transform: translate(0, 0); }
+  35% { transform: translate(6px, -5px); }
+  70% { transform: translate(-5px, -2px); }
+}
+
+/* Am Handy steht die Auswahl ueber die volle Breite, die Ziele untereinander:
+   zwei Spalten a 160 Pixel waren fuer "paypal.me/juliansebv" zu schmal. */
+html.touch .sheet-options { grid-template-columns: 1fr; }
+html.touch .sheet-option { padding: 13px 14px; }
+html.touch .station-prompt { padding: 10px 16px 10px 10px; }
+html.touch .prompt-title { font-size: 14px; }

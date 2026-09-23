@@ -11,7 +11,8 @@ const KEY_MAP = {
   KeyD: 'right', ArrowRight: 'right',
   ShiftLeft: 'carve', ShiftRight: 'carve',
   Space: 'jump',
-  KeyE: 'use', Enter: 'use',
+  KeyE: 'use', Enter: 'use', NumpadEnter: 'use',
+  Escape: 'back', Backspace: 'back',
   // Stationen mit mehr als einem Ziel: die Karte zeigt die Ziffern an, mit
   // denen man waehlt. Ein zweiter Bestaetigungsknopf waere eine Taste mehr
   // fuer einen Fall, den es an drei Stellen im Tal gibt.
@@ -26,6 +27,18 @@ export class Input {
     this.pressed = new Set()   // nur im Frame des Tastendrucks gesetzt
     this.zoom = 1
     this.anyInputYet = false
+    // Wird noch *im* Tastenereignis gerufen, nicht erst im naechsten Bild.
+    // Safari laesst window.open nur waehrend einer Nutzergeste zu; ein Link,
+    // der erst im requestAnimationFrame danach aufgeht, gilt dort als Popup
+    // und wird still verworfen. Gibt der Empfaenger true zurueck, gehoert
+    // die Taste ihm und faehrt den Skifahrer nicht.
+    this.onAction = null
+    // Vor einer Station eingezoomt: der Fahrer steht, die Pfeiltasten
+    // waehlen statt zu lenken.
+    this.locked = false
+    // Der Daumenstick auf dem Handy – siehe core/touch.js. Er ersetzt die
+    // Tasten, solange ein Finger liegt.
+    this.stick = null
     this._bind()
   }
 
@@ -44,7 +57,12 @@ export class Input {
     window.addEventListener('keydown', (e) => {
       const action = KEY_MAP[e.code]
       if (!action || this._blocked()) return
-      if (e.code === 'Space') e.preventDefault()
+      if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault()
+      if (!e.repeat && this.onAction?.(action)) {
+        e.preventDefault()
+        this.anyInputYet = true
+        return
+      }
       if (!this.keys.has(action)) this.pressed.add(action)
       this.keys.add(action)
       this.anyInputYet = true
@@ -65,11 +83,20 @@ export class Input {
 
   has(action) {
     if (this._blocked()) return false
+    if (this.locked) return action === 'brake'
     return this.keys.has(action)
   }
 
   justPressed(action) {
+    if (this.locked) return false
     return this.pressed.has(action)
+  }
+
+  // Fuer Knoepfe auf dem Bildschirm: dieselbe Aktion wie die Taste, auch fuer
+  // justPressed im naechsten Bild.
+  tap(action) {
+    this.pressed.add(action)
+    this.anyInputYet = true
   }
 
   // Am Ende jedes Frames aufrufen.
@@ -79,10 +106,12 @@ export class Input {
 
   // Lenkung in [-1, 1]; positiv = nach rechts aus Sicht des Fahrers.
   get steer() {
+    if (this.stick && !this.locked) return this.stick.steer
     return (this.has('right') ? 1 : 0) - (this.has('left') ? 1 : 0)
   }
 
   get throttle() {
+    if (this.stick && !this.locked) return this.stick.throttle
     return this.has('forward') ? 1 : 0
   }
 

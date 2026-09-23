@@ -532,8 +532,8 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-         Aufraeumen, Hosting test.veerka.mp
-b51499c  Enter statt Ziffern: Glas, Heranzoomen, Safari-Fix, Handymodus
+7845cc0  Aufraeumen, Hosting test.veerka.mp
+805b372  Enter statt Ziffern: Glas, Heranzoomen, Safari-Fix, Handymodus
 493ad64  Wegenetz, Landschaft, Huettenensemble und Seebucht
 b3fcf57  Nordabfahrt ueber die Rueckseite des Berges (Merge, --no-ff)
 a7fa99a  Uebergabe: richtige Commit-Nummer im Verlauf

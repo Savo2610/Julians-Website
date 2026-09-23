@@ -40,11 +40,12 @@ export const STATION_SPOTS = {
   //
   // Sie stand bei (25, 21) neben dem Zauberteppich, 25 Meter vom Start und
   // am Bildrand – gerade die Station, die Firmen suchen, war die
-  // versteckteste. Jetzt steht sie 16 Meter vom Start auf dem flachen Stueck
-  // am Weg (Relief 0,6 auf vier Metern), und der Weg fuehrt direkt an der
-  // Werkbank vorbei. Die Lichtung ist kleiner (9 statt 13), sonst raeumte sie
-  // den Hang bis zum Plateau leer.
-  cabin:     { x: 15, z: 21, clearing: 9, footprint: 3.4, search: 1.5, trail: 'career' },
+  // versteckteste. Bei (15, 21) stand sie dann mitten in der Abfahrt vom
+  // Plateau. Jetzt steht sie gut 20 Meter vom Start hangab, wo vorher der
+  // Baumhuegel war (der ist nach links gerueckt), sichtbar vom Wegweiser aus
+  // und nicht mehr im Weg. Der Weg fuehrt vorn an der Werkbank vorbei. Die
+  // Lichtung ist kleiner (9 statt 13), sonst raeumte sie den Hang leer.
+  cabin:     { x: 22, z: 28, clearing: 9, footprint: 3.4, search: 1.5, trail: 'career' },
 
   // Weg 2 – Soziales und Bezahlen
   // Signal und Instagram teilen sich den Kontaktposten am Waldrand, dort, wo

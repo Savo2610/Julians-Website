@@ -7,9 +7,9 @@ export const TRAILS = {
     label: 'PROFIL & CODE',
     color: '#346782',
     markerColor: 0x527f99,
-    // Nach Osten am Wegweiser vorbei in die Mulde mit der Huette und weiter
-    // bis zur Talstation des Zauberteppichs.
-    path: [[7, 27], [14, 26], [20, 23], [26, 21], [31, 19]],
+    // Vom Wegweiser hangab zur Huette, vorn an der Werkbank vorbei, und
+    // dann nach Norden bis zur Talstation des Zauberteppichs.
+    path: [[7, 27], [13, 29], [19, 34], [25, 35], [30, 28], [31, 19]],
   },
   social: {
     label: 'KONTAKT & GIPFEL',

@@ -5,7 +5,7 @@ export const SNOW_FORMS = [
   { x: -15, z: 10, rx: 7, rz: 10, height: 2.8, angle: -0.3 },
   { x: -17, z: -3, rx: 7, rz: 9, height: 2.5, angle: 0.25 },
   { x: -4, z: -13, rx: 6, rz: 9, height: 1.9, angle: -0.5 },
-  { x: 27, z: 34, rx: 10, rz: 7, height: 2.7, angle: 0.4 },
+  { x: 21, z: 40, rx: 9, rz: 6, height: 2.7, angle: 0.4 },
   { x: 15, z: 44, rx: 8, rz: 6, height: 1.8, angle: -0.3 },
   { x: -57, z: 22, rx: 10, rz: 6, height: 2.8, angle: -0.65 },
 ]
@@ -28,7 +28,7 @@ export const GROVES = [
   { x: -15, z: 11, radius: 5.0, count: 7 },
   { x: -18, z: -5, radius: 4.5, count: 6 },
   { x: -2, z: -12, radius: 4.0, count: 5 },
-  { x: 26, z: 31, radius: 4.2, count: 6 },
+  { x: 20, z: 38, radius: 4.2, count: 6 },
   { x: 15, z: 45, radius: 3.8, count: 5 },
   { x: -57, z: 21, radius: 4.5, count: 6 },
   // Um den Loeschzug (-16,4 / 41,9): hinter ihm, von der Kamera weg, und an

@@ -157,7 +157,7 @@ Strang zu Ende fahren kann.
 
 | Station | Ort | Ziel |
 |---|---|---|
-| Werkstatt (Hütte) | 15, 21 | Auswahl: LinkedIn / GitHub |
+| Werkstatt (Hütte) | 22, 28 | Auswahl: LinkedIn / GitHub |
 | Skikasse | −40, −2 | Auswahl: PayPal / Solana (Wallet-Fenster) |
 | Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
 | Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |

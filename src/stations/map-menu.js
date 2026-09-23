@@ -133,7 +133,7 @@ export class MapMenu {
         b.querySelector('.opt-sub').textContent = item.sub ?? ''
         b.querySelector('.opt-go').textContent = TOUCH ? '→' : '⏎'
         b.addEventListener('click', () => this.travel(i))
-        b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._select(i) })
+        b.addEventListener('pointermove', (e) => this._hover(e, i))
         this.list.appendChild(b)
         item.button = b
 
@@ -148,7 +148,7 @@ export class MapMenu {
         pin.firstElementChild.textContent = item.label
         pin.setAttribute('aria-label', item.label)
         pin.addEventListener('click', () => this.travel(i))
-        pin.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this._select(i) })
+        pin.addEventListener('pointermove', (e) => this._hover(e, i))
         this.pins.appendChild(pin)
         item.pin = pin
       }
@@ -183,6 +183,18 @@ export class MapMenu {
     this.open = false
     this.input.locked = false
     this.el.classList.remove('visible')
+  }
+
+  // Die Maus waehlt nur, wenn sie sich bewegt hat. Mit pointerenter sprang
+  // die Auswahl mit den Pfeiltasten am Listenende wieder nach oben: die
+  // Liste scrollt unter dem ruhenden Zeiger weg, der Browser meldet das
+  // Ziel darunter als neu betreten, und das lag weiter oben.
+  _hover(e, i) {
+    if (e.pointerType !== 'mouse') return
+    const wo = `${e.screenX},${e.screenY}`
+    if (wo === this._zeiger) return
+    this._zeiger = wo
+    this._select(i)
   }
 
   _select(i) {

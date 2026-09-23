@@ -1,158 +1,9 @@
 # Skiportfolio — Übergabe
 
-Stand: 12.09.2026, Commit `112902f`. Dieses Dokument ist der Einstieg für jeden,
-der hier weiterarbeitet. Es beschreibt nicht nur *was* da ist, sondern *warum* —
-denn an mehreren Stellen sieht die naheliegende Lösung besser aus als die
-gewählte, und ist es nicht.
-
----
-
-## Korrektur nach Rueckmeldung: Oberflaechen und Huettenensemble 22.09.2026
-
-Diese Fassung ersetzt die rechteckige Terrasse und den westlichen Standort
-im folgenden Eintrag. Die Huette steht jetzt **rechts bei (23, -64)**, weiterhin
-mit der Front zur festen Kamera. Ein gemeinsamer lokaler Grundriss verbindet
-Haustuer und asymmetrischen Terrassenfluegel zur Piste. Die Dielen werden an
-der neuneckigen Kontur zugeschnitten; keine frei liegende rechteckige Platte.
-Drei Sitzgruppen, zwei an der Fassade angeschlossene Lichterketten und nur
-hangseitige Bruestungen bilden einen zusammenhaengenden Vorplatz. Die linke
-Piste bleibt frei. Funparkschild aus dem Vorplatz an die Piste versetzt und
-seine im Brett verschwundene Beschriftung korrigiert; Wegweiser trennt jetzt
-Huette und Park mit passenden Pfeilen.
-
-**Ursache der weissen Spuren:** Der Fahrer stempelte auch auf Eis und Holz
-in die Schneetextur. Deren aufgeworfener Rand ragte durch die nur 1,2 cm hoeheren
-Belagsmeshes. `surfaces.js` teilt jetzt die echten See- und Terrassenkonturen
-mit Spurerzeugung, Schneestaub und Terrain-Displacement. Sicherheitsabstand
-fuer Skibreite und Spurrand; die Spurkette wird beim Materialwechsel getrennt.
-Der Shader sperrt Verformung unter festen Oberflaechen zusaetzlich. Eisfarbe
-staerker abgesetzt; kein Schneestaub auf Eis oder Holz.
-
-Verifikation: `node --test tests/surfaces.test.js` (drei Regressionstests)
-prueft Materialgrenzen, unterbrochene Spuren und bewegliche Moebel. Im Browser
-mit echtem Fahrmodell und echten gerenderten Spuren gefahren: Eis und Holz
-jeweils **0 Stempel**, Schneestrecke **98 Stempel**. Zu- und Ausfahrt erreichen
-ihr Ziel; die Ausfahrt endet auf den Parkwellen (0,43 m Airtime), Eis/Holz/
-Zufahrt bleiben am Boden. Sichtpruefung nach den Fahrten: kein weisser Belag
-auf dem Holz, umgefahrene Moebel reagieren. Produktionsbuild und Diffpruefung
-bestanden. Temporaere Browser-Pruefseite wieder entfernt.
-
----
-
-## Huette, Terrasse und Seebucht 22.09.2026
-
-Die Huette steht jetzt am westlichen Rand des Parkzugangs bei (0, -63),
-mit unveraenderter Schauseite zur festen Kamera. Die alte erhoehte Terrasse
-und ihre grosse Kollisionsscheibe sind entfernt. `apres-layout.js` legt eine
-13 × 11 m grosse, leicht geneigte Bodenflaeche fest. `apresGround()` formt sie
-nach den Pistenbaendern; der Holzbelag folgt derselben Hoehenfunktion mit
-1,2 cm Abstand. Vier Schneezungen, getragene Lichterketten, ein sichtbares
-Fenster und eine Tuer verbinden Haus und Vorplatz. Zwei sichtbare Musikboxen;
-kein Ton, entsprechend der bestehenden Entscheidung.
-
-`apres-terrace.js` baut drei Tische und sechs Baenke. Fahrtkontakt wird auf dem
-letzten Bewegungssegment geprueft; Moebel rutschen und kippen entsprechend
-Fahrtrichtung und Tempo. Gedrehte Stuetzpunkte nehmen das lokale Gelaende ab.
-Die Moebel bleiben zehn Sekunden liegen und richten sich erst wieder auf,
-wenn der Fahrer mindestens sieben Meter von Objekt und Stellplatz entfernt
-ist. Keine neue Physikbibliothek. Ruhende Moebel ueberspringen Hoehenproben.
-Debug: `window.__ski.props.apresTerrace.bodies` und `.hits`.
-
-Die Seeoberflaeche lag bisher ueber unebenem Boden; zusaetzlich hob der
-Gebirgsrand Teile des Eises um bis zu 7,86 m an. Eine eigene kleine Seebucht
-in `WORLD.basins` macht das gesamte Eis befahrbar. `lakeRadius()` teilt die
-unregelmaessige Uferkontur zwischen Mesh und Hoehenfeld, Seehoehe -3 m,
-weicher vier Meter breiter Ufersaum. Der Uferzaun steht jetzt ausserhalb des
-Eises. Pistenstangen im Huettenbereich und der Wegweiser wurden versetzt bzw.
-ausgespart, damit sie nicht in Haus und Durchfahrt stehen.
-
-Pruefung: sechs Fahrten mit echtem `Skier.update()` und Weltkollision im
-Browser; alle Ziele in 0,85–2,78 s erreicht, keine ungewollte Airtime.
-Die freie Spur (7,8/-66 → 7,8/-53) hat null Moebeltreffer. Gezielte Fahrten
-bewegen alle neun Moebel, Rueckstellung nach Entfernung mit < 1e-10 m Fehler.
-Separat geprueft: kein Treffer vier Meter ueber dem Tisch; keine Rueckstellung
-neben dem wartenden Fahrer. Radiale Seeproben: exakt 0 m Hoehenabweichung zum
-Eisniveau (ausgenommen 1,2 cm sichtbarer Belag). Huette und See visuell im
-Browser geprueft. `npm run build` und `git diff --check` erfolgreich.
-Kein Git-Remote konfiguriert; externer Versionsabgleich weiterhin unmoeglich.
-
----
-
-## Landschaftsupdate 21.09.2026
-
-Auf Wunsch nach mehr Fahr- und Entdeckungslust (Referenz: Bruno Simons
-befahrbares Portfolio) ist jetzt auch die Landschaft selbst gestaltet:
-
-- `landscape-layout.js`: sechs niedrige Schneeruecken, drei sanfte Bodenwellen
-  und drei Nebenstrecken (Waldpassage, Sonnenrunde hinter der Werkstatt,
-  Uferweg). Die Formen sind maximal 2,8 m hoch und werden **vor** den
-  bestehenden Pistenbaendern in `terrainHeight()` addiert.
-- Die Nebenstrecken teilen Wald-Freihaltung und Schnee-Praeparierung mit dem
-  Wegenetz. Der Talplan zeigt sie ebenfalls, weitere Schilder brauchen sie
-  nicht. 20 gezielt gesetzte Baeume gliedern die sechs kleinen Haine; kahle
-  Laerchen ergaenzen die Tannen. Die Schneekappen der Tannen sind laenger und
-  weniger scheibenfoermig.
-- `landscape-details.js`: gefrorene Felsquelle am oberen Seeufer, Bank am
-  Uferweg und reaktive Schneeschauer an den Hainbaeumen. Ein gemeinsamer
-  Puffer mit 180 Partikeln, Ausloesung bei Fahrt innerhalb 3,6 m, danach 12 s
-  Sperre. `window.__ski.props.landscape` liefert `treeCount` und `bursts`.
-- Waermeres Sonnenlicht, etwas kuerzere Schatten, ruhigere Schnee-Normalen und
-  700 statt 1400 Wetterflocken lassen die Formen deutlicher lesen.
-
-Pruefung im Browser: alle drei Wege in beide Richtungen mit echtem
-`Skier.update()` und automatischer Lenkung befahren. Alle sechs Fahrten kamen
-in 3,3–4,4 s ohne Kollision an. Dabei wurden vier Schneeschauer ausgeloest.
-Zusaetzlich alle Mittellinien alle 0,5 m gegen die echten Kollisionskreise plus
-0,55 m Fahrerbreite geprueft: keine Treffer. Der umgefallene Stamm musste aus
-der Waldpassage auf den angrenzenden Ruecken weichen, die Uferbank neben die
-Fahrspur. Die Quelle erhielt eine Lichtung, weil sie sonst ganz verdeckt war.
-
-Hoehenvergleich gegen `HEAD`: Stuetzpunkte plus 3-m-Nachbarschaften aller fuenf
-Pistenbaender unveraendert; auch die Stegmitte hat exakt dieselbe Hoehe.
-Laengsprofile der neuen Wege maximal 25,4 / 35,5 / 7,9 Grad (die Sonnenrunde
-quert auch den bestehenden Plateaurand). Diese Zahlen sind Stichproben und
-keine Aussage ueber jeden Quadratmeter des Gelaendes.
-Sichtkontrolle von Talmitte, Quelle/Ufer und Sonnenrunde; dort rund 302–361
-Draw Calls und 840–854 k Dreiecke. Build und Diff-Pruefung erfolgreich.
-Kamera, Fahrmodell, Stationsziele und die stillgelegten Ideen bleiben erhalten.
-
----
-
-## Gestaltungsupdate 21.09.2026
-
-Ausgangspunkt: lokales `main` auf `4851caa`. Kein Remote konfiguriert; ein
-Abgleich mit einem externen Repository war daher nicht moeglich.
-
-Das Tal hat jetzt ein gemeinsames Wegenetz statt vier isolierter Arme:
-`src/world/paths.js` enthaelt die bisherigen `TRAILS` und sechs Verbindungen.
-Werkstatt, Kontakt, Tools und Lift sind verbunden; schmalere Abzweige fuehren
-zum See/Loeschzug und zur Drohne. Gipfelzugang und Parkanschluss folgen den
-vorhandenen Haengen. Die Mittellinien steuern sowohl Waldschneisen als auch
-die Praeparierung im Terrainmaterial (kuehlerer, glatterer Schnee mit weichem
-Rand). Keine zweite Hoehenquelle, keine neue Kameraregel.
-
-`src/world/wayfinding.js` baut einen niedrigen Talplan am Start und sechs
-Wegweiser an Entscheidungen. Die Karte folgt der festen Kameraprojektion;
-Pfeile beziehen sich ebenfalls auf die sichtbare Richtung. Alle Tafeln schauen
-zur Kamera. Gedeckte Wegfarben und Holzpfosten ersetzen die bunteren Schilder;
-Stangen stehen alle 9 statt 4,6 Meter, Bodenpfeile sind 1,5 statt 2,2 Meter
-gross. Stationsringe treten erst beim Annaehern deutlich hervor. Der
-Fackelkranz ist ausgeduennt, zufaellige Felsen konzentrieren sich staerker auf
-Flanken und Waldrand.
-
-Stationen werden jetzt **vor** der Bepflanzung auf flache Plaetze verschoben.
-Ihre Lichtungen benutzen die korrigierten Koordinaten, nicht mehr die alten.
-Neue Verbindungen enden vor den Stationsobjekten und umrunden den Loeschzug
-sowie den westlichen Pfosten des Nordtors.
-
-Pruefung: Startplatz, Tools/See-Abzweig und Nordabfahrt/Park im Browser
-angesehen. Alle sechs neuen Verbindungen mit 0,5-m-Schritten gegen die echten
-Kollisionskreise inklusive 0,55 m Fahrerbreite geprueft: keine Treffer.
-Startansicht bei 1280 × 800: 339 Draw Calls, rund 837.000 Dreiecke.
-Schildtafeln verwenden ein Material statt sechs, damit die neue Orientierung
-nicht sechs Draw Calls pro Tafel kostet. Build und `git diff --check` erfolgreich.
-Der temporaere Browser-Pruefeinstieg wurde wieder entfernt. Die im Browser
-vorhandenen Three.js-Deprecation-Warnungen bleiben ein separates Thema.
+Stand: 23.09.2026. Dieses Dokument ist der Einstieg für jeden, der hier
+weiterarbeitet. Es beschreibt nicht nur *was* da ist, sondern *warum* — denn an
+mehreren Stellen sieht die naheliegende Lösung besser aus als die gewählte, und
+ist es nicht.
 
 ---
 
@@ -229,32 +80,36 @@ src/
   config.js          Alle Stellschrauben: WORLD, SKIER, CAMERA, TRICK, COLORS
   main.js            Loop, Renderer, window.__ski (Debug-Zugriff)
   core/              geometry.js (assemble/vertexColorMaterial), input.js,
-                     noise.js (fbm), rng.js
+                     touch.js (Handymodus), device.js (TOUCH), noise.js, rng.js
   world/
     heightfield.js   terrainHeight(), Pistenbänder, PLATEAU/SUMMIT/LAKE/SPORT_HILL
     terrain.js       Mesh aus der Höhenfunktion
     world.js         Szene, Licht, Nebel
-    populate.js      Setzt alles ins Tal — die zentrale Werkbank (723 Zeilen)
+    populate.js      Setzt alles ins Tal — die zentrale Werkbank
+    paths.js         Wegenetz: TRAILS und Verbindungen (Schneisen, Präparierung)
+    wayfinding.js    Talplan und Wegweiser
+    landscape-*.js   Schneerücken, Bodenwellen, Nebenstrecken, Quelle, Schauer
+    surfaces.js      Wo Eis und Holz liegen — dort keine Spur, kein Staub
+    apres-*.js       Hütte mit Terrasse und umwerfbaren Möbeln
     snow-trail.js    Spurkarte als Render-Target; stampDecal() stempelt hinein
-    snow-writing.js  Schrift und Tastenstempel im Schnee
-    drag-lift.js     Schlepplift (Teller, kein Sessel)
-    magic-carpet.js  Zauberteppich im Kinderland
-    rail-ride.js     Rail im Funpark, dieselbe Mechanik wie der Teppich
-    race.js          Rennstrecke mit Zeitnahme
-    speed-check.js   Geschwindigkeitsmessung an der freien Piste
-    light-run.js     Leuchtstrecke (Schussstrecke) im Kinderland
-    props/           Ein Modul je Gegenstand
+    snow-writing.js  Schrift und Tasten-/Stickzeichen im Schnee
+    drag-lift.js, magic-carpet.js, rail-ride.js, race.js, speed-check.js,
+    light-run.js, north-run.js
+    props/           Ein Modul je Gegenstand; screens.js = leuchtende Bildschirme
   player/
-    skier.js         Fahrmodell, Sprung, Tricks (489 Zeilen)
+    skier.js         Fahrmodell, Sprung, Tricks
     skier-model.js   Die Figur
-    top-camera.js    Verfolgerkamera
+    top-camera.js    Kamera: fest, Verfolger (Nordabfahrt), Heranzoomen
     spray.js         Schneestaub
   stations/
     links.js         Alle echten Adressen an einer Stelle
     stations.js      Wo was steht und was es tut
     registry.js      Nähe prüfen, auslösen
-    ui.js            Die Stationskarte als Pistenschild
+    interaction.js   Enter/Tippen: öffnen oder heranzoomen und wählen
+    ui.js            Glas-Einladung und Glas-Auswahl
   dialogs/           Wortgleich von veerka.mp übernommen — siehe unten
+tests/               node --test (npm test)
+wrangler.jsonc       Testbetrieb auf test.veerka.mp
 ```
 
 **`assemble(parts)`** in `core/geometry.js` verschmilzt viele Primitive mit
@@ -262,8 +117,11 @@ Vertexfarben zu *einem* Draw Call. Alles, was sich nicht einzeln bewegt, gehört
 da hinein. Was in Mengen auftritt und sich einzeln bewegt (Pistenstangen,
 Leuchtsegmente), ist eine `InstancedMesh`.
 
-**Kennzahlen im Betrieb:** 0.05–0.13 ms/Frame, 262–419 Draw Calls,
-~800–835 k Dreiecke. Wer etwas hinzufügt, prüft das nach.
+**Kennzahlen im Betrieb:** 0.05–0.13 ms/Frame, 300–420 Draw Calls,
+~800–855 k Dreiecke. Wer etwas hinzufügt, prüft das nach.
+
+`npm run build` teilt Three.js in ein eigenes Stück (`vite.config.js`): 145 kB
+gzip, die im Cache bleiben, wenn sich nur das Tal ändert (70 kB).
 
 ---
 
@@ -290,7 +148,7 @@ beide Enden aus. Die Bänder werden **der Reihe nach** angewendet — das späte
 gewinnt auf seiner eigenen Mittellinie, deshalb steht `SHOOT_LANE` bewusst
 zuletzt.
 
-**Vier Wege** vom Plateau (`TRAILS` in `stations/stations.js`): BERUF (blau, nach
+**Vier Wege** vom Plateau (`TRAILS` in `world/paths.js`): BERUF (blau, nach
 Osten), SOZIALES (pink, nach Norden), SPORT (orange, nach Nordosten), TOOLS
 (grün, nach Westen). Jede Station liegt an genau einem Weg, damit man einen
 Strang zu Ende fahren kann.
@@ -310,14 +168,34 @@ Strang zu Ende fahren kann.
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | jf.veerka.mp |
 
-Stationen mit zwei Zielen zeigen `1` und `2` auf der Karte; die Taste `E`
-entfällt dann. Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder
-eine Auswahl mit Inhalt hat.
+Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
+mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
 
 **Anlagen**: Schlepplift (Teller, damit der Fahrer auf den Ski bleibt und die
 Spur weiterläuft), Zauberteppich im Kinderland, Rail im Funpark, Rennstrecke
 mit Zeitnahme, Speedcheck an der freien Piste, zwei Schneekanonen, Leucht-
 strecke, Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
+
+**Wegenetz** (`paths.js`): die vier Wege plus sechs Verbindungen zu einem
+Netz; die Mittellinien steuern Waldschneisen *und* die Präparierung im
+Terrainmaterial. `wayfinding.js` baut den Talplan am Start und sechs
+Wegweiser, alle zur Kamera. Stationen rutschen **vor** der Bepflanzung auf
+flache Plätze; ihre Lichtungen benutzen die korrigierten Koordinaten.
+
+**Landschaft** (`landscape-layout.js`, `landscape-details.js`): sechs niedrige
+Schneerücken (≤ 2,8 m), drei Bodenwellen und drei Nebenstrecken, **vor** den
+Pistenbändern in `terrainHeight()` addiert. Stützpunkte aller Pistenbänder
+blieben dabei auf den Zentimeter gleich. Dazu Felsquelle, Uferbank und
+Schneeschauer an Hainbäumen (180 Partikel, Auslösung innerhalb 3,6 m).
+
+**Hütte und See**: Die Après-Ski-Hütte steht rechts bei (23, −64), Front zur
+Kamera, mit neuneckig zugeschnittener Terrasse, drei Sitzgruppen und
+umwerfbaren Möbeln (`apres-terrace.js`; stehen nach 10 s wieder auf, wenn der
+Fahrer ≥ 7 m weg ist). Der See hat eine eigene Bucht in `WORLD.basins`, damit
+das ganze Eis befahrbar ist; `lakeRadius()` teilt die Uferkontur zwischen Mesh
+und Höhenfeld. **Weiße Spuren auf Eis und Holz** kamen vom Spurstempel, dessen
+Rand durch den nur 1,2 cm höheren Belag ragte — `surfaces.js` sperrt jetzt
+Spur, Staub und Verformung dort (drei Regressionstests in `tests/`).
 
 ### Die Nordabfahrt (Rückseite)
 
@@ -423,6 +301,85 @@ oder am Lift hängt.
 
 ---
 
+## 4a. Stationen benutzen: Enter, Heranzoomen, Glas
+
+**Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
+schwebt eine Glasblase mit Name, einem Wort und dem ⏎-Zeichen.
+
+- Station mit **einem Ziel**: Enter öffnet es sofort.
+- Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
+  GitHub/LinkedIn): Enter **zoomt heran**. Der Fahrer bleibt stehen
+  (`input.locked`), unten klappt eine Glas-Auswahl auf, ←/→ (auch A/D)
+  wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
+  gehen weiterhin direkt. Das 3D-Objekt zeigt die Wahl mit: das gewählte
+  Terminal bzw. der Bildschirm leuchtet und hebt sich (`userData.select`),
+  beim Öffnen blitzt es (`userData.press`), an der Kasse schiebt das Terminal
+  einen Beleg heraus und der Kassierer winkt.
+
+**Das Heranzoomen dreht die Kamera nicht.** `TopCamera.fokus()` ändert nur
+Abstand und Blickpunkt; der Azimut bleibt. Die Grundregel ist heil, es gibt
+keine zweite Ausnahme. Der Blickpunkt rückt um `focus.vor` zur Kamera hin,
+damit das Objekt oberhalb der Auswahl steht.
+
+**Warum Safari die Links vorher blockiert hat:** Die Taste setzte nur ein
+Flag, geöffnet wurde im nächsten `requestAnimationFrame`. Safari zählt
+`window.open` nur *während* einer Nutzergeste als erlaubt. Jetzt läuft alles
+Auslösende synchron im `keydown`/`click` (`Input.onAction` →
+`StationInteraction.press`). **Wer hier etwas ergänzt: nie `window.open` im
+Loop aufrufen.**
+
+**Die Skikasse** (`props/ticket-booth.js`) ist das erste Modell, das für zwei
+Entfernungen gebaut ist: aus 33 m trägt die Dachtafel, aus 9,5 m Schalter,
+Kassierer und Terminals. Die Terminals stehen **vor** der Traufe auf einem weit
+vorspringenden Brett — die Sichtlinie zur Kamera steigt nur 0,73 m pro Meter,
+eine schräge Markise lag genau darauf und verdeckte sie zur Hälfte (deshalb
+jetzt eine senkrechte Blende). Die Werkstatt hat davor eine **Werkbank**
+(`props/workbench.js`) mit den zwei Bildschirmen, gerade zur Kamera, weil die
+Hütte selbst um 0,28 rad gedreht steht. Bildschirme sind Canvas-Zeichnungen
+auf unbeleuchteten Flächen (`props/screens.js`); der Schein dahinter ist eine
+additive Scheibe statt eines PointLights.
+
+**Das Glas** (`.glass` in `style.css`) ist hell getönt, weil der Hintergrund
+fast immer Schnee ist — klares Glas auf Weiß ist unsichtbar. Es ersetzt das
+frühere Pistenschild auf ausdrücklichen Wunsch.
+
+## 4b. Handymodus
+
+Erkannt über `pointer: coarse` ohne feinen Zeiger (`core/device.js`), zum
+Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
+`touch`.
+
+- **Daumenstick** (`core/touch.js`): erscheint dort, wo der Finger den Schnee
+  berührt, und lenkt **bildschirmbezogen** — Daumen nach oben heißt im Bild
+  nach oben. Mit fester Kamera ist ein Wohin auf dem Bildschirm genau eine
+  Himmelsrichtung; der Stick regelt nur den Winkelfehler zur Fahrtrichtung
+  aus (`GAIN` 2.1). Auf der Nordabfahrt nimmt er den mitdrehenden Azimut
+  (`chase.azimuthNow`). Schub ab 35 % Ausschlag, loslassen = ausrollen. Zieht
+  der Daumen weit hinaus, wandert der Stick mit. Geprüft mit echten
+  Pointer-Ereignissen: oben/rechts/unten-links kommen als oben/rechts/
+  unten-links an.
+- **Sprungknopf** nur im Funpark oder auf der Rail, gehalten statt getippt.
+- **Zwei Finger** zoomen. Ein Tipp in den Schnee schließt eine offene Auswahl.
+- Im Schnee steht statt WASD ein Stickzeichen, unten einmal ein Hinweis, der
+  beim ersten Berühren verschwindet.
+- **Hochformat**: bei 390 × 844 sah man vorher nur 18° breit. Der Bildwinkel
+  wächst bis 56°, den Rest holt der Abstand (≤ 1,35×). Pixelverhältnis am
+  Handy höchstens 1,5.
+
+## 4c. Hosting
+
+`test.veerka.mp` ist ein reiner Asset-Worker (`wrangler.jsonc`, Name
+`skiportfolio-test`) ohne eigenen Code. `npm run deploy:test` baut und lädt
+hoch. `public/_headers` gibt `/assets/*` ein Jahr Cache (Dateinamen tragen
+einen Hash) und `index.html` `no-cache`. Der Produktiv-Worker `website` bleibt
+davon unberührt.
+
+Auf test.veerka.mp gilt der Produktionszweig der Fenster (nicht localhost).
+Der **Kurzlink** prüft Turnstile gegen `TURNSTILE_HOSTNAMES` im Worker `kurz` —
+solange test.veerka.mp dort (und im Turnstile-Widget) nicht eingetragen ist,
+meldet das Fenster dort „Prüfung fehlgeschlagen". Upload beim Umzug ebenso
+gegenprüfen.
+
 ## 5. Fahrmodell
 
 Kein Physiksimulator — ein Fahrgefühl aus wenigen Zahlen (`config.js` → `SKIER`).
@@ -454,7 +411,8 @@ und nur im Funpark (`inFunpark(...)`).
 ## 6. Werkzeug zum Prüfen
 
 `window.__ski` = `{ skier, world, camera, renderer, scene, trail, props, sky,
-input, chase, stations, step }`.
+input, chase, stations, interaction, step, goto }`. `goto('kasse')` stellt den
+Fahrer vor eine Station (Ids in `stations.js`).
 
 `S.step(frames, dt)` spult die Welt ohne laufenden rAF-Loop vor — unentbehrlich,
 denn **rAF läuft nicht, solange das Browser-Fenster verborgen ist**.
@@ -463,8 +421,14 @@ Weitere Fallen aus der Praxis:
 
 - Der Konsolenpuffer wird beim Navigieren **nicht** geleert; alte Fehler stehen
   dort noch. Nicht darauf hereinfallen.
-- Der Ladebalken braucht 30–45 s (`writeIntro` + `renderer.compile`). Zum Testen
+- Der Ladebalken verschwindet erst mit dem ersten rAF — im **verborgenen**
+  Browserfenster also nie. Das waren die „30–45 s Ladezeit“ früherer Notizen;
+  sichtbar ist die Seite nach knapp zwei Sekunden da. Zum Testen
   `document.getElementById('loader')?.remove()`.
+- Tasten zum Prüfen: `window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter' }))`
+  — sie laufen durch denselben synchronen Weg wie echte.
+- CSS-Übergänge laufen im verborgenen Fenster nicht weiter. Für Screenshots
+  `*{transition:none!important;animation:none!important}` einhängen.
 - `computer zoom` schneidet nicht zu. Für kleine UI stattdessen
   `resize_window({width, height})`, danach `resize_window({preset:'desktop'})`.
 - `setTimeout` ist im verborgenen Fenster etwa doppelt so langsam.
@@ -544,14 +508,13 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
-- **Ladezeit**: 30–45 s bis zum ersten Bild, zwischen der Zuweisung von
-  `window.__ski` und dem ersten rAF. Verdächtig sind `writeIntro` und
-  `renderer.compile`. Nie untersucht.
-- **Umzug auf veerka.mp** steht noch aus.
+- **Umzug auf veerka.mp** steht noch aus; test.veerka.mp ist die Vorstufe.
+- Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
+  iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit
   `--no-ff`, damit sie an einem einzigen Commit hängt: `git revert -m 1 b3fcf57`
-  nimmt sie komplett wieder ab. Das war die Bedingung, unter der sie gebaut
-  wurde; der Zweig `rueckseite` kann stehenbleiben.
+  nimmt sie komplett wieder ab. Der Zweig `rueckseite` ist gelöscht (er war
+  vollständig in `main`).
 - Das Fernrohr steht seit der Nordabfahrt auf **−66, −74** statt −59, −71: es
   stand sonst 1,4 m neben der neuen Bahnmitte, mitten im Startbogen. Von sechs
   gemessenen Ausweichplätzen hatte dieser das geringste Relief (0,35).
@@ -563,14 +526,15 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.
-- `_m.mjs` im Wurzelverzeichnis ist eine Wegwerfdatei aus dem Prüfbetrieb und
-  kann weg.
 
 ---
 
 ## 10. Verlauf
 
 ```
+         Aufraeumen, Hosting test.veerka.mp
+b51499c  Enter statt Ziffern: Glas, Heranzoomen, Safari-Fix, Handymodus
+493ad64  Wegenetz, Landschaft, Huettenensemble und Seebucht
 b3fcf57  Nordabfahrt ueber die Rueckseite des Berges (Merge, --no-ff)
 a7fa99a  Uebergabe: richtige Commit-Nummer im Verlauf
 4a92a7a  Steg auf das Gelaende gelegt, zweiter Gipfel weg, Tor ohne Namen
@@ -588,4 +552,4 @@ f0ff74a  Umkippbare Pistenstangen, Auswahl an der Werkstatt, Kanone an der Piste
 ```
 
 Commits sind deutsch, erklären das Warum und nennen gemessene Zahlen. Sie enden
-mit `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
+mit `Co-Authored-By:`-Zeile des jeweiligen Modells.

@@ -26,7 +26,6 @@ export class Input {
     this.keys = new Set()
     this.pressed = new Set()   // nur im Frame des Tastendrucks gesetzt
     this.zoom = 1
-    this.anyInputYet = false
     // Wird noch *im* Tastenereignis gerufen, nicht erst im naechsten Bild.
     // Safari laesst window.open nur waehrend einer Nutzergeste zu; ein Link,
     // der erst im requestAnimationFrame danach aufgeht, gilt dort als Popup
@@ -60,12 +59,10 @@ export class Input {
       if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault()
       if (!e.repeat && this.onAction?.(action)) {
         e.preventDefault()
-        this.anyInputYet = true
         return
       }
       if (!this.keys.has(action)) this.pressed.add(action)
       this.keys.add(action)
-      this.anyInputYet = true
     })
     window.addEventListener('keyup', (e) => {
       const action = KEY_MAP[e.code]
@@ -90,13 +87,6 @@ export class Input {
   justPressed(action) {
     if (this.locked) return false
     return this.pressed.has(action)
-  }
-
-  // Fuer Knoepfe auf dem Bildschirm: dieselbe Aktion wie die Taste, auch fuer
-  // justPressed im naechsten Bild.
-  tap(action) {
-    this.pressed.add(action)
-    this.anyInputYet = true
   }
 
   // Am Ende jedes Frames aufrufen.

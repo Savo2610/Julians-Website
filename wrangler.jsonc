@@ -1,0 +1,15 @@
+// Testbetrieb auf test.veerka.mp: ein Worker, der nur die gebauten Dateien
+// aus dist/ ausliefert – kein eigener Code, keine Bindungen. Die richtige
+// Seite (Worker "website") bleibt davon unberuehrt.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "skiportfolio-test",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  "routes": [{ "pattern": "test.veerka.mp", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false
+}

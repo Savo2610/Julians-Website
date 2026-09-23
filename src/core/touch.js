@@ -46,7 +46,6 @@ export class TouchControls {
       e.preventDefault()
       if (!input.keys.has('jump')) input.pressed.add('jump')
       input.keys.add('jump')
-      input.anyInputYet = true
       this.jump.classList.add('down')
     }
     const up = () => {
@@ -85,7 +84,6 @@ export class TouchControls {
       this.base.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`
       this.knob.style.transform = ''
       this.base.classList.add('visible')
-      this.input.anyInputYet = true
       this.hint.classList.add('gone')
     })
     dom.addEventListener('pointermove', (e) => {

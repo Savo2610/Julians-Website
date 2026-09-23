@@ -1,4 +1,4 @@
-// Testbetrieb auf test.veerka.mp: ein Worker, der nur die gebauten Dateien
+// Testbetrieb auf beta.veerka.mp: ein Worker, der nur die gebauten Dateien
 // aus dist/ ausliefert – kein eigener Code, keine Bindungen. Die richtige
 // Seite (Worker "website") bleibt davon unberuehrt.
 {
@@ -9,7 +9,7 @@
     "directory": "./dist",
     "not_found_handling": "404-page"
   },
-  "routes": [{ "pattern": "test.veerka.mp", "custom_domain": true }],
+  "routes": [{ "pattern": "beta.veerka.mp", "custom_domain": true }],
   "workers_dev": false,
   "preview_urls": false
 }

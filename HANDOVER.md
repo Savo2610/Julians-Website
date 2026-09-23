@@ -109,7 +109,7 @@ src/
     ui.js            Glas-Einladung und Glas-Auswahl
   dialogs/           Wortgleich von veerka.mp übernommen — siehe unten
 tests/               node --test (npm test)
-wrangler.jsonc       Testbetrieb auf test.veerka.mp
+wrangler.jsonc       Testbetrieb auf beta.veerka.mp
 ```
 
 **`assemble(parts)`** in `core/geometry.js` verschmilzt viele Primitive mit
@@ -368,17 +368,26 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
 
 ## 4c. Hosting
 
-`test.veerka.mp` ist ein reiner Asset-Worker (`wrangler.jsonc`, Name
+**beta.veerka.mp** ist ein reiner Asset-Worker (`wrangler.jsonc`, Name
 `skiportfolio-test`) ohne eigenen Code. `npm run deploy:test` baut und lädt
-hoch. `public/_headers` gibt `/assets/*` ein Jahr Cache (Dateinamen tragen
-einen Hash) und `index.html` `no-cache`. Der Produktiv-Worker `website` bleibt
-davon unberührt.
+hoch (vorher einmal `npx wrangler login`). `public/_headers` gibt `/assets/*`
+ein Jahr Cache (Dateinamen tragen einen Hash) und `index.html` `no-cache`. Der
+Produktiv-Worker `website` bleibt davon unberührt. Geplant war test.veerka.mp —
+dort hing noch ein A-Eintrag auf einen gekündigten Server.
 
-Auf test.veerka.mp gilt der Produktionszweig der Fenster (nicht localhost).
-Der **Kurzlink** prüft Turnstile gegen `TURNSTILE_HOSTNAMES` im Worker `kurz` —
-solange test.veerka.mp dort (und im Turnstile-Widget) nicht eingetragen ist,
-meldet das Fenster dort „Prüfung fehlgeschlagen". Upload beim Umzug ebenso
-gegenprüfen.
+Auf beta gilt der Produktionszweig der Fenster. Geprüft am 23.09. von
+beta.veerka.mp aus:
+
+- **Kurzlink**: `beta.veerka.mp` steht jetzt in `TURNSTILE_HOSTNAMES` des
+  Workers `kurz` und in den Domains des Turnstile-Widgets „kurz". Das Repo
+  `~/Documents/Claude/kurz` ist nachgezogen — dort stand nur `s.veerka.mp`,
+  live schon drei Hosts; ein Deploy aus dem Repo hätte veerka.mp still
+  ausgesperrt. Turnstile löst sich auf beta, der Knopf wird „Kürzen".
+- **Solana**: RPC publicnode, CoinGecko und Binance antworten mit CORS.
+  Der Ersatz-RPC leorpc scheitert — auch von veerka.mp aus, also kein
+  beta-Problem, aber ein toter Fallback in `wallet.js` (wortgleich mit
+  veerka.mp, dort mitändern).
+- **Upload** nicht geprüft.
 
 ## 5. Fahrmodell
 
@@ -508,7 +517,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
-- **Umzug auf veerka.mp** steht noch aus; test.veerka.mp ist die Vorstufe.
+- **Umzug auf veerka.mp** steht noch aus; beta.veerka.mp ist die Vorstufe.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit
@@ -532,7 +541,8 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-7845cc0  Aufraeumen, Hosting test.veerka.mp
+         Hosting auf beta.veerka.mp
+7845cc0  Aufraeumen, Hosting vorbereitet
 805b372  Enter statt Ziffern: Glas, Heranzoomen, Safari-Fix, Handymodus
 493ad64  Wegenetz, Landschaft, Huettenensemble und Seebucht
 b3fcf57  Nordabfahrt ueber die Rueckseite des Berges (Merge, --no-ff)

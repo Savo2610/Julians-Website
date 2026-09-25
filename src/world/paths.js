@@ -4,7 +4,9 @@ import { LANDSCAPE_PATHS } from './landscape-layout.js'
 // davon, damit man einen Strang zu Ende fahren kann, ohne etwas zu verpassen.
 export const TRAILS = {
   career: {
-    label: 'PROFIL & CODE',
+    // KARRIERE statt PROFIL & CODE: am Startplatz war nicht klar, dass dort
+    // LinkedIn und GitHub liegen – "Profil" las sich wie ein Nutzerkonto.
+    label: 'KARRIERE',
     color: '#346782',
     markerColor: 0x527f99,
     // Vom Wegweiser hangab zur Huette, vorn an der Werkbank vorbei, und

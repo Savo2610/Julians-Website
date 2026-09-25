@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { LANDSCAPE_PATHS, GROVES } from './landscape-layout.js'
 import { createLandscapeDetails } from './landscape-details.js'
 import { CONNECTIONS } from './paths.js'
-import { createWayfinding } from './wayfinding.js'
+import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
 import { WORLD } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
@@ -12,6 +12,8 @@ import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
 import { createBackdrop } from './props/backdrop.js'
 import { createFence, createPisteMarkers } from './props/fence.js'
+import { createBreakableFence } from './props/park-fence.js'
+import { createAvalancheBarrier } from './props/avalanche-barrier.js'
 import { createSnowCannon } from './props/snow-cannon.js'
 import { createSignpost } from './props/signpost.js'
 import { populateStations, STATION_SPOTS, TRAILS } from '../stations/stations.js'
@@ -354,6 +356,9 @@ export function populate(world, sky, registry) {
   // Luecke liegt, stuende er mitten in der Jib-Linie. Er ist nach Westen aus
   // dem Band heraus gerueckt und bleibt trotzdem die Marke, an der man sieht,
   // wo der Park anfaengt.
+  // Beide sind zu hoch zum Ueberspringen – sie sind Marken, keine Hindernisse
+  // auf der Linie, und ein Sprung ueber einen Findling von Hausgroesse saehe
+  // aus, als fuehre man durch ihn hindurch.
   const boulderA = createBoulder(31, 2.4)
   world.place(boulderA, 9, -31, { yOffset: -1.1, rotation: 0.7 })
   world.addCollider(9, -31, 2.6)
@@ -369,14 +374,20 @@ export function populate(world, sky, registry) {
   ].entries()) {
     const log = createFallenTree(i * 977 + 13)
     world.place(log, spot.x, spot.z, { yOffset: 0.28, rotation: spot.rot })
-    // Der Stamm liegt quer – als Hindernis reichen zwei Kreise entlang.
+    // Der Stamm liegt quer – als Hindernis reichen drei Kreise entlang. Er
+    // liegt laengs der lokalen x-Achse, und die zeigt nach Drehung um rot in
+    // (cos, -sin); die Kreise lagen vorher laengs (sin, cos), also quer zum
+    // Stamm, und man blieb neben ihm haengen und fuhr durch ihn hindurch.
+    // Der Stamm ist 0,6 m hoch und laesst sich ueberspringen, der
+    // Wurzelteller am Ende (-x) mit 1,3 m nicht.
     for (const t of [-1.4, 0, 1.4]) {
-      world.addCollider(spot.x + Math.sin(spot.rot) * t, spot.z + Math.cos(spot.rot) * t, 0.75)
+      world.addCollider(spot.x + Math.cos(spot.rot) * t, spot.z - Math.sin(spot.rot) * t, 0.75, null, t < 0 ? Infinity : 0.62)
     }
   }
 
   // --- Orientierung ------------------------------------------------------
-  createWayfinding(world, { registry, trees: placements, lift: { base: LIFT_BASE, top: LIFT_TOP } })
+  const wayfinding = createWayfinding(world, { registry, trees: placements, lift: { base: LIFT_BASE, top: LIFT_TOP } })
+  animatedProps.push(wayfinding.animate)
 
   // --- Wegfuehrung --------------------------------------------------------
   // Jeder der vier Wege bekommt Pistenstangen in seiner Farbe. Sie haben keine
@@ -412,6 +423,9 @@ export function populate(world, sky, registry) {
     const first = t.path[0]
     return Math.atan2(first[0] - PLATEAU.x, first[1] - PLATEAU.z)
   })
+  // Die Panoramatafel steht auf dem Kranz; eine Fackel davor verdeckte die
+  // Karte zur Haelfte.
+  exits.push(Math.atan2(PANORAMA.x - PLATEAU.x, PANORAMA.z - PLATEAU.z))
   const nearExit = (angle) =>
     exits.some((e) => Math.abs(Math.atan2(Math.sin(angle - e), Math.cos(angle - e))) < 0.42)
 
@@ -468,8 +482,15 @@ export function populate(world, sky, registry) {
     const sx = PLATEAU.x + Math.sin(angle) * (torchRadius - 0.4) + Math.cos(angle) * 2.2
     const sz = PLATEAU.z + Math.cos(angle) * (torchRadius - 0.4) - Math.sin(angle) * 2.2
 
+    // Die Tafel zeigt dorthin, wohin der Weg im Bild laeuft: Pfeil davor,
+    // und fuer Wege nach links (TOOLS) ragt sie nach links vom Pfosten weg.
+    // Vorher standen alle vier Tafeln nach rechts; TOOLS zeigte damit vom
+    // eigenen Weg weg, und KARRIERE ragte am rechten Rand aus dem Bild.
+    const target = trail.path[Math.min(2, trail.path.length - 1)]
+    const pfeil = arrow(sx, sz, target)
+    const links = (target[0] - sx) - (target[1] - sz) < 0
     const sign = createSignpost([
-      { text: trail.label, background: trail.color, width: 3.2, height: 0.65, rotation: 0 },
+      { text: links ? `${pfeil} ${trail.label}` : `${trail.label} ${pfeil}`, background: trail.color, width: 3.2, height: 0.65, rotation: 0, side: links ? -1 : 1 },
     ], { height: 2.6 })
     world.place(sign, sx, sz, { rotation: Math.PI * 0.25 })
     world.addCollider(sx, sz, 0.45)
@@ -534,6 +555,12 @@ export function populate(world, sky, registry) {
       return m
     })(),
   })
+
+  // --- Lawinenverbauung an der Westflanke ---------------------------------
+  // Auf der Hoehenlinie um 24 m, sechs bis neun Meter unter dem Gipfel und
+  // drei bis vier Meter vor der Waldkante (Baeume ab x = -75). Links davon
+  // faellt der Hang mit ueber 35 Grad in den Wald; hier ist Schluss.
+  createAvalancheBarrier(world, [[-71, -70], [-71.5, -62], [-72, -54], [-70.5, -47], [-68, -43.5]])
 
   // --- Gipfel -------------------------------------------------------------
   const cross = createSummitCross({ label: 'GIPFEL' })
@@ -753,9 +780,11 @@ export function populate(world, sky, registry) {
     // Am Ufer statt auf dem Eis: der letzte Pfosten lag 2 m im See.
     { x: -26, z: 47 }, { x: -32, z: 56 }, { x: -42, z: 60 },
   ], { seed: 77 })
-  createFence(world, [
+  // Der Zaun oben am Funpark gibt nach, siehe props/park-fence.js.
+  const parkFence = createBreakableFence(world, [
     { x: 14, z: -46 }, { x: 2, z: -50 }, { x: -12, z: -48 },
   ], { seed: 93 })
+  animatedProps.push((t, dt) => parkFence.update(dt, skierRef.current))
 
   // --- Rodelbahn vom Gipfel ----------------------------------------------
   // Die Bahn ist eine Rinne mit Banden – die Tore darin sind kein zweiter
@@ -774,10 +803,12 @@ export function populate(world, sky, registry) {
       return { dx: (b.x - a.x) / len, dz: (b.z - a.z) / len }
     }
 
-    // Eingangsschild an der Einfahrt in den Park – dort, wo die Terrasse
-    // endet und es steil wird, nicht am obersten Ende des Bandes.
-    const signX = 13
-    const signZ = -49
+    // Eingangsschild an der linken Flanke der Einfahrt, unter dem Zaun am
+    // Waldrand. Bei (13, -49) stand es 2,6 m neben der Mittellinie des Parks,
+    // genau in der Linie von der Terrasse herunter; hier liegt es gut zehn
+    // Meter daneben und ist beim Anfahren trotzdem im Bild.
+    const signX = 5
+    const signZ = -44.5
     const sign = createParkSign({ title: 'FUNPARK', sub: 'Wellen, Kicker, Boxen' })
     world.place(sign, signX, signZ, { rotation: Math.PI * 0.25 })
     world.addCollider(signX, signZ, 0.8)
@@ -952,5 +983,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { apresTerrace, landscape, lake, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
+  return { apresTerrace, landscape, lake, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
 }

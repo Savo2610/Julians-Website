@@ -19,8 +19,11 @@ export class World {
     this.grid = new Map()
   }
 
-  addCollider(x, z, radius, data = null) {
-    const c = { x, z, r: radius, data }
+  // height: wie hoch das Hindernis ueber dem Boden aufragt. Was niedrig ist
+  // (Steine, liegende Staemme), kann man ueberspringen; ohne Angabe ist es
+  // unendlich hoch – Baeume, Haeuser und Zaeune bleiben Grenzen.
+  addCollider(x, z, radius, data = null, height = Infinity) {
+    const c = { x, z, r: radius, data, h: height }
     this.colliders.push(c)
     const cx = Math.floor(x / CELL)
     const cz = Math.floor(z / CELL)
@@ -46,7 +49,12 @@ export class World {
 
   // Schiebt eine Position aus allen ueberlappenden Hindernissen heraus und
   // laesst sie an ihnen entlanggleiten, statt hart zu stoppen.
-  resolve(x, z, radius, stepX, stepZ) {
+  //
+  // lift ist die Hoehe des Fahrers ueber dem Boden. Ein Stein ist kein
+  // Zylinder, sondern eine Kuppe: sein Rand liegt tiefer als seine Mitte.
+  // Deshalb wird die Flughoehe gegen ein Halbkugelprofil geprueft – wer im
+  // Sprung nur den Rand streift, bleibt nicht an der vollen Hoehe haengen.
+  resolve(x, z, radius, stepX, stepZ, lift = 0) {
     const candidates = this.nearby(x, z, this._scratch || (this._scratch = []))
     let hit = false
     let pushX = 0
@@ -60,6 +68,11 @@ export class World {
       const min = c.r + radius
       const d2 = dx * dx + dz * dz
       if (d2 >= min * min || d2 === 0) continue
+      if (lift > 0 && c.h < Infinity && lift > c.h * Math.sqrt(Math.max(0, 1 - d2 / (min * min)))) continue
+      // Gibt onHit true zurueck, ist das Hindernis in diesem Moment zu Bruch
+      // gegangen (Funparkzaun): dann faehrt man hindurch, statt noch ein
+      // letztes Mal abzuprallen und Tempo zu verlieren.
+      if (c.data?.onHit?.() === true) continue
       const d = Math.sqrt(d2)
       const push = (min - d) / d
       x += dx * push
@@ -67,7 +80,6 @@ export class World {
       pushX += dx * push
       pushZ += dz * push
       hit = true
-      if (c.data?.onHit) c.data.onHit()
     }
     // Die Ausweichrichtung wird mitgegeben: nur damit laesst sich ein
     // Streifschuss von einem frontalen Treffer unterscheiden.

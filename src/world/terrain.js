@@ -204,7 +204,10 @@ function patchMaterial(material, trailTexture) {
           float hz = snowRelief(wp + vec2(0.0, e));
           vec3 bump = normalize(vec3(-(hx - h0) / e, 1.0, -(hz - h0) / e));
           // Innerhalb der Spur ist der Schnee glattgedrueckt.
-          float packed = texture2D(uTrail, wp / uWorldSize + 0.5).r;
+          // Schrift (Blau) gilt ebenfalls als glatt: das Wind-Relief liess
+          // die Buchstaben im frischen Schnee ausfransen.
+          vec4 tp = texture2D(uTrail, wp / uWorldSize + 0.5);
+          float packed = max(tp.r, tp.b);
           vec3 rough = normalize(normal + (bump - vec3(0.0, 1.0, 0.0)) * 1.35);
           normal = normalize(mix(rough, normal, max(packed * 0.8, vPreparation * 0.94)));
         }
@@ -222,7 +225,9 @@ function patchMaterial(material, trailTexture) {
           diffuseColor.rgb += rim * 0.06;
           // In den Schnee geschriebene Zeichen: deutlich dunkler, damit sie
           // auch aus der Distanz lesbar bleiben.
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.46, 0.55, 0.76), t.b * 0.92);
+          // Kraeftiger als vorher (0.46/0.55/0.76): mit weniger Relief traegt
+          // die Farbe die Lesbarkeit allein.
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.3, 0.42, 0.72), t.b * 0.95);
         }
       `,
       )
@@ -254,7 +259,7 @@ function patchMaterial(material, trailTexture) {
   }
 
   // Erzwingt einen eigenen Programm-Cache-Eintrag.
-  material.customProgramCacheKey = () => 'snow-terrain-v4'
+  material.customProgramCacheKey = () => 'snow-terrain-v5'
   return material
 }
 

@@ -169,7 +169,7 @@ export function populateStations(world, registry) {
   register({
     id: 'werkstatt',
     label: 'Werkstatt',
-    hint: 'Profil und Code',
+    hint: 'Karriere · LinkedIn & GitHub',
     color: '#0a66c2',
     position: STATION_SPOTS.cabin,
     radius: 7.5,

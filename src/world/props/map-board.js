@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial, snowDust } from '../../core/geometry.js'
 
-// Das Kartenpult am Startplatz.
+// Die Panoramatafel am Startplatz (frueher: das Kartenpult).
 //
 // Die alte Tafel war ein Brett mit Papier darauf und sah aus wie
 // hingestellt. Dieses steht im Winter: auf dem Rahmen liegt eine dicke
@@ -58,12 +58,7 @@ export function createMapBoard(texture, { fuss = [0, 0] } = {}) {
   for (const sx of [-1, 1]) {
     frame.push({ geo: new THREE.BoxGeometry(0.16, H + 0.24, 0.16), color: WOOD, position: [sx * (W / 2 + 0.04), 0, 0.02] })
   }
-  // Schneehaube auf der Oberkante: im Pult gedreht zurueck in die
-  // Waagerechte, damit sie liegt statt klebt.
-  frame.push({ geo: new THREE.CylinderGeometry(0.2, 0.24, W + 0.4, 10), color: SNOW, position: [0, H / 2 + 0.16, 0.02], rotation: [0, 0, Math.PI / 2], scale: [1, 1, 0.7] })
-  for (const sx of [-1, 1]) {
-    frame.push({ geo: new THREE.SphereGeometry(0.26, 10, 6), color: SNOW, position: [sx * (W / 2 + 0.12), H / 2 + 0.1, 0.02], scale: [1, 0.7, 0.8] })
-  }
+
   // Eiszapfen an der Unterkante, unregelmaessig, damit es kein Kamm wird.
   const lens = [0.2, 0.32, 0.14, 0.26, 0.38, 0.18, 0.3, 0.12, 0.24, 0.34, 0.16]
   lens.forEach((len, i) => {
@@ -89,6 +84,96 @@ export function createMapBoard(texture, { fuss = [0, 0] } = {}) {
   panel.add(face)
   group.add(panel)
 
+  // --- Wie die Panoramatafel an einer Talstation --------------------------
+  // Ein Vordach ueber der Oberkante, parallel zur Platte, damit es mit ihr
+  // kippt und nicht als waagerechtes Brett in der Luft haengt. Es haelt die
+  // Schneehaube, die vorher direkt auf dem Rahmen lag.
+  const roof = []
+  roof.push({ geo: new THREE.BoxGeometry(W + 0.7, 0.1, 0.9), color: WOOD_DARK, position: [0, H / 2 + 0.34, 0.3] })
+  roof.push({ geo: new THREE.BoxGeometry(W + 0.8, 0.16, 1.0), color: SNOW, position: [0, H / 2 + 0.46, 0.3] })
+  for (const sx of [-1, 1]) {
+    roof.push({ geo: new THREE.BoxGeometry(0.08, 0.3, 0.08), color: WOOD, position: [sx * (W / 2 - 0.1), H / 2 + 0.18, 0.02] })
+  }
+  const roofMesh = new THREE.Mesh(assemble(roof), vertexColorMaterial({ roughness: 0.85 }))
+  snowDust(roofMesh.geometry, 0.4, 0.75)
+  roofMesh.castShadow = true
+  panel.add(roofMesh)
+
+  // Lawinenwarnung rechts oben: gelbe Rundumleuchte auf einem Kasten und
+  // darunter die Warnstufe. Stufe 1, gruen – es ist ein Spielzeugtal. Das
+  // Blinken ist das, was man aus 33 m zuerst sieht; die Tafel ist nur
+  // Kleinkram fuer den, der naeher kommt.
+  const unit = new THREE.Group()
+  unit.position.set(W / 2 + 0.55, H / 2 - 0.35, 0.05)
+  panel.add(unit)
+  const box = new THREE.Mesh(
+    assemble([
+      { geo: new THREE.BoxGeometry(0.7, 1.05, 0.14), color: 0x3a4652 },
+      { geo: new THREE.CylinderGeometry(0.12, 0.14, 0.1, 10), color: 0x2a323b, position: [0, 0.57, 0.02], rotation: [Math.PI / 2 + 0.9, 0, 0] },
+      { geo: new THREE.BoxGeometry(0.78, 0.1, 0.22), color: SNOW, position: [0, 0.56, -0.02] },
+    ]),
+    vertexColorMaterial({ roughness: 0.7 }),
+  )
+  box.castShadow = true
+  unit.add(box)
+  const plate = document.createElement('canvas')
+  plate.width = 128
+  plate.height = 192
+  const ctx = plate.getContext('2d')
+  ctx.fillStyle = '#f4f7fa'
+  ctx.fillRect(0, 0, 128, 192)
+  ctx.fillStyle = '#26323d'
+  ctx.font = '800 21px ui-rounded, system-ui, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('LAWINEN', 64, 30)
+  ctx.font = '700 15px ui-rounded, system-ui, sans-serif'
+  ctx.fillText('WARNSTUFE', 64, 50)
+  ctx.fillStyle = '#4cae4c'
+  ctx.fillRect(22, 64, 84, 108)
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '900 92px ui-rounded, system-ui, sans-serif'
+  ctx.fillText('1', 64, 152)
+  const plateTex = new THREE.CanvasTexture(plate)
+  plateTex.colorSpace = THREE.SRGBColorSpace
+  const plateMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.87), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.8 }))
+  plateMesh.position.set(0, -0.02, 0.075)
+  unit.add(plateMesh)
+  // Die Leuchte sitzt auf dem Kasten, senkrecht zur Welt und nicht zur Platte.
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0xffb300, emissive: 0xffa000, emissiveIntensity: 0.2, roughness: 0.3 })
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.6), lampMat)
+  lamp.position.set(0, 0.62, 0.05)
+  lamp.rotation.x = 0.9
+  unit.add(lamp)
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTexture(), color: 0xffb020, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, opacity: 0,
+  }))
+  glow.scale.setScalar(1.6)
+  glow.position.copy(lamp.position)
+  unit.add(glow)
+
+  // Doppelblitz alle 1,6 s, wie eine echte Warnleuchte – ein gleichmaessiges
+  // Pulsieren sah nach Weihnachtsdeko aus.
+  group.userData.animate = (t) => {
+    const p = t % 1.6
+    const on = p < 0.12 || (p > 0.24 && p < 0.36)
+    lampMat.emissiveIntensity = on ? 2.4 : 0.15
+    glow.material.opacity = on ? 0.85 : 0
+  }
+
   group.userData.footprint = { width: W + 0.6, depth: 2.4 }
   return group
+}
+
+function glowTexture() {
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const ctx = c.getContext('2d')
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
+  g.addColorStop(0, 'rgba(255,255,255,1)')
+  g.addColorStop(0.3, 'rgba(255,255,255,0.5)')
+  g.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, 64, 64)
+  return new THREE.CanvasTexture(c)
 }

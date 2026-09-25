@@ -1,6 +1,6 @@
 # Skiportfolio — Übergabe
 
-Stand: 23.09.2026. Dieses Dokument ist der Einstieg für jeden, der hier
+Stand: 26.09.2026. Dieses Dokument ist der Einstieg für jeden, der hier
 weiterarbeitet. Es beschreibt nicht nur *was* da ist, sondern *warum* — denn an
 mehreren Stellen sieht die naheliegende Lösung besser aus als die gewählte, und
 ist es nicht.
@@ -66,10 +66,13 @@ gemessenen Zahl belegt („bei Breite 9.5 zerfiel die unterste Reihe zu einem
 Fleck"). Kommentare, die wiederholen, was der Code ohnehin sagt, gehören nicht
 hinein.
 
-**Minimale Oberfläche.** Es gibt keine Leiste, kein Menü, kein dauerhaftes
-Symbol in der Ecke. Die Steuerung steht als Tastenstempel im Schnee
-(`src/world/snow-writing.js`). Was sonst eingeblendet wird, verschwindet nach
-ein bis zwei Sekunden von selbst.
+**Minimale Oberfläche.** Es gibt keine Leiste, kein dauerhaftes Symbol in
+der Ecke. Die Steuerung steht als Tastenstempel im Schnee
+(`src/world/snow-writing.js`). Was sonst eingeblendet wird, verschwindet von
+selbst. Zwei ausdrücklich gewünschte Ausnahmen (26.09.): die **Übersicht**
+hinter `M` (Abschnitt 4a′) und die beiden **Hinweispillen** unten
+(`stations/hints.js`) – beide sind für Besucher, die nicht spielen wollen
+oder mit WASD nicht zurechtkommen (beobachtet: vor allem Ältere).
 
 ---
 
@@ -118,7 +121,7 @@ da hinein. Was in Mengen auftritt und sich einzeln bewegt (Pistenstangen,
 Leuchtsegmente), ist eine `InstancedMesh`.
 
 **Kennzahlen im Betrieb:** 0.05–0.13 ms/Frame, 300–420 Draw Calls,
-~800–855 k Dreiecke. Wer etwas hinzufügt, prüft das nach.
+~800–865 k Dreiecke. Wer etwas hinzufügt, prüft das nach.
 
 `npm run build` teilt Three.js in ein eigenes Stück (`vite.config.js`): 145 kB
 gzip, die im Cache bleiben, wenn sich nur das Tal ändert (70 kB).
@@ -157,7 +160,7 @@ Strang zu Ende fahren kann.
 
 | Station | Ort | Ziel |
 |---|---|---|
-| Werkstatt (Hütte) | 22, 28 | Auswahl: LinkedIn / GitHub |
+| Werkstatt (Hütte) | 22, 28 | Auswahl: LinkedIn / GitHub (Weg heißt KARRIERE) |
 | Skikasse | −40, −2 | Auswahl: PayPal / Solana (Wallet-Fenster) |
 | Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
 | Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |
@@ -177,8 +180,11 @@ strecke, Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
 
 **Wegenetz** (`paths.js`): die vier Wege plus sechs Verbindungen zu einem
 Netz; die Mittellinien steuern Waldschneisen *und* die Präparierung im
-Terrainmaterial. `wayfinding.js` baut den Talplan am Start und sechs
-Wegweiser, alle zur Kamera. Stationen rutschen **vor** der Bepflanzung auf
+Terrainmaterial. `wayfinding.js` baut die Panoramatafel am Start und vier
+Wegweiser, alle zur Kamera (GIPFELBAHN/TOOLS und HÜTTE/PARK sind weg – sie
+zeigten auf etwas, das man von dort schon sieht). Die vier Ausgangsschilder
+am Plateau tragen einen Pfeil und ragen zur Seite ihres Weges (`side` in
+`signpost.js`). Stationen rutschen **vor** der Bepflanzung auf
 flache Plätze; ihre Lichtungen benutzen die korrigierten Koordinaten.
 
 **Landschaft** (`landscape-layout.js`, `landscape-details.js`): sechs niedrige
@@ -304,6 +310,33 @@ Gemessen: ±1 cm.
 dem Grat, Wildspuren im Schnee (`stampTrack` in `snow-writing.js`, gestempelt in
 `main.js`). Nichts zum Anklicken — das war die ausdrückliche Wahl.
 
+**Zerbrechliches**: Der **Zaun oben am Funpark** (`props/park-fence.js`)
+bricht ab 5 m/s wie die Seebank, aber nur im Umkreis von 2,6 m um den
+Aufprall; Pfosten und Latten sind zwei InstancedMeshes, gebaut wird nach
+10 s, wenn der Fahrer ≥ 12 m weg ist. `onHit` darf `true` zurückgeben – dann
+schiebt `World.resolve` nicht zurück, man fährt hindurch.
+
+**Überspringen**: Kollisionskreise haben eine Höhe (`addCollider(x, z, r,
+data, height)`, Standard unendlich). `resolve` bekommt die Flughöhe des
+Fahrers und prüft gegen ein Halbkugelprofil. Steine tragen ihre gemessene
+Kuppenhöhe (0,2–0,9 m), liegende Stämme 0,62 m (Wurzelteller nicht); der
+Sprung mit der Leertaste hat 1,14 m Scheitel. Gemessen: ohne Sprung bleibt
+man am Stein hängen, mit Sprung fliegt man drüber. Bäume, Zäune, Häuser
+und Findlinge bleiben unendlich hoch. Nebenbei: die Kreise der Stämme lagen
+quer zum Stamm (`sin/cos` vertauscht) und sind jetzt längs.
+
+**Lawinenverbauung** (`props/avalanche-barrier.js`): eine Reihe
+Schneebrücken an der Westflanke unter dem Gipfel, auf der Höhenlinie um
+24 m vor der Waldkante. Sie ist die Grenze nach links unten – vorher fuhr
+man dort in den Wald und kam nur kriechend heraus. Kollision durchgehend
+(alle 0,9 m), nicht überspringbar.
+
+**Schrift im Schnee**: Name und Tasten werden mit wenig Relief gestempelt
+(`relief` in `stampDecal`, Name 0,3, Tasten 0,45) und kräftiger eingefärbt;
+Blau zählt im Terrain-Shader als glatt. Vorher warfen Rille und Wall
+Schatten in die Buchstaben und die Windrippen liefen hindurch – lesbar war
+der Name erst, wenn man ihn platt gefahren hatte.
+
 **Spielereien**: Fackeln und alle Pistenstangen kippen um, wenn man sie
 erwischt, und richten sich nach Sekunden wieder auf (Fackeln verlöschen dabei).
 Die Schneekanone verfolgt den Fahrer mit dem Strahl, feuert aber nur manchmal
@@ -368,11 +401,14 @@ ohne Maus, siehe Abschnitt 7.
 fast immer Schnee ist — klares Glas auf Weiß ist unsichtbar. Es ersetzt das
 frühere Pistenschild auf ausdrücklichen Wunsch.
 
-## 4a′. Talkarte und Schnellreise
+## 4a′. Übersicht, Talkarte und Schnellreise
 
-Am Startplatz (4, 24) steht ein **Kartenpult** (`props/map-board.js`):
-Schneehaube auf dem Rahmen, Eiszapfen, Schneewehen an den Pfosten, Neigung
-0,9 rad. Die Karte ist **aus der Welt gemalt** (`world/valley-map.js`): Relief
+Am hinteren Rand des Startplatzes (`PANORAMA` = −8,5, 21,5, genau hinter dem
+Namen im Schnee; der Fackelkranz lässt dort eine Lücke) steht die
+**Panoramatafel** (`props/map-board.js`): Vordach mit Schnee, Eiszapfen,
+Schneewehen, Neigung 0,9 rad, rechts eine Lawinenwarnleuchte (Doppelblitz
+alle 1,6 s) über der Warnstufe 1. Vorher stand sie als Pult bei (4, 24)
+zwischen den Wegweisern im Platz. Die Karte ist **aus der Welt gemalt** (`world/valley-map.js`): Relief
 aus `terrainHeight()` mit Licht von oben links und Höhenlinien alle 2,5 m,
 Wald aus den echten Baumstandorten, See, Pisten, Wege, Lift. Gedreht wie die
 feste Kamera, nach unten um 0,72 gestaucht. Gemalt wird **einmal** (1200 × 900,
@@ -380,10 +416,26 @@ rund 450 ms beim Aufbau); Pult (`boardMap`: Papiergrund, Titel, Ortsnamen) und
 Übersicht teilen das Grundbild — vorher kostete das erste Öffnen noch einmal
 461 ms, jetzt 4 ms.
 
-Das Pult ist eine Station (`id: 'talplan'`, `map: base`). **Enter am Pult oder
-`M` überall** öffnet die Übersicht (`stations/map-menu.js`): links die Karte mit
-Pins und „Du“, rechts die Ziele (Stationen, dann Orte: Start, Gipfel, Funpark,
-Hütte, See). ↑↓/←→ wählen (am Ende bleibt die Auswahl stehen — der
+Die Tafel ist eine Station (`id: 'talplan'`, `map: base`). **`M` überall**
+öffnet die Übersicht (`stations/map-menu.js`) auf dem Reiter **Links**,
+**Enter an der Tafel** auf dem Reiter **Talkarte**; `Tab` wechselt.
+
+- *Kopf*: Name und der tippende Untertitel von veerka.mp (dieselben sieben
+  Sätze, `SAETZE`). Bewusst nur hier – als Schild oder im Schnee wäre es
+  Laufschrift.
+- *Links*: die Kachelseite von veerka.mp (Wortlaut und Reihenfolge von dort)
+  in Gruppen Karriere, Kontakt, Unterstützen, Meine Tools, Außerdem. Klick
+  oder Enter öffnet direkt; jede Kachel trägt „im Tal: Werkstatt“ usw. und
+  bringt einen per Klick oder Leertaste hin. Die Adressen hängen weiter an
+  den Stationen (`registry.open(station, pick)`), nicht ein zweites Mal im
+  Menü. Fenster (Solana, Upload, Kurzlink) schließen die Übersicht vorher.
+  Spotify und Komoot stehen nur hier (noch kein Platz im Tal).
+- *Talkarte*: links die Karte mit Pins und „Du“, rechts die Ziele
+  (Stationen, dann Orte: Start, Gipfel, Funpark, Hütte, See).
+- *Fuß*: die ganze Steuerung.
+
+Pfeiltasten gehen im Kachelraster räumlich (nächste Kachel in Richtung,
+seitlicher Versatz zählt 2,5-fach). In der Karte gilt: ↑↓/←→ wählen (am Ende bleibt die Auswahl stehen — der
 Sprung nach oben passierte außerhalb des sichtbaren Teils und sah aus wie
 ein Fehler), Enter reist, Esc/M schließen; am Handy Ziel oder Pin antippen,
 geöffnet über den Kartenknopf. **Drohne und Löschzug fehlen absichtlich** — sie sollen gefunden
@@ -391,6 +443,16 @@ werden. Die Reise ist ein Versetzen hinter einer hellen Blende, keine Fahrt;
 man steht mit dem Rücken zur Kamera vor der Station, der Ankunftspunkt weicht
 Kollisionskreisen aus (Werkbank vor der Werkstatt). Alle 15 Ziele geprüft:
 richtige Station aktiv, kein Hindernis, 0 Bilder in der Luft.
+
+**Hinweise und R** (`stations/hints.js`): Beim Start schwebt unten eine
+Glaspille „M Übersicht & alle Links“ – anklickbar, sie bleibt, bis die
+Übersicht einmal offen war oder man 30 s gefahren ist. **`R`** bringt von
+überall zum Start (derselbe Weg wie die Schnellreise, `travelTo`). Die
+Pille „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
+Gas oder Lenkung, unter 4 m/s und keine 3 m vorangekommen) oder sich
+verfranzt hat (7 s abseits jedes Weges mit ≥ 3 Bäumen im Umkreis von 4 m),
+und geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
+Start-Hinweis entfällt dort (Kartenknopf).
 
 `Skier.versetzen(x, z, heading)` ist der eine Weg, den Fahrer umzusetzen:
 Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
@@ -587,7 +649,8 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 9. Offen
 
 - **Spotify** (`https://stats.fm/savo`) und **Komoot**
-  (`https://www.komoot.de/user/464140060326`) haben noch keinen Platz im Tal.
+  (`https://www.komoot.de/user/464140060326`) haben noch keinen Platz im Tal
+  (in der Übersicht stehen sie schon, unter „Außerdem“).
   Vom Nutzer ausdrücklich zurückgestellt, aber noch zu tun. Vorschlag aus der
   letzten Sitzung: Spotify auf die Terrasse der Après-Ski-Hütte („Höre was ich
   höre"), Komoot als Gipfelbuch am Gipfelkreuz („Wandern & Radfahren").

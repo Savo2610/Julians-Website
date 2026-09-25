@@ -20,16 +20,21 @@ function arrow(x, z, target) {
   return ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][(sector + 8) % 8]
 }
 
+export { arrow }
+
+// Standort der Panoramatafel – der Fackelkranz laesst hier eine Luecke.
+export const PANORAMA = { x: -8.5, z: 21.5 }
+
 export function createWayfinding(world, { registry, trees = [], lift = null } = {}) {
-  // Sechs Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln
+  // Vier Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln
   // stehen seitlich; ihr Ziel ist immer ein vorhandener Weg oder dessen Ende.
+  // GIPFELBAHN/TOOLS an der Talstation und HÜTTE/PARK an der Terrasse sind
+  // weg: beide zeigten auf etwas, das man von dort schon sieht.
   const junctions = [
-    { at: [-40, -12], rows: [['GIPFELBAHN', [-34, -8], INK], ['TOOLS · TAL', [-49, -4], TRAILS.tools.color]] },
     { at: [6, -6], rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color], ['STARTPLATZ', [1, 8], INK]] },
     { at: [33, 15], rows: [['KONTAKT · LIFT', [29, 9], INK], ['STARTPLATZ', [20, 23], INK]] },
     { at: [-25, 28], rows: [['ZUM SEE', [-26, 38], INK], ['TOOLS · LIFT', [-28, 21], TRAILS.tools.color]] },
     { at: [-67, -59], rows: [['AUSSICHT', [-61, -63], INK], ['TALABFAHRT', [-44, -52], TRAILS.sport.color]] },
-    { at: [17, -53], rows: [['HÜTTE', [23, -61], TRAILS.sport.color], ['PARK', [20, -45], TRAILS.sport.color]] },
   ]
   for (const { at: [x, z], rows } of junctions) {
     const sign = createSignpost(rows.map(([text, target, background]) => ({
@@ -39,9 +44,13 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
     world.addCollider(x, z, 0.35)
   }
 
-  // Das Kartenpult am Platz: gemaltes Relief im Schnee, und eine Station –
-  // Enter oeffnet die Uebersicht mit Schnellreise (stations/map-menu.js).
-  const x = 4, z = 24, yaw = CAMERA.azimuth
+  // Die Panoramatafel am Platz: gemaltes Relief, und eine Station – Enter
+  // oeffnet die Uebersicht (stations/map-menu.js). Sie stand bei (4, 24)
+  // rechts im Platz zwischen den Wegweisern, wie abgestellt. Jetzt steht sie
+  // am hinteren Rand, genau hinter dem Namen im Schnee: Tafel, Name,
+  // Fahrer, Tasten liegen im Bild uebereinander wie eine Startaufstellung,
+  // und die Tafel ist die Rueckwand des Platzes statt ein Hindernis darauf.
+  const { x, z } = PANORAMA, yaw = CAMERA.azimuth
   const ground = terrainHeight(x, z)
   const postX = 4.4 / 2 - 0.35
   const fuss = [-1, 1].map((side) =>
@@ -65,6 +74,7 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
   texture.anisotropy = 8
   const board = createMapBoard(texture, { fuss })
   world.place(board, x, z, { rotation: yaw })
+  const animate = board.userData.animate
   for (const side of [-1, 1]) {
     world.addCollider(x + Math.cos(yaw) * side * postX, z - Math.sin(yaw) * side * postX, 0.3)
   }
@@ -87,4 +97,5 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
       map: base,
     })
   }
+  return { animate }
 }

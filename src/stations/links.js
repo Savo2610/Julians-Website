@@ -20,6 +20,11 @@ export const LINKS = {
   paypal: 'https://paypal.me/juliansebv',
   solana: 'solana:BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da',
 
+  // Noch ohne Platz im Tal (siehe HANDOVER, Offen) – bis dahin nur in der
+  // Uebersicht, damit sie gegenueber veerka.mp nicht fehlen.
+  spotify: 'https://stats.fm/savo',
+  komoot: 'https://www.komoot.de/user/464140060326',
+
   // Eigene Dienste
   upload: 'https://upload.veerka.mp',
   shortener: 'https://s.veerka.mp',

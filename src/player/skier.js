@@ -196,7 +196,7 @@ export class Skier {
     let nx = this.position.x + stepX
     let nz = this.position.z + stepZ
 
-    const resolved = this.world.resolve(nx, nz, SKIER.bodyRadius, stepX, stepZ)
+    const resolved = this.world.resolve(nx, nz, SKIER.bodyRadius, stepX, stepZ, this.height)
     nx = resolved.x
     nz = resolved.z
     if (resolved.hit) {

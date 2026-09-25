@@ -90,6 +90,7 @@ const decalFrag = /* glsl */ `
   precision highp float;
   uniform sampler2D uMap;
   uniform float uStrength;
+  uniform float uRelief;
   varying vec2 vUv;
 
   void main() {
@@ -97,7 +98,10 @@ const decalFrag = /* glsl */ `
     // Blau markiert bewusst gesetzte Zeichnung. Fahrspuren lassen den Kanal
     // leer – so kann das Terrain Schrift deutlich einfaerben, ohne dass jede
     // Spur zur Tintenspur wird.
-    gl_FragColor = vec4(t.r * uStrength, t.g * uStrength, t.r * uStrength, 1.0);
+    // uRelief nimmt Rille und Wall zurueck, ohne die Farbe anzutasten: bei
+    // Schrift ist die Farbe das, was man liest, und das Relief das, was sie
+    // im frischen Schnee verwischt.
+    gl_FragColor = vec4(t.r * uStrength * uRelief, t.g * uStrength * uRelief, t.r * uStrength, 1.0);
   }
 `
 
@@ -171,6 +175,7 @@ export class SnowTrail {
         uRotation: { value: 0 },
         uWorldSize: { value: WORLD.size },
         uStrength: { value: 1 },
+        uRelief: { value: 1 },
       },
     })
     this.decalMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.decalMaterial)
@@ -182,8 +187,9 @@ export class SnowTrail {
   }
 
   // Zeichnet eine Textur einmalig in den Schnee. width/height in Welteinheiten.
-  stampDecal(texture, x, z, width, height, rotation = 0, strength = 1) {
+  stampDecal(texture, x, z, width, height, rotation = 0, strength = 1, relief = 1) {
     const u = this.decalMaterial.uniforms
+    u.uRelief.value = relief
     u.uMap.value = texture
     u.uCenter.value.set(x, z)
     u.uSize.value.set(width / 2, height / 2)

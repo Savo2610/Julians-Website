@@ -17,7 +17,8 @@ import { populate, skierRef } from './world/populate.js'
 import { StationRegistry } from './stations/registry.js'
 import { StationUI } from './stations/ui.js'
 import { StationInteraction } from './stations/interaction.js'
-import { MapMenu } from './stations/map-menu.js'
+import { MapMenu, ORTE } from './stations/map-menu.js'
+import { Hints } from './stations/hints.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
 import { Spray } from './player/spray.js'
@@ -62,6 +63,22 @@ scene.add(spray.points)
 const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase })
 const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu })
 input.onAction = (action) => interaction.press(action)
+
+// R und der Rueckweg-Hinweis: zurueck zum Startplatz, hinter derselben Blende
+// wie die Schnellreise.
+const start = ORTE.find((o) => o.id === 'start')
+const hints = new Hints({
+  map: mapMenu, input, skier, world,
+  onReset: () => {
+    if (skier.tow) return
+    interaction.leave()
+    mapMenu.close()
+    mapMenu.travelTo(start)
+    hints.afterReset()
+  },
+})
+interaction.onReset = hints.onReset
+mapMenu.onShow = () => hints.seen()
 
 // Handymodus: Daumenstick, Sprungknopf und Zwei-Finger-Zoom. Ein Tipp in den
 // Schnee klappt eine offene Auswahl wieder zu – das ist am Handy das Esc.
@@ -205,6 +222,7 @@ function advance(dt) {
   // stations/interaction.js, warum.
   stations.update(dt, skier)
   interaction.update()
+  hints.update(dt)
   // dt kommt mit, weil inzwischen nicht mehr alles eine Funktion der Uhrzeit
   // ist – umgestossene Fackeln richten sich ueber eine Dauer wieder auf.
   for (const animate of props.animated) animate(elapsed, dt)
@@ -231,7 +249,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

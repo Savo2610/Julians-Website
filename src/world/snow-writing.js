@@ -18,7 +18,7 @@ function textTexture(lines, { fontSize = 96, lineGap = 1.25, rim = 15 } = {}) {
 
   // Erst messen, dann in der richtigen Groesse zeichnen.
   ctx.font = font(800, fontSize)
-  const widths = lines.map((l) => ctx.measureText(l.text).width * (l.scale ?? 1))
+  const widths = lines.map((l) => ctx.measureText(l.text).width * (l.scale ?? 1) * 1.08)
   const width = Math.ceil(Math.max(...widths) + pad * 2)
   const height = Math.ceil(lines.length * fontSize * lineGap + pad * 2)
   canvas.width = width
@@ -33,7 +33,8 @@ function textTexture(lines, { fontSize = 96, lineGap = 1.25, rim = 15 } = {}) {
   lines.forEach((line, i) => {
     const size = fontSize * (line.scale ?? 1)
     const y = pad + fontSize * lineGap * (i + 0.5)
-    ctx.font = font(line.weight ?? 800, size)
+    ctx.font = font(line.weight ?? 900, size)
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.round(size * 0.06)}px`
 
     // Wall: breiter Rand, nur Gruen.
     ctx.strokeStyle = '#00ff00'
@@ -170,10 +171,10 @@ function stickTexture({ size = 520, rim = 15 } = {}) {
 // Schrift um den Kamera-Azimut gedreht liegen.
 const TEXT_ROTATION = -CAMERA.azimuth
 
-export function writeInSnow(trail, lines, { x, z, width, rotation = TEXT_ROTATION, strength = 1 }) {
+export function writeInSnow(trail, lines, { x, z, width, rotation = TEXT_ROTATION, strength = 1, relief = 1 }) {
   const { texture, aspect } = textTexture(lines)
   const height = width / aspect
-  trail.stampDecal(texture, x, z, width, height, rotation, strength)
+  trail.stampDecal(texture, x, z, width, height, rotation, strength, relief)
   return { width, height }
 }
 
@@ -188,12 +189,18 @@ export function writeIntro(trail, { touch = false } = {}) {
     z: PLATEAU.z - 4,
     width: 17,
     strength: 1,
+    // Im unberuehrten Schnee war der Name kaum zu lesen: Rille und Wall
+    // warfen bei Licht von oben links Schatten in jeden Buchstaben, und die
+    // Windrippen liefen quer hindurch. Erst platt gefahren wurde er lesbar –
+    // weil dann nur noch die Farbe uebrig war. Also gleich so: wenig Relief,
+    // viel Farbe.
+    relief: 0.3,
   })
 
   // Steuerung: nur das Tastenkreuz, kein erklaerender Text.
   const { texture, aspect } = touch ? stickTexture() : keycapTexture()
   const width = touch ? 8 : 11
-  trail.stampDecal(texture, PLATEAU.x + 4.5, PLATEAU.z + 4.5, width, width / aspect, TEXT_ROTATION, 0.95)
+  trail.stampDecal(texture, PLATEAU.x + 4.5, PLATEAU.z + 4.5, width, width / aspect, TEXT_ROTATION, 0.95, 0.45)
 }
 
 // --- Wildspuren ---------------------------------------------------------------

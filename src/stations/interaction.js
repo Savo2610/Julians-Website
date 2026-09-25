@@ -34,9 +34,15 @@ export class StationInteraction {
     if (this.map?.open) return this.map.press(action)
     if (action === 'map' && this.map && !this.skier.tow) {
       this.leave()
-      this.map.show()
+      this.map.show('links')
       return true
     }
+    if (action === 'reset' && this.map && !this.skier.tow) {
+      this.leave()
+      this.onReset?.()
+      return true
+    }
+    if (action === 'tab') return false
     if (this.focus) {
       const n = this.focus.choices.length
       switch (action) {
@@ -57,7 +63,7 @@ export class StationInteraction {
     // Am Lift und am Teppich gehoert Enter dem Ausstieg.
     if (!s || this.skier.tow) return false
     if (action === 'use') {
-      if (s.map && this.map) this.map.show()
+      if (s.map && this.map) this.map.show('karte')
       else if (s.choices?.length) this.enter(s)
       else {
         this.registry.trigger()

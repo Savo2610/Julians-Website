@@ -486,14 +486,17 @@ html.touch .prompt-title { font-size: 14px; }
   transition: opacity 0.25s ease;
 }
 .map-overlay.visible { opacity: 1; pointer-events: auto; }
+/* Das Raster des Overlays gibt dem Panel sonst die Breite seines Inhalts. */
+.map-overlay { grid-template-columns: minmax(0, 1fr); justify-items: center; }
 
 .map-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(250px, 1fr);
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: min(1060px, 100%);
-  max-height: 100%;
-  padding: 14px;
+  min-width: 0;
+  max-height: calc(100dvh - 32px);
+  padding: 16px;
   border-radius: 30px;
   translate: 0 18px;
   scale: 0.97;
@@ -585,7 +588,6 @@ html.touch .prompt-title { font-size: 14px; }
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: min(620px, calc(100dvh - 60px));
 }
 .map-side .sheet-head { padding: 4px 4px 8px; }
 .map-list {
@@ -653,17 +655,203 @@ html.touch .prompt-title { font-size: 14px; }
 }
 .travel-veil.on { opacity: 1; }
 
-/* Hochformat: Karte oben, Liste darunter. */
+/* --- Uebersicht: Kopf, Reiter, Kacheln, Steuerung ------------------------- */
+
+.ov-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 2px 4px 0 8px;
+}
+.ov-name { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.2; }
+.ov-name strong { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
+.ov-typed { font-size: 13.5px; font-weight: 600; color: #4a5f75; min-height: 1.3em; white-space: nowrap; }
+.ov-typed i {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: #7a5cf0;
+  animation: caret 1s steps(1) infinite;
+}
+@keyframes caret { 50% { opacity: 0; } }
+
+.ov-tabs {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(40, 70, 105, 0.08);
+}
+.ov-tabs button {
+  padding: 7px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font: 700 13.5px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  color: #3d5166;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.ov-tabs button[aria-selected="true"] {
+  background: #fff;
+  color: #13212f;
+  box-shadow: 0 2px 8px -2px rgba(28, 58, 96, 0.3);
+}
+.ov-head .sheet-close { position: static; flex: none; }
+
+.ov-links, .ov-karte { flex: 1; min-height: 0; }
+.map-panel[data-view="links"] .ov-karte,
+.map-panel[data-view="karte"] .ov-links { display: none; }
+
+.ov-links {
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  align-content: start;
+  gap: 16px 18px;
+  padding: 4px 6px 6px;
+  scrollbar-width: thin;
+}
+.ov-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 4px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c);
+}
+.ov-group h3::after { content: ''; flex: 1; height: 1px; background: color-mix(in srgb, var(--c) 30%, transparent); }
+.ov-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+.ov-tile {
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 2px 8px -4px rgba(28, 58, 96, 0.25);
+  overflow: hidden;
+  transition: background 0.2s ease, box-shadow 0.2s ease, translate 0.2s ease;
+}
+.ov-tile.selected {
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 0 2px var(--c), 0 8px 20px -8px color-mix(in srgb, var(--c) 60%, transparent);
+  translate: 0 -1px;
+}
+.ov-tile.used { animation: glassPulse 0.35s ease; }
+.ov-open {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px 9px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ov-icon { font-size: 22px; line-height: 1; }
+.ov-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.ov-label { font-size: 14.5px; font-weight: 780; }
+.ov-sub { font-size: 11.5px; font-weight: 550; color: #4a5f75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-go { font-size: 14px; font-weight: 800; color: var(--c); opacity: 0.35; transition: opacity 0.2s ease; }
+.ov-tile.selected .ov-go, .ov-open:hover .ov-go { opacity: 1; }
+.ov-where {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 8px 8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 10%, transparent);
+  font: 650 11px/1.2 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  color: color-mix(in srgb, var(--c) 80%, #13212f);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.ov-where:hover { background: color-mix(in srgb, var(--c) 22%, transparent); }
+.ov-pin {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50% 50% 50% 0;
+  rotate: -45deg;
+  background: var(--c);
+}
+
+.ov-karte {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(250px, 1fr);
+  gap: 14px;
+}
+
+.ov-keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 18px;
+  padding: 10px 8px 2px;
+  border-top: 1px solid rgba(40, 70, 105, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+  color: #3d5166;
+}
+.ov-key { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.ov-kbd { display: inline-flex; gap: 3px; }
+kbd.k-space { min-width: 64px; font-size: 10px; }
+.ov-hint { padding-top: 0; flex-wrap: wrap; row-gap: 4px; }
+
+/* --- Hinweise unten ------------------------------------------------------ */
+
+.hint-pill {
+  position: fixed;
+  left: 50%;
+  bottom: max(28px, calc(env(safe-area-inset-bottom) + 14px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 18px 9px 9px;
+  border-radius: 999px;
+  font: 700 14px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  color: #13212f;
+  white-space: nowrap;
+  cursor: pointer;
+  z-index: 11;
+  opacity: 0;
+  translate: -50% 12px;
+  pointer-events: none;
+  transition: opacity 0.5s ease, translate 0.5s cubic-bezier(0.2, 1.2, 0.3, 1);
+}
+.hint-pill.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
+.hint-pill:hover { background: rgba(255, 255, 255, 0.8); }
+.hint-pill kbd { min-width: 26px; height: 26px; font-size: 12.5px; }
+html.touch .hint-pill { padding: 12px 20px; }
+
+/* Hochformat: Karte oben, Liste darunter; Kacheln einspaltig. */
 @media (max-width: 760px) {
   .map-panel {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
-    /* 100 % griff im Raster des Overlays nicht – das Panel wuchs auf 1330 px
-       und die Liste lief unten aus dem Bild. */
     height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     padding: 10px;
     border-radius: 24px;
   }
-  .map-side { max-height: none; }
+  .ov-head { flex-wrap: wrap; padding-left: 4px; }
+  .ov-name { flex-basis: calc(100% - 60px); }
+  .ov-tabs { order: 3; width: 100%; }
+  .ov-tabs button { flex: 1; }
+  .ov-links { grid-template-columns: 1fr; }
+  .ov-karte {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .ov-keys, .ov-hint { display: none; }
   .map-pin-label { font-size: 10.5px; }
 }

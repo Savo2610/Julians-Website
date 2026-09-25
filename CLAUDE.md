@@ -19,7 +19,8 @@ Das Wichtigste in Kürze:
 - Klein und dicht — ein Spielzeugtal. Im Zweifel schrumpfen.
 - Alles muss als **eine zusammenhängende Gegend** lesbar bleiben, nicht wie eine
   ausgekippte Spielzeugkiste.
-- Minimale Oberfläche: keine Leiste, kein Menü. Hinweise blenden sich selbst aus.
+- Minimale Oberfläche: keine Leiste. Einzige Menüs: die Übersicht hinter `M`
+  und die zwei Hinweispillen (für Nicht-Spieler gewünscht). Hinweise gehen von selbst.
 - Verworfen und nicht ohne Rückfrage neu anzufangen: **Halfpipe** (funktioniert
   im Fahrmodell nicht) und **Ton** (zweimal gebaut, zweimal abgelehnt).
 

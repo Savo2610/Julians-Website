@@ -45,6 +45,8 @@ export function createRocks(world, placements, seed = 4711) {
   variants.forEach((geo, vi) => {
     const list = groups[vi]
     if (!list.length) return
+    geo.computeBoundingBox()
+    const topY = geo.boundingBox.max.y
     const mesh = new THREE.InstancedMesh(geo, material, list.length)
     mesh.castShadow = true
     mesh.receiveShadow = true
@@ -57,8 +59,10 @@ export function createRocks(world, placements, seed = 4711) {
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
       // Die Blob-Form ragt weiter als der Grundradius – lieber grosszuegig,
-      // sonst steckt man optisch im Fels.
-      world.addCollider(p.x, p.z, s * 1.02 * (p.stretch || 1))
+      // sonst steckt man optisch im Fels. Die Hoehe ist die der Kuppe ueber
+      // dem Boden: die meisten Steine ragen 0,3 bis 0,9 m auf und lassen sich
+      // mit der Leertaste ueberspringen (Scheitel 1,14 m).
+      world.addCollider(p.x, p.z, s * 1.02 * (p.stretch || 1), null, Math.max(0.2, topY * s * 0.86 - s * 0.46))
     })
     mesh.instanceMatrix.needsUpdate = true
     meshes.push(mesh)

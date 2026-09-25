@@ -15,6 +15,12 @@ const KEY_MAP = {
   Escape: 'back', Backspace: 'back',
   // Die Talkarte von ueberall. Am Pult oeffnet sie auch Enter.
   KeyM: 'map',
+  // Zurueck zum Start, von ueberall – fuer den, der sich im Wald verfahren
+  // hat. Siehe stations/hints.js, wann das Tal von selbst daran erinnert.
+  KeyR: 'reset',
+  // Wechselt in der Uebersicht zwischen Links und Talkarte. Nur dort: im
+  // Spiel geht Tab wie gewohnt durch die Seite.
+  Tab: 'tab',
   // Stationen mit mehr als einem Ziel: die Karte zeigt die Ziffern an, mit
   // denen man waehlt. Ein zweiter Bestaetigungsknopf waere eine Taste mehr
   // fuer einen Fall, den es an drei Stellen im Tal gibt.

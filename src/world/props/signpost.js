@@ -38,6 +38,9 @@ export function createSignpost(boards, { height = 2.3 } = {}) {
   boards.forEach((board, i) => {
     const w = board.width ?? 1.5
     const h = board.height ?? 0.44
+    // side -1: die Tafel ragt nach links vom Pfosten weg – fuer Wege, die im
+    // Bild nach links fuehren. Eine Tafel zeigt mit ihrem freien Ende.
+    const side = board.side ?? 1
     const y = height - 0.4 - i * (h * Math.cos(BOARD_TILT) + 0.2)
 
     const tex = labelTexture(board.text, {
@@ -55,7 +58,7 @@ export function createSignpost(boards, { height = 2.3 } = {}) {
       // sonst sechs Draw Calls, obwohl nur ihre Vorderseite gelesen wird.
       new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 }),
     )
-    plate.position.set(w * 0.42, y, 0)
+    plate.position.set(side * w * 0.42, y, 0)
     plate.rotation.set(BOARD_TILT, board.rotation ?? 0, 0, 'YXZ')
     plate.castShadow = true
     group.add(plate)
@@ -65,7 +68,7 @@ export function createSignpost(boards, { height = 2.3 } = {}) {
       new THREE.BoxGeometry(w * 1.01, 0.05, 0.09),
       new THREE.MeshStandardMaterial({ color: SNOW, roughness: 0.95, flatShading: true }),
     )
-    cap.position.set(w * 0.42, y + h / 2 * Math.cos(BOARD_TILT) + 0.03, -h / 2 * Math.sin(BOARD_TILT) * -1)
+    cap.position.set(side * w * 0.42, y + h / 2 * Math.cos(BOARD_TILT) + 0.03, -h / 2 * Math.sin(BOARD_TILT) * -1)
     cap.rotation.set(BOARD_TILT, board.rotation ?? 0, 0, 'YXZ')
     group.add(cap)
   })

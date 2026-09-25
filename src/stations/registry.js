@@ -53,7 +53,13 @@ export class StationRegistry {
   trigger(index = null) {
     const s = this.active
     if (!s) return null
+    return this.open(s, index)
+  }
 
+  // Dasselbe fuer eine beliebige Station, nicht nur die, vor der man steht –
+  // die Kacheln der Uebersicht oeffnen darueber, damit jede Adresse nur an
+  // ihrer Station haengt und nicht ein zweites Mal im Menue.
+  open(s, index = null) {
     if (index !== null) {
       const choice = s.choices?.[index]
       if (!choice) return null

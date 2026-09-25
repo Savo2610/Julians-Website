@@ -90,7 +90,8 @@ src/
     world.js         Szene, Licht, Nebel
     populate.js      Setzt alles ins Tal — die zentrale Werkbank
     paths.js         Wegenetz: TRAILS und Verbindungen (Schneisen, Präparierung)
-    wayfinding.js    Talplan und Wegweiser
+    wayfinding.js    Panoramatafel (PANORAMA) und Wegweiser
+    trail-glints.js  Leuchtschleier auf den vier Wegen
     landscape-*.js   Schneerücken, Bodenwellen, Nebenstrecken, Quelle, Schauer
     surfaces.js      Wo Eis und Holz liegen — dort keine Spur, kein Staub
     apres-*.js       Hütte mit Terrasse und umwerfbaren Möbeln
@@ -98,7 +99,9 @@ src/
     snow-writing.js  Schrift und Tasten-/Stickzeichen im Schnee
     drag-lift.js, magic-carpet.js, rail-ride.js, race.js, speed-check.js,
     light-run.js, north-run.js
-    props/           Ein Modul je Gegenstand; screens.js = leuchtende Bildschirme
+    props/           Ein Modul je Gegenstand; screens.js = leuchtende Bildschirme,
+                     park-fence.js (bricht), avalanche-barrier.js, map-board.js
+                     (Panoramatafel + lawinenstufe()), signpost.js (Pfeiltafeln)
   player/
     skier.js         Fahrmodell, Sprung, Tricks
     skier-model.js   Die Figur
@@ -110,6 +113,8 @@ src/
     registry.js      Nähe prüfen, auslösen
     interaction.js   Enter/Tippen: öffnen oder heranzoomen und wählen
     ui.js            Glas-Einladung und Glas-Auswahl
+    map-menu.js      Übersicht (M): Reiter Links und Talkarte, Schnellreise
+    hints.js         Start-Hinweis, Festgefahren-Erkennung, R
   dialogs/           Wortgleich von veerka.mp übernommen — siehe unten
 tests/               node --test (npm test)
 wrangler.jsonc       Testbetrieb auf beta.veerka.mp
@@ -361,6 +366,10 @@ oder am Lift hängt.
 
 ## 4a. Stationen benutzen: Enter, Heranzoomen, Glas
 
+**Tasten insgesamt** (`core/input.js`): WASD/Pfeile, Shift kanten,
+Leertaste springen (im Park Tricks), Enter/E benutzen, `M` Übersicht,
+`R` zurück zum Start, `Tab` Reiter der Übersicht, Esc/Backspace zurück.
+
 **Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
 schwebt eine Glasblase mit Name, einem Wort und dem ⏎-Zeichen.
 
@@ -513,6 +522,12 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
 
 ## 4c. Hosting
 
+**Arbeitsweise (Ansage 26.09.):** jede fertige Runde sofort live – Tests
+und Build, deutsch committen, Commit-Nummer hier im Verlauf nachtragen,
+`npm run deploy:test`, dann prüfen, dass beta.veerka.mp dieselbe
+`assets/index-*.js` ausliefert wie `dist/`. **Das Repo hat kein Git-Remote**;
+gepusht wird nirgendwohin, bis eines eingetragen ist.
+
 **beta.veerka.mp** ist ein reiner Asset-Worker (`wrangler.jsonc`, Name
 `skiportfolio-test`) ohne eigenen Code. `npm run deploy:test` baut und lädt
 hoch (vorher einmal `npx wrangler login`). `public/_headers` gibt `/assets/*`
@@ -567,7 +582,7 @@ und nur im Funpark (`inFunpark(...)`).
 ## 6. Werkzeug zum Prüfen
 
 `window.__ski` = `{ skier, world, camera, renderer, scene, trail, props, sky,
-input, chase, stations, interaction, step, goto }`. `goto('kasse')` stellt den
+input, chase, stations, interaction, mapMenu, hints, glints, step, goto }`. `goto('kasse')` stellt den
 Fahrer vor eine Station (Ids in `stations.js`).
 
 `S.step(frames, dt)` spult die Welt ohne laufenden rAF-Loop vor — unentbehrlich,
@@ -688,6 +703,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
 - **Umzug auf veerka.mp** steht noch aus; beta.veerka.mp ist die Vorstufe.
+- **Kein Git-Remote.** Die Historie liegt nur lokal; ein GitHub-Repo fehlt.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit

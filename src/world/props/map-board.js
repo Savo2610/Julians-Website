@@ -19,7 +19,32 @@ const SNOW = 0xf7fbff
 const SNOW_SHADE = 0xe2ecf6
 const ICE = 0xd8ecfb
 
-export function createMapBoard(texture, { fuss = [0, 0] } = {}) {
+// Die Lawinenwarnstufe wechselt einmal am Tag, fuer alle Besucher gleich:
+// gezogen aus dem Datum, nicht aus Math.random. Verteilt wie im echten
+// Winter – meist gering, selten mehr: 1 zu 55 %, 2 zu 27 %, 3 zu 12 %,
+// 4 zu 5 %, 5 zu 1 %. Zum Ansehen laesst sie sich mit ?lawine=4 erzwingen.
+const STUFEN = [
+  { bis: 0.55, farbe: '#4cae4c', schrift: '#ffffff' },
+  { bis: 0.82, farbe: '#f2d21f', schrift: '#26323d' },
+  { bis: 0.94, farbe: '#f28c1f', schrift: '#ffffff' },
+  { bis: 0.99, farbe: '#e0322b', schrift: '#ffffff' },
+  { bis: 1.00, farbe: '#e0322b', schrift: '#ffffff', schach: true },
+]
+
+export function lawinenstufe(date = new Date()) {
+  const erzwungen = Number(new URLSearchParams(location.search).get('lawine'))
+  if (erzwungen >= 1 && erzwungen <= 5) return erzwungen
+  const tag = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+  // FNV-1a und ein Murmel-Nachmischer: aufeinanderfolgende Tage liegen
+  // sonst zu dicht beieinander und die Stufe klebt tagelang.
+  let h = 2166136261
+  for (const c of tag) h = Math.imul(h ^ c.charCodeAt(0), 16777619)
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16
+  const r = (h >>> 0) / 4294967296
+  return STUFEN.findIndex((s) => r < s.bis) + 1
+}
+
+export function createMapBoard(texture, { fuss = [0, 0], stufe = lawinenstufe() } = {}) {
   const group = new THREE.Group()
   group.name = 'talplan'
 
@@ -100,9 +125,9 @@ export function createMapBoard(texture, { fuss = [0, 0] } = {}) {
   panel.add(roofMesh)
 
   // Lawinenwarnung rechts oben: gelbe Rundumleuchte auf einem Kasten und
-  // darunter die Warnstufe. Stufe 1, gruen – es ist ein Spielzeugtal. Das
-  // Blinken ist das, was man aus 33 m zuerst sieht; die Tafel ist nur
-  // Kleinkram fuer den, der naeher kommt.
+  // darunter die Warnstufe des Tages (lawinenstufe). Das Blinken ist das,
+  // was man aus 33 m zuerst sieht; die Tafel ist Kleinkram fuer den, der
+  // naeher kommt.
   const unit = new THREE.Group()
   unit.position.set(W / 2 + 0.55, H / 2 - 0.35, 0.05)
   panel.add(unit)
@@ -128,11 +153,19 @@ export function createMapBoard(texture, { fuss = [0, 0] } = {}) {
   ctx.fillText('LAWINEN', 64, 30)
   ctx.font = '700 15px ui-rounded, system-ui, sans-serif'
   ctx.fillText('WARNSTUFE', 64, 50)
-  ctx.fillStyle = '#4cae4c'
+  const st = STUFEN[stufe - 1]
+  ctx.fillStyle = st.farbe
   ctx.fillRect(22, 64, 84, 108)
-  ctx.fillStyle = '#ffffff'
+  if (st.schach) {
+    // Stufe 5 traegt im echten Schema ein rot-schwarzes Schachbrett.
+    ctx.fillStyle = '#1b1b1b'
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 3; x++) if ((x + y) % 2) ctx.fillRect(22 + x * 28, 64 + y * 27, 28, 27)
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'
+    ctx.fillRect(38, 84, 52, 72)
+  }
+  ctx.fillStyle = st.schrift
   ctx.font = '900 92px ui-rounded, system-ui, sans-serif'
-  ctx.fillText('1', 64, 152)
+  ctx.fillText(String(stufe), 64, 152)
   const plateTex = new THREE.CanvasTexture(plate)
   plateTex.colorSpace = THREE.SRGBColorSpace
   const plateMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.87), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.8 }))
@@ -152,11 +185,13 @@ export function createMapBoard(texture, { fuss = [0, 0] } = {}) {
   glow.position.copy(lamp.position)
   unit.add(glow)
 
-  // Doppelblitz alle 1,6 s, wie eine echte Warnleuchte – ein gleichmaessiges
-  // Pulsieren sah nach Weihnachtsdeko aus.
+  // Doppelblitz, wie eine echte Warnleuchte – ein gleichmaessiges Pulsieren
+  // sah nach Weihnachtsdeko aus. Bei Stufe 1 bleibt sie aus; ab 4 schneller.
+  const takt = stufe >= 4 ? 1.0 : 1.6
+  group.userData.stufe = stufe
   group.userData.animate = (t) => {
-    const p = t % 1.6
-    const on = p < 0.12 || (p > 0.24 && p < 0.36)
+    const p = t % takt
+    const on = stufe >= 2 && (p < 0.12 || (p > 0.24 && p < 0.36))
     lampMat.emissiveIntensity = on ? 2.4 : 0.15
     glow.material.opacity = on ? 0.85 : 0
   }

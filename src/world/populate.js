@@ -489,7 +489,7 @@ export function populate(world, sky, registry) {
     const pfeil = arrow(sx, sz, target)
     const links = (target[0] - sx) - (target[1] - sz) < 0
     const sign = createMarkerSign([
-      { text: trail.label, arrow: pfeil, background: trail.color, width: 3.5, height: 0.74, side: links ? -1 : 1 },
+      { text: trail.label, arrow: pfeil, background: trail.color, width: 4.0, height: 0.74, side: links ? -1 : 1 },
     ], { height: 2.6 })
     world.place(sign, sx, sz, { rotation: Math.PI * 0.25 })
     world.addCollider(sx, sz, 0.45)

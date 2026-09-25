@@ -116,7 +116,9 @@ export function createTrailGlints(trails) {
   let sparkIndex = 0
   const _p = new THREE.Vector3()
 
-  function update(dt, t, camera, renderer) {
+  // Neue Schleier nur, solange der Fahrer in der Naehe des Startplatzes ist:
+  // dort sind sie Wegweiser. Draussen im Tal waeren sie nur Unruhe am Rand.
+  function update(dt, t, camera, renderer, near = true) {
     // Punktgroesse in Pixeln pro Meter bei Abstand 1 – haengt an Bildhoehe
     // und Brennweite, sonst waeren die Faeden am Handy nur Staub.
     const h = renderer.domElement.height
@@ -124,10 +126,10 @@ export function createTrailGlints(trails) {
 
     for (const lane of lanes) {
       lane.next -= dt
-      if (lane.next <= 0 && lane.comets.length < 1) {
-        // Nicht im Takt und je Weg hoechstens eine: mit zwei pro Weg waren
-        // oft sechs gleichzeitig im Bild, das war kein Huschen mehr.
-        lane.next = 5 + Math.random() * 6
+      if (lane.next <= 0 && lane.comets.length < 1 && near) {
+        // Nicht im Takt und je Weg hoechstens eine, alle 9–18 s: mit zwei pro
+        // Weg und 5–11 s war es aufdringlich.
+        lane.next = 9 + Math.random() * 9
         lane.comets.push({ s: 0, speed: 7.5 + Math.random() * 3, seed: Math.random() * 10 })
       }
       const end = lane.line[lane.line.length - 1].s
@@ -157,8 +159,8 @@ export function createTrailGlints(trails) {
           at(lane.line, Math.max(0, Math.min(end, s)), _p)
           _p.y += Math.sin(t * 3 + c.seed + s * 0.6) * 0.08
           pos.set([_p.x, _p.y, _p.z], n * 3)
-          alpha[n] = s < 0 || s > end ? 0 : Math.max(0, fade) * Math.pow(f, 1.4) * 0.45
-          size[n] = 0.35 + 0.6 * f
+          alpha[n] = s < 0 || s > end ? 0 : Math.max(0, fade) * Math.pow(f, 1.4) * 0.4
+          size[n] = 0.22 + 0.38 * f
           color.set([lane.color.r, lane.color.g, lane.color.b], n * 3)
           n++
         }

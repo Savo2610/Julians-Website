@@ -32,15 +32,17 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
   // weg: beide zeigten auf etwas, das man von dort schon sieht. ZUM SEE /
   // TOOLS · LIFT an der Rohrpost ebenso – See und Weg liegen dort im Bild.
   const junctions = [
-    { at: [6, -6], rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color], ['STARTPLATZ', [1, 8], INK]] },
+    // side 1 fest: nach links gekehrt ragten die Tafeln ueber den
+    // Kontaktposten und verdeckten ihn.
+    { at: [6, -6], side: 1, rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color], ['STARTPLATZ', [1, 8], INK]] },
     { at: [33, 15], rows: [['KONTAKT · LIFT', [29, 9], INK], ['STARTPLATZ', [20, 23], INK]] },
     { at: [-67, -59], rows: [['AUSSICHT', [-61, -63], INK], ['TALABFAHRT', [-44, -52], TRAILS.sport.color]] },
   ]
-  for (const { at: [x, z], rows } of junctions) {
+  for (const { at: [x, z], rows, side } of junctions) {
     // Alle Tafeln an einem Mast ragen zur selben Seite – die, in die die
     // Mehrheit zeigt. Gemischt stand der Mast wie ein Kreuz im Schnee.
     const pfeile = rows.map(([, target]) => arrow(x, z, target))
-    const links = pfeile.filter((p) => '←↖↙'.includes(p)).length > rows.length / 2
+    const links = side ? side < 0 : pfeile.filter((p) => '←↖↙'.includes(p)).length > rows.length / 2
     const sign = createMarkerSign(rows.map(([text, , background], i) => ({
       text, arrow: pfeile[i], background, width: 3.4, height: 0.66, side: links ? -1 : 1,
     })), { height: 2.8 })

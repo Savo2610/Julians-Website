@@ -7,7 +7,7 @@ import { CAMERA, COLORS, SKIER } from './config.js'
 import { Input } from './core/input.js'
 import { TOUCH } from './core/device.js'
 import { TouchControls } from './core/touch.js'
-import { inFunpark } from './world/heightfield.js'
+import { inFunpark, PLATEAU } from './world/heightfield.js'
 import { SnowTrail } from './world/snow-trail.js'
 import { World } from './world/world.js'
 import { createSky } from './world/sky.js'
@@ -237,7 +237,8 @@ function advance(dt) {
   props.kinderland.animate(elapsed, dt)
 
   snowfall.userData.update(dt, elapsed, skier.position)
-  glints.update(dt, elapsed, camera, renderer)
+  glints.update(dt, elapsed, camera, renderer,
+    Math.hypot(skier.position.x - PLATEAU.x, skier.position.z - PLATEAU.z) < 30)
   props.lake.update(camera)
   sky.update(elapsed)
   trail.flush()

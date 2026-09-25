@@ -183,15 +183,18 @@ Netz; die Mittellinien steuern Waldschneisen *und* die Präparierung im
 Terrainmaterial. `wayfinding.js` baut die Panoramatafel am Start und drei
 Wegweiser, alle zur Kamera (GIPFELBAHN/TOOLS, HÜTTE/PARK und ZUM SEE/TOOLS
 sind weg – sie zeigten auf etwas, das man von dort schon sieht).
-Wegweiser und die vier Ausgangsschilder am Plateau sind **moderne
-Markierungen** (`createMarkerSign` in `signpost.js`): Anthrazit-Mast,
-abgerundete Tafel in Wegfarbe, Pfeil im weißen Kreis am freien Ende; sie
-ragen zur Seite ihres Weges. Das Holzschild (`createSignpost`) bleibt nur an
-der Après-Ski-Hütte.
+Wegweiser und die vier Ausgangsschilder am Plateau sind **Pfeiltafeln**
+(`createMarkerSign` in `signpost.js`): Holzmast mit Schneehaube wie vorher,
+jede Tafel ein Pfeil in Wegfarbe mit weißem Rand und Schneekante, Spitze
+zur Seite ihres Weges. Ein Zwischenstand mit modernen Leitsystem-Tafeln
+(Stahlmast, abgerundet) passte nicht in die Landschaft und ist wieder weg.
+Die Kreuzung am Kontaktposten ragt fest nach rechts (`side: 1`) – nach
+links verdeckte sie den Posten.
 
 **Leuchtschleier** (`world/trail-glints.js`) ersetzen die Winkel im Schnee:
-je Weg huscht alle 5–11 s eine Sternschnuppe vom Plateau aus den Weg
-entlang (56 Punkte Schweif, Funken dahinter). Farben gesättigt und hell,
+je Weg huscht alle 9–18 s eine dünne Sternschnuppe vom Plateau aus den
+Weg entlang (56 Punkte Schweif, Funken dahinter) – neue nur, solange der
+Fahrer höchstens 30 m vom Startplatz entfernt ist. Farben gesättigt und hell,
 normal gemischt – additiv oder in den gedeckten Wegfarben lasen sie sich
 auf Tagschnee wie Rauch. Höchstens eine je Weg, sonst waren sechs
 gleichzeitig im Bild. Stationen rutschen **vor** der Bepflanzung auf
@@ -416,8 +419,10 @@ frühere Pistenschild auf ausdrücklichen Wunsch.
 Am hinteren Rand des Startplatzes (`PANORAMA` = −8,5, 21,5, genau hinter dem
 Namen im Schnee; der Fackelkranz lässt dort eine Lücke) steht die
 **Panoramatafel** (`props/map-board.js`): Vordach mit Schnee, Eiszapfen,
-Schneewehen, Neigung 0,9 rad, rechts eine Lawinenwarnleuchte (Doppelblitz
-alle 1,6 s) über der Warnstufe 1. Vorher stand sie als Pult bei (4, 24)
+Schneewehen, Neigung 0,9 rad, rechts eine Lawinenwarnleuchte (Doppelblitz) über der **Lawinenwarnstufe des Tages** (`lawinenstufe()`): aus dem
+Datum gezogen, für alle gleich, 1 an 56 %, 2 an 25 %, 3 an 12 %, 4 an 5 %,
+5 an unter 1 % der Tage (über zehn Jahre nachgerechnet). Die Leuchte
+blinkt erst ab Stufe 2, ab 4 schneller. `?lawine=4` erzwingt eine Stufe. Vorher stand sie als Pult bei (4, 24)
 zwischen den Wegweisern im Platz. Die Karte ist **aus der Welt gemalt** (`world/valley-map.js`): Relief
 aus `terrainHeight()` mit Licht von oben links und Höhenlinien alle 2,5 m,
 Wald aus den echten Baumstandorten, See, Pisten, Wege, Lift. Gedreht wie die

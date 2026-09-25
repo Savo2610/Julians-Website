@@ -417,7 +417,7 @@ frühere Pistenschild auf ausdrücklichen Wunsch.
 
 ## 4a′. Übersicht, Talkarte und Schnellreise
 
-Am hinteren Rand des Startplatzes (`PANORAMA` = −8,5, 21,5, genau hinter dem
+Am hinteren Rand des Startplatzes (`PANORAMA` = −7,65, 20,65, genau hinter dem
 Namen im Schnee; der Fackelkranz lässt dort eine Lücke) steht die
 **Panoramatafel** (`props/map-board.js`): Vordach mit Schnee, Eiszapfen,
 Schneewehen, Neigung 0,9 rad, rechts eine Lawinenwarnleuchte (Doppelblitz) über der **Lawinenwarnstufe des Tages** (`lawinenstufe()`): aus dem

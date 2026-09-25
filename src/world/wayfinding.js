@@ -23,7 +23,9 @@ function arrow(x, z, target) {
 export { arrow }
 
 // Standort der Panoramatafel – der Fackelkranz laesst hier eine Luecke.
-export const PANORAMA = { x: -8.5, z: 21.5 }
+// 1,2 m im Bild nach rechts (Welt 0,707/−0,707) gegenueber (−8,5, 21,5): der
+// Durchgang zwischen Tafel und TOOLS-Schild war zu schmal.
+export const PANORAMA = { x: -7.65, z: 20.65 }
 
 export function createWayfinding(world, { registry, trees = [], lift = null } = {}) {
   // Drei Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln

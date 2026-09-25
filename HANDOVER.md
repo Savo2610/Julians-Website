@@ -689,6 +689,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+d95967a  Uebersicht fuer Nichtspieler, R zum Start, Zaun, Lawinenschutz
 bea0c1b  Werkstatt hangab, Karte scrollt unter der Maus nicht zurueck
 46fd15d  Werkstatt naeher am Start, Loeschzug am Waldrand
 7edb46f  Slalom: vier Tore streng im Wechsel

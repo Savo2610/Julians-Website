@@ -584,14 +584,16 @@ dafür hängt jedes Bein an seiner Hüfte (`legSides`, Drehpunkt `HIP`).
 - **Abfahrtshocke** (`tuck`) ab Tempo 13,3, voll bei 17 — mit W fährt man in
   der Ebene genau 13, sonst hockte er immer. Gemessen am Lenken, nicht an
   `turn`: die Schwünge allein treiben `turn` auf 0,87. Vom Gipfel ≈ 9 % der Zeit.
-- **Schräg zum Hang** (`cross`, Quergefälle gegen lokales +X): Ski kanten mit
-  dem Hang, Knie zum Berg, Schultern zurück über die Füße, Bergski 14 cm vorn,
-  jedes Bein so lang, dass der Schuh auf seiner Bindung bleibt (±1,6 cm
-  gemessen bei Quergefälle bis 0,66). Die Schwünge kreuzen die Fallinie, also
-  wechselt die Kommaform von selbst bei jedem Bogen.
+- **Schräg zum Hang** (`cross`, Quergefälle gegen lokales +X): die Ski
+  liegen immer auf dem Hang, jedes Bein so lang, dass der Schuh auf seiner
+  Bindung bleibt. Knie zum Berg, Gegenneigung der Schultern und Bergski vorn
+  sind nur **angedeutet** und hängen an `poise` (0 bergauf und unter Tempo 4,
+  voll ab Tempo 10 bergab). Die volle Kommaform (Hüfte 20 cm zum Berg) war
+  richtig und sah übertrieben aus, bergauf wie kurz vor dem Umfallen —
+  Ansage: sachter, keine Skisimulation.
 - **Pflug** mit S: Schaufeln zusammen (`ploughYaw` 0,21 — der Skikörper liegt
   7,5 cm neben der Bindung, ab 0,22 stoßen die Schaufeln an), Innenkanten,
-  Arme etwas raus, breitere Spur und Schneestaub an den Enden.
+  Arme leicht raus, breitere Spur und Schneestaub an den Enden.
 
 ---
 

@@ -35,6 +35,7 @@ export class Skier {
     this.tuck = 0                   // Abfahrtshocke bei hohem Tempo
     this.plough = 0                 // Schneepflug beim Bremsen mit S
     this.cross = 0                  // Quergefaelle, >0: lokales +X liegt talwaerts
+    this.poise = 0                  // 0..1, wie deutlich die Hanghaltung gezeigt wird
 
     // --- Tricks ---------------------------------------------------------
     // spin ist eine Drehung des Modells *gegen* die Fahrtrichtung, slide ein
@@ -328,7 +329,14 @@ export class Skier {
       : slopeAlong(this.position.x, this.position.z, Math.cos(this.facing), -Math.sin(this.facing))
     this.cross += (THREE.MathUtils.clamp(cross, -0.8, 0.8) - this.cross) * damp(5, dt)
 
-    const crouchTarget = this.carving * 0.55 + Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9 + this.tuck * 0.75
+    // Wie deutlich die Hanghaltung gezeigt wird. Bergauf und im Kriechtempo
+    // gar nicht: dort sah die Kommaform aus wie ein Fahrer, der gleich
+    // umfaellt. Sie ist Schmuck fuer die Abfahrt, keine Skisimulation.
+    const flott = THREE.MathUtils.clamp((this.speed - 4) / 6, 0, 1)
+    const bergab = 1 - THREE.MathUtils.clamp(-this.slope * 4, 0, 1)
+    this.poise += (flott * bergab - this.poise) * damp(3, dt)
+
+    const crouchTarget = this.carving * 0.55 + Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9 + this.tuck * 0.5
     this.crouch += (Math.min(1.1, crouchTarget) - this.crouch) * damp(10, dt)
 
     this._applyPose(dt)
@@ -455,6 +463,7 @@ export class Skier {
     this.tuck += (0 - this.tuck) * damp(6, dt)
     this.plough += (0 - this.plough) * damp(6, dt)
     this.cross += (0 - this.cross) * damp(6, dt)
+    this.poise += (0 - this.poise) * damp(6, dt)
 
     this._applyPose(dt)
     // Am Schlepplift greift der aussenliegende Arm nach oben zur Zugstange.
@@ -485,16 +494,17 @@ export class Skier {
     // Talski: die Kommaform, an der man einen Skifahrer von weitem erkennt.
     // Ohne sie stand der Fahrer lotrecht, und bei Quergefaelle 0.6 steckte
     // der Bergski 11 cm im Schnee; so liegen beide Ski auf 2 cm genau auf.
-    const hang = THREE.MathUtils.clamp(this.cross / SKIER.traverseFull, -1, 1)
+    const hang = THREE.MathUtils.clamp(this.cross / SKIER.traverseFull, -1, 1) * this.poise
     const groundRoll = -Math.atan(this.cross)
-    // Etwas mehr als der Hang: der Bergski greift mit der Kante.
-    const skiRoll = groundRoll * 1.15 * (1 - plough * 0.6)
+    // Die Ski liegen immer auf dem Hang, sonst steckten sie im Schnee; nur
+    // in der Abfahrt greift der Bergski ein wenig mehr mit der Kante.
+    const skiRoll = groundRoll * (1 + this.poise * 0.08) * (1 - plough * 0.6)
     skis.rotation.z = -this.lean * 0.55 + skiRoll
     // Knie in den Hang – das Beinpaar kippt um die Fuesse zur Bergseite.
-    const kneeRoll = -groundRoll * 0.35
+    const kneeRoll = -groundRoll * 0.15 * this.poise
     legs.rotation.z = kneeRoll
     // Der Bergski laeuft eine Handbreit voraus.
-    const lead = hang * 0.14
+    const lead = hang * 0.07
 
     // --- Pflug ---------------------------------------------------------
     // Schaufeln zusammen, Enden auseinander, Innenkanten im Schnee. Die
@@ -524,27 +534,26 @@ export class Skier {
     // Kniebeugen: Torso runter, Ski leicht aufkanten. In der Hocke kommt
     // der Oberkoerper zusaetzlich flach nach vorne.
     torso.position.y = 0.98 - this.crouch * 0.22
-    torso.rotation.x = 0.12 + this.crouch * 0.42 + tuck * 0.18
+    torso.rotation.x = 0.12 + this.crouch * 0.42 + tuck * 0.1
     // Die Huefte wandert mit den Knien zum Berg, die Schultern lehnen
-    // zurueck ueber die Fuesse. Mit halb so viel Gegenneigung standen sie
-    // bei Quergefaelle 0.6 noch 15 cm bergseitig, der Fahrer hing am Hang;
-    // jetzt sind es 5 cm, bei 20 cm fuer die Huefte.
+    // zurueck ueber die Fuesse – beides nur angedeutet. Die volle Kommaform
+    // (Huefte 20 cm zum Berg) war richtig und sah uebertrieben aus.
     torso.position.x = -Math.sin(kneeRoll) * HIP.y
-    torso.rotation.z = groundRoll * 0.95
+    torso.rotation.z = groundRoll * 0.35 * this.poise
     legs.position.y = 0.1 - this.crouch * 0.05
     legs.scale.y = 1 - this.crouch * 0.12
-    head.rotation.x = -this.crouch * 0.3 - tuck * 0.15
+    head.rotation.x = -this.crouch * 0.3 - tuck * 0.1
     // Beim Kanten stellt sich der Oberkoerper gegen die Kurve, und quer zum
     // Hang schaut die Brust ein Stueck talwaerts.
-    torso.rotation.y = this.turn * 0.28 + hang * 0.3
+    torso.rotation.y = this.turn * 0.28 + hang * 0.12
 
     // --- Arme ----------------------------------------------------------
     // Hocke: Haende nach vorne und zusammen, die Stoecke liegen unter den
     // Achseln. Pflug: Arme etwas raus, wie man als Anfaenger die Balance haelt.
     for (const [side, arm] of [[-1, arms.left], [1, arms.right]]) {
       if (this.tow && side > 0) continue
-      const rx = -tuck * 0.45 + plough * 0.12
-      const rz = side * (plough * 0.3 - tuck * 0.14)
+      const rx = -tuck * 0.3 + plough * 0.08
+      const rz = side * (plough * 0.18 - tuck * 0.1)
       arm.rotation.x += (rx - arm.rotation.x) * damp(6, dt)
       arm.rotation.z += (rz - arm.rotation.z) * damp(6, dt)
     }

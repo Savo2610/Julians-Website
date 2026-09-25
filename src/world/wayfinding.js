@@ -35,7 +35,10 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
     // side 1 fest: nach links gekehrt ragten die Tafeln ueber den
     // Kontaktposten und verdeckten ihn.
     { at: [6, -6], side: 1, rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color], ['STARTPLATZ', [1, 8], INK]] },
-    { at: [33, 15], rows: [['KONTAKT · LIFT', [29, 9], INK], ['STARTPLATZ', [20, 23], INK]] },
+    // Stand bei (33, 15) mitten im Kinderland neben dem Zauberteppich und
+    // brach dort dessen Farben. Jetzt links unten am Karriereweg, noch vor
+    // dem Kinderland – dort, wo man sich entscheidet.
+    { at: [27.5, 23], rows: [['KONTAKT · LIFT', [29, 9], INK], ['STARTPLATZ', [20, 23], INK]] },
     { at: [-67, -59], rows: [['AUSSICHT', [-61, -63], INK], ['TALABFAHRT', [-44, -52], TRAILS.sport.color]] },
   ]
   for (const { at: [x, z], rows, side } of junctions) {

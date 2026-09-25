@@ -50,6 +50,19 @@ export const SKIER = {
   swingAmplitude: 0.55,   // rad, Ausschlag zu jeder Seite
   swingWavelength: 18,    // Einheiten pro voller Schwungperiode
   swingMinSpeed: 3.5,
+  // Abfahrtshocke: erst oberhalb des Grundtempos, sonst hockte der Fahrer
+  // auf jeder flachen Strecke, denn mit W faehrt man dort genau 13. Vom
+  // Gipfel herunter liegt jedes fuenfte Bild ueber 14, jedes zwanzigste
+  // ueber 18 – dort soll die Hocke voll sein.
+  tuckFrom: 13.3,
+  tuckFull: 17,
+  // Hangschraege quer zur Fahrt: ab welchem Quergefaelle die volle
+  // Hangstellung erreicht ist. Vom Gipfel herunter liegt der Median bei 0.33 –
+  // wer dort schraeg faehrt, soll sie ganz zeigen.
+  traverseFull: 0.35,
+  // rad je Ski. Der Skikoerper liegt 7,5 cm neben der Bindung, darum
+  // kreuzten sich die Schaufeln schon bei 0.26; ab 0.22 stossen sie an.
+  ploughYaw: 0.21,
 }
 
 // Tricks liegen alle auf einer Taste – Leertaste, dieselbe, mit der man

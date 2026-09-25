@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, WORLD } from '../config.js'
 import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark } from '../world/heightfield.js'
-import { createSkierModel } from './skier-model.js'
+import { createSkierModel, HIP } from './skier-model.js'
 
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
 
@@ -32,6 +32,9 @@ export class Skier {
     this.height = 0                 // Hoehe ueber dem Boden
     this.slope = 0
     this.carving = 0
+    this.tuck = 0                   // Abfahrtshocke bei hohem Tempo
+    this.plough = 0                 // Schneepflug beim Bremsen mit S
+    this.cross = 0                  // Quergefaelle, >0: lokales +X liegt talwaerts
 
     // --- Tricks ---------------------------------------------------------
     // spin ist eine Drehung des Modells *gegen* die Fahrtrichtung, slide ein
@@ -303,8 +306,30 @@ export class Skier {
     const pitchTarget = THREE.MathUtils.clamp(-this.slope * 0.5, -SKIER.pitchMax, SKIER.pitchMax)
     this.pitch += (pitchTarget - this.pitch) * damp(4, dt)
 
-    const crouchTarget = this.carving * 0.55 + Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9
-    this.crouch += (crouchTarget - this.crouch) * damp(10, dt)
+    // Pflug nur am Boden und nicht beim Sliden – quergestellte Ski sind
+    // schon eine Figur, ein Pflug obendrauf verknotet die Beine.
+    const sliding = Math.abs(this.slide) / TRICK.slideAngle
+    const ploughTarget = input.braking && !this.airborne ? 1 - sliding : 0
+    this.plough += (ploughTarget - this.plough) * damp(9, dt)
+
+    // Die Hocke kommt langsam und geht schnell: wer bremst oder lenkt,
+    // richtet sich auf, statt eine halbe Sekunde geduckt weiterzufahren.
+    // Gemessen wird am Lenken, nicht an this.turn – die Schwuenge allein
+    // treiben turn bei Tempo 14 auf 0.87, dann kaeme die Hocke nie.
+    const tuckTarget = THREE.MathUtils.clamp(
+      (this.speed - SKIER.tuckFrom) / (SKIER.tuckFull - SKIER.tuckFrom), 0, 1,
+    ) * (1 - Math.abs(this.steer) * 0.7) * (1 - this.plough)
+    this.tuck += (tuckTarget - this.tuck) * damp(tuckTarget > this.tuck ? 2.5 : 7, dt)
+
+    // Quergefaelle gegen die lokale +X-Achse des Modells. In der Luft gibt
+    // es keinen Hang, dann richtet sich der Fahrer wieder gerade.
+    const cross = this.airborne
+      ? 0
+      : slopeAlong(this.position.x, this.position.z, Math.cos(this.facing), -Math.sin(this.facing))
+    this.cross += (THREE.MathUtils.clamp(cross, -0.8, 0.8) - this.cross) * damp(5, dt)
+
+    const crouchTarget = this.carving * 0.55 + Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9 + this.tuck * 0.75
+    this.crouch += (Math.min(1.1, crouchTarget) - this.crouch) * damp(10, dt)
 
     this._applyPose(dt)
     this._stampTrail(trail, groundY)
@@ -427,6 +452,9 @@ export class Skier {
     this.pitch += ((hanging ? -0.1 : 0.02) - this.pitch) * damp(4, dt)
     this.crouch += ((hanging ? 0.28 : 0.06) - this.crouch) * damp(5, dt)
     this.carving += (0 - this.carving) * damp(6, dt)
+    this.tuck += (0 - this.tuck) * damp(6, dt)
+    this.plough += (0 - this.plough) * damp(6, dt)
+    this.cross += (0 - this.cross) * damp(6, dt)
 
     this._applyPose(dt)
     // Am Schlepplift greift der aussenliegende Arm nach oben zur Zugstange.
@@ -448,20 +476,78 @@ export class Skier {
     g.rotateX(this.pitch + (this.airborne ? -this.vy * 0.012 : 0))
     g.rotateZ(this.lean + this.slide * 0.18)
 
-    const { torso, legs, skis, head, arms } = this.parts
-    if (!this.tow) {
-      arms.right.rotation.x += (0 - arms.right.rotation.x) * damp(6, dt)
-      arms.right.rotation.z += (0 - arms.right.rotation.z) * damp(6, dt)
+    const { torso, legs, legSides, skis, skiLeft, skiRight, head, arms } = this.parts
+    const tuck = this.tuck
+    const plough = this.plough
+
+    // --- Schraeg zum Hang --------------------------------------------
+    // Ski und Knie gehen mit dem Hang, der Oberkoerper bleibt ueber dem
+    // Talski: die Kommaform, an der man einen Skifahrer von weitem erkennt.
+    // Ohne sie stand der Fahrer lotrecht, und bei Quergefaelle 0.6 steckte
+    // der Bergski 11 cm im Schnee; so liegen beide Ski auf 2 cm genau auf.
+    const hang = THREE.MathUtils.clamp(this.cross / SKIER.traverseFull, -1, 1)
+    const groundRoll = -Math.atan(this.cross)
+    // Etwas mehr als der Hang: der Bergski greift mit der Kante.
+    const skiRoll = groundRoll * 1.15 * (1 - plough * 0.6)
+    skis.rotation.z = -this.lean * 0.55 + skiRoll
+    // Knie in den Hang – das Beinpaar kippt um die Fuesse zur Bergseite.
+    const kneeRoll = -groundRoll * 0.35
+    legs.rotation.z = kneeRoll
+    // Der Bergski laeuft eine Handbreit voraus.
+    const lead = hang * 0.14
+
+    // --- Pflug ---------------------------------------------------------
+    // Schaufeln zusammen, Enden auseinander, Innenkanten im Schnee. Die
+    // Fuesse gehen dafuer 9 cm nach aussen, sonst stiessen die Schaufeln
+    // schon bei halbem Pflug aneinander.
+    const spreadOut = plough * 0.09
+    const yaw = plough * SKIER.ploughYaw
+    const edge = plough * 0.2
+    for (const [side, ski, hip] of [[-1, skiLeft, legSides.left], [1, skiRight, legSides.right]]) {
+      // Wie weit der Hang diesen Ski hebt oder senkt – soweit muss das Bein
+      // kuerzer oder laenger werden. Nur das Bergbein zu beugen liess bei
+      // Quergefaelle 0.6 den Talschuh 11 cm ueber seinem Ski schweben. Das
+      // Kippen der Knie nimmt den Fuss ein Stueck mit, das zieht man ab.
+      const rise = side * 0.19 * (Math.sin(skiRoll) - Math.sin(kneeRoll))
+      ski.position.x = side * (0.19 + spreadOut)
+      ski.position.z = -side * lead
+      ski.rotation.y = -side * yaw
+      ski.rotation.z = side * edge
+      // Das Bein folgt seinem Ski: nach aussen schwingen fuer den Pflug,
+      // am Hang gebeugt oder gestreckt.
+      hip.rotation.z = side * Math.asin(spreadOut / HIP.y)
+      hip.position.z = -side * lead
+      hip.scale.y = 1 - rise / (HIP.y - 0.05)
     }
-    // Kniebeugen: Torso runter, Ski leicht aufkanten.
+
+    // --- Rumpf ---------------------------------------------------------
+    // Kniebeugen: Torso runter, Ski leicht aufkanten. In der Hocke kommt
+    // der Oberkoerper zusaetzlich flach nach vorne.
     torso.position.y = 0.98 - this.crouch * 0.22
-    torso.rotation.x = 0.12 + this.crouch * 0.42
+    torso.rotation.x = 0.12 + this.crouch * 0.42 + tuck * 0.18
+    // Die Huefte wandert mit den Knien zum Berg, die Schultern lehnen
+    // zurueck ueber die Fuesse. Mit halb so viel Gegenneigung standen sie
+    // bei Quergefaelle 0.6 noch 15 cm bergseitig, der Fahrer hing am Hang;
+    // jetzt sind es 5 cm, bei 20 cm fuer die Huefte.
+    torso.position.x = -Math.sin(kneeRoll) * HIP.y
+    torso.rotation.z = groundRoll * 0.95
     legs.position.y = 0.1 - this.crouch * 0.05
     legs.scale.y = 1 - this.crouch * 0.12
-    skis.rotation.z = -this.lean * 0.55
-    head.rotation.x = -this.crouch * 0.3
-    // Beim Kanten stellt sich der Oberkoerper gegen die Kurve.
-    torso.rotation.y = this.turn * 0.28
+    head.rotation.x = -this.crouch * 0.3 - tuck * 0.15
+    // Beim Kanten stellt sich der Oberkoerper gegen die Kurve, und quer zum
+    // Hang schaut die Brust ein Stueck talwaerts.
+    torso.rotation.y = this.turn * 0.28 + hang * 0.3
+
+    // --- Arme ----------------------------------------------------------
+    // Hocke: Haende nach vorne und zusammen, die Stoecke liegen unter den
+    // Achseln. Pflug: Arme etwas raus, wie man als Anfaenger die Balance haelt.
+    for (const [side, arm] of [[-1, arms.left], [1, arms.right]]) {
+      if (this.tow && side > 0) continue
+      const rx = -tuck * 0.45 + plough * 0.12
+      const rz = side * (plough * 0.3 - tuck * 0.14)
+      arm.rotation.x += (rx - arm.rotation.x) * damp(6, dt)
+      arm.rotation.z += (rz - arm.rotation.z) * damp(6, dt)
+    }
   }
 
   // Setzt den Fahrer an einen anderen Ort (Schnellreise, Pruefwerkzeug).
@@ -493,7 +579,8 @@ export class Skier {
     const cos = Math.cos(this.facing)
     const sin = Math.sin(this.facing)
     // Beim Kanten laufen die Ski weiter auseinander.
-    const spread = 0.19 + this.carving * 0.14 + Math.abs(this.turn) * 0.1
+    // Im Pflug stehen die Skienden weit auseinander.
+    const spread = 0.19 + this.carving * 0.14 + Math.abs(this.turn) * 0.1 + this.plough * 0.2
 
     for (let i = 0; i < 2; i++) {
       const side = i === 0 ? -spread : spread
@@ -501,7 +588,7 @@ export class Skier {
       const wz = this.position.z - sin * side
       const prev = this._trailPrev[i]
       if (this._trailInit) {
-        const width = 0.5 + this.carving * 0.5 + Math.abs(this.turn) * 0.3
+        const width = 0.5 + this.carving * 0.5 + Math.abs(this.turn) * 0.3 + this.plough * 0.35
         if (isSnowSurface((prev.x + wx) / 2, (prev.y + wz) / 2, width)) trail.stamp(prev.x, prev.y, wx, wz, width)
       }
       prev.set(wx, wz)

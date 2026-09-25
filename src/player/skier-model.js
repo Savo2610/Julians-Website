@@ -20,6 +20,9 @@ const PALETTE = {
   scarf: 0xd9d2c4,
 }
 
+// Drehpunkt der Beine im Beinpaar: oben am Oberschenkel, wo die Jacke ansetzt.
+export const HIP = { x: 0.17, y: 0.88 }
+
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({
     color,
@@ -119,25 +122,30 @@ export function createSkierModel() {
   root.add(skis)
 
   // --- Beine ------------------------------------------------------------
+  // Jedes Bein haengt an seiner Huefte. So kann es im Pflug nach aussen
+  // schwingen und am Hang einzeln einknicken, ohne dass sich die Ruhelage
+  // gegenueber dem alten, starren Beinpaar um einen Millimeter verschiebt.
   const legs = new THREE.Group()
   legs.position.y = 0.1
+  const legSides = {}
   for (const side of [-1, 1]) {
-    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.19, 0.29), materials.boot)
-    boot.position.set(side * 0.19, 0.11, -0.01)
-    boot.castShadow = true
-    legs.add(boot)
+    const hip = new THREE.Group()
+    hip.position.set(side * HIP.x, HIP.y, 0)
+    const at = (mesh, x, y, z) => {
+      mesh.position.set(x - side * HIP.x, y - HIP.y, z)
+      mesh.castShadow = true
+      hip.add(mesh)
+      return mesh
+    }
 
-    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.082, 0.42, 7), materials.pants)
-    shin.position.set(side * 0.185, 0.4, 0.02)
+    at(new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.19, 0.29), materials.boot), side * 0.19, 0.11, -0.01)
+    const shin = at(new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.082, 0.42, 7), materials.pants), side * 0.185, 0.4, 0.02)
     shin.rotation.x = -0.16
-    shin.castShadow = true
-    legs.add(shin)
-
-    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.1, 0.36, 7), materials.pants)
-    thigh.position.set(side * 0.16, 0.72, -0.04)
+    const thigh = at(new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.1, 0.36, 7), materials.pants), side * 0.16, 0.72, -0.04)
     thigh.rotation.x = 0.34
-    thigh.castShadow = true
-    legs.add(thigh)
+
+    legs.add(hip)
+    legSides[side < 0 ? 'left' : 'right'] = hip
   }
   root.add(legs)
 
@@ -236,6 +244,6 @@ export function createSkierModel() {
 
   torso.add(head)
 
-  root.userData.parts = { skis, skiLeft, skiRight, legs, torso, head, arms, materials }
+  root.userData.parts = { skis, skiLeft, skiRight, legs, legSides, torso, head, arms, materials }
   return root
 }

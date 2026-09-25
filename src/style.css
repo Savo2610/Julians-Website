@@ -836,6 +836,29 @@ kbd.k-space { min-width: 64px; font-size: 10px; }
 .hint-pill kbd { min-width: 26px; height: 26px; font-size: 12.5px; }
 html.touch .hint-pill { padding: 12px 20px; }
 
+/* Der Start-Hinweis ohne Glas: nur Taste und Wort, mit einem weichen hellen
+   Hof, damit es auf Schnee wie auf Tannen lesbar bleibt. Als Kachel stand er
+   lauter da als alles andere im Bild. Ein langsames Atmen haelt ihn im
+   Augenwinkel, ohne zu blinken. */
+.hint-pill.hint-start {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  padding: 6px 10px;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #2a3d52;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.8);
+}
+.hint-pill.hint-start::before { display: none; }
+.hint-pill.hint-start kbd { min-width: 22px; height: 22px; font-size: 11px; }
+.hint-pill.hint-start.visible { opacity: 0.82; animation: hintBreath 4.5s ease-in-out 2s infinite; }
+.hint-pill.hint-start:hover { background: none; opacity: 1; animation: none; }
+@keyframes hintBreath { 50% { opacity: 0.5; } }
+
 /* Hochformat: Karte oben, Liste darunter; Kacheln einspaltig. */
 @media (max-width: 760px) {
   .map-panel {

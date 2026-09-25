@@ -47,8 +47,8 @@ const KACHELN = [
     { icon: '💬', label: 'Signal', sub: 'Schreib mir', station: 'kontakt', pick: 0 },
     { icon: '📸', label: 'Instagram', sub: 'Schöne Fotos', station: 'kontakt', pick: 1 },
   ] },
-  { titel: 'Unterstützen', weg: 'social', kacheln: [
-    { icon: '💸', label: 'PayPal', sub: 'Geld senden', station: 'kasse', pick: 0 },
+  { titel: 'Geld senden', weg: 'social', kacheln: [
+    { icon: '💸', label: 'PayPal', sub: 'paypal.me/juliansebv', station: 'kasse', pick: 0 },
     { icon: '◎', label: 'Solana', sub: 'Echtes Geld', station: 'kasse', pick: 1 },
   ] },
   { titel: 'Meine Tools', weg: 'tools', kacheln: [
@@ -161,6 +161,13 @@ export class MapMenu {
     // Ein Klick neben das Glas schliesst, wie ein Tipp in den Schnee.
     this.el.addEventListener('click', (e) => { if (e.target === this.el) this.close() })
 
+    // Das close-Ereignis eines <dialog> steigt nicht auf, laeuft aber durch
+    // die Capture-Phase des Dokuments – so reicht ein Horcher fuer alle drei
+    // Fenster, auch fuer die, die erst beim Benutzen nachgeladen werden.
+    document.addEventListener('close', (e) => {
+      if (e.target instanceof HTMLDialogElement) this._zurueckAusFenster()
+    }, true)
+
     this.veil = document.createElement('div')
     this.veil.className = 'travel-veil'
     document.body.appendChild(this.veil)
@@ -252,8 +259,24 @@ export class MapMenu {
     }
     const choice = t.pick !== undefined ? t.station.choices?.[t.pick] : null
     const isLink = choice ? !!choice.url : !!t.station.url
-    if (!isLink) this.close()
+    if (!isLink) {
+      // Wer das Fenster mit Esc oder × schliesst, landet wieder hier, auf
+      // derselben Kachel – nicht im Schnee. Siehe _zurueckAusFenster.
+      this._zurueck = i
+      this.close()
+    }
     this.registry.open(t.station, t.pick ?? null)
+  }
+
+  _zurueckAusFenster() {
+    if (this._zurueck === undefined) return
+    const i = this._zurueck
+    this._zurueck = undefined
+    // Erst im naechsten Takt: im selben Ereignis haelt der Dialog noch den
+    // Fokus, und keyboard.js gibt ihn gerade erst ab.
+    setTimeout(() => {
+      if (this.show('links')) this._selectTile(i)
+    }, 0)
   }
 
   _travelTile(i) {
@@ -372,6 +395,7 @@ export class MapMenu {
 
   show(view = 'links') {
     if (this.open || this.skier.tow) return false
+    this._zurueck = undefined
     this._buildLinks()
     this._buildMap()
     this._selectTile(this.tileSel)
@@ -507,6 +531,7 @@ export class MapMenu {
   // Auch der Weg fuer R: zurueck zum Start ist nur ein weiteres Reiseziel.
   travelTo(item) {
     if (this._reisend) return
+    this._zurueck = undefined
     this._reisend = true
     this.veil.classList.add('on')
     // Erst wenn die Blende deckt, wird versetzt – sonst sieht man das Tal

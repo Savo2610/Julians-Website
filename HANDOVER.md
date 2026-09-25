@@ -180,11 +180,21 @@ strecke, Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
 
 **Wegenetz** (`paths.js`): die vier Wege plus sechs Verbindungen zu einem
 Netz; die Mittellinien steuern Waldschneisen *und* die Präparierung im
-Terrainmaterial. `wayfinding.js` baut die Panoramatafel am Start und vier
-Wegweiser, alle zur Kamera (GIPFELBAHN/TOOLS und HÜTTE/PARK sind weg – sie
-zeigten auf etwas, das man von dort schon sieht). Die vier Ausgangsschilder
-am Plateau tragen einen Pfeil und ragen zur Seite ihres Weges (`side` in
-`signpost.js`). Stationen rutschen **vor** der Bepflanzung auf
+Terrainmaterial. `wayfinding.js` baut die Panoramatafel am Start und drei
+Wegweiser, alle zur Kamera (GIPFELBAHN/TOOLS, HÜTTE/PARK und ZUM SEE/TOOLS
+sind weg – sie zeigten auf etwas, das man von dort schon sieht).
+Wegweiser und die vier Ausgangsschilder am Plateau sind **moderne
+Markierungen** (`createMarkerSign` in `signpost.js`): Anthrazit-Mast,
+abgerundete Tafel in Wegfarbe, Pfeil im weißen Kreis am freien Ende; sie
+ragen zur Seite ihres Weges. Das Holzschild (`createSignpost`) bleibt nur an
+der Après-Ski-Hütte.
+
+**Leuchtschleier** (`world/trail-glints.js`) ersetzen die Winkel im Schnee:
+je Weg huscht alle 5–11 s eine Sternschnuppe vom Plateau aus den Weg
+entlang (56 Punkte Schweif, Funken dahinter). Farben gesättigt und hell,
+normal gemischt – additiv oder in den gedeckten Wegfarben lasen sie sich
+auf Tagschnee wie Rauch. Höchstens eine je Weg, sonst waren sechs
+gleichzeitig im Bild. Stationen rutschen **vor** der Bepflanzung auf
 flache Plätze; ihre Lichtungen benutzen die korrigierten Koordinaten.
 
 **Landschaft** (`landscape-layout.js`, `landscape-details.js`): sechs niedrige
@@ -424,11 +434,13 @@ Die Tafel ist eine Station (`id: 'talplan'`, `map: base`). **`M` überall**
   Sätze, `SAETZE`). Bewusst nur hier – als Schild oder im Schnee wäre es
   Laufschrift.
 - *Links*: die Kachelseite von veerka.mp (Wortlaut und Reihenfolge von dort)
-  in Gruppen Karriere, Kontakt, Unterstützen, Meine Tools, Außerdem. Klick
+  in Gruppen Karriere, Kontakt, Geld senden, Meine Tools, Außerdem. Klick
   oder Enter öffnet direkt; jede Kachel trägt „im Tal: Werkstatt“ usw. und
   bringt einen per Klick oder Leertaste hin. Die Adressen hängen weiter an
   den Stationen (`registry.open(station, pick)`), nicht ein zweites Mal im
-  Menü. Fenster (Solana, Upload, Kurzlink) schließen die Übersicht vorher.
+  Menü. Fenster (Solana, Upload, Kurzlink) schließen die Übersicht vorher;
+  wer sie mit Esc oder × schließt, ist wieder in der Übersicht auf derselben
+  Kachel (ein `close`-Horcher in der Capture-Phase des Dokuments).
   Spotify und Komoot stehen nur hier (noch kein Platz im Tal).
 - *Talkarte*: links die Karte mit Pins und „Du“, rechts die Ziele
   (Stationen, dann Orte: Start, Gipfel, Funpark, Hütte, See).
@@ -444,8 +456,9 @@ man steht mit dem Rücken zur Kamera vor der Station, der Ankunftspunkt weicht
 Kollisionskreisen aus (Werkbank vor der Werkstatt). Alle 15 Ziele geprüft:
 richtige Station aktiv, kein Hindernis, 0 Bilder in der Luft.
 
-**Hinweise und R** (`stations/hints.js`): Beim Start schwebt unten eine
-Glaspille „M Übersicht & alle Links“ – anklickbar, sie bleibt, bis die
+**Hinweise und R** (`stations/hints.js`): Beim Start steht unten dezent,
+ohne Glas, „M Übersicht & alle Links“ mit hellem Hof und langsamem Atmen –
+anklickbar, sie bleibt, bis die
 Übersicht einmal offen war oder man 30 s gefahren ist. **`R`** bringt von
 überall zum Start (derselbe Weg wie die Schnellreise, `travelTo`). Die
 Pille „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang

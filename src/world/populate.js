@@ -15,7 +15,7 @@ import { createFence, createPisteMarkers } from './props/fence.js'
 import { createBreakableFence } from './props/park-fence.js'
 import { createAvalancheBarrier } from './props/avalanche-barrier.js'
 import { createSnowCannon } from './props/snow-cannon.js'
-import { createSignpost } from './props/signpost.js'
+import { createSignpost, createMarkerSign } from './props/signpost.js'
 import { populateStations, STATION_SPOTS, TRAILS } from '../stations/stations.js'
 import { createMarker } from '../stations/marker.js'
 import { createTorch } from './props/torch.js'
@@ -29,7 +29,6 @@ import { APRES } from './apres-layout.js'
 import { createApresTerrace } from './apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
-import { snowPaint } from './props/snow-paint.js'
 import { Kinderland } from './kinderland.js'
 import { NorthRun } from './north-run.js'
 import { createStartGate } from './props/start-gate.js'
@@ -489,43 +488,17 @@ export function populate(world, sky, registry) {
     const target = trail.path[Math.min(2, trail.path.length - 1)]
     const pfeil = arrow(sx, sz, target)
     const links = (target[0] - sx) - (target[1] - sz) < 0
-    const sign = createSignpost([
-      { text: links ? `${pfeil} ${trail.label}` : `${trail.label} ${pfeil}`, background: trail.color, width: 3.2, height: 0.65, rotation: 0, side: links ? -1 : 1 },
+    const sign = createMarkerSign([
+      { text: trail.label, arrow: pfeil, background: trail.color, width: 3.5, height: 0.74, side: links ? -1 : 1 },
     ], { height: 2.6 })
     world.place(sign, sx, sz, { rotation: Math.PI * 0.25 })
     world.addCollider(sx, sz, 0.45)
   }
 
-  // --- Wegweiser im Schnee ------------------------------------------------
-  // Die Stangen sagen, wo der Weg ist. Die Winkel im Schnee sagen, wohin er
-  // fuehrt – man kann ihnen folgen, ohne die Karte im Kopf zu haben. Sie
-  // tragen die Farbe ihres Weges, damit man beim Kreuzen sieht, auf welchem
-  // man gerade ist.
-  {
-    const paint = snowPaint()
-    const washed = new THREE.Color()
-    for (const trail of Object.values(TRAILS)) {
-      const pts = trail.path
-      // Farbe auf Schnee ist nie satt. Ein Drittel Weiss dazu, sonst liegen
-      // vier Plastikpfeile in der Landschaft statt vier Markierungen.
-      washed.setHex(trail.markerColor).lerp(new THREE.Color(0xffffff), 0.34)
-      const tone = washed.getHex()
-      // Der Weg wird als Polylinie abgeschritten, ein Winkel alle 16 Meter.
-      let carry = 7
-      for (let i = 0; i < pts.length - 1; i++) {
-        const [x1, z1] = pts[i]
-        const [x2, z2] = pts[i + 1]
-        const len = Math.hypot(x2 - x1, z2 - z1)
-        const dx = (x2 - x1) / len
-        const dz = (z2 - z1) / len
-        for (let d = carry; d < len; d += 16) {
-          paint.chevron(x1 + dx * d, z1 + dz * d, dx, dz, 1.5, tone)
-        }
-        carry = Math.max(0, carry - len) || (16 - ((len - carry) % 16))
-      }
-    }
-    world.scene.add(paint.build({ name: 'wegweiser-schnee' }))
-  }
+  // Die Winkel im Schnee, die hier einmal alle 16 m den Weg wiesen, sind den
+  // Leuchtschleiern gewichen (world/trail-glints.js): die huschen vom Platz
+  // aus die Wege entlang und zeigen die Richtung, ohne den Schnee dauerhaft
+  // zu bemalen. Die Stangen in Wegfarbe markieren weiter den Verlauf.
 
   // --- Schlepplift --------------------------------------------------------
   // Verbindet den Talkessel mit dem Gipfel des Bergarms. Er ist der einzige

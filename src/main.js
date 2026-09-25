@@ -18,6 +18,8 @@ import { StationRegistry } from './stations/registry.js'
 import { StationUI } from './stations/ui.js'
 import { StationInteraction } from './stations/interaction.js'
 import { MapMenu, ORTE } from './stations/map-menu.js'
+import { createTrailGlints } from './world/trail-glints.js'
+import { TRAILS } from './world/paths.js'
 import { Hints } from './stations/hints.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
@@ -96,6 +98,10 @@ canvas.addEventListener('pointerdown', () => interaction.leave())
 
 const snowfall = createSnowfall()
 scene.add(snowfall)
+
+// Leuchtschleier auf den vier Wegen, siehe world/trail-glints.js.
+const glints = createTrailGlints(Object.values(TRAILS))
+scene.add(glints.points)
 
 // --- Schneestaub aus den Ski ------------------------------------------------
 let sprayAccum = 0
@@ -231,6 +237,7 @@ function advance(dt) {
   props.kinderland.animate(elapsed, dt)
 
   snowfall.userData.update(dt, elapsed, skier.position)
+  glints.update(dt, elapsed, camera, renderer)
   props.lake.update(camera)
   sky.update(elapsed)
   trail.flush()
@@ -249,7 +256,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

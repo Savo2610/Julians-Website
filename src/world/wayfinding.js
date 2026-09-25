@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { CAMERA } from '../config.js'
 import { terrainHeight } from './heightfield.js'
 import { TRAILS } from './paths.js'
-import { createSignpost } from './props/signpost.js'
+import { createMarkerSign } from './props/signpost.js'
 import { createMapBoard } from './props/map-board.js'
 import { paintValleyMap, boardMap } from './valley-map.js'
 import { createMarker } from '../stations/marker.js'
@@ -26,19 +26,23 @@ export { arrow }
 export const PANORAMA = { x: -8.5, z: 21.5 }
 
 export function createWayfinding(world, { registry, trees = [], lift = null } = {}) {
-  // Vier Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln
+  // Drei Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln
   // stehen seitlich; ihr Ziel ist immer ein vorhandener Weg oder dessen Ende.
   // GIPFELBAHN/TOOLS an der Talstation und HÜTTE/PARK an der Terrasse sind
-  // weg: beide zeigten auf etwas, das man von dort schon sieht.
+  // weg: beide zeigten auf etwas, das man von dort schon sieht. ZUM SEE /
+  // TOOLS · LIFT an der Rohrpost ebenso – See und Weg liegen dort im Bild.
   const junctions = [
     { at: [6, -6], rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color], ['STARTPLATZ', [1, 8], INK]] },
     { at: [33, 15], rows: [['KONTAKT · LIFT', [29, 9], INK], ['STARTPLATZ', [20, 23], INK]] },
-    { at: [-25, 28], rows: [['ZUM SEE', [-26, 38], INK], ['TOOLS · LIFT', [-28, 21], TRAILS.tools.color]] },
     { at: [-67, -59], rows: [['AUSSICHT', [-61, -63], INK], ['TALABFAHRT', [-44, -52], TRAILS.sport.color]] },
   ]
   for (const { at: [x, z], rows } of junctions) {
-    const sign = createSignpost(rows.map(([text, target, background]) => ({
-      text: `${arrow(x, z, target)} ${text}`, background, width: 3.5, height: 0.64,
+    // Alle Tafeln an einem Mast ragen zur selben Seite – die, in die die
+    // Mehrheit zeigt. Gemischt stand der Mast wie ein Kreuz im Schnee.
+    const pfeile = rows.map(([, target]) => arrow(x, z, target))
+    const links = pfeile.filter((p) => '←↖↙'.includes(p)).length > rows.length / 2
+    const sign = createMarkerSign(rows.map(([text, , background], i) => ({
+      text, arrow: pfeile[i], background, width: 3.4, height: 0.66, side: links ? -1 : 1,
     })), { height: 2.8 })
     world.place(sign, x, z, { rotation: CAMERA.azimuth })
     world.addCollider(x, z, 0.35)

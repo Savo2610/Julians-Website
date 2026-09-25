@@ -707,6 +707,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+58c16e7  Pfeiltafeln, Lawinenwarnstufe des Tages, leisere Schleier
 4b59df2  Moderne Markierungen, Leuchtschleier, Esc zurueck in die Uebersicht
 d95967a  Uebersicht fuer Nichtspieler, R zum Start, Zaun, Lawinenschutz
 bea0c1b  Werkstatt hangab, Karte scrollt unter der Maus nicht zurueck

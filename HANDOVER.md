@@ -742,6 +742,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+8434c9f  Hanghaltung sachter, bergauf gar nicht
 772b26b  Abfahrtshocke, Kommaform am Hang, Pflug beim Bremsen
 047d51d  Panoramatafel 1,2 m nach rechts
 0e7217d  Wegweiser aus dem Kinderland an den Karriereweg

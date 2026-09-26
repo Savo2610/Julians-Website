@@ -529,8 +529,8 @@ geht nach 3 s. Alte Spielstände werden beim Laden umgerechnet
 
 **Goldene Ski**: alles erkundet + Slalom-**Silber** + Raser + 540er (Gold
 ausdrücklich nicht – Julians eigene Bestzeit war 4,18). `Skier.vergolden()`.
-Die Ski sind von Haus aus gelb; Metall ohne Umgebungsbild wurde nur ocker.
-Deshalb Emission mit langsamem Schimmer und ein **Goldstaub-Schweif**
+Die normalen Ski sind seit 26.09. **grün** (vorher gelb – Gold sah dann kaum
+anders aus). Metall ohne Umgebungsbild wurde nur ocker, deshalb Emission mit langsamem Schimmer und ein **Goldstaub-Schweif**
 (zweite `Spray`-Instanz, 260 Teilchen). Additiv war er auf Tagschnee weiß,
 Größe 0,16 ergab aus 33 m zwei Pixel – jetzt normal gemischt, 0,45–0,75.
 

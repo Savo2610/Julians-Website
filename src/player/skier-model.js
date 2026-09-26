@@ -14,7 +14,9 @@ const PALETTE = {
   goggleGlass: 0x63c7d6,
   glove: 0x2f3d5c,
   pole: 0x9aa3ad,
-  ski: 0xf5c542,
+  // Gruen, damit Gold eine Belohnung ist: bis 26.09. waren die Ski gelb, und
+  // die goldenen Ski des Pistenpasses sahen kaum anders aus.
+  ski: 0x2fae62,
   skiEdge: 0x2b3240,
   pack: 0x50694f,
   scarf: 0xd9d2c4,

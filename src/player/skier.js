@@ -101,10 +101,9 @@ export class Skier {
     }
   }
 
-  // Goldene Ski fuer den vollen Pistenpass. Die Ski sind ohnehin gelb –
-  // Gold muss also am Glanz zu erkennen sein und nicht an der Farbe: Metall,
-  // glatte Oberflaeche und ein Schimmer, der langsam ueber sie laeuft. Die
-  // Kanten werden mit vergoldet, sonst bleibt ein dunkler Rand um jedes Brett.
+  // Goldene Ski fuer den vollen Pistenpass: aus Gruen wird Gold, dazu ein
+  // Schimmer, der langsam ueber die Bretter laeuft. Die Kanten werden mit
+  // vergoldet, sonst bleibt ein dunkler Rand um jedes Brett.
   vergolden() {
     if (this.gold) return
     this.gold = true

@@ -114,9 +114,9 @@ const glints = createTrailGlints(Object.values(TRAILS))
 scene.add(glints.points)
 
 // --- Goldstaub ---------------------------------------------------------------
-// Nur mit goldenen Ski (voller Pistenpass). Die Ski sind von Haus aus gelb;
-// am Brett allein sah man den Unterschied aus 33 Metern nicht. Ein feiner
-// Funkenschweif hinter den Enden sagt es auch aus der festen Kamera.
+// Nur mit goldenen Ski (voller Pistenpass). Aus 33 Metern ist ein Brett nur
+// ein paar Pixel breit; ein feiner Funkenschweif hinter den Enden sagt es
+// auch dann, wenn man die Farbe kaum sieht.
 // Normal gemischt und kraeftig gefaerbt: additiv wurde er auf Tagschnee weiss
 // und war nicht mehr zu sehen, wie frueher die Leuchtschleier.
 let goldAccum = 0

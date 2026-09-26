@@ -1,91 +1,87 @@
 import { MEDALS } from '../world/race.js'
 
-// Der Pistenpass: Abzeichen fuer das, was man im Tal findet und kann.
+// Der Pistenpass: wie weit man das Tal kennt, was man gefahren ist.
 //
-// Belohnt wird das Finden, nie das Benutzen. Fuer Hochladen, Wallet, Kurzlink
-// oder Bezahlen gibt es absichtlich nichts – ein Abzeichen dafuer hiesse
-// Datenmuell im Briefkasten, Wegwerf-Kurzlinks und Cent-Betraege, nur damit
-// ein Stempel farbig wird. Wer eine Station erreicht, hat sie gefunden; das
-// ist genau das, was das Tal erreichen soll.
+// Die erste Fassung hatte 37 Abzeichen, und fuer fast alles, was man tat,
+// kam eine Pille – das erschlug mehr, als es lockte (Ansage 26.09.). Uebrig
+// sind drei Dinge:
 //
-// Drei Sorten:
-// - ENTDECKEN und KOENNEN stehen offen im Pass, mit dem, was zu tun ist. Sie
-//   fuehren zu Stationen oder geben dem Fahren einen Grund.
-// - GEHEIM zeigt nur ein Fragezeichen, auch keinen Hinweis: die Ueberraschung
-//   ist die Belohnung. Unfug zum Kaputtmachen ist dort bewusst nur zweimal
-//   vertreten (Seebank, Fackeln) – vier Abzeichen fuers Umfahren waren eins
-//   zu viel Programm.
+// - ERKUNDET ist ein stiller Fortschritt: fuenfzehn Orte, ein Balken im Pass,
+//   keine Pille pro Ort. Nur wer alles gefunden hat, bekommt eine Meldung.
+// - MEDAILLEN im Slalom, wie an der Zeitnahme.
+// - ABZEICHEN sind wenige und schwer. Zwei stehen offen im Pass, sechs sind
+//   geheim und zeigen nur ein Fragezeichen, ohne Hinweis.
 //
-// Wer alle offenen hat, bekommt goldene Ski. Keine Leiste, kein Zaehler: der
-// Pass liegt als Reiter in der Uebersicht, und beim Freischalten kommt eine
-// Pille, die von selbst geht.
+// Belohnt wird nie das Benutzen. Fuer Hochladen, Wallet, Kurzlink oder
+// Bezahlen gibt es absichtlich nichts – sonst Datenmuell und Cent-Betraege
+// fuer einen Stempel. Wer eine Station erreicht, hat sie gefunden.
+//
+// Alles erkundet, Silber und die beiden offenen Abzeichen ergeben goldene
+// Ski. Gold im Slalom gehoert nicht dazu: Julians eigene Bestzeit nach Tagen
+// Uebung war 4,18 – Silber.
 
 const STORE = 'skiportfolio.pass'
 
-const medaille = (name) => MEDALS.find((m) => m.name === name).time.toFixed(2).replace('.', ',')
+const zeit = (name) => MEDALS.find((m) => m.name === name).time.toFixed(2).replace('.', ',')
 
-export const GRUPPEN = [
-  { id: 'entdecken', titel: 'Entdecken', farbe: '#346782' },
-  { id: 'koennen', titel: 'Können', farbe: '#a86738' },
-  { id: 'geheim', titel: 'Geheim', farbe: '#935976' },
+// Drohne und Loeschzug heissen erst, wenn man sie gefunden hat – sie sollen
+// gesucht werden, wie in der Uebersicht.
+export const ORTE_ERKUNDET = [
+  { id: 'werkstatt', name: 'Werkstatt' },
+  { id: 'kontakt', name: 'Kontakt' },
+  { id: 'kasse', name: 'Skikasse' },
+  { id: 'upload', name: 'Rohrpost' },
+  { id: 'shortener', name: 'Abkürzung' },
+  { id: 'worktime', name: 'Stechuhr' },
+  { id: 'packlist', name: 'Packliste' },
+  { id: 'drone', name: 'Drohne', versteckt: true },
+  { id: 'firetruck', name: 'Löschzug', versteckt: true },
+  { id: 'see', name: 'See' },
+  { id: 'gipfel', name: 'Gipfel' },
+  { id: 'huette', name: 'Hütte' },
+  { id: 'park', name: 'Funpark' },
+  { id: 'kinderland', name: 'Kinderland' },
+  { id: 'nord', name: 'Nordabfahrt' },
+]
+
+export const MEDAILLEN = [
+  { id: 'bronze', icon: '🥉', name: 'Bronze', zeit: zeit('Bronze') },
+  { id: 'silber', icon: '🥈', name: 'Silber', zeit: zeit('Silber') },
+  { id: 'gold', icon: '🥇', name: 'Gold', zeit: zeit('Gold') },
 ]
 
 export const ABZEICHEN = [
-  // --- Entdecken --------------------------------------------------------
-  { id: 'see', gruppe: 'entdecken', icon: '🧊', name: 'Seeblick', text: 'Auf dem zugefrorenen See gestanden.' },
-  { id: 'gipfel', gruppe: 'entdecken', icon: '⛰️', name: 'Gipfelstürmer', text: 'Oben am Gipfelkreuz.' },
-  { id: 'lift', gruppe: 'entdecken', icon: '🚡', name: 'Bergfahrt', text: 'Mit dem Tellerlift ganz nach oben.' },
-  { id: 'teppich', gruppe: 'entdecken', icon: '🧸', name: 'Kinderland', text: 'Einmal auf dem Zauberteppich gefahren.' },
-  { id: 'huette', gruppe: 'entdecken', icon: '☕', name: 'Einkehrschwung', text: 'Auf der Terrasse der Après-Ski-Hütte.' },
-  { id: 'nord', gruppe: 'entdecken', icon: '🌲', name: 'Die Rückseite', text: 'Die Nordabfahrt bis ganz unten.' },
-  { id: 'wege', gruppe: 'entdecken', icon: '🧭', name: 'Pistenkenner', text: 'Alle vier Wege bis zu ihrem Ende.', ziel: 4 },
-  { id: 'stationen', gruppe: 'entdecken', icon: '📍', name: 'Rundgang', text: 'Alle neun Stationen gefunden.', ziel: 9 },
-  { id: 'drohne', gruppe: 'entdecken', icon: '🛸', name: 'Bruchlandung', text: 'Irgendwo ist etwas vom Himmel gefallen.' },
-  { id: 'loeschzug', gruppe: 'entdecken', icon: '🚒', name: 'Einsatzbereit', text: 'Irgendwo wartet ein Einsatzfahrzeug.' },
-
-  // --- Koennen ------------------------------------------------------------
-  { id: 'bronze', gruppe: 'koennen', icon: '🥉', name: 'Slalom Bronze', text: `Rodelbahn-Slalom unter ${medaille('Bronze')} s.` },
-  { id: 'silber', gruppe: 'koennen', icon: '🥈', name: 'Slalom Silber', text: `Rodelbahn-Slalom unter ${medaille('Silber')} s.` },
-  { id: 'gold', gruppe: 'koennen', icon: '🥇', name: 'Slalom Gold', text: `Rodelbahn-Slalom unter ${medaille('Gold')} s.` },
-  { id: 'kmh50', gruppe: 'koennen', icon: '📸', name: 'Geblitzt', text: 'Mit 50 km/h durch den Speedcheck.' },
-  { id: 'kmh58', gruppe: 'koennen', icon: '🚀', name: 'Raser', text: 'Mit 58 km/h durch den Speedcheck.' },
-  { id: 'd180', gruppe: 'koennen', icon: '↩️', name: 'Halbe Sache', text: 'Einen 180er im Funpark gestanden.' },
-  { id: 'd360', gruppe: 'koennen', icon: '🔄', name: 'Einmal rum', text: 'Einen 360er im Funpark gestanden.' },
-  { id: 'd540', gruppe: 'koennen', icon: '🌀', name: 'Fünf-Vierzig', text: 'Einen 540er im Funpark gestanden.' },
-  { id: 'rail', gruppe: 'koennen', icon: '🛤️', name: 'Railslide', text: 'Die Rail bis ans Ende gerutscht.' },
-  { id: 'leucht', gruppe: 'koennen', icon: '✨', name: 'Lichtgeschwindigkeit', text: 'Die Leuchtstrecke ganz durchfahren.' },
-  { id: 'stein', gruppe: 'koennen', icon: '🪨', name: 'Überflieger', text: 'Mit der Leertaste über einen Stein gesprungen.' },
-  { id: 'hm300', gruppe: 'koennen', icon: '📉', name: 'Talfahrer', text: '300 Höhenmeter abgefahren.', ziel: 300 },
-
-  // --- Geheim -------------------------------------------------------------
-  { id: 'bankrott', gruppe: 'geheim', icon: '🪵', name: 'Bankrott', text: 'Die Seebank zerlegt.' },
-  { id: 'lichter', gruppe: 'geheim', icon: '🔥', name: 'Lichter aus', text: 'Drei Fackeln auf einmal umgefahren.' },
-  { id: 'eingeschneit', gruppe: 'geheim', icon: '☃️', name: 'Eingeschneit', text: 'Von der Schneekanone erwischt.' },
-  { id: 'schwarzfahrt', gruppe: 'geheim', icon: '🚫', name: 'Hausverbot', text: 'Slalom am Schlepplift. Das ist verboten.' },
-  { id: 'pizza', gruppe: 'geheim', icon: '🍕', name: 'Pizza!', text: 'Fünf Sekunden Pizza gehalten.' },
-  { id: 'schauer', gruppe: 'geheim', icon: '🌨️', name: 'Schneedusche', text: 'Den Schnee von einer Tanne geschüttelt.' },
-  { id: 'verfranzt', gruppe: 'geheim', icon: '🫥', name: 'Verfranzt', text: 'Mitten im Wald verlaufen.' },
-  { id: 'heimweh', gruppe: 'geheim', icon: '🏠', name: 'Heimweh', text: 'Zehnmal zurück zum Start.', ziel: 10 },
-  { id: 'klamm', gruppe: 'geheim', icon: '🕳️', name: 'Brücke verpasst', text: 'Unten in der Klamm statt auf dem Steg.' },
-  { id: 'aussicht', gruppe: 'geheim', icon: '🌄', name: 'Aussicht genossen', text: 'Eine Minute lang nichts gedrückt.' },
-  { id: 'nacht', gruppe: 'geheim', icon: '🌙', name: 'Nachtskifahrer', text: 'Zwischen Mitternacht und fünf Uhr im Tal.' },
-  { id: 'stammgast', gruppe: 'geheim', icon: '🎟️', name: 'Stammgast', text: 'An drei verschiedenen Tagen vorbeigekommen.', ziel: 3 },
-  { id: 'lawine', gruppe: 'geheim', icon: '⚠️', name: 'Lawinengefahr', text: 'An einem Tag mit Warnstufe 4 oder 5 gefahren.' },
-  { id: 'd720', gruppe: 'geheim', icon: '💫', name: 'Doppelschraube', text: 'Einen 720er gestanden.' },
-  { id: 'everest', gruppe: 'geheim', icon: '🏔️', name: 'Everest', text: '8848 Höhenmeter abgefahren.', ziel: 8848 },
+  { id: 'kmh58', icon: '🚀', name: 'Raser', text: 'Mit 58 km/h durch den Speedcheck.' },
+  { id: 'd540', icon: '🌀', name: 'Fünf-Vierzig', text: 'Einen 540er im Funpark gestanden.' },
+  { id: 'd720', geheim: true, icon: '💫', name: 'Doppelschraube', text: 'Einen 720er gestanden.' },
+  { id: 'schwarzfahrt', geheim: true, icon: '🚫', name: 'Hausverbot', text: 'Slalom am Schlepplift. Das ist verboten.' },
+  { id: 'bankrott', geheim: true, icon: '🪵', name: 'Bankrott', text: 'Die Seebank zerlegt.' },
+  { id: 'klamm', geheim: true, icon: '🕳️', name: 'Brücke verpasst', text: 'Unten in der Klamm statt auf dem Steg.' },
+  { id: 'aussicht', geheim: true, icon: '🌄', name: 'Aussicht genossen', text: 'Eine Minute lang nichts gedrückt.' },
+  { id: 'nacht', geheim: true, icon: '🌙', name: 'Nachtskifahrer', text: 'Zwischen Mitternacht und fünf Uhr im Tal.' },
 ]
 
-const BY_ID = new Map(ABZEICHEN.map((a) => [a.id, a]))
-export const OFFEN = ABZEICHEN.filter((a) => a.gruppe !== 'geheim')
+const MELDBAR = new Map([
+  ...MEDAILLEN.map((m) => [m.id, { icon: m.icon, name: `Slalom ${m.name}`, text: `Unter ${m.zeit} s.` }]),
+  ...ABZEICHEN.map((a) => [a.id, a]),
+])
+const FUER_GOLD = ['silber', ...ABZEICHEN.filter((a) => !a.geheim).map((a) => a.id)]
+const IST_ORT = new Set(ORTE_ERKUNDET.map((o) => o.id))
+
+// Die erste Fassung speicherte Orte als Abzeichen und Stationen als Menge;
+// beides wird hier zu Erkundet, damit auf beta niemand von vorn anfaengt.
+const ALT_ORTE = { see: 'see', gipfel: 'gipfel', huette: 'huette', nord: 'nord', teppich: 'kinderland', drohne: 'drone', loeschzug: 'firetruck' }
 
 function laden() {
-  try {
-    const d = JSON.parse(localStorage.getItem(STORE))
-    if (d && typeof d === 'object') {
-      return { erreicht: d.erreicht ?? {}, zaehler: d.zaehler ?? {}, stand: d.stand ?? {}, tage: d.tage ?? [] }
-    }
-  } catch { /* leer oder gesperrt – dann eben frisch */ }
-  return { erreicht: {}, zaehler: {}, stand: {}, tage: [] }
+  let d = null
+  try { d = JSON.parse(localStorage.getItem(STORE)) } catch { /* leer oder gesperrt */ }
+  if (!d || typeof d !== 'object') return { erreicht: {}, orte: [] }
+  const orte = new Set(Array.isArray(d.orte) ? d.orte : [])
+  for (const id of d.stand?.stationen ?? []) orte.add(id)
+  for (const [alt, neu] of Object.entries(ALT_ORTE)) if (d.erreicht?.[alt]) orte.add(neu)
+  const erreicht = {}
+  for (const [id, t] of Object.entries(d.erreicht ?? {})) if (MELDBAR.has(id)) erreicht[id] = t
+  return { erreicht, orte: [...orte].filter((id) => IST_ORT.has(id)) }
 }
 
 export class Pistenpass {
@@ -104,83 +100,45 @@ export class Pistenpass {
   }
 
   hat(id) { return !!this.daten.erreicht[id] }
-  get gold() { return OFFEN.every((a) => this.hat(a.id)) }
-  get anzahl() { return Object.keys(this.daten.erreicht).filter((id) => BY_ID.has(id)).length }
+  kennt(ort) { return this.daten.orte.includes(ort) }
+  get erkundet() { return this.daten.orte.length }
+  get allesErkundet() { return this.erkundet >= ORTE_ERKUNDET.length }
+  get gold() { return this.allesErkundet && FUER_GOLD.every((id) => this.hat(id)) }
 
-  // Gespeichert wird hoechstens einmal pro Sekunde: die Hoehenmeter zaehlen
-  // in jedem Bild mit, localStorage in jedem Bild waere Verschwendung.
-  _speichern(sofort = false) {
-    if (!sofort) {
-      if (this._timer) return
-      this._timer = setTimeout(() => { this._timer = null; this._speichern(true) }, 1000)
-      return
-    }
+  _speichern() {
     try { localStorage.setItem(STORE, JSON.stringify(this.daten)) } catch { /* egal */ }
   }
 
-  erreiche(id) {
-    const a = BY_ID.get(id)
-    if (!a || this.hat(id)) return false
-    const warGold = this.gold
-    this.daten.erreicht[id] = Date.now()
-    this._speichern(true)
-    this._melden(a)
+  // Nach jeder Aenderung: koennten jetzt die goldenen Ski faellig sein?
+  _nachher(warGold) {
     if (!warGold && this.gold) {
-      this._melden({ icon: '⛷️', name: 'Goldene Ski', text: 'Alle offenen Abzeichen gesammelt.', gold: true })
+      this._melden({ icon: '⛷️', name: 'Goldene Ski', text: 'Tal erkundet, Silber, Raser und 540er.', gold: true })
       this.onGold?.()
     }
     this.onChange?.()
+  }
+
+  erreiche(id) {
+    const a = MELDBAR.get(id)
+    if (!a || this.hat(id)) return false
+    const warGold = this.gold
+    this.daten.erreicht[id] = Date.now()
+    this._speichern()
+    this._melden(a)
+    this._nachher(warGold)
     return true
   }
 
-  // Zaehler fuer Abzeichen mit Ziel (Hoehenmeter, R, Tage). Mehrere
-  // Abzeichen koennen denselben Zaehler lesen – Talfahrer und Everest.
-  zaehle(schluessel, um = 1) {
-    const z = this.daten.zaehler
-    z[schluessel] = (z[schluessel] ?? 0) + um
+  // Still: ein neuer Ort meldet sich nicht, er fuellt nur den Balken. Erst
+  // der letzte bekommt eine Pille.
+  entdecke(ort) {
+    if (!IST_ORT.has(ort) || this.kennt(ort)) return false
+    const warGold = this.gold
+    this.daten.orte.push(ort)
     this._speichern()
-    return z[schluessel]
-  }
-
-  zaehler(schluessel) { return this.daten.zaehler[schluessel] ?? 0 }
-
-  // Mengen statt Zaehler, wo es auf das Was ankommt: welche Stationen, welche
-  // Wege. Doppelt zaehlt dann nichts.
-  merke(menge, wert) {
-    const liste = this.daten.stand[menge] ?? (this.daten.stand[menge] = [])
-    if (!liste.includes(wert)) {
-      liste.push(wert)
-      this._speichern(true)
-      this.onChange?.()
-    }
-    return liste.length
-  }
-
-  menge(name) { return this.daten.stand[name] ?? [] }
-
-  // Stand fuer den Reiter: wie weit ist ein Abzeichen mit Ziel?
-  fortschritt(a) {
-    if (!a.ziel) return null
-    const wert = {
-      wege: this.menge('wege').length,
-      stationen: this.menge('stationen').length,
-      hm300: Math.floor(this.zaehler('hm')),
-      everest: Math.floor(this.zaehler('hm')),
-      heimweh: this.zaehler('heimweh'),
-      stammgast: this.daten.tage.length,
-    }[a.id] ?? 0
-    return Math.min(wert, a.ziel)
-  }
-
-  // Einmal beim Laden: der heutige Tag zaehlt fuer den Stammgast.
-  besuch(datum = new Date()) {
-    const tag = `${datum.getFullYear()}-${datum.getMonth() + 1}-${datum.getDate()}`
-    if (!this.daten.tage.includes(tag)) {
-      this.daten.tage.push(tag)
-      if (this.daten.tage.length > 30) this.daten.tage.shift()
-      this._speichern(true)
-    }
-    return this.daten.tage.length
+    if (this.allesErkundet) this._melden({ icon: '🧭', name: 'Tal erkundet', text: `Alle ${ORTE_ERKUNDET.length} Orte gefunden.` })
+    this._nachher(warGold)
+    return true
   }
 
   // Eine nach der anderen, nicht uebereinander: beim Slalom kommen Bronze
@@ -207,8 +165,8 @@ export class Pistenpass {
 
   // Nur zum Pruefen aus der Konsole: __ski.pass.zuruecksetzen()
   zuruecksetzen() {
-    this.daten = { erreicht: {}, zaehler: {}, stand: {}, tage: [] }
-    this._speichern(true)
+    this.daten = { erreicht: {}, orte: [] }
+    this._speichern()
     this.onChange?.()
   }
 }

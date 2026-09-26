@@ -899,19 +899,22 @@ html.touch .hint-pill { padding: 12px 20px; }
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 4px 12px;
+  gap: 12px;
   padding: 12px 16px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.75);
 }
-.pass-ski { grid-row: span 2; font-size: 30px; line-height: 1; filter: grayscale(1); opacity: 0.55; }
+.pass-ski { font-size: 30px; line-height: 1; filter: grayscale(1); opacity: 0.55; }
 .pass-kopf.gold .pass-ski { filter: none; opacity: 1; }
 .pass-kopf-text { display: flex; flex-direction: column; line-height: 1.25; }
 .pass-kopf-text strong { font-size: 15.5px; font-weight: 800; }
 .pass-kopf-text small { font-size: 12px; font-weight: 600; color: #4a5f75; }
+.pass-kopf.gold { box-shadow: 0 0 0 2px #e9b93c, 0 8px 24px -8px rgba(200, 150, 30, 0.6); }
 .pass-balken {
+  display: block;
   height: 6px;
+  margin: 0 4px 10px;
   border-radius: 999px;
   background: rgba(40, 70, 105, 0.1);
   overflow: hidden;
@@ -920,9 +923,40 @@ html.touch .hint-pill { padding: 12px 20px; }
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #e9b93c, #f6d36a);
+  background: var(--c);
 }
-.pass-kopf.gold { box-shadow: 0 0 0 2px #e9b93c, 0 8px 24px -8px rgba(200, 150, 30, 0.6); }
+.pass-orte { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
+.pass-ort {
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #7a8b9c;
+  border: 1px dashed rgba(60, 90, 125, 0.3);
+}
+.pass-ort.hat {
+  color: #13212f;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+}
+.pass-reihe { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pass-medaille {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px dashed rgba(60, 90, 125, 0.28);
+}
+.pass-medaille.hat {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.pass-medaille.hat .pass-icon { filter: none; opacity: 1; background: color-mix(in srgb, var(--c) 14%, #fff); }
+html.touch .pass-reihe { grid-template-columns: 1fr; }
 
 .pass-grid {
   display: grid;

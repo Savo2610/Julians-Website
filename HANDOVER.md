@@ -73,8 +73,8 @@ selbst. Zwei ausdrücklich gewünschte Ausnahmen (26.09.): die **Übersicht**
 hinter `M` (Abschnitt 4a′) und die beiden **Hinweispillen** unten
 (`stations/hints.js`) – beide sind für Besucher, die nicht spielen wollen
 oder mit WASD nicht zurechtkommen (beobachtet: vor allem Ältere).
-Dazu seit 26.09. die Abzeichen-Pille oben links (Abschnitt 4a″), die
-ebenfalls von selbst geht.
+Dazu seit 26.09. die Pistenpass-Pille oben links (Abschnitt 4a″), die
+ebenfalls von selbst geht – nur für Medaillen und Abzeichen, nicht für Orte.
 
 ---
 
@@ -497,44 +497,42 @@ Start-Hinweis entfällt dort (Kartenknopf).
 Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
 `null` zählt als 0, und an 9 von 15 Zielen hob der Fahrer ab), `_rise` null.
 
-## 4a″. Pistenpass (Abzeichen)
+## 4a″. Pistenpass
 
-`stations/pistenpass.js` (Liste, Speicher, Pille) und `stations/pass-regeln.js`
-(wann was fällt). Dritter Reiter **Pistenpass** in der Übersicht hinter `M`;
-beim Freischalten eine Glaspille **oben links** (oben Mitte ist die
-Zeitnahme, unten Trick und Hinweise), die nach 3 s von selbst geht.
+`stations/pistenpass.js` (Listen, Speicher, Pille) und `stations/pass-regeln.js`
+(wann was fällt). Dritter Reiter **Pistenpass** in der Übersicht hinter `M`.
 Speicher: `localStorage` `skiportfolio.pass`. Zurücksetzen:
 `__ski.pass.zuruecksetzen()`.
 
-**Grundsatz: belohnt wird das Finden, nie das Benutzen.** Für Hochladen,
-Wallet, Kurzlink, Bezahlen gibt es absichtlich nichts – sonst Datenmüll im
-Briefkasten und Cent-Beträge für einen Stempel. Wer eine Station erreicht
-(`registry.active`), hat sie gefunden.
+**Die erste Fassung (37 Abzeichen, 14c573f) war zu viel** – für fast alles
+kam eine Pille, und Pizza (5 s S halten) bekam jeder beim Anhalten. Ansage:
+weniger, schwierigere, statt Abzeichen fürs Hinkommen ein Erkundungsstand.
+Jetzt drei Teile:
 
-- **Entdecken** (10, offen): See, Gipfel, Lift oben, Teppich, Hüttenterrasse,
-  Nordabfahrt, alle vier Wegenden, alle neun Stationen, Drohne, Löschzug.
-- **Können** (12, offen): Slalom 4,50/4,20/3,90 (`MEDALS`), Speedcheck 50
-  und 58 km/h (mit gerader Ideallinie gemessen 59–60 – 60 hätte nur ein
-  Autopilot), 180/360/540, Railslide, Leuchtstrecke ganz, über einen Stein
-  gesprungen (`world.uebersprungen` aus `resolve`), 300 Höhenmeter.
-- **Geheim** (15): nur „?“, **ohne Hinweis** (Ansage). Kaputtmachen nur
-  zweimal (Seebank, drei Fackeln auf einmal) – vier davon waren zu viel.
-  „Hausverbot“ = vier Seitenwechsel am Tellerlift (`rider.offset` über
-  ±1,1). Pizza = 5 s Pflug *gehalten*: der Pflug bremst in gut einer
-  Sekunde auf null, Pflug in Fahrt über 5 s gibt es nicht. Aussicht = 60 s
-  keine Taste. Dazu Nacht (0–5 Uhr), Stammgast (3 Tage), Warnstufe ≥ 4,
-  720er, Everest (8848 Hm), Klamm, Verfranzt, Heimweh (10 × R),
-  Schneedusche, Eingeschneit.
+- **Erkundet** (still): 15 Orte – die neun Stationen (erreicht =
+  `registry.active`), See, Gipfel, Hüttenterrasse, Funpark, Kinderland
+  (auf dem Teppich), Nordabfahrt (bis unten). Ein Balken und Namensmarken,
+  Drohne und Löschzug als „???“. **Keine Pille pro Ort**, nur beim letzten.
+- **Slalom-Medaillen** 4,50 / 4,20 / 3,90 (`MEDALS`), mit Pille.
+- **Abzeichen** (8): offen *Raser* (58 km/h am Speedcheck – mit gerader
+  Ideallinie gemessen 59–60, 60 hätte nur ein Autopilot) und *540er*.
+  Geheim, nur „?“ ohne Hinweis: 720er, Hausverbot (vier Seitenwechsel am
+  Tellerlift, `rider.offset` über ±1,1), Seebank zerlegt, unten in der
+  Klamm, eine Minute nichts gedrückt, 0–5 Uhr.
 
-Höhenmeter zählen nur bergab, frei fahrend und in Schritten unter 0,8 m
-pro Bild – ein Versetzen (R, Schnellreise) ist keine Abfahrt.
+Nie ein Abzeichen fürs **Benutzen** (Hochladen, Wallet, Kurzlink,
+Bezahlen) – sonst Datenmüll und Cent-Beträge für einen Stempel.
 
-**Goldene Ski** für alle 22 offenen (`Skier.vergolden()`). Die Ski sind
-von Haus aus gelb; Metall ohne Umgebungsbild wurde nur ocker. Deshalb
-Emission mit langsamem Schimmer und ein **Goldstaub-Schweif** (zweite
-`Spray`-Instanz, 260 Teilchen). Additiv war er auf Tagschnee weiß und
-unsichtbar, Größe 0,16 ergab aus 33 m zwei Pixel – jetzt normal gemischt,
-0,45–0,75.
+Pille oben links (oben Mitte ist die Zeitnahme, unten Trick und Hinweise),
+geht nach 3 s. Alte Spielstände werden beim Laden umgerechnet
+(`ALT_ORTE`).
+
+**Goldene Ski**: alles erkundet + Slalom-**Silber** + Raser + 540er (Gold
+ausdrücklich nicht – Julians eigene Bestzeit war 4,18). `Skier.vergolden()`.
+Die Ski sind von Haus aus gelb; Metall ohne Umgebungsbild wurde nur ocker.
+Deshalb Emission mit langsamem Schimmer und ein **Goldstaub-Schweif**
+(zweite `Spray`-Instanz, 260 Teilchen). Additiv war er auf Tagschnee weiß,
+Größe 0,16 ergab aus 33 m zwei Pixel – jetzt normal gemischt, 0,45–0,75.
 
 ## 4b. Handymodus
 

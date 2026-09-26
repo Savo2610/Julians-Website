@@ -108,9 +108,6 @@ export function createTorch(seed = 0) {
     hold = 2.6
   }
 
-  // Fuer den Pistenpass (Lichter aus): liegt sie, ist das Feuer aus.
-  group.userData.liegt = () => fall > 0.45
-
   group.userData.animate = (t, dt = 0) => {
     if (hold > 0) {
       hold -= dt

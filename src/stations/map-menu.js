@@ -3,7 +3,7 @@ import { TOUCH } from '../core/device.js'
 import { TRAILS } from '../world/paths.js'
 import { PLATEAU } from '../world/heightfield.js'
 import { LINKS } from './links.js'
-import { ABZEICHEN, GRUPPEN, OFFEN } from './pistenpass.js'
+import { ABZEICHEN, MEDAILLEN, ORTE_ERKUNDET } from './pistenpass.js'
 
 // Die Uebersicht: M ueberall, Enter an der Panoramatafel, am Handy der
 // Kartenknopf. Zwei Reiter:
@@ -15,8 +15,9 @@ import { ABZEICHEN, GRUPPEN, OFFEN } from './pistenpass.js'
 //   Wunsch hin. Vorher stand LinkedIn nur hinter dem Wort "Werkstatt" in
 //   einer Liste zwischen Gipfel und See; das musste man erraten.
 // - KARTE ist die alte Talkarte mit Schnellreise zu Stationen und Orten.
-// - PASS ist der Pistenpass (stations/pistenpass.js): die Abzeichen. Er ist
-//   nur zum Anschauen, ohne Auswahl – es gibt dort nichts zu oeffnen.
+// - PASS ist der Pistenpass (stations/pistenpass.js): Erkundet, Medaillen,
+//   Abzeichen. Nur zum Anschauen, ohne Auswahl – dort gibt es nichts zu
+//   oeffnen.
 //
 // Unten steht die ganze Steuerung – die einzige Stelle ausser dem
 // Tastenkreuz im Schnee, an der man sie nachlesen kann.
@@ -297,56 +298,75 @@ export class MapMenu {
   // --- Pistenpass ----------------------------------------------------------
 
   // Jedes Mal neu: der Pass ist klein, und so stimmt er auch dann, wenn
-  // waehrend des Oeffnens etwas freigeschaltet wird.
+  // waehrend des Oeffnens etwas dazukommt.
   _buildPass() {
     const p = this.pass
     if (!p) return
-    const offenErreicht = OFFEN.filter((a) => p.hat(a.id)).length
-    const geheim = ABZEICHEN.filter((a) => a.gruppe === 'geheim')
-    const geheimErreicht = geheim.filter((a) => p.hat(a.id)).length
+    const karte = (klasse, farbe) => {
+      const el = document.createElement('div')
+      el.className = `ov-group ${klasse}`
+      el.style.setProperty('--c', farbe)
+      return el
+    }
 
+    // Goldene Ski: was fehlt noch?
     const kopf = document.createElement('div')
     kopf.className = 'pass-kopf' + (p.gold ? ' gold' : '')
-    kopf.innerHTML = `
-      <span class="pass-ski" aria-hidden="true">⛷️</span>
-      <span class="pass-kopf-text">
-        <strong></strong>
-        <small></small>
-      </span>
-      <span class="pass-balken"><i></i></span>
-    `
-    kopf.querySelector('strong').textContent = p.gold
-      ? 'Goldene Ski – alles gesammelt'
-      : `${offenErreicht} von ${OFFEN.length} Abzeichen`
+    kopf.innerHTML = '<span class="pass-ski" aria-hidden="true">⛷️</span><span class="pass-kopf-text"><strong></strong><small></small></span>'
+    const fehlt = [
+      !p.allesErkundet && 'das ganze Tal',
+      !p.hat('silber') && 'Slalom-Silber',
+      ...ABZEICHEN.filter((a) => !a.geheim && !p.hat(a.id)).map((a) => a.name),
+    ].filter(Boolean)
+    kopf.querySelector('strong').textContent = p.gold ? 'Goldene Ski' : 'Goldene Ski – noch nicht'
     kopf.querySelector('small').textContent = p.gold
-      ? `Und ${geheimErreicht} von ${geheim.length} geheimen.`
-      : `Alle ${OFFEN.length} ergeben goldene Ski. Dazu ${geheimErreicht} von ${geheim.length} geheimen.`
-    kopf.querySelector('.pass-balken i').style.width = `${(offenErreicht / OFFEN.length) * 100}%`
+      ? 'Du hast sie. Schau auf deine Füße.'
+      : `Fehlt: ${fehlt.join(', ')}.`
 
-    const teile = [kopf]
-    for (const g of GRUPPEN) {
-      const sec = document.createElement('div')
-      sec.className = 'ov-group pass-gruppe'
-      sec.style.setProperty('--c', g.farbe)
-      sec.innerHTML = '<h3></h3><div class="pass-grid"></div>'
-      const liste = ABZEICHEN.filter((a) => a.gruppe === g.id)
-      sec.querySelector('h3').textContent = `${g.titel} · ${liste.filter((a) => p.hat(a.id)).length}/${liste.length}`
-      const grid = sec.querySelector('.pass-grid')
-      for (const a of liste) {
-        const hat = p.hat(a.id)
-        const verborgen = g.id === 'geheim' && !hat
-        const el = document.createElement('div')
-        el.className = 'pass-stempel' + (hat ? ' hat' : '') + (verborgen ? ' verborgen' : '')
-        el.innerHTML = '<span class="pass-icon"></span><span class="pass-text"><span class="pass-name"></span><span class="pass-sub"></span></span>'
-        el.querySelector('.pass-icon').textContent = verborgen ? '?' : a.icon
-        el.querySelector('.pass-name').textContent = verborgen ? 'Geheim' : a.name
-        const stand = !hat && !verborgen ? p.fortschritt(a) : null
-        el.querySelector('.pass-sub').textContent = verborgen ? '' : stand !== null ? `${a.text} (${stand}/${a.ziel})` : a.text
-        grid.appendChild(el)
-      }
-      teile.push(sec)
+    // Erkundet: ein Balken und die Orte als kleine Marken.
+    const erk = karte('pass-erkundet', '#346782')
+    erk.innerHTML = '<h3></h3><span class="pass-balken"><i></i></span><div class="pass-orte"></div>'
+    erk.querySelector('h3').textContent = `Erkundet · ${p.erkundet}/${ORTE_ERKUNDET.length}`
+    erk.querySelector('.pass-balken i').style.width = `${(p.erkundet / ORTE_ERKUNDET.length) * 100}%`
+    const orte = erk.querySelector('.pass-orte')
+    for (const o of ORTE_ERKUNDET) {
+      const kennt = p.kennt(o.id)
+      const el = document.createElement('span')
+      el.className = 'pass-ort' + (kennt ? ' hat' : '')
+      el.textContent = kennt || !o.versteckt ? o.name : '???'
+      orte.appendChild(el)
     }
-    this.passEl.replaceChildren(...teile)
+
+    // Medaillen im Slalom.
+    const med = karte('pass-medaillen', '#a86738')
+    med.innerHTML = '<h3>Slalom</h3><div class="pass-reihe"></div>'
+    for (const m of MEDAILLEN) {
+      const el = document.createElement('div')
+      el.className = 'pass-medaille' + (p.hat(m.id) ? ' hat' : '')
+      el.innerHTML = '<span class="pass-icon"></span><span class="pass-text"><span class="pass-name"></span><span class="pass-sub"></span></span>'
+      el.querySelector('.pass-icon').textContent = m.icon
+      el.querySelector('.pass-name').textContent = m.name
+      el.querySelector('.pass-sub').textContent = `unter ${m.zeit} s`
+      med.lastElementChild.appendChild(el)
+    }
+
+    // Abzeichen: wenige, offen oder geheim.
+    const abz = karte('pass-abzeichen', '#935976')
+    abz.innerHTML = '<h3></h3><div class="pass-grid"></div>'
+    abz.querySelector('h3').textContent = `Abzeichen · ${ABZEICHEN.filter((a) => p.hat(a.id)).length}/${ABZEICHEN.length}`
+    for (const a of ABZEICHEN) {
+      const hat = p.hat(a.id)
+      const verborgen = a.geheim && !hat
+      const el = document.createElement('div')
+      el.className = 'pass-stempel' + (hat ? ' hat' : '') + (verborgen ? ' verborgen' : '')
+      el.innerHTML = '<span class="pass-icon"></span><span class="pass-text"><span class="pass-name"></span><span class="pass-sub"></span></span>'
+      el.querySelector('.pass-icon').textContent = verborgen ? '?' : a.icon
+      el.querySelector('.pass-name').textContent = verborgen ? 'Geheim' : a.name
+      el.querySelector('.pass-sub').textContent = verborgen ? '' : a.text
+      abz.lastElementChild.appendChild(el)
+    }
+
+    this.passEl.replaceChildren(kopf, erk, med, abz)
   }
 
   // --- Karte ------------------------------------------------------------

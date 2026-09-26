@@ -86,10 +86,9 @@ const hints = new Hints({
     mapMenu.close()
     mapMenu.travelTo(start)
     hints.afterReset()
-    regeln.zurueck()
   },
 })
-const regeln = new PassRegeln(pass, { skier, world, props, stations, lift: props.lift, hints, map: mapMenu })
+const regeln = new PassRegeln(pass, { skier, props, stations, map: mapMenu })
 interaction.onReset = hints.onReset
 mapMenu.onShow = () => hints.seen()
 

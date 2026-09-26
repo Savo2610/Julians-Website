@@ -22,8 +22,9 @@ Das Wichtigste in Kürze:
 - Minimale Oberfläche: keine Leiste. Einzige Menüs: die Übersicht hinter `M`
   (Links, Talkarte, Pistenpass), die zwei Hinweispillen (für Nicht-Spieler
   gewünscht) und die Abzeichen-Pille oben links. Hinweise gehen von selbst.
-- Pistenpass: Abzeichen nur fürs Finden und Können, **nie** für Hochladen,
-  Wallet, Kurzlink oder Bezahlen. Geheime ohne Hinweis.
+- Pistenpass: stiller Erkundungsstand, Slalom-Medaillen, acht schwere
+  Abzeichen. **Nie** etwas fürs Hochladen, Wallet, Kurzlink oder Bezahlen.
+  Lieber wenige, schwierige als für alles eins (erste Fassung zu viel).
 - Verworfen und nicht ohne Rückfrage neu anzufangen: **Halfpipe** (funktioniert
   im Fahrmodell nicht) und **Ton** (zweimal gebaut, zweimal abgelehnt).
 

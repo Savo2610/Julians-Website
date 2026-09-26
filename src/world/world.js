@@ -68,12 +68,7 @@ export class World {
       const min = c.r + radius
       const d2 = dx * dx + dz * dz
       if (d2 >= min * min || d2 === 0) continue
-      if (lift > 0 && c.h < Infinity && lift > c.h * Math.sqrt(Math.max(0, 1 - d2 / (min * min)))) {
-        // Fuer den Pistenpass: nur wer wirklich ueber der Kuppe ist, nicht
-        // wer im Absprung den Rand streift.
-        if (d2 < c.r * c.r && c.h >= 0.2) this.uebersprungen = (this.uebersprungen ?? 0) + 1
-        continue
-      }
+      if (lift > 0 && c.h < Infinity && lift > c.h * Math.sqrt(Math.max(0, 1 - d2 / (min * min)))) continue
       // Gibt onHit true zurueck, ist das Hindernis in diesem Moment zu Bruch
       // gegangen (Funparkzaun): dann faehrt man hindurch, statt noch ein
       // letztes Mal abzuprallen und Tempo zu verlieren.

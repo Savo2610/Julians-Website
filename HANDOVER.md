@@ -798,6 +798,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+50f83d6  Ski gelbgruen statt gruen
 356771b  Ski gruen, Gold nur mit vollem Pistenpass
 2dcbc33  Pistenpass verschlankt: Erkundet, Medaillen, acht Abzeichen
 14c573f  Pistenpass: Abzeichen fuers Finden und Koennen, goldene Ski

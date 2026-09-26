@@ -17,12 +17,6 @@ import { vertexColorMaterial } from '../core/geometry.js'
 
 const CABLE_GAUGE = 1.0      // seitlicher Abstand zwischen Auf- und Abwaertsseil
 const CABLE_CLEARANCE = 3.6  // Mindesthoehe des Seils ueber dem Boden
-// Sitzpunkt des Tellers im Fahrermodell (lokal, -Z ist hinten, +X die Seite
-// der greifenden Hand). Das Seil liegt 5,3 hoch und 2,4 voraus genau ueber
-// dem Fahrer, die gerade Stange muss also am Koerper vorbei. Mittig hinten
-// lief sie 22 cm tief durch die Brust; so bleibt sie 4 cm neben Schulter,
-// Rucksack und Kopf. Die Greifhand holt sie sich selbst (skier.greifen).
-const SEAT = new THREE.Vector3(0.28, 0.6, -0.45)
 const PLATTER_SPACING = 11   // Abstand der Teller am Seil
 const PYLON_SPACING = 13
 
@@ -260,18 +254,21 @@ export class DragLift {
 
   // Der benutzte Teller wird zwischen Seil und Fahrer gespannt: die Stange
   // zeigt exakt dorthin und wird auf die noetige Laenge gezogen, wie das
-  // Teleskopgehaenge eines echten Schlepplifts. Laeuft nach skier.update() –
-  // mit der Haltung aus dem vorigen Bild hing der Teller 13 cm neben der Hand.
+  // Teleskopgehaenge eines echten Schlepplifts. Das laeuft erst nach
+  // skier.update(): vorher zielte der Teller auf die Position aus dem
+  // vorigen Bild und hing um den Weg eines Bildes zurueck – bei Liftfahrt 7,2
+  // sind das 12 cm bei 60 und 24 cm bei 30 Bildern. Schwankte die Bildrate,
+  // sprang er vor und zurueck und flackerte durch die Jacke.
   spannen(skier) {
     if (!this.rider || !this._riderState) return
     const state = this._riderState
     const dummy = this._dummy
-    // Angriffspunkt im Fahrer selbst, damit der Teller jedes Zuruecklehnen
-    // und Ausscheren mitgeht. Ein fester Weltpunkt (0,86 hoch, 0,3
-    // zurueck) lag im Ruecken, die Scheibe schnitt durch den Rucksack.
     this._from.set(state.x, state.y, state.z)
-    skier.group.updateMatrixWorld()
-    this._to.copy(SEAT).applyMatrix4(skier.group.matrixWorld)
+    this._to.set(
+      skier.position.x - this.dir.x * 0.3,
+      skier.position.y + 0.86,
+      skier.position.z - this.dir.y * 0.3,
+    )
     this._delta.copy(this._to).sub(this._from)
     const len = Math.max(1.2, this._delta.length())
     this._quat.setFromUnitVectors(this._down, this._delta.normalize())
@@ -282,7 +279,6 @@ export class DragLift {
     dummy.updateMatrix()
     this.platters.setMatrixAt(this.rider.index, dummy.matrix)
     this.platters.instanceMatrix.needsUpdate = true
-    skier.greifen(this._from, this._to)
   }
 
   // Kann hier eingestiegen werden?

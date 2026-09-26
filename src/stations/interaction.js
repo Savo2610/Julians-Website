@@ -13,8 +13,9 @@ import { CAMERA } from '../config.js'
 // Ereignis.
 
 export class StationInteraction {
-  constructor({ registry, ui, input, camera, skier, map = null }) {
+  constructor({ registry, ui, input, camera, skier, map = null, flight = null }) {
     this.map = map
+    this.flight = flight
     this.registry = registry
     this.ui = ui
     this.input = input
@@ -31,6 +32,7 @@ export class StationInteraction {
 
   // true = die Aktion ist hier verbraucht und bewegt den Fahrer nicht.
   press(action) {
+    if (this.flight?.active) return this.flight.press(action)
     if (this.map?.open) return this.map.press(action)
     if (action === 'map' && this.map && !this.skier.tow) {
       this.leave()
@@ -51,6 +53,7 @@ export class StationInteraction {
         case 'use': this._open(this.selected); return true
         case 'pick1': this._open(0); return true
         case 'pick2': this._open(1); return true
+        case 'pick3': if (n > 2) this._open(2); return true
         case 'back': this.leave(); return true
         // W und S fuehren aus der Auswahl hinaus – und W faehrt gleich los,
         // deshalb wird es nicht verbraucht.
@@ -116,16 +119,22 @@ export class StationInteraction {
   _open(i) {
     if (!this.focus) return
     this._select(i)
+    const focus = this.focus
     if (this.registry.trigger(i)) {
       this.ui.flash(i)
-      this.focus.object?.userData.press?.(i)
+      focus.object?.userData.press?.(i)
+    } else {
+      this.ui.nope(i)
     }
+    // Untertitel koennen vom Zustand abhaengen (Ticket geloest).
+    if (this.focus) this.ui.refresh(this.focus)
   }
 
   // Jedes Bild: faehrt der Fahrer doch irgendwie weg (Lift, Rutschen), klappt
   // die Auswahl von selbst zu.
   update() {
     if (this.focus && this.registry.active !== this.focus) this.leave()
-    this.ui.update(this.registry.active)
+    // Aus der Luft schwebte sonst die Einladung der Drohne ueber dem Tal.
+    this.ui.update(this.flight?.active ? null : this.registry.active)
   }
 }

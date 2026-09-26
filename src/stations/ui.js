@@ -26,8 +26,14 @@ const GLYPHS = {
   paypal: '<svg viewBox="0 0 24 24"><path d="M7.2 20.5 9.6 4h6.1c3.3 0 5 1.8 4.5 4.6-.6 3.3-3 4.9-6.3 4.9h-2.3l-1 7z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/></svg>',
   signal: '<svg viewBox="0 0 24 24"><path d="M12 3.6a8.4 8.4 0 0 0-7.2 12.7L3.8 20.2l3.9-1a8.4 8.4 0 1 0 4.3-15.6z" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3.2 1.6" stroke-linejoin="round"/></svg>',
   instagram: '<svg viewBox="0 0 24 24"><rect x="3.8" y="3.8" width="16.4" height="16.4" rx="4.8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16.9" cy="7.1" r="1.2" fill="currentColor"/></svg>',
+  // Ein Fahrschein mit Lochung, eine Drohne von oben, ein Doktorhut.
+  ticket: '<svg viewBox="0 0 24 24"><path d="M3.5 7.5h17v3a1.6 1.6 0 0 0 0 3v3h-17v-3a1.6 1.6 0 0 0 0-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14.5 8v8" stroke="currentColor" stroke-width="1.6" stroke-dasharray="1.6 1.6"/></svg>',
+  drone: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2"/><rect x="9.3" y="9.3" width="5.4" height="5.4" rx="1.2" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><circle cx="18" cy="18" r="2.6"/></g></svg>',
+  uni: '<svg viewBox="0 0 24 24"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z" fill="currentColor"/><path d="M6.5 11.6v4.2c1.4 1.5 3.3 2.2 5.5 2.2s4.1-.7 5.5-2.2v-4.2M20 10.3v5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   solana: '<svg viewBox="0 0 24 24"><path d="M6.5 6h13l-2 2.6h-13zM4.5 10.7h13l2 2.6h-13zM6.5 15.4h13l-2 2.6h-13z" fill="currentColor"/></svg>',
 }
+
+const subText = (choice) => (typeof choice.sub === 'function' ? choice.sub() : choice.sub) ?? ''
 
 export class StationUI {
   constructor(container, camera) {
@@ -130,7 +136,7 @@ export class StationUI {
         <span class="opt-go" aria-hidden="true">${TOUCH ? '↗' : '⏎'}</span>
       `
       b.querySelector('.opt-label').textContent = choice.label
-      b.querySelector('.opt-sub').textContent = choice.sub ?? ''
+      b.querySelector('.opt-sub').textContent = subText(choice)
       b.addEventListener('click', () => this.onPick?.(i))
       // Mit der Maus zeigen heisst auswaehlen – sonst stuende der Rahmen
       // woanders als der Zeiger.
@@ -141,6 +147,23 @@ export class StationUI {
     })
     this.select(selected)
     this.sheet.classList.add('visible')
+  }
+
+  // Nach dem Oeffnen: manche Untertitel sagen, was sich gerade geaendert hat.
+  refresh(station) {
+    station.choices.forEach((choice, i) => {
+      const el = this.optionsEl.children[i]?.querySelector('.opt-sub')
+      if (el) el.textContent = subText(choice)
+    })
+  }
+
+  // Abgelehnt: kurz schuetteln statt aufleuchten.
+  nope(index) {
+    const el = this.optionsEl.children[index]
+    if (!el) return
+    el.classList.remove('nope')
+    void el.offsetWidth
+    el.classList.add('nope')
   }
 
   select(index) {

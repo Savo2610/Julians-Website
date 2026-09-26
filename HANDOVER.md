@@ -32,7 +32,7 @@ gezeichnet. `npm run build` muss durchlaufen, bevor irgendetwas als fertig gilt.
 Diese sind über mehrere Sitzungen entstanden und jeweils teuer bezahlt. Wer sie
 bricht, baut etwas, das zurückgenommen werden muss.
 
-**Die Kamera dreht sich nie** — mit genau einer Ausnahme, siehe unten.
+**Die Kamera dreht sich nie** — mit genau zwei Ausnahmen, siehe unten.
 `CAMERA.azimuth = Math.PI * 0.25`, Elevation 0.63 rad (≈ 36°). Sie folgt dem
 Fahrer, sonst nichts. Daraus folgt:
 
@@ -53,7 +53,11 @@ Fahrer, sonst nichts. Daraus folgt:
 dreht mit ihm (`CHASE` in `config.js`, Abschnitt 4). Das war eine ausdrückliche
 Ansage und gilt nur dort. Die Steuerung blieb davon unberührt, weil A/D ohnehin
 aus Sicht des Fahrers lenken — genau deshalb war der Modus überhaupt möglich.
-Wer eine zweite Ausnahme erwägt: erst fragen.
+
+*Die zweite Ausnahme* (26.09., auf Ansage): der **Drohnen-Rundflug**
+(Abschnitt 4a‴). Dort steuert niemand – der Fahrer steht, jede Taste beendet
+den Flug –, also gibt es keine Taste, deren Bedeutung sich mit dem Bild
+dreht. Wer eine dritte erwägt: erst fragen.
 
 **Es gibt genau eine Höhenfunktion.** `terrainHeight(x, z)` in
 `src/world/heightfield.js` speist das Mesh *und* jede Kollisions- und
@@ -533,6 +537,40 @@ Die normalen Ski sind seit 26.09. **gelbgrün** (vorher gelb – Gold sah dann k
 anders aus). Metall ohne Umgebungsbild wurde nur ocker, deshalb Emission mit langsamem Schimmer und ein **Goldstaub-Schweif**
 (zweite `Spray`-Instanz, 260 Teilchen). Additiv war er auf Tagschnee weiß,
 Größe 0,16 ergab aus 33 m zwei Pixel – jetzt normal gemischt, 0,45–0,75.
+
+## 4a‴. Drohnen-Rundflug und Ticket
+
+An der **Skikasse** gibt es als dritte Wahl ein **Rundflug-Ticket**
+(`stations/ticket.js`, `localStorage` `skiportfolio.rundflug`, `3` wählt
+direkt). Umsonst und immer nur eins – ein Stapel wäre eine Währung. An der
+**Drohne** (jetzt eine Station mit Auswahl: Uniprojekt / Rundflug) wird es
+entwertet; ohne Ticket schüttelt sich die Wahl (`action` gibt `false`
+zurück, `ui.nope`) und der Untertitel sagt „Ticket an der Skikasse lösen“.
+Untertitel dürfen dafür Funktionen sein (`ui.refresh`).
+
+Der Flug (`player/drone-flight.js`): 17 handgesetzte Punkte, jeder mit
+eigenem Blickziel – Plateau von Süden, Löschzug und See, Werkzeuge von
+Westen, hoch zum Gipfel (46 m), hinter den Berg auf Nordabfahrt und Klamm,
+über Hütte und Funpark zurück. 511 m, 12 m/s, mit je 4 s Anfahr- und
+Bremsrampe ≈ 47 s. Die Untergrenze (Gelände + 8 m, neun Proben im Umkreis
+von 5 m) wird über ein Fenster maximiert und dann gemittelt, damit die
+Drohne nicht über jeden Hügel hüpft; gemessen nie unter 7,6 m. In Kurven
+bis 0,22 rad Schräglage, Bildwinkel 62°. Die abgestürzte Drohne ist
+während des Flugs unsichtbar (sie ist ja in der Luft). Schatten, Himmel
+und Schneefall folgen dem Blick der Drohne statt dem Fahrer. Esc/Enter/M/R
+oder Tippen beenden; hinterher `chase.snap()`. Die Aussicht-Regel im
+Pistenpass zählt den Flug nicht mit.
+
+Kosten: im Flug bis 561 Draw Calls und 912 k Dreiecke (man sieht mehr vom
+Tal als von oben), 0,005 ms je Update.
+
+**Bezahlen mit dem eigenen Solana-Token** ist besprochen, nicht gebaut:
+im reinen Frontend wäre es nur Deko (jeder setzt das Ticket in der
+Konsole). Echt ginge es nur mit einem Worker, der die Überweisung auf der
+Kette prüft und ein signiertes Ticket ausstellt – und auch dann läuft der
+Flug selbst im Browser. Dasselbe gilt für ein **Slalom-Scoreboard**: ohne
+Server-Plausibilität (Zeitstempel, Torfolge, Mindestzeit) ist jede Zeit
+fälschbar.
 
 ## 4b. Handymodus
 

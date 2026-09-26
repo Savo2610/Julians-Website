@@ -15,7 +15,8 @@ const LIFT_AUSSCHERT = 1.1
 const LIFT_WECHSEL = 4
 
 export class PassRegeln {
-  constructor(pass, { skier, props, stations, map }) {
+  constructor(pass, { skier, props, stations, map, flight = null }) {
+    this.flight = flight
     this.pass = pass
     this.skier = skier
     this.props = props
@@ -81,8 +82,9 @@ export class PassRegeln {
     // bis 50 Metern Anlauf gemessen. 60 hiesse: nur ein Autopilot.
     if (this.props.speedCheck.last >= 58) p.erreiche('kmh58')
 
-    // Aussicht: kein Menue, kein Fenster, nur schauen.
-    const offen = this.map.open || !!document.querySelector('dialog[open]')
+    // Aussicht: kein Menue, kein Fenster, nur schauen. Der Rundflug zaehlt
+    // nicht – er dauert fast eine Minute, und die Aussicht waere geschenkt.
+    const offen = this.map.open || !!document.querySelector('dialog[open]') || this.flight?.active
     this._still = offen ? 0 : this._still + dt
     if (this._still >= 60) p.erreiche('aussicht')
 

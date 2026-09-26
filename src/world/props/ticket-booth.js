@@ -443,7 +443,9 @@ export function createTicketBooth({ label = 'SKIKASSE' } = {}) {
   }
   group.userData.press = (index) => {
     const t = terminals[index]
-    if (!t) return
+    // Das Rundflug-Ticket gibt es am Schalter selbst, nicht am Terminal –
+    // der Kassierer winkt nur.
+    if (!t) { waving = 1.4; return }
     t.screen.userData.flash = 1
     t.receiptT = 0
     t.receipt.visible = true
@@ -469,7 +471,7 @@ export function createTicketBooth({ label = 'SKIKASSE' } = {}) {
       }
     }
     // Kopf zum gewaehlten Terminal, sonst leichtes Umschauen.
-    const want = selected === null ? Math.sin(time * 0.4) * 0.25 : selected === 0 ? -0.55 : 0.5
+    const want = selected === null ? Math.sin(time * 0.4) * 0.25 : selected === 0 ? -0.55 : selected === 1 ? 0.5 : 0
     lookAt += (want - lookAt) * (1 - Math.exp(-5 * dt))
     head.rotation.y = lookAt
     head.position.y = 0.8 + Math.sin(time * 2.1) * 0.012

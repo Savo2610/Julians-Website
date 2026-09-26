@@ -159,13 +159,13 @@ function scatter(rng, { count, minDist, accept, tries = 40 }) {
 // nach der Welt entsteht. Ein kleiner Halter loest das ohne Umweg.
 export const skierRef = { current: null }
 
-export function populate(world, sky, registry) {
+export function populate(world, sky, registry, stationOptions = {}) {
   const rng = makeRng(20260902)
   const animatedProps = []
 
   // Erst die flachen Stationsplaetze bestimmen: sonst bleibt der Wald an
   // den alten Koordinaten frei und waechst in den tatsaechlichen Vorplatz.
-  const stations = populateStations(world, registry)
+  const stations = populateStations(world, registry, stationOptions)
 
   createBackdrop(world.scene, { fogColor: world.scene.fog.color })
 

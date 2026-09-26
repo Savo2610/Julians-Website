@@ -8,8 +8,9 @@ Das Wichtigste in Kürze:
 - Die Kamera dreht sich **nie** (`CAMERA.azimuth = Math.PI * 0.25`, ≈36° von
   oben). WASD steuert klassisch aus Sicht des Fahrers. Alles mit einer
   Schauseite muss der Kamera zugewandt sein.
-  Genau **eine** dokumentierte Ausnahme: auf der Nordabfahrt geht sie hinter
-  den Fahrer und dreht mit (`CHASE`). Eine zweite nur nach Rückfrage.
+  Genau **zwei** dokumentierte Ausnahmen: auf der Nordabfahrt geht sie hinter
+  den Fahrer und dreht mit (`CHASE`), und im Drohnen-Rundflug fliegt sie ums
+  Tal (`player/drone-flight.js`, niemand steuert). Weitere nur nach Rückfrage.
 - Was man **befährt**, ist Gelände; was man **sieht**, ist Aufbau. Schanzen,
   Steg und Bahnen stecken im Höhenfeld, das Holz liegt nur darauf.
 - `terrainHeight(x, z)` in `src/world/heightfield.js` ist die **einzige**

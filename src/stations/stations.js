@@ -14,6 +14,7 @@ import { createTimeClock } from '../world/props/time-clock.js'
 import { CAMERA } from '../config.js'
 import { TOUCH } from '../core/device.js'
 import { findFlatSpot } from '../world/heightfield.js'
+import { ticket } from './ticket.js'
 
 // Die Kamera blickt immer aus derselben Richtung. Objekte mit einer
 // Schauseite muessen ihr also zugewandt sein, sonst liest man Schilder von
@@ -126,7 +127,7 @@ function solanaApp() {
   }, 1600)
 }
 
-export function populateStations(world, registry) {
+export function populateStations(world, registry, { rundflug = () => {} } = {}) {
   const animated = []
 
   // Jede Station rutscht auf die flachste Stelle in ihrer Umgebung. Die
@@ -225,7 +226,7 @@ export function populateStations(world, registry) {
   register({
     id: 'kasse',
     label: 'Skikasse',
-    hint: 'Trinkgeld',
+    hint: 'Trinkgeld & Rundflug',
     color: '#2b8ce6',
     position: STATION_SPOTS.ticket,
     radius: 5.0,
@@ -241,6 +242,14 @@ export function populateStations(world, registry) {
       TOUCH
         ? { label: 'Solana', sub: 'Wallet-App öffnen', glyph: 'solana', color: '#9945ff', action: solanaApp }
         : { label: 'Solana', sub: 'Wallet verbinden', glyph: 'solana', color: '#9945ff', action: () => walletDialog() },
+      // Das Ticket fuer den Rundflug der Drohne, siehe ticket.js. Es gibt nur
+      // eins auf einmal: ein Stapel waere eine Waehrung, und dafuer ist das
+      // Tal nicht da.
+      {
+        label: 'Rundflug', glyph: 'ticket', color: '#e0662b',
+        sub: () => ticket.vorhanden ? 'Ticket in der Tasche ✓' : 'Ticket für die Drohne · gratis',
+        action: () => { ticket.loesen() },
+      },
     ],
   })
 
@@ -328,12 +337,28 @@ export function populateStations(world, registry) {
   register({
     id: 'drone',
     label: 'Abgestürzte Drohne',
-    hint: 'Uniprojekt ansehen',
+    hint: 'Uniprojekt & Rundflug',
     color: '#ff4d3d',
-    url: LINKS.kidrohne,
     position: STATION_SPOTS.drone,
     radius: 4.5,
     labelHeight: world.heightAt(STATION_SPOTS.drone.x, STATION_SPOTS.drone.z) + 1.8,
+    object: drone,
+    // Die Drohne ist kaum einen Meter gross; aus zehn Metern waere sie ein
+    // Fleck ueber der Auswahl.
+    focus: { abstand: 6.5, hoehe: 0.5, vor: 0.7 },
+    choices: [
+      { label: 'Uniprojekt', sub: 'KI-Drohne · Frankfurt UAS', glyph: 'uni', url: LINKS.kidrohne, color: '#ff4d3d' },
+      // Ohne Ticket bleibt sie am Boden: die Wahl schuettelt sich, und der
+      // Untertitel sagt, wo es eins gibt.
+      {
+        label: 'Rundflug', glyph: 'drone', color: '#e0662b',
+        sub: () => ticket.vorhanden ? 'Ticket entwerten und abheben' : 'Ticket an der Skikasse lösen',
+        action: () => {
+          if (!ticket.einloesen()) return false
+          rundflug(drone)
+        },
+      },
+    ],
   })
 
   const truck = createFireTruck()

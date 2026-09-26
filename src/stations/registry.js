@@ -66,9 +66,9 @@ export class StationRegistry {
       // Ein Ziel ist entweder eine Adresse oder eine Handlung. Solana ist der
       // Grund fuer die zweite Sorte: dort wird kein Link geoeffnet, sondern
       // ein Fenster, in dem man einen Betrag eintraegt.
+      // Gibt sie false zurueck, ist nichts passiert (Rundflug ohne Ticket).
       if (typeof choice.action === 'function') {
-        choice.action()
-        return s
+        return choice.action() === false ? null : s
       }
       if (!choice.url) return null
       window.open(choice.url, '_blank', 'noopener,noreferrer')

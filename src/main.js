@@ -25,6 +25,7 @@ import { Pistenpass } from './stations/pistenpass.js'
 import { PassRegeln } from './stations/pass-regeln.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
+import { DroneFlight } from './player/drone-flight.js'
 import { Spray } from './player/spray.js'
 
 const canvas = document.getElementById('scene')
@@ -53,7 +54,10 @@ const trail = new SnowTrail(renderer)
 const world = new World(scene, trail.texture)
 const sky = createSky(scene, renderer)
 const stations = new StationRegistry()
-const props = populate(world, sky, stations)
+// Der Rundflug steht vor der Welt, weil die Drohne ihn beim Aufbau schon
+// kennen muss; seine Kamera bekommt er erst unten.
+let flight = null
+const props = populate(world, sky, stations, { rundflug: (drone) => { interaction.leave(); flight.start(drone) } })
 const stationUI = new StationUI(document.body, camera)
 
 const skier = new Skier(world)
@@ -72,7 +76,8 @@ pass.onGold = () => skier.vergolden()
 if (pass.gold) skier.vergolden()
 
 const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase, pass })
-const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu })
+flight = new DroneFlight({ camera, input, onEnd: () => chase.snap() })
+const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu, flight })
 input.onAction = (action) => interaction.press(action)
 
 // R und der Rueckweg-Hinweis: zurueck zum Startplatz, hinter derselben Blende
@@ -88,7 +93,7 @@ const hints = new Hints({
     hints.afterReset()
   },
 })
-const regeln = new PassRegeln(pass, { skier, props, stations, map: mapMenu })
+const regeln = new PassRegeln(pass, { skier, props, stations, map: mapMenu, flight })
 interaction.onReset = hints.onReset
 mapMenu.onShow = () => hints.seen()
 
@@ -100,11 +105,14 @@ const touch = TOUCH
     skier,
     jumpVisible: () => inFunpark(skier.position.x, skier.position.z) || !!props.railRide.rider,
     onMap: () => interaction.press('map'),
-    mapVisible: () => !mapMenu.open && !interaction.focus && !skier.tow,
+    mapVisible: () => !mapMenu.open && !interaction.focus && !skier.tow && !flight.active,
   })
   : null
 if (TOUCH) document.documentElement.classList.add('touch')
-canvas.addEventListener('pointerdown', () => interaction.leave())
+canvas.addEventListener('pointerdown', () => {
+  if (flight.active) flight.stop()
+  interaction.leave()
+})
 
 const snowfall = createSnowfall()
 scene.add(snowfall)
@@ -241,13 +249,18 @@ function advance(dt) {
   // Sie muss nach skier.update() laufen, sonst urteilt sie ueber die Position
   // des vorigen Bildes – und am Tor waere das genau ein Bild zu spaet.
   chase.verfolgen(props.northRun.update(dt, skier))
-  chase.update(dt, skier, input)
+  // Im Rundflug gehoert die Kamera der Drohne; die feste Kamera wartet und
+  // springt nach der Landung ohne Anfahrt zurueck (snap).
+  if (flight.active) flight.update(dt)
+  else chase.update(dt, skier, input)
 
   // Schattenkamera dem Fahrer nachfuehren, damit die Aufloesung dort liegt,
-  // wo man hinschaut.
-  sky.sun.target.position.copy(skier.position)
-  sky.sun.position.copy(sky.sunDir).multiplyScalar(90).add(skier.position)
-  sky.dome.position.set(skier.position.x, 0, skier.position.z)
+  // wo man hinschaut – im Rundflug also dorthin, wo die Drohne hinsieht.
+  const blick = flight.active ? flight.look : skier.position
+  sky.sun.target.position.copy(blick)
+  sky.sun.position.copy(sky.sunDir).multiplyScalar(90).add(blick)
+  const mitte = flight.active ? camera.position : skier.position
+  sky.dome.position.set(mitte.x, 0, mitte.z)
 
   // Trickmeldung: der Fahrer legt sie ab, sobald eine Figur steht.
   if (skier.trick) {
@@ -280,7 +293,7 @@ function advance(dt) {
   // Ausschwingvorgaenge, keine Funktionen der Uhrzeit.
   props.kinderland.animate(elapsed, dt)
 
-  snowfall.userData.update(dt, elapsed, skier.position)
+  snowfall.userData.update(dt, elapsed, flight.active ? camera.position : skier.position)
   glints.update(dt, elapsed, camera, renderer,
     Math.hypot(skier.position.x - PLATEAU.x, skier.position.z - PLATEAU.z) < 20)
   props.lake.update(camera)
@@ -301,7 +314,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

@@ -15,7 +15,7 @@ import { createFence, createPisteMarkers } from './props/fence.js'
 import { createBreakableFence } from './props/park-fence.js'
 import { createAvalancheBarrier } from './props/avalanche-barrier.js'
 import { createSnowCannon } from './props/snow-cannon.js'
-import { createSignpost, createMarkerSign } from './props/signpost.js'
+import { createSignpost, createMarkerSign, springMount } from './props/signpost.js'
 import { populateStations, STATION_SPOTS, TRAILS } from '../stations/stations.js'
 import { createMarker } from '../stations/marker.js'
 import { createTorch } from './props/torch.js'
@@ -385,7 +385,7 @@ export function populate(world, sky, registry) {
   }
 
   // --- Orientierung ------------------------------------------------------
-  const wayfinding = createWayfinding(world, { registry, trees: placements, lift: { base: LIFT_BASE, top: LIFT_TOP } })
+  const wayfinding = createWayfinding(world, { registry, trees: placements, lift: { base: LIFT_BASE, top: LIFT_TOP }, skierRef })
   animatedProps.push(wayfinding.animate)
 
   // --- Wegfuehrung --------------------------------------------------------
@@ -492,7 +492,9 @@ export function populate(world, sky, registry) {
       { text: trail.label, arrow: pfeil, background: trail.color, width: 4.0, height: 0.74, side: links ? -1 : 1 },
     ], { height: 2.6 })
     world.place(sign, sx, sz, { rotation: Math.PI * 0.25 })
-    world.addCollider(sx, sz, 0.45)
+    // Auf Federfuss statt festem Kreis, siehe springMount.
+    const feder = springMount(world, sign, sx, sz, Math.PI * 0.25)
+    animatedProps.push((t, dt) => feder(dt, skierRef.current))
   }
 
   // Die Winkel im Schnee, die hier einmal alle 16 m den Weg wiesen, sind den

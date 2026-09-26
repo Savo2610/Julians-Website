@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { CAMERA } from '../config.js'
 import { terrainHeight } from './heightfield.js'
 import { TRAILS } from './paths.js'
-import { createMarkerSign } from './props/signpost.js'
+import { createMarkerSign, springMount } from './props/signpost.js'
 import { createMapBoard } from './props/map-board.js'
 import { paintValleyMap, boardMap } from './valley-map.js'
 import { createMarker } from '../stations/marker.js'
@@ -27,7 +27,8 @@ export { arrow }
 // Durchgang zwischen Tafel und TOOLS-Schild war zu schmal.
 export const PANORAMA = { x: -7.65, z: 20.65 }
 
-export function createWayfinding(world, { registry, trees = [], lift = null } = {}) {
+export function createWayfinding(world, { registry, trees = [], lift = null, skierRef = { current: null } } = {}) {
+  const federn = []
   // Drei Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln
   // stehen seitlich; ihr Ziel ist immer ein vorhandener Weg oder dessen Ende.
   // GIPFELBAHN/TOOLS an der Talstation und HÜTTE/PARK an der Terrasse sind
@@ -57,7 +58,7 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
       text, arrow: pfeile[i], background, width: 3.4, height: 0.66, side: links ? -1 : 1,
     })), { height: 2.8 })
     world.place(sign, x, z, { rotation: CAMERA.azimuth })
-    world.addCollider(x, z, 0.35)
+    federn.push(springMount(world, sign, x, z, CAMERA.azimuth))
   }
 
   // Die Panoramatafel am Platz: gemaltes Relief, und eine Station – Enter
@@ -90,7 +91,7 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
   texture.anisotropy = 8
   const board = createMapBoard(texture, { fuss })
   world.place(board, x, z, { rotation: yaw })
-  const animate = board.userData.animate
+  const tafel = board.userData.animate
   for (const side of [-1, 1]) {
     world.addCollider(x + Math.cos(yaw) * side * postX, z - Math.sin(yaw) * side * postX, 0.3)
   }
@@ -112,6 +113,10 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
       // Das Grundbild der Karte, fuer die Uebersicht wiederverwendet.
       map: base,
     })
+  }
+  const animate = (t, dt) => {
+    tafel(t)
+    for (const f of federn) f(dt, skierRef.current)
   }
   return { animate }
 }

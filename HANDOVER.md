@@ -193,6 +193,12 @@ Wegweiser und die vier Ausgangsschilder am Plateau sind **Pfeiltafeln**
 jede Tafel ein Pfeil in Wegfarbe mit weißem Rand und Schneekante, Spitze
 zur Seite ihres Weges. Ein Zwischenstand mit modernen Leitsystem-Tafeln
 (Stahlmast, abgerundet) passte nicht in die Landschaft und ist wieder weg.
+Alle Wegweiser stehen auf einem **Federfuß** (`springMount` in
+`signpost.js`), wie echte Pistenschilder: kein Kollisionskreis mehr – wer
+dagegen fährt, drückt das Schild bis 1,25 rad weg, fährt durch (gut 10 %
+Tempo weg, ab 6 m/s staubt Schnee) und es schwingt in etwa 1,5 s zurück
+(gemessen 47° → 13° Nachschwinger → 0°). Vorher stand man nach dem Laden
+beim Geradeausfahren am Pfosten von KONTAKT & GIPFEL fest.
 Die Kreuzung am Kontaktposten ragt fest nach rechts (`side: 1`) – nach
 links verdeckte sie den Posten. Die Kreuzung KONTAKT · LIFT / STARTPLATZ steht bei
 (27,5, 23) links unter dem Kinderland statt bei (33, 15) neben dem Teppich.

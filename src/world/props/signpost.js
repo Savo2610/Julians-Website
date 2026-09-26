@@ -197,3 +197,77 @@ export function createMarkerSign(boards, { height = 2.6 } = {}) {
   })
   return group
 }
+
+// --- Federfuss -------------------------------------------------------------
+// Wegweiser im Skigebiet stehen oft auf einem Federgelenk: wer dagegen
+// faehrt, drueckt das Schild um, faehrt darueber hinweg, und es schnellt
+// hinter ihm gedaempft zurueck. Genau so hier. Vorher waren die Schilder feste
+// Kollisionskreise, und wer nach dem Laden geradeaus losfuhr, stand am
+// Pfosten von KONTAKT & GIPFEL.
+//
+// Modell: eine Neigung (Vektor in x/z, Betrag = Winkel) mit Feder und
+// Daempfung um den Fusspunkt. Solange der Fahrer den Fuss beruehrt, zieht
+// sie das Schild von ihm weg flach (bis 1,25 rad); danach federt es mit
+// ein, zwei Nachschwingern zurueck. Der Fahrer verliert dabei gut zehn
+// Prozent Tempo – ein Schild ist kein Hindernis, aber auch nicht Luft.
+
+const FEDER = 55          // 1/s² Rueckstellkraft
+const DAEMPFUNG = 5.5     // 1/s
+const FLACH = 1.25        // rad, so weit drueckt man es um
+const REICH = 1.05        // m um den Fuss, ab hier beruehrt man es
+
+export function springMount(world, sign, x, z, yaw) {
+  const tilt = { x: 0, z: 0, vx: 0, vz: 0 }
+  const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw)
+  const qTilt = new THREE.Quaternion()
+  const axis = new THREE.Vector3()
+  let inside = false
+  let ruhig = true
+
+  // Kein Kollisionskreis mehr – ein Kreis schiebt, und genau das soll das
+  // Schild nicht. Die Beruehrung prueft update() selbst.
+  return (dt, skier) => {
+    if (!skier) return
+    const dx = skier.position.x - x
+    const dz = skier.position.z - z
+    const d = Math.hypot(dx, dz)
+    const touching = d < REICH && skier.height < 1.2 && skier.speed > 0.5
+    let tx = 0, tz = 0
+    if (touching) {
+      // Vom Fahrer weg kippen, mit der Fahrtrichtung gemischt – von vorn
+      // getroffen kippt es nach vorn, gestreift zur Seite.
+      const ax = -dx / (d || 1) * 0.4 + skier.forward.x * 0.6
+      const az = -dz / (d || 1) * 0.4 + skier.forward.z * 0.6
+      const l = Math.hypot(ax, az) || 1
+      tx = (ax / l) * FLACH
+      tz = (az / l) * FLACH
+      if (!inside) {
+        // Schnee staubt von Haube und Tafeln – derselbe Schwall wie bei der
+        // Kanone, nur ohne Meldung. Erst ab etwas Tempo, im Schritt nicht.
+        if (skier.speed > 6) skier.snowBurst = 1
+        skier.speed *= 0.88
+        tilt.vx += (ax / l) * skier.speed * 0.9
+        tilt.vz += (az / l) * skier.speed * 0.9
+      }
+      ruhig = false
+    }
+    inside = touching
+    if (ruhig) return
+
+    tilt.vx += ((tx - tilt.x) * FEDER - tilt.vx * DAEMPFUNG) * dt
+    tilt.vz += ((tz - tilt.z) * FEDER - tilt.vz * DAEMPFUNG) * dt
+    tilt.x += tilt.vx * dt
+    tilt.z += tilt.vz * dt
+    let a = Math.hypot(tilt.x, tilt.z)
+    if (a > FLACH) { tilt.x *= FLACH / a; tilt.z *= FLACH / a; a = FLACH }
+    if (!touching && a < 0.002 && Math.hypot(tilt.vx, tilt.vz) < 0.01) {
+      tilt.x = tilt.z = tilt.vx = tilt.vz = 0
+      ruhig = true
+    }
+    // Kippen in Richtung (tx, tz) heisst drehen um die waagerechte Achse
+    // senkrecht dazu: y × Richtung = (dz, 0, -dx).
+    if (a > 1e-5) axis.set(tilt.z / a, 0, -tilt.x / a)
+    qTilt.setFromAxisAngle(axis, a)
+    sign.quaternion.copy(qTilt).multiply(qYaw)
+  }
+}

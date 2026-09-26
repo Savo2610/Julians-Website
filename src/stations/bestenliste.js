@@ -4,7 +4,8 @@ import { MEDALS } from '../world/race.js'
 // Die Bestenliste des Slaloms – Gegenstueck zu worker/index.js.
 //
 // Ablauf: beim Durchfahren des Startbogens holt das Spiel still eine
-// Startmarke, im Ziel eine Zielmarke. Nur wenn beides geklappt hat, steht
+// Startmarke, im Ziel eine Zielmarke. Nur bei einer neuen eigenen
+// Bestzeit und wenn beides geklappt hat, steht
 // unter der Zeitnahme acht Sekunden lang „⏎ In die Bestenliste“. Wer nicht
 // will, faehrt einfach weiter – gefragt wird nie, eingetragen nur auf Enter.
 //
@@ -16,10 +17,6 @@ const API = '/api/slalom'
 const NAME_KEY = 'skiportfolio.slalom.name'
 const EIGENE_KEY = 'skiportfolio.slalom.eigene'
 const ANGEBOT_DAUER = 8
-// Wie im Worker: nur Laeufe unter 5,00 s (mit Strafsekunden) duerfen in
-// die Liste. Langsamere bekommen gar kein Angebot, statt erst beim
-// Eintragen abgewiesen zu werden.
-const MAX_ZEIT = 5
 
 const lesen = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
 const schreiben = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* privat */ } }
@@ -149,7 +146,10 @@ export class Bestenliste {
   async ziel(run) {
     const lauf = await this._lauf
     this._lauf = null
-    if (!lauf || run.total >= MAX_ZEIT) return
+    // Angeboten wird nur eine neue eigene Bestzeit (in diesem Browser) –
+    // jede Zeit darf hinein, aber nach jedem Lauf zu fragen, waere laestig.
+    // Die Marke wird trotzdem nur dann geholt.
+    if (!lauf || !run.bestzeit) return
     try {
       const { ziel } = await post('ziel', { lauf })
       this._fahrt = { ...run, ziel }

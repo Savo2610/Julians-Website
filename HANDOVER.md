@@ -583,14 +583,16 @@ lokal in `.dev.vars`. **Beim Umzug auf veerka.mp muss `/api/*` mit.**
 Ablauf: Startbogen → `POST start` (signierte Startmarke), Ziel → `POST ziel`
 (Zielmarke mit beiden Serverzeiten). Nur wenn beides klappt, steht acht
 Sekunden „⏎ In die Bestenliste“ unter der Zeitnahme; Enter (oder Tippen)
-öffnet ein Fenster mit Name, danach Platz und Liste. Gefragt wird nie.
+öffnet ein Fenster mit Name, danach Platz und Liste (nur bei neuer
+Bestzeit, siehe unten). Gefragt wird nie.
 Reiter **Bestenliste** in der Übersicht (M): Treppchen für die ersten drei,
 Zeilen bis Platz 20, beste Zeit je Name der letzten 30 Tage, eigene
 Einträge umrandet (`skiportfolio.slalom.eigene`), unten „Zum Slalom-Start“.
 
-Nur Zeiten **unter 5,00 s** (mit Strafsekunden) bekommen das Angebot und
-werden vom Worker angenommen (Ansage 27.09.) – die Liste ist für gute
-Läufe, Bronze liegt bei 4,50.
+Eintragen darf man **jede** Zeit, angeboten wird es aber nur bei einer
+**neuen eigenen Bestzeit** in diesem Browser (`lastRun.bestzeit`, der
+erste Lauf zählt immer). Ansage 27.09.; eine Fassung „nur unter 5 s“ war
+dazwischen kurz live.
 
 Gegen Schummeln (bewusst nur „mühsam“, beweisen lässt sich im Browser
 nichts): Serveruhr zwischen den Marken muss zur Fahrzeit passen (−0,8 bis

@@ -331,14 +331,17 @@ export class RaceCourse {
     const clean = this.missed === 0
     const total = this.time + this.missed * PENALTY
     this.state = 'idle'
-    this.lastRun = { time: this.time, missed: this.missed, total, splits: [...this.splits] }
+    // bestzeit: schneller als alles vorher in diesem Browser. Nur dann
+    // bietet die Bestenliste das Eintragen an.
+    const bestzeit = this.best === null || total < this.best
+    this.lastRun = { time: this.time, missed: this.missed, total, splits: [...this.splits], bestzeit }
     this.onFinish?.(this.lastRun)
 
     const medal = MEDALS.find((m) => total <= m.time)
     const next = medal ? MEDALS[MEDALS.indexOf(medal) - 1] : MEDALS[MEDALS.length - 1]
     const parts = []
     if (medal) parts.push(medal.name)
-    if (this.best === null || total < this.best) {
+    if (bestzeit) {
       this.best = total
       this.bestSplits = [...this.splits]
       saveBest({ best: this.best, splits: this.bestSplits })

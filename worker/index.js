@@ -23,9 +23,6 @@ const PENALTY = 2
 const GATES = 4
 const MIN_ZEIT = 3.4
 const MIN_FAHRT = 3.0
-// Die Liste ist fuer gute Laeufe: Bronze liegt bei 4,50, ein verfehltes
-// Tor kostet 2 s. Unter 5,00 heisst also: sauber oder fast sauber.
-export const MAX_ZEIT = 5
 const MARKE_GILT = 15 * 60 * 1000   // so lange darf man ueber dem Namen gruebeln
 const PRO_TAG = 40
 const TAGE = 30
@@ -96,7 +93,7 @@ export function fahrtPruefen({ zeit, fahrzeit, verfehlt, tore }, uhr) {
   if (!Number.isInteger(verfehlt) || verfehlt < 0 || verfehlt > GATES) return 'Tore passen nicht'
   if (Math.abs(fahrzeit + verfehlt * PENALTY - zeit) > 0.011) return 'Strafzeit passt nicht'
   if (zeit < MIN_ZEIT || fahrzeit < MIN_FAHRT) return 'Das ist schneller als möglich'
-  if (zeit >= MAX_ZEIT) return 'Nur Zeiten unter 5 Sekunden kommen in die Liste'
+  if (zeit > 60) return 'Zu langsam für die Liste'
   if (!Array.isArray(tore) || tore.length !== GATES || !tore.every(Number.isFinite)) return 'Tore fehlen'
   for (let i = 0; i < GATES; i++) {
     // Das erste Tor steht sieben Meter hinter dem Start; der Autopilot

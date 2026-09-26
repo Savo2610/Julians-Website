@@ -20,8 +20,8 @@ test('Fahrten: moeglich, stimmig und zur Serveruhr passend', () => {
   assert.equal(fahrtPruefen(sauber, 4400), null)
   assert.match(fahrtPruefen({ ...sauber, zeit: 3.2, fahrzeit: 3.2, tore: [0.5, 1.4, 2.2, 3.0] }), /schneller/)
   assert.match(fahrtPruefen({ ...sauber, zeit: 4.99 }), /Strafzeit/)
-  // Ein verfehltes Tor bei 3,1 s Fahrt: 5,1 – knapp zu langsam fuer die Liste.
-  assert.match(fahrtPruefen({ ...sauber, zeit: 5.1, fahrzeit: 3.1, verfehlt: 1, tore: [0.5, 2.9, 3.9, 4.8] }, 3200), /unter 5/)
+  // Jede Zeit darf hinein, auch mit Strafsekunden.
+  assert.equal(fahrtPruefen({ ...sauber, zeit: 6.21, fahrzeit: 4.21, verfehlt: 1, tore: [0.6, 3.8, 4.9, 5.9] }, 4300), null)
   assert.equal(fahrtPruefen({ ...sauber, zeit: 4.95, fahrzeit: 2.95, verfehlt: 1, tore: [0.5, 2.9, 3.9, 4.8] }, 3000), 'Das ist schneller als möglich')
   assert.match(fahrtPruefen({ ...sauber, tore: [0.6, 2.9, 1.8, 3.9] }), /Zwischenzeiten/)
   assert.match(fahrtPruefen({ ...sauber, tore: [0.6, 1.8, 2.9] }), /Tore/)

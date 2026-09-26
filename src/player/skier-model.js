@@ -16,7 +16,7 @@ const PALETTE = {
   pole: 0x9aa3ad,
   // Gruen, damit Gold eine Belohnung ist: bis 26.09. waren die Ski gelb, und
   // die goldenen Ski des Pistenpasses sahen kaum anders aus.
-  ski: 0x2fae62,
+  ski: 0x8fc23a,
   skiEdge: 0x2b3240,
   pack: 0x50694f,
   scarf: 0xd9d2c4,

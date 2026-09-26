@@ -744,6 +744,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ```
 8434c9f  Hanghaltung sachter, bergauf gar nicht
 772b26b  Abfahrtshocke, Kommaform am Hang, Pflug beim Bremsen
+25bb595  Leuchtschleier nur noch in 20 m um den Start
 047d51d  Panoramatafel 1,2 m nach rechts
 0e7217d  Wegweiser aus dem Kinderland an den Karriereweg
 58c16e7  Pfeiltafeln, Lawinenwarnstufe des Tages, leisere Schleier

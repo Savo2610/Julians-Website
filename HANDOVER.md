@@ -750,9 +750,9 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+6e37e07  Tellerlift wieder wie vorher, nur ohne Flackern
 9d2bf4d  Wegweiser: Pfeile gerade statt schraeg
 25bb595  Leuchtschleier nur noch in 20 m um den Start
-6e37e07  Tellerlift wieder wie vorher, nur ohne Flackern
 d187faf  Tellerlift: Teller nicht mehr im Fahrer
 8434c9f  Hanghaltung sachter, bergauf gar nicht
 772b26b  Abfahrtshocke, Kommaform am Hang, Pflug beim Bremsen

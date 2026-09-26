@@ -722,8 +722,9 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
   kürzer werdenden Rhythmus, in Kurven nach innen, waren zu unruhig.) Das nächste Tor glimmt im Schnee,
   getroffen blitzt grün, verfehlt rot (+2 s). Zwischenzeiten gegen die
   Bestzeit, Bestzeit in `localStorage` (`skiportfolio.slalom`). Medaillen
-  aus einem Testfahrer mit Vorausschau: bester sauberer Lauf 3,58 s → Gold
-  3,60 / Silber 3,85 / Bronze 4,20. **Die Strecke dauert nur gut drei
+  Gold 3,90 / Silber 4,20 / Bronze 4,50 (26.09.). Ein Testfahrer mit
+  Vorausschau schafft 3,58 s, aber Julians Bestzeit nach Tagen Übung war
+  4,18 – die alten Grenzen 3,60 / 3,85 / 4,20 waren für Menschen zu eng. **Die Strecke dauert nur gut drei
   Sekunden** — länger ginge nur mit einer neuen Trasse.
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe

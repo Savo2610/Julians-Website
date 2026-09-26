@@ -588,6 +588,10 @@ Reiter **Bestenliste** in der Übersicht (M): Treppchen für die ersten drei,
 Zeilen bis Platz 20, beste Zeit je Name der letzten 30 Tage, eigene
 Einträge umrandet (`skiportfolio.slalom.eigene`), unten „Zum Slalom-Start“.
 
+Nur Zeiten **unter 5,00 s** (mit Strafsekunden) bekommen das Angebot und
+werden vom Worker angenommen (Ansage 27.09.) – die Liste ist für gute
+Läufe, Bronze liegt bei 4,50.
+
 Gegen Schummeln (bewusst nur „mühsam“, beweisen lässt sich im Browser
 nichts): Serveruhr zwischen den Marken muss zur Fahrzeit passen (−0,8 bis
 +0,6 s), Zeit ≥ 3,4 s (Autopilot 3,58–3,62), Strafzeit und vier steigende

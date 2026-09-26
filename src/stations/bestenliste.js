@@ -16,6 +16,10 @@ const API = '/api/slalom'
 const NAME_KEY = 'skiportfolio.slalom.name'
 const EIGENE_KEY = 'skiportfolio.slalom.eigene'
 const ANGEBOT_DAUER = 8
+// Wie im Worker: nur Laeufe unter 5,00 s (mit Strafsekunden) duerfen in
+// die Liste. Langsamere bekommen gar kein Angebot, statt erst beim
+// Eintragen abgewiesen zu werden.
+const MAX_ZEIT = 5
 
 const lesen = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
 const schreiben = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* privat */ } }
@@ -145,7 +149,7 @@ export class Bestenliste {
   async ziel(run) {
     const lauf = await this._lauf
     this._lauf = null
-    if (!lauf) return
+    if (!lauf || run.total >= MAX_ZEIT) return
     try {
       const { ziel } = await post('ziel', { lauf })
       this._fahrt = { ...run, ziel }

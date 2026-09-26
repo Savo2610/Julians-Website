@@ -863,6 +863,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+23abd92  Slalom-Bestenliste mit Worker und D1
 76c527f  Drohnen-Rundflug mit Ticket von der Skikasse
 50f83d6  Ski gelbgruen statt gruen
 356771b  Ski gruen, Gold nur mit vollem Pistenpass

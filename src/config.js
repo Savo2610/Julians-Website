@@ -60,8 +60,8 @@ export const SKIER = {
   // Hangstellung erreicht ist. Vom Gipfel herunter liegt der Median bei 0.33 –
   // wer dort schraeg faehrt, soll sie ganz zeigen.
   traverseFull: 0.35,
-  // rad je Ski. Der Skikoerper liegt 7,5 cm neben der Bindung, darum
-  // kreuzten sich die Schaufeln schon bei 0.26; ab 0.22 stossen sie an.
+  // rad je Ski. Ab 0.22 stossen die Schaufeln aneinander, bei 0.26
+  // kreuzten sie sich.
   ploughYaw: 0.21,
 }
 

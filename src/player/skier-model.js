@@ -57,7 +57,11 @@ function makeSki(material, edgeMaterial) {
   // Profil liegt in XY, Extrusion in Z -> so drehen, dass der Ski flach liegt
   // und nach -Z (Fahrtrichtung) zeigt.
   geo.rotateY(-Math.PI / 2)
-  geo.translate(0, 0, 0)
+  // Die Extrusion laeuft von 0 bis depth und liegt nach dem Drehen ganz auf
+  // einer Seite. Ohne das Zuruecksetzen stand jeder Ski 7,5 cm neben seiner
+  // Bindung, der Fahrer also auf der Innenkante des einen und der Aussen-
+  // kante des anderen Skis – so gebaut seit dem ersten Commit.
+  geo.translate(0.075, 0, 0)
   geo.computeVertexNormals()
 
   const ski = new THREE.Group()

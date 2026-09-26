@@ -594,9 +594,11 @@ dafür hängt jedes Bein an seiner Hüfte (`legSides`, Drehpunkt `HIP`).
   voll ab Tempo 10 bergab). Die volle Kommaform (Hüfte 20 cm zum Berg) war
   richtig und sah übertrieben aus, bergauf wie kurz vor dem Umfallen —
   Ansage: sachter, keine Skisimulation.
-- **Pflug** mit S: Schaufeln zusammen (`ploughYaw` 0,21 — der Skikörper liegt
-  7,5 cm neben der Bindung, ab 0,22 stoßen die Schaufeln an), Innenkanten,
+- **Pflug** mit S: Schaufeln zusammen (`ploughYaw` 0,21, ab 0,22 stoßen die
+  Schaufeln an), Innenkanten,
   Arme leicht raus, breitere Spur und Schneestaub an den Enden.
+- **Ski mittig**: bis 26.09. lag jeder Skikörper 7,5 cm neben seiner
+  Bindung (Extrusion nicht zurückgesetzt, seit dem ersten Commit).
 - **Am Tellerlift** wird der benutzte Teller erst **nach** `skier.update()`
   gespannt (`lift.spannen`). Vorher hing er um den Weg eines Bildes zurück
   (12 cm bei 60 fps) und flackerte bei schwankender Bildrate. Ein Umbau mit

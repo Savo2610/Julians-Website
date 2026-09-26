@@ -958,5 +958,5 @@ export function populate(world, sky, registry) {
     sunDir: sky.sunDir,
   })
 
-  return { apresTerrace, landscape, lake, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
+  return { apresTerrace, landscape, lake, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, torches, animated: [...stations.animated, ...animatedProps] }
 }

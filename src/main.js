@@ -21,6 +21,8 @@ import { MapMenu, ORTE } from './stations/map-menu.js'
 import { createTrailGlints } from './world/trail-glints.js'
 import { TRAILS } from './world/paths.js'
 import { Hints } from './stations/hints.js'
+import { Pistenpass } from './stations/pistenpass.js'
+import { PassRegeln } from './stations/pass-regeln.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
 import { Spray } from './player/spray.js'
@@ -61,8 +63,15 @@ scene.add(skier.group)
 const chase = new TopCamera(camera)
 const spray = new Spray()
 scene.add(spray.points)
+const goldstaub = new Spray({ max: 260, color: 0xf0a400 })
+scene.add(goldstaub.points)
 
-const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase })
+// Der Pistenpass: Abzeichen im Hintergrund, Reiter in der Uebersicht.
+const pass = new Pistenpass()
+pass.onGold = () => skier.vergolden()
+if (pass.gold) skier.vergolden()
+
+const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase, pass })
 const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu })
 input.onAction = (action) => interaction.press(action)
 
@@ -77,8 +86,10 @@ const hints = new Hints({
     mapMenu.close()
     mapMenu.travelTo(start)
     hints.afterReset()
+    regeln.zurueck()
   },
 })
+const regeln = new PassRegeln(pass, { skier, world, props, stations, lift: props.lift, hints, map: mapMenu })
 interaction.onReset = hints.onReset
 mapMenu.onShow = () => hints.seen()
 
@@ -102,6 +113,33 @@ scene.add(snowfall)
 // Leuchtschleier auf den vier Wegen, siehe world/trail-glints.js.
 const glints = createTrailGlints(Object.values(TRAILS))
 scene.add(glints.points)
+
+// --- Goldstaub ---------------------------------------------------------------
+// Nur mit goldenen Ski (voller Pistenpass). Die Ski sind von Haus aus gelb;
+// am Brett allein sah man den Unterschied aus 33 Metern nicht. Ein feiner
+// Funkenschweif hinter den Enden sagt es auch aus der festen Kamera.
+// Normal gemischt und kraeftig gefaerbt: additiv wurde er auf Tagschnee weiss
+// und war nicht mehr zu sehen, wie frueher die Leuchtschleier.
+let goldAccum = 0
+function emitGold(dt) {
+  if (!skier.gold || skier.speed < 2) return
+  goldAccum += (10 + skier.speed * 2.2) * dt
+  while (goldAccum >= 1) {
+    goldAccum -= 1
+    const side = Math.random() < 0.5 ? -0.19 : 0.19
+    const cos = Math.cos(skier.facing)
+    const sin = Math.sin(skier.facing)
+    goldstaub.emit(
+      skier.position.x + cos * side - skier.forward.x * 0.8,
+      skier.position.y + 0.08,
+      skier.position.z - sin * side - skier.forward.z * 0.8,
+      (Math.random() - 0.5) * 0.8, 1.2 + Math.random() * 1.2, (Math.random() - 0.5) * 0.8,
+      // Groesse 0,45–0,75: aus 33 m sind das 4–7 Pixel. Bei 0,16 waren es
+      // zwei, und der Schweif war nicht da.
+      0.45 + Math.random() * 0.3, 0.8 + Math.random() * 0.2,
+    )
+  }
+}
 
 // --- Schneestaub aus den Ski ------------------------------------------------
 let sprayAccum = 0
@@ -198,6 +236,8 @@ function advance(dt) {
   props.lift.spannen(skier)
   emitSpray(dt)
   spray.update(dt)
+  emitGold(dt)
+  goldstaub.update(dt)
   // Die Nordabfahrt entscheidet vor der Kamera, ob sie hinter den Fahrer geht.
   // Sie muss nach skier.update() laufen, sonst urteilt sie ueber die Position
   // des vorigen Bildes – und am Tor waere das genau ein Bild zu spaet.
@@ -212,6 +252,7 @@ function advance(dt) {
 
   // Trickmeldung: der Fahrer legt sie ab, sobald eine Figur steht.
   if (skier.trick) {
+    regeln.trick(skier.trick.text)
     trickHud.textContent = skier.trick.text
     trickHud.classList.add('visible')
     trickTimer = 1.1
@@ -232,6 +273,7 @@ function advance(dt) {
   stations.update(dt, skier)
   interaction.update()
   hints.update(dt)
+  regeln.update(dt)
   // dt kommt mit, weil inzwischen nicht mehr alles eine Funktion der Uhrzeit
   // ist – umgestossene Fackeln richten sich ueber eine Dauer wieder auf.
   for (const animate of props.animated) animate(elapsed, dt)
@@ -260,7 +302,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

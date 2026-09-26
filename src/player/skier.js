@@ -101,7 +101,31 @@ export class Skier {
     }
   }
 
+  // Goldene Ski fuer den vollen Pistenpass. Die Ski sind ohnehin gelb –
+  // Gold muss also am Glanz zu erkennen sein und nicht an der Farbe: Metall,
+  // glatte Oberflaeche und ein Schimmer, der langsam ueber sie laeuft. Die
+  // Kanten werden mit vergoldet, sonst bleibt ein dunkler Rand um jedes Brett.
+  vergolden() {
+    if (this.gold) return
+    this.gold = true
+    const { ski, skiEdge } = this.parts.materials
+    // Metall ohne Umgebungsbild wird nur dunkel (gemessen: satter Ocker
+    // statt Gold) – deshalb wenig Metall und das Leuchten aus der Emission.
+    ski.color.set(0xffcf45)
+    ski.metalness = 0.3
+    ski.roughness = 0.25
+    ski.emissive.set(0xc88a00)
+    skiEdge.color.set(0xe0a21f)
+    skiEdge.roughness = 0.3
+    skiEdge.emissive.set(0x7a5200)
+    this._goldZeit = 0
+  }
+
   update(dt, input, trail) {
+    if (this.gold) {
+      this._goldZeit += dt
+      this.parts.materials.ski.emissiveIntensity = 0.3 + 0.6 * Math.max(0, Math.sin(this._goldZeit * 2.2)) ** 6
+    }
     // Der Schnee auf den Schultern taut ueberall gleich – auch am Lift.
     this.snowed = Math.max(0, this.snowed - dt * 0.22)
     for (const c of this._snowCaps) {

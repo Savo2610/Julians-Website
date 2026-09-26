@@ -701,9 +701,12 @@ html.touch .prompt-title { font-size: 14px; }
 }
 .ov-head .sheet-close { position: static; flex: none; }
 
-.ov-links, .ov-karte { flex: 1; min-height: 0; }
+.ov-links, .ov-karte, .ov-pass { flex: 1; min-height: 0; }
 .map-panel[data-view="links"] .ov-karte,
-.map-panel[data-view="karte"] .ov-links { display: none; }
+.map-panel[data-view="karte"] .ov-links,
+.map-panel:not([data-view="pass"]) .ov-pass,
+.map-panel[data-view="pass"] .ov-links,
+.map-panel[data-view="pass"] .ov-karte { display: none; }
 
 .ov-links {
   overflow-y: auto;
@@ -878,3 +881,123 @@ html.touch .hint-pill { padding: 12px 20px; }
   .ov-keys, .ov-hint { display: none; }
   .map-pin-label { font-size: 10.5px; }
 }
+
+/* --- Pistenpass --------------------------------------------------------------
+   Ein Reiter der Uebersicht und eine Pille oben links. Oben in der Mitte
+   steht die Zeitnahme des Slaloms, unten Trickmeldung und Hinweise – oben
+   links ist die einzige Ecke, in der nichts anderes auftaucht. */
+
+.ov-pass {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 6px 6px;
+  scrollbar-width: thin;
+}
+.pass-kopf {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+}
+.pass-ski { grid-row: span 2; font-size: 30px; line-height: 1; filter: grayscale(1); opacity: 0.55; }
+.pass-kopf.gold .pass-ski { filter: none; opacity: 1; }
+.pass-kopf-text { display: flex; flex-direction: column; line-height: 1.25; }
+.pass-kopf-text strong { font-size: 15.5px; font-weight: 800; }
+.pass-kopf-text small { font-size: 12px; font-weight: 600; color: #4a5f75; }
+.pass-balken {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(40, 70, 105, 0.1);
+  overflow: hidden;
+}
+.pass-balken i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e9b93c, #f6d36a);
+}
+.pass-kopf.gold { box-shadow: 0 0 0 2px #e9b93c, 0 8px 24px -8px rgba(200, 150, 30, 0.6); }
+
+.pass-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+.pass-stempel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px dashed rgba(60, 90, 125, 0.28);
+}
+.pass-stempel.hat {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c) 45%, transparent), 0 4px 12px -6px rgba(28, 58, 96, 0.3);
+}
+.pass-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  background: rgba(40, 70, 105, 0.07);
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.pass-stempel.hat .pass-icon {
+  filter: none;
+  opacity: 1;
+  background: color-mix(in srgb, var(--c) 14%, #fff);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.pass-stempel.verborgen .pass-icon { font-size: 17px; font-weight: 800; color: #6b7f94; filter: none; }
+.pass-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.22; }
+.pass-name { font-size: 13.5px; font-weight: 780; }
+.pass-stempel:not(.hat) .pass-name { color: #4a5f75; }
+.pass-sub { font-size: 11.5px; font-weight: 550; color: #4a5f75; }
+.pass-stempel.verborgen .pass-sub { display: none; }
+
+.pass-pille {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 16px 8px 8px;
+  border-radius: 999px;
+  z-index: 13;
+  opacity: 0;
+  translate: 0 -12px;
+  pointer-events: none;
+  transition: opacity 0.4s ease, translate 0.45s cubic-bezier(0.2, 1.2, 0.3, 1);
+}
+.pass-pille.visible { opacity: 1; translate: 0 0; }
+.pass-pille-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 19px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 0 2px rgba(233, 185, 60, 0.7);
+}
+.pass-pille-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.pass-pille-text strong { font-size: 14px; font-weight: 800; }
+.pass-pille-text small { font-size: 11.5px; font-weight: 600; color: #4a5f75; }
+.pass-pille.gold { box-shadow: 0 0 0 2px #e9b93c, 0 12px 32px -8px rgba(200, 150, 30, 0.55); }
+html.touch .pass-pille { top: max(12px, env(safe-area-inset-top)); left: 12px; max-width: calc(100vw - 88px); }

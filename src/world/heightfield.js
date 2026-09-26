@@ -225,7 +225,9 @@ function klammTiefe(u) {
   return 0
 }
 
-function klammAt(x, z) {
+// Negativ, wo die Klamm schneidet – der Pistenpass fragt damit, ob man unten
+// in der Rinne steht.
+export function klammAt(x, z) {
   const ax = KLAMM.bis.x - KLAMM.von.x
   const az = KLAMM.bis.z - KLAMM.von.z
   const len2 = ax * ax + az * az

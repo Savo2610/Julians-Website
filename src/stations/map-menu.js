@@ -3,6 +3,7 @@ import { TOUCH } from '../core/device.js'
 import { TRAILS } from '../world/paths.js'
 import { PLATEAU } from '../world/heightfield.js'
 import { LINKS } from './links.js'
+import { ABZEICHEN, GRUPPEN, OFFEN } from './pistenpass.js'
 
 // Die Uebersicht: M ueberall, Enter an der Panoramatafel, am Handy der
 // Kartenknopf. Zwei Reiter:
@@ -14,6 +15,8 @@ import { LINKS } from './links.js'
 //   Wunsch hin. Vorher stand LinkedIn nur hinter dem Wort "Werkstatt" in
 //   einer Liste zwischen Gipfel und See; das musste man erraten.
 // - KARTE ist die alte Talkarte mit Schnellreise zu Stationen und Orten.
+// - PASS ist der Pistenpass (stations/pistenpass.js): die Abzeichen. Er ist
+//   nur zum Anschauen, ohne Auswahl – es gibt dort nichts zu oeffnen.
 //
 // Unten steht die ganze Steuerung – die einzige Stelle ausser dem
 // Tastenkreuz im Schnee, an der man sie nachlesen kann.
@@ -101,7 +104,8 @@ const STEUERUNG = TOUCH
   ]
 
 export class MapMenu {
-  constructor({ registry, input, skier, world, camera }) {
+  constructor({ registry, input, skier, world, camera, pass = null }) {
+    this.pass = pass
     this.registry = registry
     this.input = input
     this.skier = skier
@@ -130,6 +134,7 @@ export class MapMenu {
           <div class="ov-tabs" role="tablist">
             <button type="button" role="tab" data-view="links">Links</button>
             <button type="button" role="tab" data-view="karte">Talkarte</button>
+            ${pass ? '<button type="button" role="tab" data-view="pass">Pistenpass</button>' : ''}
           </div>
           <button type="button" class="sheet-close" aria-label="Schließen">×</button>
         </header>
@@ -140,6 +145,7 @@ export class MapMenu {
             <div class="map-list"></div>
           </div>
         </section>
+        <section class="ov-pass"></section>
         <footer class="ov-keys">
           ${STEUERUNG.map(([k, t]) => `<span class="ov-key"><span class="ov-kbd">${k}</span>${t}</span>`).join('')}
         </footer>
@@ -152,6 +158,8 @@ export class MapMenu {
     this.pins = this.el.querySelector('.map-pins')
     this.list = this.el.querySelector('.map-list')
     this.linksEl = this.el.querySelector('.ov-links')
+    this.passEl = this.el.querySelector('.ov-pass')
+    if (pass) pass.onChange = () => { if (this.open && this.view === 'pass') this._buildPass() }
     this.hintEl = this.el.querySelector('.ov-hint')
     this.typedEl = this.el.querySelector('.ov-typed span')
     this.el.querySelector('.sheet-close').addEventListener('click', () => this.close())
@@ -286,6 +294,61 @@ export class MapMenu {
     this.travelTo({ x: t.station.position.x, z: t.station.position.z, station: t.station })
   }
 
+  // --- Pistenpass ----------------------------------------------------------
+
+  // Jedes Mal neu: der Pass ist klein, und so stimmt er auch dann, wenn
+  // waehrend des Oeffnens etwas freigeschaltet wird.
+  _buildPass() {
+    const p = this.pass
+    if (!p) return
+    const offenErreicht = OFFEN.filter((a) => p.hat(a.id)).length
+    const geheim = ABZEICHEN.filter((a) => a.gruppe === 'geheim')
+    const geheimErreicht = geheim.filter((a) => p.hat(a.id)).length
+
+    const kopf = document.createElement('div')
+    kopf.className = 'pass-kopf' + (p.gold ? ' gold' : '')
+    kopf.innerHTML = `
+      <span class="pass-ski" aria-hidden="true">⛷️</span>
+      <span class="pass-kopf-text">
+        <strong></strong>
+        <small></small>
+      </span>
+      <span class="pass-balken"><i></i></span>
+    `
+    kopf.querySelector('strong').textContent = p.gold
+      ? 'Goldene Ski – alles gesammelt'
+      : `${offenErreicht} von ${OFFEN.length} Abzeichen`
+    kopf.querySelector('small').textContent = p.gold
+      ? `Und ${geheimErreicht} von ${geheim.length} geheimen.`
+      : `Alle ${OFFEN.length} ergeben goldene Ski. Dazu ${geheimErreicht} von ${geheim.length} geheimen.`
+    kopf.querySelector('.pass-balken i').style.width = `${(offenErreicht / OFFEN.length) * 100}%`
+
+    const teile = [kopf]
+    for (const g of GRUPPEN) {
+      const sec = document.createElement('div')
+      sec.className = 'ov-group pass-gruppe'
+      sec.style.setProperty('--c', g.farbe)
+      sec.innerHTML = '<h3></h3><div class="pass-grid"></div>'
+      const liste = ABZEICHEN.filter((a) => a.gruppe === g.id)
+      sec.querySelector('h3').textContent = `${g.titel} · ${liste.filter((a) => p.hat(a.id)).length}/${liste.length}`
+      const grid = sec.querySelector('.pass-grid')
+      for (const a of liste) {
+        const hat = p.hat(a.id)
+        const verborgen = g.id === 'geheim' && !hat
+        const el = document.createElement('div')
+        el.className = 'pass-stempel' + (hat ? ' hat' : '') + (verborgen ? ' verborgen' : '')
+        el.innerHTML = '<span class="pass-icon"></span><span class="pass-text"><span class="pass-name"></span><span class="pass-sub"></span></span>'
+        el.querySelector('.pass-icon').textContent = verborgen ? '?' : a.icon
+        el.querySelector('.pass-name').textContent = verborgen ? 'Geheim' : a.name
+        const stand = !hat && !verborgen ? p.fortschritt(a) : null
+        el.querySelector('.pass-sub').textContent = verborgen ? '' : stand !== null ? `${a.text} (${stand}/${a.ziel})` : a.text
+        grid.appendChild(el)
+      }
+      teile.push(sec)
+    }
+    this.passEl.replaceChildren(...teile)
+  }
+
   // --- Karte ------------------------------------------------------------
 
   _collect() {
@@ -399,6 +462,7 @@ export class MapMenu {
     this._buildLinks()
     this._buildMap()
     this._selectTile(this.tileSel)
+    this._buildPass()
     this._setView(view)
     this.open = true
     this.input.locked = true
@@ -422,11 +486,21 @@ export class MapMenu {
     for (const b of this.el.querySelectorAll('.ov-tabs button')) {
       b.setAttribute('aria-selected', String(b.dataset.view === view))
     }
+    const weiter = { links: 'Links', karte: 'Talkarte', pass: 'Pistenpass' }[this._naechsterReiter()]
+    if (view === 'pass') {
+      this.hintEl.innerHTML = TOUCH ? 'Abzeichen sammelst du beim Fahren' : `<kbd>↑</kbd><kbd>↓</kbd> blättern <i></i> <kbd>tab</kbd> ${weiter} <i></i> <kbd>esc</kbd> zurück`
+      return
+    }
     this.hintEl.innerHTML = TOUCH
       ? (view === 'links' ? 'Kachel antippen öffnet · „im Tal“ bringt dich hin' : 'Ziel antippen zum Hinreisen')
       : view === 'links'
-        ? '<kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd class="k-space">Leertaste</kbd> hinfahren <i></i> <kbd>tab</kbd> Talkarte <i></i> <kbd>esc</kbd> zurück'
-        : '<kbd>↑</kbd><kbd>↓</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> hinreisen <i></i> <kbd>tab</kbd> Links <i></i> <kbd>esc</kbd> zurück'
+        ? `<kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd class="k-space">Leertaste</kbd> hinfahren <i></i> <kbd>tab</kbd> ${weiter} <i></i> <kbd>esc</kbd> zurück`
+        : `<kbd>↑</kbd><kbd>↓</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> hinreisen <i></i> <kbd>tab</kbd> ${weiter} <i></i> <kbd>esc</kbd> zurück`
+  }
+
+  _naechsterReiter() {
+    const reiter = this.pass ? ['links', 'karte', 'pass'] : ['links', 'karte']
+    return reiter[(reiter.indexOf(this.view) + 1) % reiter.length]
   }
 
   // Getippt wird nur, solange die Uebersicht offen ist.
@@ -472,11 +546,16 @@ export class MapMenu {
   press(action) {
     if (!this.open) return false
     if (action === 'tab') {
-      this._setView(this.view === 'links' ? 'karte' : 'links')
+      this._setView(this._naechsterReiter())
       return true
     }
     if (action === 'back' || action === 'map') {
       this.close()
+      return true
+    }
+    if (this.view === 'pass') {
+      if (action === 'forward') this.passEl.scrollBy({ top: -120, behavior: 'smooth' })
+      if (action === 'brake') this.passEl.scrollBy({ top: 120, behavior: 'smooth' })
       return true
     }
     if (this.view === 'links') {

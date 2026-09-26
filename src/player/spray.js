@@ -4,7 +4,6 @@ import * as THREE from 'three'
 // und die Kontrolle ueber Lebensdauer und Auftrieb hier mehr wert ist als
 // GPU-Eleganz.
 
-const MAX = 900
 
 const vert = /* glsl */ `
   attribute float aLife;
@@ -33,8 +32,11 @@ const frag = /* glsl */ `
   }
 `
 
+// Dieselbe Anlage traegt auch den Goldstaub der goldenen Ski: weniger
+// Partikel, eigene Farbe.
 export class Spray {
-  constructor() {
+  constructor({ max = 900, color = 0xf4f9ff } = {}) {
+    const MAX = this.max = max
     this.positions = new Float32Array(MAX * 3)
     this.velocities = new Float32Array(MAX * 3)
     this.life = new Float32Array(MAX)
@@ -53,7 +55,7 @@ export class Spray {
       fragmentShader: frag,
       transparent: true,
       depthWrite: false,
-      uniforms: { uColor: { value: new THREE.Color(0xf4f9ff) } },
+      uniforms: { uColor: { value: new THREE.Color(color) } },
     })
 
     this.points = new THREE.Points(geo, this.material)
@@ -63,7 +65,7 @@ export class Spray {
 
   emit(x, y, z, vx, vy, vz, size, life = 1) {
     const i = this.cursor
-    this.cursor = (this.cursor + 1) % MAX
+    this.cursor = (this.cursor + 1) % this.max
     this.positions[i * 3] = x
     this.positions[i * 3 + 1] = y
     this.positions[i * 3 + 2] = z
@@ -78,7 +80,7 @@ export class Spray {
     const p = this.positions
     const v = this.velocities
     const l = this.life
-    for (let i = 0; i < MAX; i++) {
+    for (let i = 0; i < this.max; i++) {
       if (l[i] <= 0) continue
       l[i] -= dt * 0.85
       if (l[i] <= 0) {

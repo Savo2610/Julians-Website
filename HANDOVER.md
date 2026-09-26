@@ -73,6 +73,8 @@ selbst. Zwei ausdrücklich gewünschte Ausnahmen (26.09.): die **Übersicht**
 hinter `M` (Abschnitt 4a′) und die beiden **Hinweispillen** unten
 (`stations/hints.js`) – beide sind für Besucher, die nicht spielen wollen
 oder mit WASD nicht zurechtkommen (beobachtet: vor allem Ältere).
+Dazu seit 26.09. die Abzeichen-Pille oben links (Abschnitt 4a″), die
+ebenfalls von selbst geht.
 
 ---
 
@@ -494,6 +496,45 @@ Start-Hinweis entfällt dort (Kartenknopf).
 `Skier.versetzen(x, z, heading)` ist der eine Weg, den Fahrer umzusetzen:
 Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
 `null` zählt als 0, und an 9 von 15 Zielen hob der Fahrer ab), `_rise` null.
+
+## 4a″. Pistenpass (Abzeichen)
+
+`stations/pistenpass.js` (Liste, Speicher, Pille) und `stations/pass-regeln.js`
+(wann was fällt). Dritter Reiter **Pistenpass** in der Übersicht hinter `M`;
+beim Freischalten eine Glaspille **oben links** (oben Mitte ist die
+Zeitnahme, unten Trick und Hinweise), die nach 3 s von selbst geht.
+Speicher: `localStorage` `skiportfolio.pass`. Zurücksetzen:
+`__ski.pass.zuruecksetzen()`.
+
+**Grundsatz: belohnt wird das Finden, nie das Benutzen.** Für Hochladen,
+Wallet, Kurzlink, Bezahlen gibt es absichtlich nichts – sonst Datenmüll im
+Briefkasten und Cent-Beträge für einen Stempel. Wer eine Station erreicht
+(`registry.active`), hat sie gefunden.
+
+- **Entdecken** (10, offen): See, Gipfel, Lift oben, Teppich, Hüttenterrasse,
+  Nordabfahrt, alle vier Wegenden, alle neun Stationen, Drohne, Löschzug.
+- **Können** (12, offen): Slalom 4,50/4,20/3,90 (`MEDALS`), Speedcheck 50
+  und 58 km/h (mit gerader Ideallinie gemessen 59–60 – 60 hätte nur ein
+  Autopilot), 180/360/540, Railslide, Leuchtstrecke ganz, über einen Stein
+  gesprungen (`world.uebersprungen` aus `resolve`), 300 Höhenmeter.
+- **Geheim** (15): nur „?“, **ohne Hinweis** (Ansage). Kaputtmachen nur
+  zweimal (Seebank, drei Fackeln auf einmal) – vier davon waren zu viel.
+  „Hausverbot“ = vier Seitenwechsel am Tellerlift (`rider.offset` über
+  ±1,1). Pizza = 5 s Pflug *gehalten*: der Pflug bremst in gut einer
+  Sekunde auf null, Pflug in Fahrt über 5 s gibt es nicht. Aussicht = 60 s
+  keine Taste. Dazu Nacht (0–5 Uhr), Stammgast (3 Tage), Warnstufe ≥ 4,
+  720er, Everest (8848 Hm), Klamm, Verfranzt, Heimweh (10 × R),
+  Schneedusche, Eingeschneit.
+
+Höhenmeter zählen nur bergab, frei fahrend und in Schritten unter 0,8 m
+pro Bild – ein Versetzen (R, Schnellreise) ist keine Abfahrt.
+
+**Goldene Ski** für alle 22 offenen (`Skier.vergolden()`). Die Ski sind
+von Haus aus gelb; Metall ohne Umgebungsbild wurde nur ocker. Deshalb
+Emission mit langsamem Schimmer und ein **Goldstaub-Schweif** (zweite
+`Spray`-Instanz, 260 Teilchen). Additiv war er auf Tagschnee weiß und
+unsichtbar, Größe 0,16 ergab aus 33 m zwei Pixel – jetzt normal gemischt,
+0,45–0,75.
 
 ## 4b. Handymodus
 

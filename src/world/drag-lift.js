@@ -17,6 +17,12 @@ import { vertexColorMaterial } from '../core/geometry.js'
 
 const CABLE_GAUGE = 1.0      // seitlicher Abstand zwischen Auf- und Abwaertsseil
 const CABLE_CLEARANCE = 3.6  // Mindesthoehe des Seils ueber dem Boden
+// Sitzpunkt des Tellers im Fahrermodell (lokal, -Z ist hinten, +X die Seite
+// der greifenden Hand). Das Seil liegt 5,3 hoch und 2,4 voraus genau ueber
+// dem Fahrer, die gerade Stange muss also am Koerper vorbei. Mittig hinten
+// lief sie 22 cm tief durch die Brust; so bleibt sie 4 cm neben Schulter,
+// Rucksack und Kopf. Die Greifhand holt sie sich selbst (skier.greifen).
+const SEAT = new THREE.Vector3(0.28, 0.6, -0.45)
 const PLATTER_SPACING = 11   // Abstand der Teller am Seil
 const PYLON_SPACING = 13
 
@@ -230,33 +236,19 @@ export class DragLift {
       const state = this._platterState(s)
 
       if (this.rider && this.rider.index === i && skier) {
-        // Der benutzte Teller wird zwischen Seil und Fahrer gespannt: die
-        // Stange zeigt exakt dorthin und wird auf die noetige Laenge gezogen,
-        // wie das Teleskopgehaenge eines echten Schlepplifts.
-        this._from.set(state.x, state.y, state.z)
-        this._to.set(
-          skier.position.x - this.dir.x * 0.3,
-          skier.position.y + 0.86,
-          skier.position.z - this.dir.y * 0.3,
-        )
-        this._delta.copy(this._to).sub(this._from)
-        const len = Math.max(1.2, this._delta.length())
-        this._quat.setFromUnitVectors(this._down, this._delta.normalize())
-
-        dummy.position.copy(this._from)
-        dummy.quaternion.copy(this._quat)
-        dummy.scale.set(1, len / PLATTER_LENGTH, 1)
-      } else {
-        dummy.position.set(state.x, state.y, state.z)
-        dummy.rotation.set(0, this.heading, 0)
-        // Leerlaufende Teller sind eingezogen und pendeln leicht.
-        dummy.quaternion.setFromEuler(dummy.rotation)
-        const sway = Math.sin(this.cursor * 0.4 + i * 1.7) * 0.14
-        dummy.quaternion.multiply(
-          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), sway),
-        )
-        dummy.scale.set(1, 0.62, 1)
+        // Wird erst nach dem Fahrer gespannt, siehe spannen().
+        this._riderState = state
+        continue
       }
+      dummy.position.set(state.x, state.y, state.z)
+      dummy.rotation.set(0, this.heading, 0)
+      // Leerlaufende Teller sind eingezogen und pendeln leicht.
+      dummy.quaternion.setFromEuler(dummy.rotation)
+      const sway = Math.sin(this.cursor * 0.4 + i * 1.7) * 0.14
+      dummy.quaternion.multiply(
+        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), sway),
+      )
+      dummy.scale.set(1, 0.62, 1)
 
       dummy.updateMatrix()
       this.platters.setMatrixAt(i, dummy.matrix)
@@ -264,6 +256,33 @@ export class DragLift {
     this.platters.instanceMatrix.needsUpdate = true
 
     if (this.rider) this._updateRider(dt, skier, input)
+  }
+
+  // Der benutzte Teller wird zwischen Seil und Fahrer gespannt: die Stange
+  // zeigt exakt dorthin und wird auf die noetige Laenge gezogen, wie das
+  // Teleskopgehaenge eines echten Schlepplifts. Laeuft nach skier.update() –
+  // mit der Haltung aus dem vorigen Bild hing der Teller 13 cm neben der Hand.
+  spannen(skier) {
+    if (!this.rider || !this._riderState) return
+    const state = this._riderState
+    const dummy = this._dummy
+    // Angriffspunkt im Fahrer selbst, damit der Teller jedes Zuruecklehnen
+    // und Ausscheren mitgeht. Ein fester Weltpunkt (0,86 hoch, 0,3
+    // zurueck) lag im Ruecken, die Scheibe schnitt durch den Rucksack.
+    this._from.set(state.x, state.y, state.z)
+    skier.group.updateMatrixWorld()
+    this._to.copy(SEAT).applyMatrix4(skier.group.matrixWorld)
+    this._delta.copy(this._to).sub(this._from)
+    const len = Math.max(1.2, this._delta.length())
+    this._quat.setFromUnitVectors(this._down, this._delta.normalize())
+
+    dummy.position.copy(this._from)
+    dummy.quaternion.copy(this._quat)
+    dummy.scale.set(1, len / PLATTER_LENGTH, 1)
+    dummy.updateMatrix()
+    this.platters.setMatrixAt(this.rider.index, dummy.matrix)
+    this.platters.instanceMatrix.needsUpdate = true
+    skier.greifen(this._from, this._to)
   }
 
   // Kann hier eingestiegen werden?
@@ -289,6 +308,7 @@ export class DragLift {
       }
     }
     this.rider = { index: best, progress: Math.max(0.01, bestT), offset: 0 }
+    this._riderState = null
     skier.tow = this
     skier.speed = this.speed
     return true

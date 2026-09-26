@@ -6,6 +6,15 @@ import { createSkierModel, HIP } from './skier-model.js'
 
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
 
+// Richtung Schulter -> Handschuh in Ruhelage (skier-model.js), fuer greifen().
+const GLOVE_DIR = new THREE.Vector3(0.16, -0.52, 0.29)
+const ARM_LENGTH = GLOVE_DIR.length()
+GLOVE_DIR.normalize()
+const _g1 = new THREE.Vector3()
+const _g2 = new THREE.Vector3()
+const _g3 = new THREE.Vector3()
+const _g4 = new THREE.Vector3()
+
 export class Skier {
   constructor(world) {
     this.world = world
@@ -466,14 +475,14 @@ export class Skier {
     this.poise += (0 - this.poise) * damp(6, dt)
 
     this._applyPose(dt)
-    // Am Schlepplift greift der aussenliegende Arm nach oben zur Zugstange.
-    // Der Zauberteppich traegt dagegen – dort steht man nur.
+    // Am Schlepplift greift der aussenliegende Arm nach oben zur Zugstange –
+    // wohin genau, legt greifen() fest, sobald der Lift die Stange gespannt
+    // hat. Der Zauberteppich traegt dagegen, dort steht man nur.
     if (this.tow.grab !== false) {
       const arm = this.parts.arms.right
       arm.rotation.x = -1.15
       arm.rotation.z = -0.25
     }
-
     this._stampTrail(trail, groundY)
   }
 
@@ -556,7 +565,33 @@ export class Skier {
       const rz = side * (plough * 0.18 - tuck * 0.1)
       arm.rotation.x += (rx - arm.rotation.x) * damp(6, dt)
       arm.rotation.z += (rz - arm.rotation.z) * damp(6, dt)
+      // Vom Greifen am Lift bleibt sonst eine Drehung um die Hochachse haengen.
+      arm.rotation.y += (0 - arm.rotation.y) * damp(6, dt)
     }
+  }
+
+  // Legt die Greifhand an die Zugstange zwischen a und b (Weltpunkte). Ein
+  // fester Winkel passte nur in der Mitte der Trasse: wer am Lift um 1,7 m
+  // ausschert, kippt die Stange, und die Hand griff 50 cm daneben. So zielt
+  // der Arm jedes Bild auf den Stangenpunkt, der genau eine Armlaenge ueber
+  // der Schulter liegt.
+  greifen(a, b) {
+    const arm = this.parts.arms.right
+    const torso = this.parts.torso
+    torso.updateMatrixWorld()
+    const s = arm.position
+    const la = torso.worldToLocal(_g1.copy(a))
+    const rod = torso.worldToLocal(_g2.copy(b)).sub(la)
+    const len = rod.length()
+    rod.divideScalar(len)
+    // Naechster Stangenpunkt zur Schulter, dann so weit an der Stange hoch
+    // (Richtung Seil, also zu a hin), bis der Abstand eine Armlaenge ist.
+    const t = _g3.copy(s).sub(la).dot(rod)
+    const naechster = _g4.copy(la).addScaledVector(rod, t)
+    const d = naechster.distanceTo(s)
+    const hoch = Math.sqrt(Math.max(0, ARM_LENGTH * ARM_LENGTH - d * d))
+    naechster.addScaledVector(rod, -hoch)
+    arm.quaternion.setFromUnitVectors(GLOVE_DIR, naechster.sub(s).normalize())
   }
 
   // Setzt den Fahrer an einen anderen Ort (Schnellreise, Pruefwerkzeug).

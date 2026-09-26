@@ -597,6 +597,12 @@ dafür hängt jedes Bein an seiner Hüfte (`legSides`, Drehpunkt `HIP`).
 - **Pflug** mit S: Schaufeln zusammen (`ploughYaw` 0,21 — der Skikörper liegt
   7,5 cm neben der Bindung, ab 0,22 stoßen die Schaufeln an), Innenkanten,
   Arme leicht raus, breitere Spur und Schneestaub an den Enden.
+- **Am Tellerlift** hängt der Teller an einem Punkt im Fahrer (`SEAT` in
+  `drag-lift.js`, hinten zur Greifhand), nicht an einem Weltpunkt, und wird
+  erst **nach** `skier.update()` gespannt (`lift.spannen`). Das Seil liegt
+  2,4 m voraus über dem Fahrer; mittig hinten lief die gerade Stange durch
+  die Brust. `skier.greifen()` legt die Hand jedes Bild auf die Stange, auch
+  beim Ausscheren.
 
 ---
 

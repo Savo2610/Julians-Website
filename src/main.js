@@ -195,6 +195,7 @@ function advance(dt) {
   props.railRide.update(dt, skier, input)
   touch?.update()
   skier.update(dt, input, trail)
+  props.lift.spannen(skier)
   emitSpray(dt)
   spray.update(dt)
   // Die Nordabfahrt entscheidet vor der Kamera, ob sie hinter den Fahrer geht.

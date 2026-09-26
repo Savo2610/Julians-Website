@@ -21,7 +21,7 @@ Das Wichtigste in Kürze:
 - Alles muss als **eine zusammenhängende Gegend** lesbar bleiben, nicht wie eine
   ausgekippte Spielzeugkiste.
 - Minimale Oberfläche: keine Leiste. Einzige Menüs: die Übersicht hinter `M`
-  (Links, Talkarte, Pistenpass), die zwei Hinweispillen (für Nicht-Spieler
+  (Links, Talkarte, Pistenpass, Bestenliste), die zwei Hinweispillen (für Nicht-Spieler
   gewünscht) und die Abzeichen-Pille oben links. Hinweise gehen von selbst.
 - Pistenpass: stiller Erkundungsstand, Slalom-Medaillen, acht schwere
   Abzeichen. **Nie** etwas fürs Hochladen, Wallet, Kurzlink oder Bezahlen.

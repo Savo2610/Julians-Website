@@ -84,6 +84,10 @@ export class RaceCourse {
     this.lastRun = null
     this._prevS = null
     this._hold = 0
+    // Fuer die Bestenliste (stations/bestenliste.js): Start, Ziel, Abbruch.
+    this.onStart = null
+    this.onFinish = null
+    this.onAbort = null
 
     this.startS = startFade
     this.finishS = lane.total - finishFade
@@ -298,6 +302,7 @@ export class RaceCourse {
         gate.missed = false
       }
       this._hold = 0
+      this.onStart?.()
       this._showHud('0.00', this.best !== null ? `Bestzeit ${this.best.toFixed(2)}` : `Gold unter ${MEDALS[0].time.toFixed(2)}`, '')
     }
   }
@@ -326,7 +331,8 @@ export class RaceCourse {
     const clean = this.missed === 0
     const total = this.time + this.missed * PENALTY
     this.state = 'idle'
-    this.lastRun = { time: this.time, missed: this.missed, total }
+    this.lastRun = { time: this.time, missed: this.missed, total, splits: [...this.splits] }
+    this.onFinish?.(this.lastRun)
 
     const medal = MEDALS.find((m) => total <= m.time)
     const next = medal ? MEDALS[MEDALS.indexOf(medal) - 1] : MEDALS[MEDALS.length - 1]
@@ -347,6 +353,7 @@ export class RaceCourse {
   }
 
   _reset() {
+    this.onAbort?.()
     this.state = 'idle'
     this.hud.classList.remove('visible')
     this._hold = 0

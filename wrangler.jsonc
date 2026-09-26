@@ -1,14 +1,30 @@
-// Testbetrieb auf beta.veerka.mp: ein Worker, der nur die gebauten Dateien
-// aus dist/ ausliefert – kein eigener Code, keine Bindungen. Die richtige
-// Seite (Worker "website") bleibt davon unberuehrt.
+// Testbetrieb auf beta.veerka.mp. Der Worker liefert die gebauten Dateien
+// aus dist/ aus und springt nur fuer /api/* selbst an – dort liegt die
+// Bestenliste des Slaloms (worker/index.js). Gleicher Host wie das Spiel:
+// kein CORS, kein eigener DNS-Eintrag. Die richtige Seite (Worker
+// "website") bleibt davon unberuehrt; beim Umzug auf veerka.mp muss /api/*
+// dorthin mit.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "skiportfolio-test",
+  "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "skiportfolio-slalom",
+      "database_id": "9529912d-c89a-472d-9ecc-5dcbce6b4aae",
+      "migrations_dir": "worker/migrations"
+    }
+  ],
+  // Marken-Schluessel: wrangler secret put SLALOM_GEHEIM (lokal: .dev.vars)
+  "observability": { "enabled": true },
   "routes": [{ "pattern": "beta.veerka.mp", "custom_domain": true }],
   "workers_dev": false,
   "preview_urls": false

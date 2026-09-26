@@ -701,12 +701,11 @@ html.touch .prompt-title { font-size: 14px; }
 }
 .ov-head .sheet-close { position: static; flex: none; }
 
-.ov-links, .ov-karte, .ov-pass { flex: 1; min-height: 0; }
-.map-panel[data-view="links"] .ov-karte,
-.map-panel[data-view="karte"] .ov-links,
+.ov-links, .ov-karte, .ov-pass, .ov-liste { flex: 1; min-height: 0; }
+.map-panel:not([data-view="links"]) .ov-links,
+.map-panel:not([data-view="karte"]) .ov-karte,
 .map-panel:not([data-view="pass"]) .ov-pass,
-.map-panel[data-view="pass"] .ov-links,
-.map-panel[data-view="pass"] .ov-karte { display: none; }
+.map-panel:not([data-view="liste"]) .ov-liste { display: none; }
 
 .ov-links {
   overflow-y: auto;
@@ -872,7 +871,8 @@ html.touch .hint-pill { padding: 12px 20px; }
   .ov-head { flex-wrap: wrap; padding-left: 4px; }
   .ov-name { flex-basis: calc(100% - 60px); }
   .ov-tabs { order: 3; width: 100%; }
-  .ov-tabs button { flex: 1; }
+  /* Vier Reiter auf 390 px: mit 16 px Rand ragte der vierte hinaus. */
+  .ov-tabs button { flex: 1; min-width: 0; padding: 7px 4px; font-size: 12.5px; }
   .ov-links { grid-template-columns: 1fr; }
   .ov-karte {
     grid-template-columns: 1fr;
@@ -1099,3 +1099,202 @@ html.rundflug .hint-pill,
 html.rundflug .touch-jump,
 html.rundflug .touch-hint,
 html.rundflug .touch-stick { visibility: hidden; }
+
+/* --- Slalom-Bestenliste ------------------------------------------------------
+   Treppchen fuer die ersten drei, darunter Zeilen. Dieselbe Liste steht im
+   Reiter der Uebersicht und im Fenster nach dem Eintragen. Zeiten in
+   Ziffern gleicher Breite, damit die Kommas untereinander stehen. */
+
+.sb-angebot {
+  position: fixed;
+  top: 98px;
+  left: 50%;
+  translate: -50% -6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px 7px 9px;
+  border-radius: 999px;
+  font: 700 13.5px/1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  color: #13212f;
+  cursor: pointer;
+  z-index: 12;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, translate 0.35s cubic-bezier(0.2, 1.3, 0.3, 1);
+}
+.sb-angebot.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
+html.touch .sb-angebot { padding: 10px 18px; }
+
+.ov-liste {
+  overflow-y: auto;
+  padding: 4px 6px 6px;
+  scrollbar-width: thin;
+}
+.sb-liste { display: flex; flex-direction: column; gap: 14px; }
+/* In der breiten Uebersicht zerfiel das Treppchen in drei weit entfernte Stufen. */
+.ov-liste .sb-liste { max-width: 600px; margin: 0 auto; }
+.sb-kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+.sb-titel { display: flex; flex-direction: column; line-height: 1.2; }
+.sb-titel strong { font-size: 17px; font-weight: 800; }
+.sb-titel small, .sb-zahlen { font-size: 12px; font-weight: 600; color: #4a5f75; }
+.sb-leer {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #4a5f75;
+  border-radius: 18px;
+  border: 1px dashed rgba(60, 90, 125, 0.3);
+}
+
+.sb-podest {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+.sb-stufe {
+  --m: #b8c3cf;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  text-align: center;
+}
+.sb-stufe.p1 { --m: #e2ac2c; --h: 64px; }
+.sb-stufe.p2 { --m: #a4b1bf; --h: 44px; }
+.sb-stufe.p3 { --m: #c98552; --h: 30px; }
+.sb-stufe .sb-rang {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  font-size: 17px;
+  font-weight: 850;
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--m) 55%, #fff), var(--m));
+  box-shadow: 0 4px 12px -3px color-mix(in srgb, var(--m) 80%, transparent), inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+.sb-stufe.p1 .sb-rang { width: 46px; height: 46px; font-size: 20px; }
+.sb-stufe .sb-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 780;
+}
+.sb-stufe .sb-zeit { font-size: 20px; }
+.sb-stufe.p1 .sb-zeit { font-size: 24px; }
+.sb-stufe .sb-wann { font-size: 11px; font-weight: 600; color: #6b7f94; }
+.sb-sockel {
+  width: 100%;
+  height: var(--h);
+  margin-top: 6px;
+  border-radius: 12px 12px 4px 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--m) 38%, #fff), color-mix(in srgb, var(--m) 14%, #fff));
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 0 #fff;
+}
+.sb-stufe.frei { opacity: 0.35; }
+.sb-stufe.eigen .sb-name { color: #1f5fbf; }
+.sb-stufe.eigen .sb-sockel { box-shadow: inset 0 1px 0 #fff, 0 0 0 2px #2b6fd6; }
+
+.sb-zeit {
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.sb-zeilen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.sb-zeile {
+  display: grid;
+  grid-template-columns: 26px 10px minmax(0, 1fr) auto auto 52px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  font-size: 13.5px;
+}
+.sb-zeile .sb-rang { font-weight: 800; color: #6b7f94; font-variant-numeric: tabular-nums; text-align: right; }
+.sb-zeile .sb-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-zeile .sb-zeit { font-size: 15px; text-align: right; }
+.sb-zeile .sb-wann { font-size: 11.5px; font-weight: 600; color: #6b7f94; }
+.sb-straf {
+  font-size: 11px;
+  font-weight: 750;
+  color: #c0453a;
+}
+.sb-punkt { width: 10px; height: 10px; border-radius: 50%; }
+.sb-punkt[data-m="gold"] { background: #e2ac2c; }
+.sb-punkt[data-m="silber"] { background: #a4b1bf; }
+.sb-punkt[data-m="bronze"] { background: #c98552; }
+.sb-zeile.eigen {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 2px #2b6fd6;
+}
+html.touch .sb-zeile { grid-template-columns: 22px 10px minmax(0, 1fr) auto 48px; }
+html.touch .sb-zeile .sb-wann { display: none; }
+
+.sb-fussleiste {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5f75;
+}
+.sb-hin {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 750;
+  color: #fff;
+  cursor: pointer;
+  border: 0;
+  background: linear-gradient(150deg, #e7874f, #c9582b);
+  box-shadow: 0 4px 12px -4px rgba(201, 88, 43, 0.7);
+}
+
+/* Das Fenster: dieselbe Glasart wie Solana und Kurzlink, etwas breiter,
+   damit das Treppchen darin Platz hat. */
+.sb-dialog { width: min(30rem, calc(100vw - 2rem)); }
+/* dialogs.css setzt in .dialog alle Abstaende auf null und kommt nach
+   dieser Datei – deshalb hier alles mit .sb-dialog davor. */
+.sb-dialog .sb-lauf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 1rem 0 0.9rem;
+}
+.sb-lauf-zeit {
+  font: 850 2.4rem/1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.sb-lauf-sub { font-size: 0.8rem; font-weight: 650; color: var(--muted); }
+.sb-dialog .sb-form .kz-feld { width: 100%; padding: 0.75rem 0.9rem; font: inherit; font-size: 1rem; outline: none; }
+.sb-dialog .sb-ergebnis { margin-top: 1rem; }
+.sb-dialog .sb-platz { margin-bottom: 0.9rem; font-weight: 750; text-align: center; }
+.sb-dialog .sb-podest { gap: 6px; }
+.sb-dialog .sb-fuss { margin-top: 0.9rem; font-size: 0.72rem; }
+.sb-dialog .sb-zeile { padding: 7px 10px; }
+.sb-dialog .sb-stufe .sb-rang { margin-bottom: 4px; }
+.sb-dialog .sb-sockel { margin-top: 6px; }
+.sb-dialog .sb-leer { padding: 20px 14px; }
+.sb-dialog .dialog-status { margin-top: 0.8rem; }

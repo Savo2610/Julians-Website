@@ -383,7 +383,7 @@ oder am Lift hängt.
 
 **Tasten insgesamt** (`core/input.js`): WASD/Pfeile, Shift kanten,
 Leertaste springen (im Park Tricks), Enter/E benutzen, `M` Übersicht,
-`R` zurück zum Start, `Tab` Reiter der Übersicht, Esc/Backspace zurück.
+`R` zurück zum Start, `Tab` Reiter der Übersicht (Links, Talkarte, Pistenpass, Bestenliste), Esc/Backspace zurück.
 
 **Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
 schwebt eine Glasblase mit Name, einem Wort und dem ⏎-Zeichen.
@@ -572,6 +572,33 @@ Flug selbst im Browser. Dasselbe gilt für ein **Slalom-Scoreboard**: ohne
 Server-Plausibilität (Zeitstempel, Torfolge, Mindestzeit) ist jede Zeit
 fälschbar.
 
+## 4a⁗. Slalom-Bestenliste
+
+Seit 27.09. hat der beta-Worker eigenen Code: `worker/index.js` springt nur
+für `/api/*` an (`run_worker_first`), alles andere bleibt Asset. Gleicher
+Host wie das Spiel – kein CORS, kein DNS. D1 `skiportfolio-slalom`
+(Schema in `worker/migrations/`), Geheimnis `SLALOM_GEHEIM` als Secret,
+lokal in `.dev.vars`. **Beim Umzug auf veerka.mp muss `/api/*` mit.**
+
+Ablauf: Startbogen → `POST start` (signierte Startmarke), Ziel → `POST ziel`
+(Zielmarke mit beiden Serverzeiten). Nur wenn beides klappt, steht acht
+Sekunden „⏎ In die Bestenliste“ unter der Zeitnahme; Enter (oder Tippen)
+öffnet ein Fenster mit Name, danach Platz und Liste. Gefragt wird nie.
+Reiter **Bestenliste** in der Übersicht (M): Treppchen für die ersten drei,
+Zeilen bis Platz 20, beste Zeit je Name der letzten 30 Tage, eigene
+Einträge umrandet (`skiportfolio.slalom.eigene`), unten „Zum Slalom-Start“.
+
+Gegen Schummeln (bewusst nur „mühsam“, beweisen lässt sich im Browser
+nichts): Serveruhr zwischen den Marken muss zur Fahrzeit passen (−0,8 bis
++0,6 s), Zeit ≥ 3,4 s (Autopilot 3,58–3,62), Strafzeit und vier steigende
+Zwischenzeiten stimmig, jede Marke einmal, 40 Einträge je Adresse und Tag,
+Namen 2–16 Zeichen mit Sperrliste. Wer Anfragen mit passenden Pausen
+skriptet, kommt durch. Tests: `tests/slalom-worker.test.js`.
+
+Löschen: `npx wrangler d1 execute skiportfolio-slalom --remote --command
+"DELETE FROM fahrten WHERE name = '…'"`. Lokal: `npx wrangler dev` (Eintrag
+`api` in `.claude/launch.json`), vite reicht `/api` an 8787 durch.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger (`core/device.js`), zum
@@ -614,8 +641,8 @@ und Build, deutsch committen, Commit-Nummer hier im Verlauf nachtragen,
 `assets/index-*.js` ausliefert wie `dist/`. **Das Repo hat kein Git-Remote**;
 gepusht wird nirgendwohin, bis eines eingetragen ist.
 
-**beta.veerka.mp** ist ein reiner Asset-Worker (`wrangler.jsonc`, Name
-`skiportfolio-test`) ohne eigenen Code. `npm run deploy:test` baut und lädt
+**beta.veerka.mp** ist ein Asset-Worker (`wrangler.jsonc`, Name
+`skiportfolio-test`), seit 27.09. mit Code nur für `/api/*` (Abschnitt 4a⁗). `npm run deploy:test` baut und lädt
 hoch (vorher einmal `npx wrangler login`). `public/_headers` gibt `/assets/*`
 ein Jahr Cache (Dateinamen tragen einen Hash) und `index.html` `no-cache`. Der
 Produktiv-Worker `website` bleibt davon unberührt. Geplant war test.veerka.mp —

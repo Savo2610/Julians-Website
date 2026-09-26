@@ -4,6 +4,7 @@ import { TRAILS } from '../world/paths.js'
 import { PLATEAU } from '../world/heightfield.js'
 import { LINKS } from './links.js'
 import { ABZEICHEN, MEDAILLEN, ORTE_ERKUNDET } from './pistenpass.js'
+import { listeZeichnen } from './bestenliste.js'
 
 // Die Uebersicht: M ueberall, Enter an der Panoramatafel, am Handy der
 // Kartenknopf. Zwei Reiter:
@@ -105,8 +106,10 @@ const STEUERUNG = TOUCH
   ]
 
 export class MapMenu {
-  constructor({ registry, input, skier, world, camera, pass = null }) {
+  constructor({ registry, input, skier, world, camera, pass = null, bestenliste = null, race = null }) {
     this.pass = pass
+    this.bestenliste = bestenliste
+    this.race = race
     this.registry = registry
     this.input = input
     this.skier = skier
@@ -136,6 +139,7 @@ export class MapMenu {
             <button type="button" role="tab" data-view="links">Links</button>
             <button type="button" role="tab" data-view="karte">Talkarte</button>
             ${pass ? '<button type="button" role="tab" data-view="pass">Pistenpass</button>' : ''}
+            ${bestenliste ? '<button type="button" role="tab" data-view="liste">Bestenliste</button>' : ''}
           </div>
           <button type="button" class="sheet-close" aria-label="Schließen">×</button>
         </header>
@@ -147,6 +151,7 @@ export class MapMenu {
           </div>
         </section>
         <section class="ov-pass"></section>
+        <section class="ov-liste"><div class="sb-liste"></div></section>
         <footer class="ov-keys">
           ${STEUERUNG.map(([k, t]) => `<span class="ov-key"><span class="ov-kbd">${k}</span>${t}</span>`).join('')}
         </footer>
@@ -160,6 +165,7 @@ export class MapMenu {
     this.list = this.el.querySelector('.map-list')
     this.linksEl = this.el.querySelector('.ov-links')
     this.passEl = this.el.querySelector('.ov-pass')
+    this.listeEl = this.el.querySelector('.ov-liste')
     if (pass) pass.onChange = () => { if (this.open && this.view === 'pass') this._buildPass() }
     this.hintEl = this.el.querySelector('.ov-hint')
     this.typedEl = this.el.querySelector('.ov-typed span')
@@ -369,6 +375,39 @@ export class MapMenu {
     this.passEl.replaceChildren(kopf, erk, med, abz)
   }
 
+  // --- Bestenliste ---------------------------------------------------------
+
+  // Jedes Oeffnen fragt neu; der Worker gibt 15 Sekunden Cache mit. Der
+  // Fuss traegt den Weg zum Start, damit die Liste eine Einladung ist und
+  // nicht nur eine Tafel.
+  async _buildListe() {
+    const ziel = this.listeEl.querySelector('.sb-liste')
+    if (!ziel.childElementCount) ziel.innerHTML = '<p class="sb-leer">Lade die Bestenliste…</p>'
+    let daten
+    try {
+      daten = await this.bestenliste.laden()
+    } catch {
+      ziel.innerHTML = '<p class="sb-leer">Die Bestenliste ist gerade nicht erreichbar.</p>'
+      return
+    }
+    if (!this.open || this.view !== 'liste') return
+    listeZeichnen(ziel, daten)
+    const fuss = document.createElement('div')
+    fuss.className = 'sb-fussleiste'
+    const eigene = this.race?.best
+    fuss.innerHTML = '<span></span><button type="button" class="sb-hin">Zum Slalom-Start</button>'
+    fuss.firstElementChild.textContent = eigene ? `Deine Bestzeit hier im Browser: ${eigene.toFixed(2).replace('.', ',')} s` : 'Noch keine eigene Zeit gefahren.'
+    fuss.querySelector('button').addEventListener('click', () => this._zumSlalom())
+    ziel.appendChild(fuss)
+  }
+
+  // Ein paar Meter ueber dem Startbogen, Blick die Bahn hinunter.
+  _zumSlalom() {
+    if (!this.race) return
+    const p = this.race.pointAt(this.race.startS - 6)
+    this.travelTo({ x: p.x, z: p.z, heading: Math.atan2(p.dx, p.dz) })
+  }
+
   // --- Karte ------------------------------------------------------------
 
   _collect() {
@@ -506,7 +545,12 @@ export class MapMenu {
     for (const b of this.el.querySelectorAll('.ov-tabs button')) {
       b.setAttribute('aria-selected', String(b.dataset.view === view))
     }
-    const weiter = { links: 'Links', karte: 'Talkarte', pass: 'Pistenpass' }[this._naechsterReiter()]
+    const weiter = { links: 'Links', karte: 'Talkarte', pass: 'Pistenpass', liste: 'Bestenliste' }[this._naechsterReiter()]
+    if (view === 'liste') {
+      this._buildListe()
+      this.hintEl.innerHTML = TOUCH ? 'Zeiten trägst du nach dem Ziel ein' : `<kbd>↑</kbd><kbd>↓</kbd> blättern <i></i> <kbd class="k-enter">⏎</kbd> zum Slalom-Start <i></i> <kbd>tab</kbd> ${weiter} <i></i> <kbd>esc</kbd> zurück`
+      return
+    }
     if (view === 'pass') {
       this.hintEl.innerHTML = TOUCH ? 'Abzeichen sammelst du beim Fahren' : `<kbd>↑</kbd><kbd>↓</kbd> blättern <i></i> <kbd>tab</kbd> ${weiter} <i></i> <kbd>esc</kbd> zurück`
       return
@@ -519,7 +563,7 @@ export class MapMenu {
   }
 
   _naechsterReiter() {
-    const reiter = this.pass ? ['links', 'karte', 'pass'] : ['links', 'karte']
+    const reiter = ['links', 'karte', this.pass && 'pass', this.bestenliste && 'liste'].filter(Boolean)
     return reiter[(reiter.indexOf(this.view) + 1) % reiter.length]
   }
 
@@ -573,6 +617,12 @@ export class MapMenu {
       this.close()
       return true
     }
+    if (this.view === 'liste') {
+      if (action === 'forward') this.listeEl.scrollBy({ top: -120, behavior: 'smooth' })
+      if (action === 'brake') this.listeEl.scrollBy({ top: 120, behavior: 'smooth' })
+      if (action === 'use' || action === 'jump') this._zumSlalom()
+      return true
+    }
     if (this.view === 'pass') {
       if (action === 'forward') this.passEl.scrollBy({ top: -120, behavior: 'smooth' })
       if (action === 'brake') this.passEl.scrollBy({ top: 120, behavior: 'smooth' })
@@ -606,6 +656,7 @@ export class MapMenu {
   // Ruecken zur Kamera davor steht. Liegt dort etwas im Weg (die Werkbank
   // vor der Werkstatt), wird weiter aussen und seitlich gesucht.
   _arrival(item) {
+    if (item.heading !== undefined) return { x: item.x, z: item.z, heading: item.heading }
     if (!item.station) return { x: item.x, z: item.z, heading: CAMERA.azimuth + Math.PI }
     const r = item.station.radius ?? 6
     for (const dist of [r * 0.5, r * 0.65, r * 0.8]) {

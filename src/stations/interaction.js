@@ -13,8 +13,9 @@ import { CAMERA } from '../config.js'
 // Ereignis.
 
 export class StationInteraction {
-  constructor({ registry, ui, input, camera, skier, map = null, flight = null }) {
+  constructor({ registry, ui, input, camera, skier, map = null, flight = null, bestenliste = null }) {
     this.map = map
+    this.bestenliste = bestenliste
     this.flight = flight
     this.registry = registry
     this.ui = ui
@@ -63,6 +64,9 @@ export class StationInteraction {
     }
 
     const s = this.registry.active
+    // Gleich nach dem Slalom-Ziel: Enter traegt ein. Eine Station davor
+    // hat Vorrang, aber am Zielbogen steht keine.
+    if (action === 'use' && !s && this.bestenliste?.angebotOffen) return this.bestenliste.oeffnen()
     // Am Lift und am Teppich gehoert Enter dem Ausstieg.
     if (!s || this.skier.tow) return false
     if (action === 'use') {

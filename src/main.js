@@ -26,6 +26,7 @@ import { PassRegeln } from './stations/pass-regeln.js'
 import { Skier } from './player/skier.js'
 import { TopCamera } from './player/top-camera.js'
 import { DroneFlight } from './player/drone-flight.js'
+import { Bestenliste } from './stations/bestenliste.js'
 import { Spray } from './player/spray.js'
 
 const canvas = document.getElementById('scene')
@@ -75,9 +76,16 @@ const pass = new Pistenpass()
 pass.onGold = () => skier.vergolden()
 if (pass.gold) skier.vergolden()
 
-const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase, pass })
+// Die Bestenliste haengt an der Zeitnahme: Marken holen, nach dem Ziel
+// anbieten, im Reiter der Uebersicht zeigen.
+const bestenliste = new Bestenliste()
+props.race.onStart = () => bestenliste.start()
+props.race.onFinish = (run) => bestenliste.ziel(run)
+props.race.onAbort = () => bestenliste.abbruch()
+
+const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase, pass, bestenliste, race: props.race })
 flight = new DroneFlight({ camera, input, onEnd: () => chase.snap() })
-const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu, flight })
+const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu, flight, bestenliste })
 input.onAction = (action) => interaction.press(action)
 
 // R und der Rueckweg-Hinweis: zurueck zum Startplatz, hinter derselben Blende
@@ -276,6 +284,7 @@ function advance(dt) {
 
   // Rennstrecke: Zeitnahme laeuft mit, ohne dass man etwas starten muesste.
   props.race.update(dt, skier)
+  bestenliste.update(dt)
   // Dasselbe auf der freien Abfahrt, nur eine Zahl statt einer Uhr.
   props.speedCheck.update(dt, skier)
 
@@ -314,7 +323,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

@@ -753,6 +753,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ```
 9d2bf4d  Wegweiser: Pfeile gerade statt schraeg
 25bb595  Leuchtschleier nur noch in 20 m um den Start
+d187faf  Tellerlift: Teller nicht mehr im Fahrer
 8434c9f  Hanghaltung sachter, bergauf gar nicht
 772b26b  Abfahrtshocke, Kommaform am Hang, Pflug beim Bremsen
 047d51d  Panoramatafel 1,2 m nach rechts

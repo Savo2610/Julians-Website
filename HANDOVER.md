@@ -753,6 +753,7 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
+4defffc  Ski mittig unter die Bindung
 d7621fa  Slalom: Medaillen 3,90 / 4,20 / 4,50
 6e37e07  Tellerlift wieder wie vorher, nur ohne Flackern
 9d2bf4d  Wegweiser: Pfeile gerade statt schraeg

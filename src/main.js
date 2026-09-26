@@ -240,7 +240,7 @@ function advance(dt) {
 
   snowfall.userData.update(dt, elapsed, skier.position)
   glints.update(dt, elapsed, camera, renderer,
-    Math.hypot(skier.position.x - PLATEAU.x, skier.position.z - PLATEAU.z) < 30)
+    Math.hypot(skier.position.x - PLATEAU.x, skier.position.z - PLATEAU.z) < 20)
   props.lake.update(camera)
   sky.update(elapsed)
   trail.flush()

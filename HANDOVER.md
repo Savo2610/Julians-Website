@@ -200,7 +200,7 @@ links verdeckte sie den Posten. Die Kreuzung KONTAKT · LIFT / STARTPLATZ steht 
 **Leuchtschleier** (`world/trail-glints.js`) ersetzen die Winkel im Schnee:
 je Weg huscht alle 9–18 s eine dünne Sternschnuppe vom Plateau aus den
 Weg entlang (56 Punkte Schweif, Funken dahinter) – neue nur, solange der
-Fahrer höchstens 30 m vom Startplatz entfernt ist. Farben gesättigt und hell,
+Fahrer höchstens 20 m vom Startplatz entfernt ist (vorher 30). Farben gesättigt und hell,
 normal gemischt – additiv oder in den gedeckten Wegfarben lasen sie sich
 auf Tagschnee wie Rauch. Höchstens eine je Weg, sonst waren sechs
 gleichzeitig im Bild. Stationen rutschen **vor** der Bepflanzung auf

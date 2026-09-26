@@ -36,17 +36,22 @@ export function createWayfinding(world, { registry, trees = [], lift = null } = 
   const junctions = [
     // side 1 fest: nach links gekehrt ragten die Tafeln ueber den
     // Kontaktposten und verdeckten ihn.
-    { at: [6, -6], side: 1, rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color], ['STARTPLATZ', [1, 8], INK]] },
+    { at: [6, -6], side: 1, rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color, '↓'], ['STARTPLATZ', [1, 8], INK]] },
     // Stand bei (33, 15) mitten im Kinderland neben dem Zauberteppich und
     // brach dort dessen Farben. Jetzt links unten am Karriereweg, noch vor
     // dem Kinderland – dort, wo man sich entscheidet.
-    { at: [27.5, 23], rows: [['KONTAKT · LIFT', [29, 9], INK], ['STARTPLATZ', [20, 23], INK]] },
+    { at: [27.5, 23], rows: [['KONTAKT · LIFT', [29, 9], INK, '↑'], ['STARTPLATZ', [20, 23], INK]] },
     { at: [-67, -59], rows: [['AUSSICHT', [-61, -63], INK], ['TALABFAHRT', [-44, -52], TRAILS.sport.color]] },
   ]
   for (const { at: [x, z], rows, side } of junctions) {
     // Alle Tafeln an einem Mast ragen zur selben Seite – die, in die die
     // Mehrheit zeigt. Gemischt stand der Mast wie ein Kreuz im Schnee.
-    const pfeile = rows.map(([, target]) => arrow(x, z, target))
+    // Ein fester Pfeil (vierter Eintrag) geht vor: gerechnet wird nur zum
+    // Zielpunkt, der Weg dorthin biegt aber erst spaeter ab. Von der
+    // Kontakt-Kreuzung fuehrt er zur Werkstatt zuerst gerade hangab, von der
+    // Kinderland-Kreuzung zum Lift zuerst gerade hinauf – schraeg zeigten
+    // die Pfeile ins Gelaende neben dem Weg.
+    const pfeile = rows.map(([, target, , fest]) => fest ?? arrow(x, z, target))
     const links = side ? side < 0 : pfeile.filter((p) => '←↖↙'.includes(p)).length > rows.length / 2
     const sign = createMarkerSign(rows.map(([text, , background], i) => ({
       text, arrow: pfeile[i], background, width: 3.4, height: 0.66, side: links ? -1 : 1,

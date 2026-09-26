@@ -121,6 +121,7 @@ src/
     ui.js            Glas-Einladung und Glas-Auswahl
     map-menu.js      Übersicht (M): Reiter Links und Talkarte, Schnellreise
     hints.js         Start-Hinweis, Festgefahren-Erkennung, R
+    broadcast.js     Laufende Sendung holen und ins Eis der Quelle legen
   dialogs/           Wortgleich von veerka.mp übernommen — siehe unten
 tests/               node --test (npm test)
 wrangler.jsonc       Testbetrieb auf beta.veerka.mp
@@ -180,6 +181,7 @@ Strang zu Ende fahren kann.
 | Packlisten-App (Depot) | −48, 0 | packliste.veerka.mp |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | jf.veerka.mp (am Waldrand, eigene Baumgruppen) |
+| Gefrorene Quelle (Eisfall am See) | −57,5, 26,4 | broadcast.veerka.mp, zeigt die laufende Sendung (4a⁵) |
 
 Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
 mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
@@ -604,6 +606,47 @@ skriptet, kommt durch. Tests: `tests/slalom-worker.test.js`.
 Löschen: `npx wrangler d1 execute skiportfolio-slalom --remote --command
 "DELETE FROM fahrten WHERE name = '…'"`. Lokal: `npx wrangler dev` (Eintrag
 `api` in `.claude/launch.json`), vite reicht `/api` an 8787 durch.
+
+## 4a⁵. Gefrorene Quelle: Broadcast im Eis
+
+Seit 27.09. zeigt die Felsquelle am oberen Seeufer, was gerade auf
+broadcast.veerka.mp läuft. Die Quelle ist mitten im Fallen erstarrt
+(`props/frozen-fall.js`), und im Eis steckt die Sendung: Bild, stummes
+Video oder Text. Vorher hing dort nur ein Vorhang aus 13 Zapfen.
+
+**Versteckt, mit Absicht:** kein Ring im Schnee, nicht auf der Karte
+(`VERSTECKT` in `map-menu.js`), nicht im Pistenpass. Aus der Kamerahöhe
+sieht man nur einen bereiften Eisblock mit einem Hauch Farbe. Kommt man
+näher als 14 m, wird der Reif dünner. Enter zoomt heran (eine Auswahl mit
+einem Ziel), dann taut das Eis von der Mitte her auf (1,6/s). Enter
+öffnet broadcast.veerka.mp, und Eiskristalle steigen auf.
+
+**Das Bild steckt im Eis und klebt nicht darauf:** Parallaxe (0,035 in UV)
+setzt es hinter die Oberfläche, die Rinnen des Eisfalls verziehen es
+leicht, der Reif verwischt es über die Mip-Stufen, und zum Fensterrand hin
+verliert es sich. Die rote Lampe des Funkturms (wie auf der
+Broadcast-Seite) atmet rechts im Eis, solange gesendet wird, und leuchtet
+auch durch den Reif. Der Schein auf dem Schnee hat die Mittelfarbe des Bildes.
+Die Fläche lehnt 0,5 rad zurück: bei 36° Kamerahöhe bleiben 86 % der
+Bildhöhe statt 59 %.
+
+**Daten:** `worker/index.js` reicht `/api/broadcast/state` (nur `message`,
+20 s Cache) und `/api/broadcast/file?key=` (mit Range, für Videos) durch.
+Der Broadcast-Dienst schickt keinen CORS-Kopf, und WebGL nimmt fremde
+Bilder nicht als Textur. Am Dienst selbst ist nichts geändert.
+Durchgelassen werden nur Schlüssel in der Form des Dienstes und nur
+JPEG/PNG/WebP/GIF/AVIF/MP4/WebM/MOV. Kein SVG, denn das könnte unter dem Namen des
+Spiels Skript ausführen. Kein Ton, denn das Tal bleibt still. Tests:
+`tests/broadcast-worker.test.js`.
+Gefragt wird erst, wenn der Fahrer näher als 40 m kommt, danach höchstens
+einmal pro Minute. Bilder werden im Browser auf 1024 px verkleinert (das
+erste Testbild hatte 2,6 MB). Mehrere Anhänge wechseln alle 8 s. Videos
+laufen stumm und nur unter 26 m. Kurzer Text (≤ 140 Zeichen) läuft als Zeile
+unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
+Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
+expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
+
+**Beim Umzug auf veerka.mp** muss `/api/broadcast/*` mit, wie die Bestenliste.
 
 ## 4b. Handymodus
 

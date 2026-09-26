@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { LANDSCAPE_PATHS, GROVES } from './landscape-layout.js'
-import { createLandscapeDetails } from './landscape-details.js'
+import { createLandscapeDetails, FALL_SPOT } from './landscape-details.js'
+import { BroadcastFeed } from '../stations/broadcast.js'
+import { LINKS } from '../stations/links.js'
 import { CONNECTIONS } from './paths.js'
 import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
 import { WORLD } from '../config.js'
@@ -319,6 +321,34 @@ export function populate(world, sky, registry, stationOptions = {}) {
   createForest(world, placements)
   const landscape = createLandscapeDetails(world, groveTrees)
   animatedProps.push((t, dt) => landscape.update(dt, skierRef.current))
+
+  // Die gefrorene Quelle am See zeigt die laufende Sendung von
+  // broadcast.veerka.mp. Bewusst ohne Ring im Schnee, ohne Eintrag auf der
+  // Karte und im Pistenpass: wer sie findet, hat gestoebert. Enter zoomt
+  // heran, dann taut das Eis auf – deshalb eine Auswahl mit nur einem Ziel.
+  const feed = new BroadcastFeed(landscape.fall, FALL_SPOT)
+  const fallGround = terrainHeight(FALL_SPOT.x, FALL_SPOT.z)
+  registry.add({
+    id: 'broadcast',
+    label: 'Gefrorene Quelle',
+    color: '#5fa8f0',
+    position: FALL_SPOT,
+    radius: 5,
+    groundY: fallGround,
+    labelHeight: fallGround + 2.5,
+    object: landscape.fall,
+    focus: { abstand: 6.2, hoehe: 1.0, vor: 0.9 },
+    choices: [
+      { label: 'Broadcast', sub: () => feed.sub, glyph: 'broadcast', url: LINKS.broadcast, color: '#ff6b5a' },
+    ],
+  })
+  // registry.add kopiert die Station; der Hinweis haengt am Stand der
+  // Sendung und muss deshalb an der Kopie nachgelesen werden.
+  Object.defineProperty(registry.stations.at(-1), 'hint', { get: () => feed.hint })
+  animatedProps.push((t, dt) => {
+    landscape.fall.userData.animate(t, dt)
+    feed.update(dt, skierRef.current)
+  })
 
   // --- Felsen -----------------------------------------------------------
   const rockSpots = scatter(rng, {
@@ -958,5 +988,5 @@ export function populate(world, sky, registry, stationOptions = {}) {
     sunDir: sky.sunDir,
   })
 
-  return { apresTerrace, landscape, lake, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
+  return { apresTerrace, landscape, broadcast: feed, lake, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
 }

@@ -4,6 +4,11 @@ import { makeRng } from '../core/rng.js'
 import { terrainHeight, LAKE } from './heightfield.js'
 import { createRocks } from './props/rocks.js'
 import { createLakeBench } from './props/lake-bench.js'
+import { createFrozenFall } from './props/frozen-fall.js'
+import { CAMERA } from '../config.js'
+
+// Mitte des Eisfalls an der Quelle; die Station haengt an derselben Stelle.
+export const FALL_SPOT = { x: -57.5, z: 26.4 }
 
 export function createLandscapeDetails(world, trees) {
   const rng = makeRng(210927)
@@ -11,25 +16,16 @@ export function createLandscapeDetails(world, trees) {
   // Die Quelle sitzt am oberen Seeufer. Fels, Eis und der Schneeruecken
   // erzaehlen denselben Ort; die Mitte davor bleibt als Aussicht frei.
   createRocks(world, [
-    { x: -59.8, z: 24, variant: 0, scale: 2.0, stretch: 1.2, rotation: 0.7, tilt: 0.1 },
-    { x: -56.9, z: 23.5, variant: 1, scale: 1.55, stretch: 1.2, rotation: 2, tilt: 0 },
+    { x: -59.9, z: 23.9, variant: 0, scale: 1.8, stretch: 1.2, rotation: 0.7, tilt: 0.1 },
+    { x: -56.2, z: 22.8, variant: 1, scale: 1.55, stretch: 1.2, rotation: 2, tilt: 0 },
     { x: -61, z: 27, variant: 2, scale: 1.1, stretch: 0.7, rotation: 1, tilt: 0.1 },
   ], 210928)
-  const iceParts = []
-  for (let i = 0; i < 13; i++) {
-    const x = -59.8 + i * 0.22, z = 25 + Math.sin(i * 0.5) * 0.3
-    const length = 0.65 + rng() * 1.15
-    iceParts.push({
-      geo: new THREE.ConeGeometry(0.1 + rng() * 0.09, length, 6),
-      color: i % 3 ? 0xb4e1e8 : 0x7cb6c9,
-      position: [x, terrainHeight(x, z) + 1.7 - length / 2, z],
-      rotation: [Math.PI, 0, 0],
-    })
-  }
-  const ice = new THREE.Mesh(assemble(iceParts), vertexColorMaterial({ roughness: 0.24, metalness: 0.08 }))
-  ice.name = 'gefrorene-quelle'
-  ice.castShadow = true
-  world.scene.add(ice)
+  // Zwischen den Felsen ist die Quelle mitten im Fallen erstarrt, und im
+  // Eis steckt, was gerade auf broadcast.veerka.mp laeuft – siehe
+  // props/frozen-fall.js. Vorher hing hier nur ein Vorhang aus 13 Zapfen.
+  const fall = createFrozenFall()
+  world.place(fall, FALL_SPOT.x, FALL_SPOT.z, { rotation: CAMERA.azimuth })
+  for (const c of fall.userData.colliders) world.addCollider(FALL_SPOT.x + c.dx, FALL_SPOT.z + c.dz, c.r, null, 1.2)
 
   // Eine Bank macht das Ufer zum Ziel. Sie schaut aufs Eis und zerbricht,
   // wenn man hineinfaehrt – siehe props/lake-bench.js.
@@ -74,6 +70,7 @@ export function createLandscapeDetails(world, trees) {
     get bursts() { return bursts },
     get treeCount() { return sources.length },
     bench,
+    fall,
     update(dt, skier) {
       bench.update(dt, skier)
       if (!skier) return

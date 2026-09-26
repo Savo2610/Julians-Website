@@ -28,10 +28,11 @@ import { listeZeichnen } from './bestenliste.js'
 // Kamerafahrt, die man nicht steuert. Man steht danach vor der Station,
 // mit dem Ruecken zur Kamera, und die Einladung zum Enter ist schon da.
 //
-// Drohne und Loeschzug fehlen absichtlich, in beiden Reitern: sie liegen
-// abseits, damit man sie findet – auf veerka.mp stehen sie auch nicht.
+// Drohne, Loeschzug und die gefrorene Quelle fehlen absichtlich, in beiden
+// Reitern: sie liegen abseits, damit man sie findet – auf veerka.mp stehen
+// sie auch nicht.
 
-const VERSTECKT = new Set(['talplan', 'drone', 'firetruck'])
+const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast'])
 
 // Welche Station an welchem Weg liegt – fuer die Farbe in der Liste.
 const WEG = {

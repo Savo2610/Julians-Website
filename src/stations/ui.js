@@ -30,6 +30,8 @@ const GLYPHS = {
   ticket: '<svg viewBox="0 0 24 24"><path d="M3.5 7.5h17v3a1.6 1.6 0 0 0 0 3v3h-17v-3a1.6 1.6 0 0 0 0-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14.5 8v8" stroke="currentColor" stroke-width="1.6" stroke-dasharray="1.6 1.6"/></svg>',
   drone: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2"/><rect x="9.3" y="9.3" width="5.4" height="5.4" rx="1.2" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><circle cx="18" cy="18" r="2.6"/></g></svg>',
   uni: '<svg viewBox="0 0 24 24"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z" fill="currentColor"/><path d="M6.5 11.6v4.2c1.4 1.5 3.3 2.2 5.5 2.2s4.1-.7 5.5-2.2v-4.2M20 10.3v5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  // Der Funkturm von broadcast.veerka.mp: Mast mit zwei Wellen.
+  broadcast: '<svg viewBox="0 0 24 24"><path d="M12 10.5 8.2 21M12 10.5l3.8 10.5M9.4 17.6h5.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8.6" r="1.9" fill="currentColor"/><path d="M8.3 5.2a5 5 0 0 0 0 6.8M15.7 5.2a5 5 0 0 1 0 6.8M5.6 2.8a8.6 8.6 0 0 0 0 11.6M18.4 2.8a8.6 8.6 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
   solana: '<svg viewBox="0 0 24 24"><path d="M6.5 6h13l-2 2.6h-13zM4.5 10.7h13l2 2.6h-13zM6.5 15.4h13l-2 2.6h-13z" fill="currentColor"/></svg>',
 }
 

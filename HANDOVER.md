@@ -1065,6 +1065,9 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+9887de5  Linkliste fuer alle ohne WebGL oder JavaScript
+f84b84f  beta.veerka.mp geloescht, Runden gehen direkt auf main
+984dd9c  Das Skital wird veerka.mp (#1, Merge auf GitHub)
 38da8fd  Das Skital loest die Kachelseite auf veerka.mp ab (Merge)
 711bee8  Dokumentation fuer veerka.mp: README, Uebergabe, CLAUDE.md
 ee6f87a  Seite heisst wieder Julian Veerkamp

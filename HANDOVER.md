@@ -154,7 +154,7 @@ worker/              Der Cloudflare-Worker hinter der Seite
   migrations/        Schema der D1 skiportfolio-slalom
 public/              _headers (Cache für /assets/), favicon.svg
 tests/               node --test (npm test)
-wrangler.jsonc       Worker "website" (veerka.mp) und env.beta (beta.veerka.mp)
+wrangler.jsonc       Worker "website" auf veerka.mp und www.veerka.mp
 ```
 
 Abhängigkeiten laufen in eine Richtung: `core/` kennt nur `config.js`,
@@ -583,8 +583,9 @@ Nie ein Abzeichen fürs **Benutzen** (Hochladen, Wallet, Kurzlink,
 Bezahlen) – sonst Datenmüll und Cent-Beträge für einen Stempel.
 
 Pille oben links (oben Mitte ist die Zeitnahme, unten Trick und Hinweise),
-geht nach 3 s. Alte Spielstände werden beim Laden umgerechnet
-(`ALT_ORTE`).
+geht nach 3 s. Die Umrechnung von Spielständen der ersten Fassung
+(`ALT_ORTE`) ist mit beta weggefallen: auf veerka.mp beginnt jeder neu,
+`localStorage` gilt je Adresse.
 
 **Goldene Ski**: alles erkundet + Slalom-**Silber** + Raser + 540er (Gold
 ausdrücklich nicht – Julians eigene Bestzeit war 4,18). `Skier.vergolden()`.
@@ -632,10 +633,10 @@ fälschbar.
 Server: `worker/slalom.js`, Spiel: `menu/bestenliste.js`. Der Worker
 springt nur für `/` und `/api/*` an (`run_worker_first`), alles andere
 bleibt Asset. Gleicher Host wie das Spiel – kein CORS, kein DNS. D1
-`skiportfolio-slalom` (Schema in `worker/migrations/`), geteilt von
-veerka.mp und beta. Geheimnis `SLALOM_GEHEIM` als Secret, je Worker ein
-eigenes (das von `website` ist beim Umzug neu erzeugt worden; es signiert
-nur Marken, die höchstens eine Viertelstunde gelten), lokal in `.dev.vars`.
+`skiportfolio-slalom` (Schema in `worker/migrations/`; die Einträge aus
+der beta-Zeit sind mit umgezogen). Geheimnis `SLALOM_GEHEIM` als Secret
+(beim Umzug neu erzeugt; es signiert nur Marken, die höchstens eine
+Viertelstunde gelten), lokal in `.dev.vars`.
 
 Ablauf: Startbogen → `POST start` (signierte Startmarke), Ziel → `POST ziel`
 (Zielmarke mit beiden Serverzeiten). Nur wenn beides klappt, steht acht
@@ -781,16 +782,19 @@ deploy`; der `build`-Eintrag in `wrangler.jsonc` lässt vorher vite laufen,
 veerka.mp um (`worker/index.js`), weil Pistenpass, Bestzeit und Ticket im
 `localStorage` liegen und der je Adresse gilt.
 
-**beta.veerka.mp** bleibt die Vorstufe: Worker `skiportfolio-test`,
-`env.beta` in derselben `wrangler.jsonc`, `npm run deploy:beta`. Gleiche D1,
-eigenes Secret. Wrangler warnt bei `deploy` ohne `--env`, weil es Umgebungen
-gibt; ohne `--env` ist immer veerka.mp gemeint.
+**Es gibt keine Vorstufe mehr.** beta.veerka.mp (Worker
+`skiportfolio-test`) war der Testbetrieb bis zum Umzug und ist seit dem
+27.09. gelöscht (Ansage). Ausprobiert wird lokal: `npm run dev`, für den
+Worker `npm run dev:api` – der baut vorher und liefert dann auf 8787 die
+ganze Seite so aus wie veerka.mp.
 
-**Arbeitsweise** (Ansage 26.09.: jede fertige Runde sofort live): Tests und
-Build, deutsch committen, Commit-Nummer hier im Verlauf nachtragen,
-`npm run deploy:beta` und prüfen, dass beta dieselbe `assets/index-*.js`
-ausliefert wie `dist/`. Ein `git push` auf `main` ist dann veerka.mp;
-dort dasselbe prüfen. Bis zum Umzug hieß „live“ beta.
+**Arbeitsweise** (Ansage 26.09., für veerka.mp bestätigt 27.09.: jede
+fertige Runde sofort live, ohne Rückfrage): Tests und Build, deutsch
+committen, Commit-Nummer hier im Verlauf nachtragen, `git push` auf `main`.
+Danach prüfen, dass veerka.mp dieselbe `assets/index-*.js` ausliefert wie
+`dist/` – Workers Builds braucht dafür etwa 40 Sekunden. Schlägt der Build
+fehl, bleibt der alte Stand online; den Fehler zeigt der Check
+„Workers Builds: website“ am Commit auf GitHub.
 
 **Cache**: `public/_headers` gibt `/assets/*` ein Jahr (die Dateinamen
 tragen einen Hash). Die Startseite setzt der Worker selbst auf `no-cache` –
@@ -801,14 +805,16 @@ antwortet.
 
 | Dienst | Im Code | Was freigegeben sein muss | Stand |
 |---|---|---|---|
-| Kurzlink (s.veerka.mp) | `dialogs/kurz.js` | `TURNSTILE_HOSTNAMES` im Worker `kurz` und Domainliste des Turnstile-Widgets „kurz“ | veerka.mp, www und beta eingetragen; Turnstile löst sich, der Knopf wird „Kürzen“ |
-| Upload (upload.veerka.mp) | `dialogs/upload.js` | `CORS_HERKUNFT` im Worker `upload` | veerka.mp, www, beta: Preflight 204; fremde Herkunft 405 |
+| Kurzlink (s.veerka.mp) | `dialogs/kurz.js` | `TURNSTILE_HOSTNAMES` im Worker `kurz` und Domainliste des Turnstile-Widgets „kurz“ | veerka.mp und www eingetragen; Turnstile löst sich, der Knopf wird „Kürzen“ |
+| Upload (upload.veerka.mp) | `dialogs/upload.js` | `CORS_HERKUNFT` im Worker `upload` | veerka.mp und www: Preflight 204; fremde Herkunft 405 |
 | Solana | `dialogs/wallet.js` | nichts – publicnode, CoinGecko und Binance antworten mit CORS `*` | geprüft |
 | Broadcast | `worker/broadcast.js` | nichts – der Worker holt serverseitig | geprüft |
-| Bestenliste | `worker/slalom.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker | an `website` und `skiportfolio-test` |
+| Bestenliste | `worker/slalom.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker | am Worker `website` |
 
 Die Repos der Dienste liegen unter `~/Git/` (`kurz`, `file-uploader`,
-`broadcast`). **Wer dort deployt, prüft die Hostlisten**: im Repo `kurz`
+`broadcast`). In beiden Hostlisten und im Turnstile-Widget steht noch
+`beta.veerka.mp` – harmlos, weil dort nichts mehr läuft; beim nächsten
+Deploy des jeweiligen Dienstes kann es mit raus. **Wer dort deployt, prüft die Hostlisten**: im Repo `kurz`
 stand einmal nur `s.veerka.mp`, live schon drei Hosts – ein Deploy aus dem
 Repo hätte das Kurzlink-Fenster hier still ausgesperrt. Beim Solana-Fenster
 ist der tote Ersatz-RPC leorpc entfernt; ohne Schlüssel trägt sonst keiner
@@ -1019,9 +1025,6 @@ Code steckt in `git show 44010bd`.
   die alte Kachelseite ging ohne beides. Eine schlichte Linkliste als
   Rückfall (`<noscript>` und bei fehlendem WebGL) wäre klein, ist aber neue
   Oberfläche – nur auf Ansage.
-- **Arbeitsweise nach dem Umzug**: ob fertige Runden weiter ohne Rückfrage
-  live gehen – jetzt also per Push auf `main` nach veerka.mp – oder erst
-  auf beta warten, ist noch nicht angesagt.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit

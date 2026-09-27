@@ -1,4 +1,4 @@
-// Der Worker hinter veerka.mp (und beta.veerka.mp). Die Seite selbst sind
+// Der Worker hinter veerka.mp. Die Seite selbst sind
 // die gebauten Dateien aus dist/; der Worker springt nur an, wo
 // run_worker_first in wrangler.jsonc es sagt:
 //

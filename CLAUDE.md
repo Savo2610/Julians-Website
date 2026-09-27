@@ -4,9 +4,10 @@
 die Begründungen und was offen ist.
 
 Das ist **veerka.mp**: Jeder Push auf `main` geht über Cloudflare Workers
-Builds live. Vorstufe ist beta.veerka.mp (`npm run deploy:beta`). Die Seite
-heißt **Julian Veerkamp** – nicht Portfolio, nicht Skiportfolio (das war der
-Arbeitsname).
+Builds live, eine Vorstufe gibt es nicht mehr. Fertige Runden gehen ohne
+Rückfrage auf `main` (Ansage 27.09.); danach prüfen, dass veerka.mp den neuen
+Stand ausliefert. Die Seite heißt **Julian Veerkamp** – nicht Portfolio, nicht
+Skiportfolio (das war der Arbeitsname).
 
 Das Wichtigste in Kürze:
 

@@ -7,9 +7,6 @@
 // `npx wrangler deploy` veroeffentlicht. "build" laesst vorher vite laufen,
 // ganz gleich, was im Dashboard als Build-Befehl eingetragen ist – ohne
 // dist/ gaebe es nichts hochzuladen.
-//
-// Die Umgebung "beta" ist der Testbetrieb auf beta.veerka.mp
-// (npm run deploy:beta). Sie teilt sich die Bestenliste mit veerka.mp.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   // Muss exakt dem Worker-Namen im Dashboard entsprechen, sonst legt ein
@@ -32,28 +29,12 @@
       "migrations_dir": "worker/migrations"
     }
   ],
-  // Marken-Schluessel: npx wrangler secret put SLALOM_GEHEIM [--env beta]
-  // (lokal: .dev.vars)
+  // Marken-Schluessel: npx wrangler secret put SLALOM_GEHEIM (lokal: .dev.vars)
   "observability": { "enabled": true },
   "routes": [
     { "pattern": "veerka.mp", "custom_domain": true },
     { "pattern": "www.veerka.mp", "custom_domain": true }
   ],
   "workers_dev": false,
-  "preview_urls": false,
-
-  "env": {
-    "beta": {
-      "name": "skiportfolio-test",
-      "routes": [{ "pattern": "beta.veerka.mp", "custom_domain": true }],
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "skiportfolio-slalom",
-          "database_id": "9529912d-c89a-472d-9ecc-5dcbce6b4aae",
-          "migrations_dir": "worker/migrations"
-        }
-      ]
-    }
-  }
+  "preview_urls": false
 }

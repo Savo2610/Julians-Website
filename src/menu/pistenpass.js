@@ -68,17 +68,11 @@ const MELDBAR = new Map([
 const FUER_GOLD = ['silber', ...ABZEICHEN.filter((a) => !a.geheim).map((a) => a.id)]
 const IST_ORT = new Set(ORTE_ERKUNDET.map((o) => o.id))
 
-// Die erste Fassung speicherte Orte als Abzeichen und Stationen als Menge;
-// beides wird hier zu Erkundet, damit auf beta niemand von vorn anfaengt.
-const ALT_ORTE = { see: 'see', gipfel: 'gipfel', huette: 'huette', nord: 'nord', teppich: 'kinderland', drohne: 'drone', loeschzug: 'firetruck' }
-
 function laden() {
   let d = null
   try { d = JSON.parse(localStorage.getItem(STORE)) } catch { /* leer oder gesperrt */ }
   if (!d || typeof d !== 'object') return { erreicht: {}, orte: [] }
   const orte = new Set(Array.isArray(d.orte) ? d.orte : [])
-  for (const id of d.stand?.stationen ?? []) orte.add(id)
-  for (const [alt, neu] of Object.entries(ALT_ORTE)) if (d.erreicht?.[alt]) orte.add(neu)
   const erreicht = {}
   for (const [id, t] of Object.entries(d.erreicht ?? {})) if (MELDBAR.has(id)) erreicht[id] = t
   return { erreicht, orte: [...orte].filter((id) => IST_ORT.has(id)) }

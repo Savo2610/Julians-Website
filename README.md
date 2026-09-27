@@ -66,15 +66,13 @@ Fenster verborgen ist.
 
 ## Veröffentlichen
 
-| Wohin | Wie |
-|---|---|
-| **veerka.mp** | jeder Push auf `main` – Cloudflare Workers Builds baut und veröffentlicht (Worker `website`) |
-| beta.veerka.mp | `npm run deploy:beta` – Vorstufe zum Ausprobieren (Worker `skiportfolio-test`) |
-| veerka.mp von Hand | `npm run deploy` |
+Jeder Push auf `main` geht live: Cloudflare Workers Builds baut und
+veröffentlicht den Worker `website` (etwa 40 Sekunden). Von Hand geht es mit
+`npm run deploy`. Zum Ausprobieren vorher liefert `npm run dev:api` die ganze
+Seite lokal so aus wie veerka.mp.
 
-Beide Worker stehen in `wrangler.jsonc` und teilen sich die Bestenliste.
-Das Geheimnis `SLALOM_GEHEIM` liegt je Worker als Secret
-(`npx wrangler secret put SLALOM_GEHEIM [--env beta]`).
+Das Geheimnis für die Marken der Bestenliste liegt als Secret am Worker
+(`npx wrangler secret put SLALOM_GEHEIM`).
 
 ## Aufbau
 

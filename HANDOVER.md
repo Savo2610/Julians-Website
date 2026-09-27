@@ -1076,6 +1076,7 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+459c2d5  Symbole: Schneeflocke im Tab, Skifahrer auf dem Homescreen
 9887de5  Linkliste fuer alle ohne WebGL oder JavaScript
 f84b84f  beta.veerka.mp geloescht, Runden gehen direkt auf main
 984dd9c  Das Skital wird veerka.mp (#1, Merge auf GitHub)

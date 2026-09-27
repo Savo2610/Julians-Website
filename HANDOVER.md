@@ -1082,6 +1082,7 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+2b284bf  R im Slalom fuehrt zum Slalom-Start
 459c2d5  Symbole: Schneeflocke im Tab, Skifahrer auf dem Homescreen
 9887de5  Linkliste fuer alle ohne WebGL oder JavaScript
 f84b84f  beta.veerka.mp geloescht, Runden gehen direkt auf main

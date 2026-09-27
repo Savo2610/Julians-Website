@@ -1,10 +1,10 @@
 import * as THREE from 'three'
-import { KINDER_LANE, SHOOT_RUN, terrainHeight } from './heightfield.js'
-import { MagicCarpet } from './magic-carpet.js'
-import { readableYaw } from './props/slalom.js'
-import { LightRun } from './light-run.js'
-import { createMarker } from '../stations/marker.js'
-import { createSnowCannon } from './props/snow-cannon.js'
+import { KINDER_LANE, SHOOT_RUN, terrainHeight } from '../heightfield.js'
+import { MagicCarpet } from '../attractions/magic-carpet.js'
+import { readableYaw } from '../props/slalom.js'
+import { LightRun } from '../attractions/light-run.js'
+import { createMarker } from '../../stations/marker.js'
+import { createSnowCannon } from '../props/snow-cannon.js'
 import {
   createNoodleArch,
   createCone,
@@ -12,7 +12,7 @@ import {
   createSnowman,
   createBuntingFence,
   KINDER_COLORS,
-} from './props/kinderland.js'
+} from '../props/kinderland.js'
 
 // Das Kinderland: Spielwiese oben auf der Osthoehe, Uebungshang darunter,
 // Zauberteppich dazwischen.

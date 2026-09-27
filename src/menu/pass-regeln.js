@@ -1,5 +1,5 @@
 import { LAKE, SUMMIT, lakeRadius, klammAt, inFunpark } from '../world/heightfield.js'
-import { terraceDistance } from '../world/apres-layout.js'
+import { terraceDistance } from '../world/areas/apres-layout.js'
 
 // Wann was im Pistenpass faellt. Alles wird hier im Loop abgelesen, statt
 // dass jede Anlage selbst den Pass kennt: Lift, Rennstrecke und Seebank

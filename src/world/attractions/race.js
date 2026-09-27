@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import { terrainHeight, SLED_LANE } from './heightfield.js'
-import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readableYaw } from './props/slalom.js'
-import { createHalo } from './props/screens.js'
+import { terrainHeight, SLED_LANE } from '../heightfield.js'
+import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readableYaw } from '../props/slalom.js'
+import { createHalo } from '../props/screens.js'
 
 // Die Zeitnahme einer Bahn: Start, Ziel, Tore – und die Farbe im Schnee, die
 // sagt, wo man langfahren soll.
@@ -84,7 +84,7 @@ export class RaceCourse {
     this.lastRun = null
     this._prevS = null
     this._hold = 0
-    // Fuer die Bestenliste (stations/bestenliste.js): Start, Ziel, Abbruch.
+    // Fuer die Bestenliste (menu/bestenliste.js): Start, Ziel, Abbruch.
     this.onStart = null
     this.onFinish = null
     this.onAbort = null

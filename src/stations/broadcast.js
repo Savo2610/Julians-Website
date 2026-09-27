@@ -4,7 +4,7 @@ import { CAMERA } from '../config.js'
 
 // Was gerade auf broadcast.veerka.mp laeuft, eingefroren in die Quelle am
 // See (world/props/frozen-fall.js). Der Worker reicht Stand und Dateien
-// unter /api/broadcast/* durch, siehe worker/index.js.
+// unter /api/broadcast/* durch, siehe worker/broadcast.js.
 //
 // Gefragt wird nur, wer in die Naehe kommt – die allermeisten Besucher
 // fahren nie an den See, und fuer sie geht keine Anfrage raus. Danach

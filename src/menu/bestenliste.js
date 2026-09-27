@@ -1,7 +1,7 @@
 import { TOUCH } from '../core/device.js'
-import { MEDALS } from '../world/race.js'
+import { MEDALS } from '../world/attractions/race.js'
 
-// Die Bestenliste des Slaloms – Gegenstueck zu worker/index.js.
+// Die Bestenliste des Slaloms – Gegenstueck zu worker/slalom.js.
 //
 // Ablauf: beim Durchfahren des Startbogens holt das Spiel still eine
 // Startmarke, im Ziel eine Zielmarke. Nur bei einer neuen eigenen

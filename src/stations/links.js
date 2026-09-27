@@ -1,9 +1,8 @@
 // Zentrale Stelle fuer alle echten Adressen. Hier eintragen, sonst nirgends –
 // die Objekte in der Welt referenzieren nur die Schluessel.
 //
-// Die Liste ist dieselbe wie auf veerka.mp; sie ist von dort uebernommen,
-// damit es nicht zwei Wahrheiten gibt. Wer eine Adresse aendert, aendert sie
-// an beiden Stellen.
+// Die Liste stammt von der frueheren Kachelseite auf veerka.mp, die dieses
+// Tal abgeloest hat; seitdem gibt es sie nur noch hier.
 
 export const LINKS = {
   // Beruflich – beide in der Werkstatt

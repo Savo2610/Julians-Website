@@ -1,4 +1,4 @@
-import { NORTH_LANE } from './heightfield.js'
+import { NORTH_LANE } from '../heightfield.js'
 
 // Die Nordabfahrt als Zustand – nicht als Gelaende, das steckt im Hoehenfeld,
 // und nicht als Aufbau, der steht in populate.

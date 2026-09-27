@@ -1,4 +1,4 @@
-import { apresGround } from './apres-layout.js'
+import { apresGround } from './areas/apres-layout.js'
 import { landscapeHeight } from './landscape-layout.js'
 import { WORLD } from '../config.js'
 import { fbm } from '../core/noise.js'

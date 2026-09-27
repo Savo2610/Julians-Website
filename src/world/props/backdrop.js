@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { makeRng } from '../../core/rng.js'
-import { assemble, vertexColorMaterial } from '../../core/geometry.js'
+import { assemble } from '../../core/geometry.js'
 
 // Ferne Gipfelkulisse. Sie steht weit ausserhalb der begehbaren Welt, hat
 // keine Kollision und ist unbeleuchtet: der Farbverlauf von dunstig-hell unten

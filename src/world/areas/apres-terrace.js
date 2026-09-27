@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { assemble, vertexColorMaterial } from '../core/geometry.js'
-import { terrainHeight } from './heightfield.js'
+import { assemble, vertexColorMaterial } from '../../core/geometry.js'
+import { terrainHeight } from '../heightfield.js'
 import { APRES, terraceWorld, terraceDistance } from './apres-layout.js'
 
 const WOOD = 0x98734e, DARK = 0x574638

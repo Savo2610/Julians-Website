@@ -2,9 +2,9 @@ import { TOUCH } from '../core/device.js'
 
 // Die drei Fenster ohne Maus.
 //
-// Die Fenster selbst sind von veerka.mp uebernommen und bleiben dort
-// wortgleich; was das Skigebiet zusaetzlich braucht, steht hier und wird
-// nach dem Oeffnen drueber gelegt. Ohne das landete der Fokus auf dem
+// Die Fenster selbst stammen unveraendert von der frueheren Kachelseite;
+// was das Skigebiet zusaetzlich braucht, steht hier und wird nach dem
+// Oeffnen drueber gelegt. Ohne das landete der Fokus auf dem
 // Schliessen-Knopf – dem ersten Knopf im Fenster –, und wer mit Enter an
 // die Station gekommen war, musste erst zur Maus greifen, um einen Betrag
 // oder eine Adresse einzutippen.

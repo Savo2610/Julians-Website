@@ -1,5 +1,5 @@
 import { LAKE, lakeRadius } from './heightfield.js'
-import { APRES, terraceDistance } from './apres-layout.js'
+import { APRES, terraceDistance } from './areas/apres-layout.js'
 
 // Auch die Breite der Ski und der aufgeworfene Spurrand muessen auf Schnee
 // liegen. Sonst hebt der Trail-Shader Schnee durch Eis und Holz hindurch.

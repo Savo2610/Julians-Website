@@ -1,4 +1,3 @@
-import * as THREE from 'three'
 import { LINKS } from './links.js'
 import { createMarker } from './marker.js'
 import { createContactPost } from '../world/props/contact-post.js'
@@ -92,24 +91,24 @@ export const STATION_SPOTS = {
   firetruck: { x: -15, z: 43, clearing: 4.5, footprint: 3.2, search: 4, trail: null },
 }
 
-// Die drei Fenster von veerka.mp werden erst geladen, wenn jemand die
-// zugehoerige Station benutzt. Zusammen sind sie 35 Kilobyte, und die
-// allermeisten Besucher fahren einfach Ski.
 // Abstand der Werkbank vor der Huettenmitte, zur Kamera hin. Die Huette ist
 // 2,4 tief und hat einen Kollisionskreis von 2,1; bei 3,4 bleibt ein knapper
 // Meter Luft zwischen Bank und Wand – eng genug, dass beide zusammengehoeren.
 const BENCH_AHEAD = 3.4
 
-// Die Tastaturbedienung liegt obendrauf, siehe dialogs/keyboard.js.
+// Die drei Fenster (Solana, Briefkasten, Kurzlink) werden erst geladen, wenn
+// jemand die zugehoerige Station benutzt. Zusammen sind sie 35 Kilobyte, und
+// die allermeisten Besucher fahren einfach Ski. Die Tastaturbedienung liegt
+// obendrauf, siehe dialogs/keyboard.js.
 const fenster = (laden, id) => () => Promise.all([laden(), import('../dialogs/keyboard.js')])
   .then(([m, k]) => { m.oeffnen(); k.mitTastatur(id) })
 const walletDialog = fenster(() => import('../dialogs/wallet.js'), 'sol-dialog')
 const uploadDialog = fenster(() => import('../dialogs/upload.js'), 'up-dialog')
 const kurzDialog = fenster(() => import('../dialogs/kurz.js'), 'kz-dialog')
 
-// Am Handy oeffnet Solana wie auf veerka.mp direkt die Wallet-App: der
-// solana:-Link ist dort die Uebergabe an die App, und ein Dialog, der nach
-// einer Browser-Erweiterung sucht, findet am Handy keine. Geht keine App auf
+// Am Handy oeffnet Solana wie frueher auf der Kachelseite direkt die
+// Wallet-App: der solana:-Link ist dort die Uebergabe an die App, und ein
+// Dialog, der nach einer Browser-Erweiterung sucht, findet am Handy keine. Geht keine App auf
 // – weil keine installiert ist –, bleibt die Seite sichtbar, und nach 1,6 s
 // kommt doch der Dialog mit seinem Hinweis. Nur die Sichtbarkeit zaehlt,
 // nicht 'blur': Safari nimmt den Fokus auch fuer seinen eigenen Hinweis
@@ -235,9 +234,9 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     focus: { abstand: 9.5, hoehe: 1.3, vor: 1.4 },
     choices: [
       { label: 'PayPal', sub: 'paypal.me/juliansebv', glyph: 'paypal', url: LINKS.paypal, color: '#2b8ce6' },
-      // Solana oeffnet am Rechner kein Ziel, sondern das Fenster von
-      // veerka.mp: es sucht die Wallet-Erweiterung, rechnet SOL in Euro um
-      // und schickt die Ueberweisung. Ein blosser solana:-Link tut dort
+      // Solana oeffnet am Rechner kein Ziel, sondern ein Fenster
+      // (dialogs/wallet.js): es sucht die Wallet-Erweiterung, rechnet SOL
+      // in Euro um und schickt die Ueberweisung. Ein blosser solana:-Link tut dort
       // schlicht nichts – am Handy dagegen ist er genau richtig.
       TOUCH
         ? { label: 'Solana', sub: 'Wallet-App öffnen', glyph: 'solana', color: '#9945ff', action: solanaApp }

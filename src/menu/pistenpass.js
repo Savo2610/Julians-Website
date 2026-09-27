@@ -1,4 +1,4 @@
-import { MEDALS } from '../world/race.js'
+import { MEDALS } from '../world/attractions/race.js'
 
 // Der Pistenpass: wie weit man das Tal kennt, was man gefahren ist.
 //

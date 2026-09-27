@@ -2,21 +2,21 @@ import { CAMERA } from '../config.js'
 import { TOUCH } from '../core/device.js'
 import { TRAILS } from '../world/paths.js'
 import { PLATEAU } from '../world/heightfield.js'
-import { LINKS } from './links.js'
+import { LINKS } from '../stations/links.js'
 import { ABZEICHEN, MEDAILLEN, ORTE_ERKUNDET } from './pistenpass.js'
 import { listeZeichnen } from './bestenliste.js'
 
 // Die Uebersicht: M ueberall, Enter an der Panoramatafel, am Handy der
 // Kartenknopf. Zwei Reiter:
 //
-// - LINKS ist die Kachelseite von veerka.mp im Glas des Tals. Wer nicht
-//   spielen will – und das sind gerade die, fuer die ein WASD-Tal eine Huerde
+// - LINKS ist die fruehere Kachelseite von veerka.mp im Glas des Tals. Wer
+//   nicht spielen will – und das sind gerade die, fuer die ein WASD-Tal eine Huerde
 //   ist –, findet hier jede Adresse mit einem Klick. Jede Kachel sagt
 //   ausserdem, *wo* im Tal sie liegt ("Werkstatt"), und bringt einen auf
 //   Wunsch hin. Vorher stand LinkedIn nur hinter dem Wort "Werkstatt" in
 //   einer Liste zwischen Gipfel und See; das musste man erraten.
 // - KARTE ist die alte Talkarte mit Schnellreise zu Stationen und Orten.
-// - PASS ist der Pistenpass (stations/pistenpass.js): Erkundet, Medaillen,
+// - PASS ist der Pistenpass (pistenpass.js): Erkundet, Medaillen,
 //   Abzeichen. Nur zum Anschauen, ohne Auswahl – dort gibt es nichts zu
 //   oeffnen.
 //
@@ -29,8 +29,8 @@ import { listeZeichnen } from './bestenliste.js'
 // mit dem Ruecken zur Kamera, und die Einladung zum Enter ist schon da.
 //
 // Drohne, Loeschzug und die gefrorene Quelle fehlen absichtlich, in beiden
-// Reitern: sie liegen abseits, damit man sie findet – auf veerka.mp stehen
-// sie auch nicht.
+// Reitern: sie liegen abseits, damit man sie findet – auf der alten
+// Kachelseite standen sie auch nicht.
 
 const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast'])
 
@@ -41,8 +41,8 @@ const WEG = {
   worktime: 'tools', upload: 'tools', shortener: 'tools', packlist: 'tools',
 }
 
-// Die Kacheln, in der Reihenfolge und mit den Worten von veerka.mp. Die
-// Adressen haengen an den Stationen (station + pick) und stehen nicht ein
+// Die Kacheln, in der Reihenfolge und mit den Worten der alten Kachelseite.
+// Die Adressen haengen an den Stationen (station + pick) und stehen nicht ein
 // zweites Mal hier; nur Spotify und Komoot haben noch keinen Platz im Tal.
 const KACHELN = [
   { titel: 'Karriere', weg: 'career', kacheln: [
@@ -69,7 +69,8 @@ const KACHELN = [
   ] },
 ]
 
-// Wie auf veerka.mp: ein Satz nach dem anderen, getippt und wieder geloescht.
+// Wie auf der alten Kachelseite: ein Satz nach dem anderen, getippt und
+// wieder geloescht.
 // Im Menue und nicht im Tal – als Schild oder im Schnee waere es Laufschrift.
 const SAETZE = [
   'Student E-Technik und IT. 👨‍💻',

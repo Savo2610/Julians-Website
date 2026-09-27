@@ -1,13 +1,10 @@
-/* Die drei Fenster von veerka.mp – Solana, Briefkasten, Kurzlink – im Glas
- * des Skiportfolios.
+/* Die drei Fenster – Solana, Briefkasten, Kurzlink – im Glas des Tals.
  *
- * Das Markup in index.html und der Code in src/dialogs/ sind weiterhin die
- * von der Website; alle Klassen und Ids sind geblieben. Neu ist nur, wie sie
- * aussehen: frueher das dunkle Violett von veerka.mp, jetzt dasselbe helle
- * Glas wie die Stationsauswahl (.glass in style.css). Ein dunkles Fenster
- * ueber einem Schneetal war der einzige Bruch im Bild.
- *
- * Wer veerka.mp abgleicht: den Code weiter tauschen, diese Datei nicht.
+ * Markup (index.html) und Code (src/dialogs/) stammen unveraendert von der
+ * frueheren Kachelseite; alle Klassen und Ids sind geblieben. Neu ist nur,
+ * wie sie aussehen: dort das dunkle Violett, hier dasselbe helle Glas wie
+ * die Stationsauswahl (.glass in style.css). Ein dunkles Fenster ueber einem
+ * Schneetal war der einzige Bruch im Bild.
  */
 
 .dialog {

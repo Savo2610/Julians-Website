@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import { assemble, vertexColorMaterial } from '../core/geometry.js'
-import { terrainHeight } from './heightfield.js'
-import { KINDER_COLORS } from './props/kinderland.js'
+import { assemble, vertexColorMaterial } from '../../core/geometry.js'
+import { terrainHeight } from '../heightfield.js'
+import { KINDER_COLORS } from '../props/kinderland.js'
 
 // Der fliegende Teppich: ein Foerderband im Schnee, das den Fahrer den Hang
 // hinauftraegt. Anders als am Schlepplift haelt man sich an nichts fest – man

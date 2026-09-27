@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 import { pointScale } from '../core/point-scale.js'
-import { assemble, vertexColorMaterial } from '../core/geometry.js'
 import { makeRng } from '../core/rng.js'
 import { terrainHeight, LAKE } from './heightfield.js'
 import { createLakeBench } from './props/lake-bench.js'

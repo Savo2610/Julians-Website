@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { terrainHeight } from './heightfield.js'
+import { terrainHeight } from '../heightfield.js'
 import {
   createLiftPylon,
   createLiftBaseStation,
@@ -7,8 +7,8 @@ import {
   createLiftPlatterGeometry,
   PLATTER_LENGTH,
   LIFT_COLORS,
-} from './props/lift-parts.js'
-import { vertexColorMaterial } from '../core/geometry.js'
+} from '../props/lift-parts.js'
+import { vertexColorMaterial } from '../../core/geometry.js'
 
 // Schlepplift als Tellerlift. Bewusst kein Sessellift: der Fahrer bleibt auf
 // den Ski stehen, seine Spur reisst nicht ab und Aussteigen heisst schlicht

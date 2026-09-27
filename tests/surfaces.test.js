@@ -2,10 +2,10 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import * as THREE from 'three'
 import { isSnowSurface } from '../src/world/surfaces.js'
-import { APRES, terraceWorld, terraceDistance, terraceHeight } from '../src/world/apres-layout.js'
+import { APRES, terraceWorld, terraceDistance, terraceHeight } from '../src/world/areas/apres-layout.js'
 import { LAKE, lakeRadius, terrainHeight } from '../src/world/heightfield.js'
 import { Skier } from '../src/player/skier.js'
-import { createApresTerrace } from '../src/world/apres-terrace.js'
+import { createApresTerrace } from '../src/world/areas/apres-terrace.js'
 
 test('Eis, Holz und Schnee teilen eindeutige Oberflaechengrenzen', () => {
   assert.equal(isSnowSurface(LAKE.x, LAKE.z), false)

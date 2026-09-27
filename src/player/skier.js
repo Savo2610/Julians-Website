@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
-import { SKIER, TRICK, WORLD } from '../config.js'
+import { SKIER, TRICK } from '../config.js'
 import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 

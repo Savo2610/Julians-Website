@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { PARK_FEATURES } from './heightfield.js'
 
 // Die Rail im Funpark ist nicht nur ein Rohr im Schnee, sondern eine Fahrt:
 // wer sie oben mit gedrueckter Leertaste erwischt, wird aufgezogen und
@@ -104,7 +103,3 @@ RailRide.prototype.grab = false
 RailRide.prototype.slidePose = true
 RailRide.prototype.lift = 0.5
 RailRide.prototype.speed = SPEED
-
-export function findRailFeature() {
-  return PARK_FEATURES.find((f) => f.kind === 'ledge')
-}

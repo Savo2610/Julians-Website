@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { assemble, vertexColorMaterial } from '../core/geometry.js'
-import { terrainHeight } from './heightfield.js'
+import { assemble, vertexColorMaterial } from '../../core/geometry.js'
+import { terrainHeight } from '../heightfield.js'
 
 // Die Leuchtstrecke: eine gerade Schussfahrt aus dem Kinderland heraus,
 // eingefasst von Lichtbogen, die mit dem Fahrer mitlaufen.

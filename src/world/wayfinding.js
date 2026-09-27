@@ -62,7 +62,7 @@ export function createWayfinding(world, { registry, trees = [], lift = null, ski
   }
 
   // Die Panoramatafel am Platz: gemaltes Relief, und eine Station – Enter
-  // oeffnet die Uebersicht (stations/map-menu.js). Sie stand bei (4, 24)
+  // oeffnet die Uebersicht (menu/map-menu.js). Sie stand bei (4, 24)
   // rechts im Platz zwischen den Wegweisern, wie abgestellt. Jetzt steht sie
   // am hinteren Rand, genau hinter dem Namen im Schnee: Tafel, Name,
   // Fahrer, Tasten liegen im Bild uebereinander wie eine Startaufstellung,

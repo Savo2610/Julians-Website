@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import { assemble, vertexColorMaterial } from '../core/geometry.js'
-import { CAMERA } from '../config.js'
-import { terrainHeight } from './heightfield.js'
+import { assemble, vertexColorMaterial } from '../../core/geometry.js'
+import { CAMERA } from '../../config.js'
+import { terrainHeight } from '../heightfield.js'
 
 // Die Radarfalle auf der freien Abfahrt: zwei Pfosten links und rechts der
 // Bahn, auf dem rechten eine kleine Kamera, auf dem linken ihr Reflektor –

@@ -258,12 +258,8 @@ export function createFrozenFall() {
       stone(x, v * H, -0.1 - i * 0.1, s * (0.9 + rng() * 0.2), 7100 + i * 7 + (side > 0 ? 3 : 0))
     })
   }
-  // In der Mitte des Sturzes eine Kerbe: dort kommt der Bach herein
-  // (props/frozen-river.js). Die inneren Steine sind kleiner und lassen gut
-  // einen Meter Luft.
-  ;[-0.4, -0.25, 0.25, 0.4].forEach((u, i) => {
-    const innen = Math.abs(u) < 0.3
-    const s = innen ? 0.62 + rng() * 0.1 : 0.82 + rng() * 0.2
+  ;[-0.36, -0.12, 0.12, 0.36].forEach((u, i) => {
+    const s = 0.78 + rng() * 0.22 + (Math.abs(u) < 0.2 ? 0.1 : 0)
     stone(u * W, H * 0.98 + s * 0.55, -0.4, s, 7200 + i * 5)
   })
 
@@ -417,11 +413,6 @@ export function createFrozenFall() {
     }
   }
   group.userData.setSicht = (v) => { sicht = v }
-  // Mitte der Oberkante in Weltkoordinaten – dort endet der Bach.
-  group.userData.lip = () => {
-    group.updateMatrixWorld(true)
-    return tilt.localToWorld(new THREE.Vector3(0, H * 0.96, 0.12))
-  }
 
   // Neues Bild ins Eis; das alte blendet ueber. Entsorgt werden Texturen
   // von dem, der sie gebaut hat (stations/broadcast.js).

@@ -665,25 +665,6 @@ unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
 Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
 expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
 
-**Der Bach** (`props/frozen-river.js`, `BACH` in `heightfield.js`, 27.09.,
-ausdrücklich als Versuch). Er kommt vom Gebirgsrand im Westen, auf 18 m
-bei x = −86, und läuft durch den Wald herunter. Durch eine Kerbe in der
-Mitte des Steinsturzes stürzt er in den Eisfall. Das Bett ist 0,55 m tief
-ins Höhenfeld geschnitten (Sohle ±1,7 m, flache Böschung 2,6 m), das Eis
-liegt 4 cm darüber und ist 2–2,5 m breit je Seite, nicht überall gleich.
-**Zweite Fassung (27.09.):** Die erste war unbeleuchtet, eigenes Türkis,
-harte Kante, schmal. Julian fand, sie sah „wie aufgemalt“ aus. Jetzt ist
-es ein `MeshStandardMaterial` wie das Gelände, mit Sonne und Baumschatten.
-Die Farbe kommt aus dem Rezept des Sees (dieselben Töne, Risse,
-Verwehungen in Weltkoordinaten), dazu ein Drittel Eigenlicht, sonst wird das
-Eis im Schatten grau. Zum Ufer hin franst es aus und wird durchsichtig.
-Zwischen Hangfuß und Böschungskante lag ein Graben 2 m unter beiden. Der
-`SCHWEMMKEGEL` füllt ihn nur dort, wo der Bach quert. Die letzten 3 m
-spannen sich als schmale Eislippe von der Kante zur Oberkante des Falls.
-Wo es steil ist (oben 15 → 4 m auf 8 m), liegt mehr Schnee darauf. Am Ufer liegen verschneite Steine, im
-Bett wächst kein Wald, und es bleiben keine Spuren (`surfaces.js`).
-Zurück ohne Bach: `git tag vor-fluss` markiert den Stand davor.
-
 **Beim Umzug auf veerka.mp** muss `/api/broadcast/*` mit, wie die Bestenliste.
 
 ## 4b. Handymodus
@@ -882,7 +863,7 @@ am Hostnamen. Beim Umzug gegenprüfen.
 
 ## 8. Was verworfen wurde
 
-Beides wurde gebaut, geprüft und auf Ansage wieder entfernt. **Nicht erneut
+Alles hier wurde gebaut, geprüft und auf Ansage wieder entfernt. **Nicht erneut
 anfangen, ohne zu fragen.**
 
 **Halfpipe** (siehe Abschnitt 5). Der Fahrmodell-Grund ist strukturell, nicht
@@ -902,6 +883,15 @@ eine Frage der Abstimmung.
 
 Urteil: **das Skigebiet bleibt still.** Wer Ton doch noch will, findet die
 komplette Anlage in `git show c218775:src/audio/audio.js`.
+
+**Gefrorener Bach zur Quelle** (27.09., Commits `1e0a99e` und `44010bd`,
+entfernt auf Ansage). Er kam vom Westrand herunter und lief durch eine
+Kerbe im Steinsturz in den Eisfall. Dafür gab es ein Bett im Höhenfeld
+(`BACH`) und einen Schwemmkegel über dem Graben hinter der Böschungskante.
+Die erste Fassung war unbeleuchtet und türkis und sah aufgemalt aus. Die
+zweite hatte Seefarben, Licht und Schatten und einen ausgefransten Rand,
+hat aber trotzdem nicht überzeugt. Zurück auf den Stand `vor-fluss`. Der
+Code steckt in `git show 44010bd`.
 
 ---
 
@@ -950,8 +940,6 @@ komplette Anlage in `git show c218775:src/audio/audio.js`.
 ## 10. Verlauf
 
 ```
-44010bd  Bach wie der See: beleuchtet, ausgefranst, breiter
-1e0a99e  Gefrorener Bach vom Gebirgsrand in die gefrorene Quelle
 00c2813  Gefrorene Quelle: erst ab dem See sichtbar, Pille vor dem Eis, ohne Schleier
 fefc225  Gefrorene Quelle gross, im Felsrahmen, klar vom See aus
 596e0e5  Gefrorene Quelle: laufende Broadcast-Sendung im Eis am See

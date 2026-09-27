@@ -2,14 +2,13 @@ import * as THREE from 'three'
 import { LANDSCAPE_PATHS, GROVES } from './landscape-layout.js'
 import { createLandscapeDetails, FALL_SPOT } from './landscape-details.js'
 import { BroadcastFeed } from '../stations/broadcast.js'
-import { createFrozenRiver } from './props/frozen-river.js'
 import { LINKS } from '../stations/links.js'
 import { CONNECTIONS } from './paths.js'
 import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
 import { WORLD, CAMERA } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, BACH, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -203,12 +202,6 @@ export function populate(world, sky, registry, stationOptions = {}) {
     const [x2, z2] = RETURN_PATH[i + 1]
     LANES.push({ x1, z1, x2, z2, r: 6 })
   }
-  // Im Bachbett waechst nichts; die Ufer duerfen dicht stehen.
-  for (let i = 0; i < BACH.punkte.length - 1; i++) {
-    const [x1, z1] = BACH.punkte[i]
-    const [x2, z2] = BACH.punkte[i + 1]
-    LANES.push({ x1, z1, x2, z2, r: BACH.halb + 1.2 })
-  }
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
   // Bewuchs und Boden nicht auseinanderlaufen koennen.
@@ -333,9 +326,6 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // broadcast.veerka.mp. Bewusst ohne Ring im Schnee, ohne Eintrag auf der
   // Karte und im Pistenpass: wer sie findet, hat gestoebert. Enter zoomt
   // heran, dann taut das Eis auf – deshalb eine Auswahl mit nur einem Ziel.
-  // Der Bach, der vom Gebirgsrand kommt und oben in den Fall stuerzt.
-  createFrozenRiver(world, { lip: landscape.fall.userData.lip() })
-
   const feed = new BroadcastFeed(landscape.fall, FALL_SPOT)
   const fallGround = terrainHeight(FALL_SPOT.x, FALL_SPOT.z)
   registry.add({

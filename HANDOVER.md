@@ -1046,6 +1046,8 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+38da8fd  Das Skital loest die Kachelseite auf veerka.mp ab (Merge)
+711bee8  Dokumentation fuer veerka.mp: README, Uebergabe, CLAUDE.md
 ee6f87a  Seite heisst wieder Julian Veerkamp
 b41208f  Worker aufgeteilt, www-Umleitung, Betrieb auf veerka.mp vorbereitet
 93aab7c  Aufraeumen: Menues, Anlagen und Bereiche in eigene Ordner

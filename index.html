@@ -8,8 +8,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="description" content="Julian Veerkamp – ein kleines Skital zum Durchfahren. Jede Station ist ein Link." />
-    <title>Julian — Skiportfolio</title>
+    <title>Julian Veerkamp</title>
+    <meta name="description" content="Julian Veerkamp – Student E-Technik und IT, Feuerwehrmann, Skilehrer. Ein kleines Skital zum Durchfahren; jede Station ist ein Link." />
+    <!-- Die Seite ist auch unter www.veerka.mp erreichbar (der Worker leitet
+         um); fuer Suchmaschinen zaehlt die Adresse ohne www. -->
+    <link rel="canonical" href="https://veerka.mp/" />
   </head>
   <body>
     <canvas id="scene"></canvas>
@@ -22,10 +25,10 @@
     </div>
 
 
-  <!-- Die drei Dialoge von veerka.mp; Markup wie dort, nur die Zeichen im
-       Kopf sind Glyphen statt Emoji, passend zum Glas (dialogs.css). Sie werden
-       von src/dialogs/ gefuellt und gesteuert und erst nachgeladen, wenn
-       jemand die zugehoerige Station benutzt.
+  <!-- Die drei Dialoge der frueheren Kachelseite; Markup wie dort, nur die
+       Zeichen im Kopf sind Glyphen statt Emoji, passend zum Glas
+       (dialogs.css). Sie werden von src/dialogs/ gefuellt und gesteuert und
+       erst nachgeladen, wenn jemand die zugehoerige Station benutzt.
        Solana: -->
   <dialog id="sol-dialog" class="dialog" aria-labelledby="sol-titel">
     <button type="button" class="dialog-zu" id="sol-zu" aria-label="Schließen">×</button>

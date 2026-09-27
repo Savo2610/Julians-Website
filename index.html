@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#cfe2f2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Julian Veerkamp</title>
+    <meta name="description" content="Julian Veerkamp – Student E-Technik und IT, Feuerwehrmann, Skilehrer. Ein kleines Skital zum Durchfahren; jede Station ist ein Link." />
+    <!-- Die Seite ist auch unter www.veerka.mp erreichbar (der Worker leitet
+         um); fuer Suchmaschinen zaehlt die Adresse ohne www. -->
+    <link rel="canonical" href="https://veerka.mp/" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <div id="loader">
+      <div class="loader-inner">
+        <div class="loader-mark">❄</div>
+        <div class="loader-bar"><span></span></div>
+      </div>
+    </div>
+
+
+  <!-- Die drei Dialoge der frueheren Kachelseite; Markup wie dort, nur die
+       Zeichen im Kopf sind Glyphen statt Emoji, passend zum Glas
+       (dialogs.css). Sie werden von src/dialogs/ gefuellt und gesteuert und
+       erst nachgeladen, wenn jemand die zugehoerige Station benutzt.
+       Solana: -->
+  <dialog id="sol-dialog" class="dialog" aria-labelledby="sol-titel">
+    <button type="button" class="dialog-zu" id="sol-zu" aria-label="Schließen">×</button>
+
+    <div class="dialog-kopf">
+      <span class="dialog-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6h13l-2 2.6h-13zM4.5 10.7h13l2 2.6h-13zM6.5 15.4h13l-2 2.6h-13z" fill="currentColor"/></svg></span>
+      <strong id="sol-titel">Solana</strong>
+    </div>
+
+    <button type="button" class="sol-adresse" id="sol-kopieren" title="Adresse kopieren">
+      <code id="sol-adresse-text"></code>
+      <span id="sol-kopieren-text">kopieren</span>
+    </button>
+
+    <!-- Wallet-Erweiterung gefunden: hier wird wirklich gesendet. -->
+    <div class="dialog-block" id="sol-senden" hidden>
+      <label class="dialog-label" for="sol-betrag">Betrag</label>
+      <div class="sol-betrag">
+        <!-- Bewusst kein type="number": ob das dort ein Komma durchgeht,
+             hängt an der Browsersprache. Als Text lesen wir beides. -->
+        <input type="text" id="sol-betrag" value="0,1"
+               inputmode="decimal" autocomplete="off" />
+        <!-- Einheit ist gleichzeitig der Umschalter SOL <-> EUR. Ohne Kurs
+             bleibt sie ein reines Etikett, siehe wallet.js. -->
+        <button type="button" class="sol-einheit" id="sol-einheit">SOL</button>
+      </div>
+      <p class="sol-umrechnung" id="sol-umrechnung" hidden></p>
+      <div class="sol-chips" id="sol-chips"></div>
+      <label class="dialog-label" for="sol-wahl" id="sol-wahl-label" hidden>Wallet</label>
+      <select id="sol-wahl" class="sol-wahl" hidden></select>
+      <button type="button" class="dialog-los" id="sol-los">Senden</button>
+    </div>
+
+    <!-- Keine Wallet da: Empfehlung statt Sackgasse. -->
+    <div class="dialog-block" id="sol-keine" hidden>
+      <p class="dialog-text">
+        Keine Wallet gefunden. Ich empfehle
+        <a href="https://solflare.com/download" target="_blank" rel="noopener noreferrer">Solflare</a>.
+      </p>
+    </div>
+
+    <p class="dialog-status" id="sol-status" role="status" aria-live="polite" hidden></p>
+  </dialog>
+
+  <!-- Briefkasten. Der volle steht auf upload.veerka.mp; hier liegt nur die
+       kleine Fassung. -->
+  <dialog id="up-dialog" class="dialog" aria-labelledby="up-titel">
+    <button type="button" class="dialog-zu" id="up-zu" aria-label="Schließen">×</button>
+
+    <div class="dialog-kopf">
+      <span class="dialog-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <strong id="up-titel">Dateien senden</strong>
+    </div>
+
+    <label class="up-zone" id="up-zone">
+      <input type="file" id="up-auswahl" multiple aria-label="Dateien auswählen" />
+      <span class="up-zone-text">Dateien wählen<span class="up-ziehen"> oder hierher ziehen</span></span>
+      <span class="up-zone-klein" id="up-grenze">Alle Dateitypen</span>
+    </label>
+
+    <ul class="up-liste" id="up-liste" hidden></ul>
+
+    <div class="dialog-block">
+      <label class="dialog-label" for="up-notiz">Oder Text und Links</label>
+      <textarea id="up-notiz" class="up-notiz"
+                placeholder="Adresse, Link, ein paar Zeilen …"></textarea>
+    </div>
+
+    <button type="button" class="dialog-los" id="up-los" disabled>Senden</button>
+
+    <p class="dialog-status" id="up-status" role="status" aria-live="polite" hidden></p>
+
+    <p class="dialog-text up-fuss">
+      Größere Dateien und Vorschau auf
+      <a href="https://upload.veerka.mp" target="_blank" rel="noopener noreferrer">upload.veerka.mp</a>.
+    </p>
+  </dialog>
+
+  <!-- Kurzlink: -->
+  <dialog id="kz-dialog" class="dialog" aria-labelledby="kz-titel">
+    <button type="button" class="dialog-zu" id="kz-zu" aria-label="Schließen">×</button>
+
+    <div class="dialog-kopf">
+      <span class="dialog-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+      <strong id="kz-titel">Kurzlink</strong>
+    </div>
+
+    <form id="kz-form" autocomplete="off">
+      <label class="dialog-label" for="kz-url">Lange Adresse</label>
+      <input type="url" id="kz-url" class="kz-feld" inputmode="url"
+             placeholder="https://…" required />
+      <!-- Hier rendert Turnstile, sobald kurz.js den Sitekey geholt hat. -->
+      <div class="kz-ts" id="kz-ts"></div>
+      <button type="submit" class="dialog-los" id="kz-los" disabled>Moment…</button>
+    </form>
+
+    <div class="kz-out" id="kz-out" hidden>
+      <a class="kz-kurz" id="kz-kurz" href="#" target="_blank" rel="noopener"></a>
+      <button type="button" class="kz-kopieren" id="kz-kopieren">Kopieren</button>
+    </div>
+
+    <p class="dialog-status" id="kz-status" role="status" aria-live="polite" hidden></p>
+
+    <p class="dialog-text kz-fuss">
+      QR-Code gibt es auf <a href="https://s.veerka.mp" target="_blank" rel="noopener">s.veerka.mp</a>.
+      Kurzlinks sind öffentlich erratbar – nichts Vertrauliches kürzen.
+    </p>
+  </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

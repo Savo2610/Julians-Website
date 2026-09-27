@@ -1,0 +1,122 @@
+import * as THREE from 'three'
+import { assemble, vertexColorMaterial } from '../../core/geometry.js'
+import { terrainHeight } from '../heightfield.js'
+
+// Die Bande der Rodelbahn: Pfosten mit zwei Brettern, die der Bahn folgen.
+// Sie steht auf der Bandenkrone, also dort, wo das Gelaende schon von selbst
+// ansteigt – zusammen liest man das als Rinne und nicht als Zaun.
+//
+// Gebaut wird in zwei Schritten: erst die gueltigen Pfostenplaetze sammeln,
+// dann die Bretter nur zwischen zwei Pfosten spannen, die es beide gibt.
+// Andernfalls haengen Bretter ins Leere, wo ein Pfosten ausgelassen wurde.
+//
+// Alles wird zu einer einzigen Geometrie verschmolzen. Bei ueber hundert
+// Pfosten waere jedes Brett sonst ein eigener Zeichenaufruf.
+
+const WOOD = 0x8a6a44
+const WOOD_DARK = 0x6b4f31
+const SNOW = 0xf4f9ff
+
+export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.92 } = {}) {
+  const parts = []
+  const segs = lane.segments
+  const half = lane.width * 0.5 - inset
+
+  const at = (s) => {
+    let g = segs[segs.length - 1]
+    let t = 1
+    for (const seg of segs) {
+      if (s >= seg.s0 && s <= seg.s0 + seg.len) {
+        g = seg
+        t = (s - seg.s0) / seg.len
+        break
+      }
+    }
+    return { x: g.x + g.dx * t, z: g.z + g.dz * t, dx: g.dx / g.len, dz: g.dz / g.len }
+  }
+
+  // Die Bande beginnt und endet innerhalb der Ausblendzonen des Bandes –
+  // dort, wo die Rinne schon Form hat.
+  const from = lane.endFade * 0.8
+  const to = lane.total - lane.endFade * 0.8
+
+  for (const side of [-1, 1]) {
+    const posts = []
+    let index = 0
+    for (let s = from; s <= to; s += spacing) {
+      const p = at(s)
+      const nx = -p.dz * side
+      const nz = p.dx * side
+      const x = p.x + nx * half
+      const z = p.z + nz * half
+      const y = terrainHeight(x, z)
+      // Auf der Bergseite ist der Hang selbst die Bande – dort steckt ein
+      // Brett nur im Anschnitt. Ein Pfosten kommt nur hin, wo das Gelaende
+      // hinter der Bahn abfaellt.
+      const outside = terrainHeight(x + nx * 3, z + nz * 3)
+      posts.push({
+        x, y, z,
+        yaw: Math.atan2(p.dx, p.dz),
+        ok: outside <= y + 0.35,
+        tall: height + (index % 3 === 0 ? 0.1 : 0),
+        dark: index % 4 === 0,
+      })
+      index++
+    }
+
+    // Einzelne Pfosten sehen aus wie vergessen. Erst Luecken von einem
+    // Pfosten schliessen, dann Ausreisser entfernen – uebrig bleiben
+    // zusammenhaengende Bandenstuecke.
+    const raw = posts.map((q) => q.ok)
+    for (let i = 1; i < posts.length - 1; i++) {
+      if (!raw[i] && raw[i - 1] && raw[i + 1]) posts[i].ok = true
+    }
+    for (let i = 0; i < posts.length; i++) {
+      const before = i > 0 && posts[i - 1].ok
+      const after = i < posts.length - 1 && posts[i + 1].ok
+      if (posts[i].ok && !before && !after) posts[i].ok = false
+    }
+
+    const lean = side * 0.09
+    for (let i = 0; i < posts.length; i++) {
+      const a = posts[i]
+      if (!a.ok) continue
+
+      parts.push({
+        geo: new THREE.BoxGeometry(0.13, a.tall, 0.13),
+        color: a.dark ? WOOD_DARK : WOOD,
+        position: [a.x, a.y + a.tall * 0.5 - 0.12, a.z],
+        rotation: [0, a.yaw, lean],
+      })
+      parts.push({
+        geo: new THREE.BoxGeometry(0.17, 0.06, 0.17),
+        color: SNOW,
+        position: [a.x, a.y + a.tall - 0.09, a.z],
+        rotation: [0, a.yaw, lean],
+      })
+
+      const b = posts[i + 1]
+      if (!b || !b.ok) continue
+
+      const len = Math.hypot(b.x - a.x, b.z - a.z)
+      const pitch = Math.atan2(b.y - a.y, len)
+      const dir = Math.atan2(b.x - a.x, b.z - a.z)
+      const mx = (a.x + b.x) / 2
+      const mz = (a.z + b.z) / 2
+      const my = (a.y + b.y) / 2
+      for (const [rel, thick] of [[0.78, 0.17], [0.42, 0.15]]) {
+        parts.push({
+          geo: new THREE.BoxGeometry(0.05, thick, len + 0.1),
+          color: WOOD,
+          position: [mx, my + a.tall * rel - 0.12, mz],
+          rotation: [-pitch, dir, lean],
+        })
+      }
+    }
+  }
+
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.88 }))
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  return mesh
+}

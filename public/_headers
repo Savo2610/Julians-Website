@@ -1,10 +1,5 @@
-# Die Avatar-Fotos ändern sich praktisch nie – 30 Tage im Browser behalten.
-# Wird ein Foto ausgetauscht, den Dateinamen mitändern (foto1b.webp o. ä.),
-# sonst sehen wiederkehrende Besucher bis zu 30 Tage das alte Bild.
-/img/*
-  Cache-Control: public, max-age=2592000
-
-# three.js liegt versioniert im Pfad (/vendor/three-<version>/) – ein Update
-# bekommt einen neuen Ordner, also darf die Datei ewig im Cache bleiben.
-/vendor/*
+# Dateien unter /assets/ tragen einen Inhaltshash im Namen und aendern sich
+# nie. Die Startseite setzt der Worker selbst auf no-cache (worker/index.js);
+# eine Regel fuer / griffe hier nicht, weil der Worker dort zuerst antwortet.
+/assets/*
   Cache-Control: public, max-age=31536000, immutable

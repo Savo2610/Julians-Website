@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { broadcastSchluessel } from '../worker/index.js'
+import { broadcastSchluessel } from '../worker/broadcast.js'
 
 // Der Worker reicht Dateien von broadcast.veerka.mp unter der Adresse des
 // Spiels durch. Nur Schluessel in der Form des Dienstes kommen durch.

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { nameGlaetten, fahrtPruefen } from '../worker/index.js'
+import { nameGlaetten, fahrtPruefen } from '../worker/slalom.js'
 
 const sauber = { zeit: 4.21, fahrzeit: 4.21, verfehlt: 0, tore: [0.6, 1.8, 2.9, 3.9] }
 

@@ -1,7 +1,5 @@
 # Dateien unter /assets/ tragen einen Inhaltshash im Namen und aendern sich
-# nie; alles andere (index.html) muss bei jedem Aufruf frisch sein, sonst
-# zeigt es nach einem Update auf Dateien, die es nicht mehr gibt.
+# nie. Die Startseite setzt der Worker selbst auf no-cache (worker/index.js);
+# eine Regel fuer / griffe hier nicht, weil der Worker dort zuerst antwortet.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
-/
-  Cache-Control: no-cache

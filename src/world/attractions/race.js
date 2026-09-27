@@ -84,8 +84,6 @@ export class RaceCourse {
     this.lastRun = null
     this._prevS = null
     this._hold = 0
-    // Sekunden seit dem letzten Start oder Ziel – fuer R (slalomNah).
-    this._seit = Infinity
     // Fuer die Bestenliste (menu/bestenliste.js): Start, Ziel, Abbruch.
     this.onStart = null
     this.onFinish = null
@@ -230,7 +228,6 @@ export class RaceCourse {
     const { s, v, d } = this.project(skier.position.x, skier.position.z)
     const prev = this._prevS
     this._prevS = s
-    this._seit += dt
     this._glow(dt)
 
     if (this.state === 'running') {
@@ -305,7 +302,6 @@ export class RaceCourse {
         gate.missed = false
       }
       this._hold = 0
-      this._seit = 0
       this.onStart?.()
       this._showHud('0.00', this.best !== null ? `Bestzeit ${this.best.toFixed(2)}` : `Gold unter ${MEDALS[0].time.toFixed(2)}`, '')
     }
@@ -335,7 +331,6 @@ export class RaceCourse {
     const clean = this.missed === 0
     const total = this.time + this.missed * PENALTY
     this.state = 'idle'
-    this._seit = 0
     // bestzeit: schneller als alles vorher in diesem Browser. Nur dann
     // bietet die Bestenliste das Eintragen an.
     const bestzeit = this.best === null || total < this.best
@@ -360,14 +355,12 @@ export class RaceCourse {
     this._hold = 6
   }
 
-  // Faehrt man gerade Slalom oder ist eben durchs Ziel, bringt R an den
-  // Slalom-Start statt zum Startplatz – wer eine Zeit jagt, will den
-  // naechsten Lauf und nicht ueber den Berg zurueck. Eine Minute nach dem
-  // letzten Start oder Ziel und nur in der Naehe der Bahn: wer
-  // weitergefahren ist, meint wieder den Startplatz.
-  slalomNah(skier) {
-    if (this.state === 'running') return true
-    return this._seit < 60 && this.project(skier.position.x, skier.position.z).d < 26
+  // Solange die Zeit eingeblendet ist – im Lauf und die sechs Sekunden
+  // danach –, bringt R an den Slalom-Start statt zum Startplatz: wer eine
+  // Zeit jagt, will den naechsten Lauf und nicht ueber den Berg zurueck. Ist
+  // die Zeit weg, gilt wieder der Startplatz.
+  zeitSichtbar() {
+    return this.state === 'running' || this._hold > 0
   }
 
   // R mitten im Lauf: der Lauf zaehlt nicht, die Uhr geht aus.

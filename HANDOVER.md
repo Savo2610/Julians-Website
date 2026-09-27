@@ -549,8 +549,8 @@ ohne Glas, „M Übersicht & alle Links“ mit hellem Hof und langsamem Atmen �
 anklickbar, sie bleibt, bis die
 Übersicht einmal offen war oder man 30 s gefahren ist. **`R`** bringt von
 überall zum Start (derselbe Weg wie die Schnellreise, `travelTo`) – außer
-man fährt gerade Slalom oder war in der letzten Minute am Start oder im Ziel
-und ist noch höchstens 26 m von der Bahn weg (`race.slalomNah`): dann geht es
+die Slalomzeit ist noch eingeblendet – im Lauf und 6 s nach dem Ziel
+(`race.zeitSichtbar`): dann geht es
 6 m über den Startbogen, ein laufender Lauf wird ohne Wertung abgebrochen
 (28.09., auf Ansage). Die
 Pille „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang

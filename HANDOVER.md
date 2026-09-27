@@ -770,7 +770,9 @@ expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
 
 ## 4b. Handymodus
 
-Erkannt über `pointer: coarse` ohne feinen Zeiger (`core/device.js`), zum
+Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/
+iOS-Browser mit Touchscreen (`core/device.js`): Samsungs mit S-Pen (Fold 6)
+melden sonst `any-pointer: fine` und blieben beim Tastenmodus. Zum
 Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
 `touch`.
 

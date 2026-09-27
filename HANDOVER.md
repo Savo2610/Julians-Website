@@ -1,6 +1,6 @@
-# Skiportfolio — Übergabe
+# veerka.mp — Übergabe
 
-Stand: 26.09.2026. Dieses Dokument ist der Einstieg für jeden, der hier
+Stand: 27.09.2026. Dieses Dokument ist der Einstieg für jeden, der hier
 weiterarbeitet. Es beschreibt nicht nur *was* da ist, sondern *warum* — denn an
 mehreren Stellen sieht die naheliegende Lösung besser aus als die gewählte, und
 ist es nicht.
@@ -9,9 +9,16 @@ ist es nicht.
 
 ## 1. Was das ist
 
-Ein Three.js-Skigebiet, durch das man fährt, um Julians Links zu finden. Es
-ersetzt die bisherige Kachelseite und läuft am Ende auf **veerka.mp selbst**.
-Jede Station im Tal ist ein echter Link oder ein echtes Fenster.
+Ein Three.js-Skigebiet, durch das man fährt, um Julians Links zu finden. Seit
+dem 27.09.2026 ist es **veerka.mp** und hat dort die Kachelseite abgelöst
+(die steckt in der Git-Historie, zuletzt `def8f43`). Jede Station im Tal ist
+ein echter Link oder ein echtes Fenster.
+
+Die Seite heißt **Julian Veerkamp**, nicht Portfolio – ein Portfolio an
+Arbeiten gibt es noch nicht (Ansage 27.09.). „Skiportfolio“ war der
+Arbeitsname bis zum Umzug; er lebt nur noch in Namen weiter, die man nicht
+umbenennen sollte: `localStorage`-Schlüssel `skiportfolio.*`, die D1
+`skiportfolio-slalom` und der Beta-Worker `skiportfolio-test`.
 
 Das Leitbild: **eine zusammenhängende Gegend**, nicht „als hätte jemand eine
 Kiste mit Spielzeug ausgekippt". Alles ist klein und dicht — im Zweifel
@@ -75,7 +82,7 @@ der Ecke. Die Steuerung steht als Tastenstempel im Schnee
 (`src/world/snow-writing.js`). Was sonst eingeblendet wird, verschwindet von
 selbst. Zwei ausdrücklich gewünschte Ausnahmen (26.09.): die **Übersicht**
 hinter `M` (Abschnitt 4a′) und die beiden **Hinweispillen** unten
-(`stations/hints.js`) – beide sind für Besucher, die nicht spielen wollen
+(`menu/hints.js`) – beide sind für Besucher, die nicht spielen wollen
 oder mit WASD nicht zurechtkommen (beobachtet: vor allem Ältere).
 Dazu seit 26.09. die Pistenpass-Pille oben links (Abschnitt 4a″), die
 ebenfalls von selbst geht – nur für Medaillen und Abzeichen, nicht für Orte.
@@ -85,47 +92,77 @@ ebenfalls von selbst geht – nur für Medaillen und Abzeichen, nicht für Orte.
 ## 3. Aufbau
 
 ```
+index.html           Canvas, Ladebalken und das Markup der drei Fenster
 src/
-  config.js          Alle Stellschrauben: WORLD, SKIER, CAMERA, TRICK, COLORS
   main.js            Loop, Renderer, window.__ski (Debug-Zugriff)
-  core/              geometry.js (assemble/vertexColorMaterial), input.js,
-                     touch.js (Handymodus), device.js (TOUCH), noise.js, rng.js
-  world/
-    heightfield.js   terrainHeight(), Pistenbänder, PLATEAU/SUMMIT/LAKE/SPORT_HILL
-    terrain.js       Mesh aus der Höhenfunktion
-    world.js         Szene, Licht, Nebel
+  config.js          Alle Stellschrauben: WORLD, SKIER, CAMERA, CHASE, TRICK, COLORS
+  style.css          Glas, Einladung, Auswahl, Übersicht, Pillen, Handymodus
+  core/              Werkzeug ohne Spielwissen: geometry.js (assemble,
+                     vertexColorMaterial), input.js, touch.js (Handymodus),
+                     device.js (TOUCH), noise.js, rng.js, point-scale.js
+  world/             Gelände und alles, was darauf steht
+    heightfield.js   terrainHeight() – die einzige Höhenquelle; Pistenbänder,
+                     PLATEAU/SUMMIT/LAKE/SPORT_HILL, Klamm, Steg
+    terrain.js       Mesh und Schnee-Shader aus der Höhenfunktion
+    world.js         Terrain und Kollisionsraster (resolve, addCollider)
     populate.js      Setzt alles ins Tal — die zentrale Werkbank
     paths.js         Wegenetz: TRAILS und Verbindungen (Schneisen, Präparierung)
-    wayfinding.js    Panoramatafel (PANORAMA) und Wegweiser
-    trail-glints.js  Leuchtschleier auf den vier Wegen
     landscape-*.js   Schneerücken, Bodenwellen, Nebenstrecken, Quelle, Schauer
     surfaces.js      Wo Eis und Holz liegen — dort keine Spur, kein Staub
-    apres-*.js       Hütte mit Terrasse und umwerfbaren Möbeln
     snow-trail.js    Spurkarte als Render-Target; stampDecal() stempelt hinein
-    snow-writing.js  Schrift und Tasten-/Stickzeichen im Schnee
-    drag-lift.js, magic-carpet.js, rail-ride.js, race.js, speed-check.js,
-    light-run.js, north-run.js
-    props/           Ein Modul je Gegenstand; screens.js = leuchtende Bildschirme,
-                     park-fence.js (bricht), avalanche-barrier.js, map-board.js
-                     (Panoramatafel + lawinenstufe()), signpost.js (Pfeiltafeln)
+    snow-writing.js  Schrift und Tasten-/Stickzeichen im Schnee, Wildspuren
+    sky.js, weather.js  Himmel, Sonne, Gegenlicht; Schneefall
+    wayfinding.js    Panoramatafel (PANORAMA) und Wegweiser
+    trail-glints.js  Leuchtschleier auf den vier Wegen
+    valley-map.js    Talkarte, aus der Welt gemalt
+    attractions/     Was den Fahrer übernimmt oder misst: drag-lift.js,
+                     magic-carpet.js, rail-ride.js, race.js (Zeitnahme,
+                     Slalom), speed-check.js, light-run.js, north-run.js
+    areas/           Ensembles: kinderland.js, apres-layout.js und
+                     apres-terrace.js (Hütte mit umwerfbaren Möbeln)
+    props/           Ein Modul je Gegenstand, nur Geometrie und eigene
+                     Bewegung; z. B. screens.js (leuchtende Bildschirme),
+                     park-fence.js (bricht), map-board.js (Panoramatafel +
+                     lawinenstufe()), signpost.js (Pfeiltafeln), frozen-fall.js
   player/
-    skier.js         Fahrmodell, Sprung, Tricks
+    skier.js         Fahrmodell, Sprung, Tricks, Haltung
     skier-model.js   Die Figur
     top-camera.js    Kamera: fest, Verfolger (Nordabfahrt), Heranzoomen
-    spray.js         Schneestaub
-  stations/
+    drone-flight.js  Drohnen-Rundflug (zweite Kamera-Ausnahme)
+    spray.js         Schneestaub, auch der Goldstaub
+  stations/          Was an einer Station passiert
     links.js         Alle echten Adressen an einer Stelle
     stations.js      Wo was steht und was es tut
     registry.js      Nähe prüfen, auslösen
     interaction.js   Enter/Tippen: öffnen oder heranzoomen und wählen
     ui.js            Glas-Einladung und Glas-Auswahl
-    map-menu.js      Übersicht (M): Reiter Links und Talkarte, Schnellreise
-    hints.js         Start-Hinweis, Festgefahren-Erkennung, R
+    marker.js        Ring im Schnee vor jeder Station
+    ticket.js        Rundflug-Ticket (Skikasse → Drohne)
     broadcast.js     Laufende Sendung holen und ins Eis der Quelle legen
-  dialogs/           Wortgleich von veerka.mp übernommen — siehe unten
+  menu/              Die einzigen Menüs (CLAUDE.md)
+    map-menu.js      Übersicht (M): Links, Talkarte, Pistenpass, Bestenliste
+    hints.js         Hinweispillen: Start-Hinweis, Festgefahren-Erkennung, R
+    pistenpass.js    Erkundet, Medaillen, Abzeichen; Speicher und Pille
+    pass-regeln.js   Wann was im Pistenpass fällt
+    bestenliste.js   Slalom-Bestenliste: Marken holen, eintragen, anzeigen
+  dialogs/           Solana, Briefkasten, Kurzlink – siehe Abschnitt 7
+worker/              Der Cloudflare-Worker hinter der Seite
+  index.js           Router: www-Umleitung, Startseite no-cache, /api/*
+  slalom.js          Bestenliste: Marken, Plausibilität, D1
+  broadcast.js       Durchreiche zu broadcast.veerka.mp
+  antwort.js         JSON-Antworten
+  migrations/        Schema der D1 skiportfolio-slalom
+public/              _headers (Cache für /assets/), favicon.svg
 tests/               node --test (npm test)
-wrangler.jsonc       Testbetrieb auf beta.veerka.mp
+wrangler.jsonc       Worker "website" (veerka.mp) und env.beta (beta.veerka.mp)
 ```
+
+Abhängigkeiten laufen in eine Richtung: `core/` kennt nur `config.js`,
+`world/` und `player/` bauen auf `core/`, `stations/` und `menu/` kennen die
+Welt – die Welt kennt kein Menü. Einzige Querverbindung: `world/` holt aus
+`stations/` die Stationen selbst (`populate.js`) und den Ring im Schnee
+(`marker.js`, der auch vor Wegweisern und im Kinderland liegt). Verdrahtet
+wird alles in `main.js`.
 
 **`assemble(parts)`** in `core/geometry.js` verschmilzt viele Primitive mit
 Vertexfarben zu *einem* Draw Call. Alles, was sich nicht einzeln bewegt, gehört
@@ -255,7 +292,7 @@ sobald der Fahrer ≥ 14 m weg ist. Die Kollision ist solange aus (`c.off` in
 
 **Hütte und See**: Die Après-Ski-Hütte steht rechts bei (23, −64), Front zur
 Kamera, mit neuneckig zugeschnittener Terrasse, drei Sitzgruppen und
-umwerfbaren Möbeln (`apres-terrace.js`; stehen nach 10 s wieder auf, wenn der
+umwerfbaren Möbeln (`areas/apres-terrace.js`; stehen nach 10 s wieder auf, wenn der
 Fahrer ≥ 7 m weg ist). Der See hat eine eigene Bucht in `WORLD.basins`, damit
 das ganze Eis befahrbar ist; `lakeRadius()` teilt die Uferkontur zwischen Mesh
 und Höhenfeld. **Weiße Spuren auf Eis und Holz** kamen vom Spurstempel, dessen
@@ -308,7 +345,7 @@ Dazu eine Bodenfreiheit von 1,3 m, gewichtet mit der Überblendung — bei 17°
 steht die Kamera nur gut vier Meter über dem Blickpunkt und taucht am Steilstück
 sonst in den Schnee.
 
-**Wann sie greift**, entscheidet `world/north-run.js` an der Bahnmitte und nicht
+**Wann sie greift**, entscheidet `world/attractions/north-run.js` an der Bahnmitte und nicht
 am Tor: ein Tor liefert nur einen Moment, aber die Kamera braucht über die ganze
 Fahrt eine Meinung. Hysterese in drei Richtungen — seitlich (ein bei 8 m, aus
 bei 12,5 m), längs (2 m Sicherheitsabstand an beiden Enden) und zeitlich
@@ -475,7 +512,7 @@ rund 450 ms beim Aufbau); Pult (`boardMap`: Papiergrund, Titel, Ortsnamen) und
 461 ms, jetzt 4 ms.
 
 Die Tafel ist eine Station (`id: 'talplan'`, `map: base`). **`M` überall**
-öffnet die Übersicht (`stations/map-menu.js`) auf dem Reiter **Links**,
+öffnet die Übersicht (`menu/map-menu.js`) auf dem Reiter **Links**,
 **Enter an der Tafel** auf dem Reiter **Talkarte**; `Tab` wechselt.
 
 - *Kopf*: Name und der tippende Untertitel von veerka.mp (dieselben sieben
@@ -504,7 +541,7 @@ man steht mit dem Rücken zur Kamera vor der Station, der Ankunftspunkt weicht
 Kollisionskreisen aus (Werkbank vor der Werkstatt). Alle 15 Ziele geprüft:
 richtige Station aktiv, kein Hindernis, 0 Bilder in der Luft.
 
-**Hinweise und R** (`stations/hints.js`): Beim Start steht unten dezent,
+**Hinweise und R** (`menu/hints.js`): Beim Start steht unten dezent,
 ohne Glas, „M Übersicht & alle Links“ mit hellem Hof und langsamem Atmen –
 anklickbar, sie bleibt, bis die
 Übersicht einmal offen war oder man 30 s gefahren ist. **`R`** bringt von
@@ -521,7 +558,7 @@ Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
 
 ## 4a″. Pistenpass
 
-`stations/pistenpass.js` (Listen, Speicher, Pille) und `stations/pass-regeln.js`
+`menu/pistenpass.js` (Listen, Speicher, Pille) und `menu/pass-regeln.js`
 (wann was fällt). Dritter Reiter **Pistenpass** in der Übersicht hinter `M`.
 Speicher: `localStorage` `skiportfolio.pass`. Zurücksetzen:
 `__ski.pass.zuruecksetzen()`.
@@ -592,11 +629,13 @@ fälschbar.
 
 ## 4a⁗. Slalom-Bestenliste
 
-Seit 27.09. hat der beta-Worker eigenen Code: `worker/index.js` springt nur
-für `/api/*` an (`run_worker_first`), alles andere bleibt Asset. Gleicher
-Host wie das Spiel – kein CORS, kein DNS. D1 `skiportfolio-slalom`
-(Schema in `worker/migrations/`), Geheimnis `SLALOM_GEHEIM` als Secret,
-lokal in `.dev.vars`. **Beim Umzug auf veerka.mp muss `/api/*` mit.**
+Server: `worker/slalom.js`, Spiel: `menu/bestenliste.js`. Der Worker
+springt nur für `/` und `/api/*` an (`run_worker_first`), alles andere
+bleibt Asset. Gleicher Host wie das Spiel – kein CORS, kein DNS. D1
+`skiportfolio-slalom` (Schema in `worker/migrations/`), geteilt von
+veerka.mp und beta. Geheimnis `SLALOM_GEHEIM` als Secret, je Worker ein
+eigenes (das von `website` ist beim Umzug neu erzeugt worden; es signiert
+nur Marken, die höchstens eine Viertelstunde gelten), lokal in `.dev.vars`.
 
 Ablauf: Startbogen → `POST start` (signierte Startmarke), Ziel → `POST ziel`
 (Zielmarke mit beiden Serverzeiten). Nur wenn beides klappt, steht acht
@@ -620,8 +659,11 @@ Namen 2–16 Zeichen mit Sperrliste. Wer Anfragen mit passenden Pausen
 skriptet, kommt durch. Tests: `tests/slalom-worker.test.js`.
 
 Löschen: `npx wrangler d1 execute skiportfolio-slalom --remote --command
-"DELETE FROM fahrten WHERE name = '…'"`. Lokal: `npx wrangler dev` (Eintrag
-`api` in `.claude/launch.json`), vite reicht `/api` an 8787 durch.
+"DELETE FROM fahrten WHERE name = '…'"`. Lokal: `npm run dev:api` (Eintrag
+`api` in `.claude/launch.json`, baut vorher einmal), vite reicht `/api` an
+8787 durch. Die lokale D1 liegt unter `.wrangler/`; zwei `wrangler dev`
+gleichzeitig sperren sich dort gegenseitig (SQLITE_BUSY) – ein zweiter
+braucht `--persist-to` in ein eigenes Verzeichnis.
 
 ## 4a⁵. Gefrorene Quelle: Broadcast im Eis
 
@@ -679,7 +721,7 @@ additiv, weil Licht vor Schnee nur weiß wird. **Einseitig**, nie
 zweimal und baut dafür jeden Frame den Shaderschlüssel neu. Die sechs Bögen
 taten das 12-mal je Frame; das gab alle 1–2 s einen Ruckler.
 
-**Daten:** `worker/index.js` reicht `/api/broadcast/state` (nur `message`,
+**Daten:** `worker/broadcast.js` reicht `/api/broadcast/state` (nur `message`,
 20 s Cache) und `/api/broadcast/file?key=` (mit Range) durch.
 Der Broadcast-Dienst schickt keinen CORS-Kopf, und WebGL nimmt fremde
 Bilder nicht als Textur. Am Dienst selbst ist nichts geändert.
@@ -693,8 +735,6 @@ erste Testbild hatte 2,6 MB). Mehrere Anhänge wechseln alle 8 s. Kurzer Text (�
 unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
 Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
 expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
-
-**Beim Umzug auf veerka.mp** muss `/api/broadcast/*` mit, wie die Bestenliste.
 
 ## 4b. Handymodus
 
@@ -730,36 +770,53 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
   wächst bis 56°, den Rest holt der Abstand (≤ 1,35×). Pixelverhältnis am
   Handy höchstens 1,5.
 
-## 4c. Hosting
+## 4c. Hosting und Dienste
 
-**Arbeitsweise (Ansage 26.09.):** jede fertige Runde sofort live – Tests
-und Build, deutsch committen, Commit-Nummer hier im Verlauf nachtragen,
-`npm run deploy:test`, dann prüfen, dass beta.veerka.mp dieselbe
-`assets/index-*.js` ausliefert wie `dist/`. **Das Repo hat kein Git-Remote**;
-gepusht wird nirgendwohin, bis eines eingetragen ist.
+**veerka.mp** ist der Cloudflare-Worker `website` mit statischen Assets,
+verbunden mit dem GitHub-Repo `Savo2610/Julians-Website`. **Jeder Push auf
+`main` wird von Workers Builds gebaut und veröffentlicht** (`npx wrangler
+deploy`; der `build`-Eintrag in `wrangler.jsonc` lässt vorher vite laufen,
+`.node-version` hält Node 24). Von Hand: `npm run deploy`. `veerka.mp` und
+`www.veerka.mp` hängen als Custom Domains am Worker; www leitet mit 301 auf
+veerka.mp um (`worker/index.js`), weil Pistenpass, Bestzeit und Ticket im
+`localStorage` liegen und der je Adresse gilt.
 
-**beta.veerka.mp** ist ein Asset-Worker (`wrangler.jsonc`, Name
-`skiportfolio-test`), seit 27.09. mit Code nur für `/api/*` (Abschnitt 4a⁗). `npm run deploy:test` baut und lädt
-hoch (vorher einmal `npx wrangler login`). `public/_headers` gibt `/assets/*`
-ein Jahr Cache (Dateinamen tragen einen Hash) und `index.html` `no-cache`. Der
-Produktiv-Worker `website` bleibt davon unberührt. Geplant war test.veerka.mp —
-dort hing noch ein A-Eintrag auf einen gekündigten Server (inzwischen gelöscht).
+**beta.veerka.mp** bleibt die Vorstufe: Worker `skiportfolio-test`,
+`env.beta` in derselben `wrangler.jsonc`, `npm run deploy:beta`. Gleiche D1,
+eigenes Secret. Wrangler warnt bei `deploy` ohne `--env`, weil es Umgebungen
+gibt; ohne `--env` ist immer veerka.mp gemeint.
 
-Auf beta gilt der Produktionszweig der Fenster. Geprüft am 23.09. von
-beta.veerka.mp aus:
+**Arbeitsweise** (Ansage 26.09.: jede fertige Runde sofort live): Tests und
+Build, deutsch committen, Commit-Nummer hier im Verlauf nachtragen,
+`npm run deploy:beta` und prüfen, dass beta dieselbe `assets/index-*.js`
+ausliefert wie `dist/`. Ein `git push` auf `main` ist dann veerka.mp;
+dort dasselbe prüfen. Bis zum Umzug hieß „live“ beta.
 
-- **Kurzlink**: `beta.veerka.mp` steht jetzt in `TURNSTILE_HOSTNAMES` des
-  Workers `kurz` und in den Domains des Turnstile-Widgets „kurz". Das Repo
-  `~/Documents/Claude/kurz` ist nachgezogen — dort stand nur `s.veerka.mp`,
-  live schon drei Hosts; ein Deploy aus dem Repo hätte veerka.mp still
-  ausgesperrt. Turnstile löst sich auf beta, der Knopf wird „Kürzen".
-- **Solana**: RPC publicnode, CoinGecko und Binance antworten mit CORS. Der
-  tote Ersatz-RPC leorpc ist hier und auf veerka.mp entfernt; ohne Schlüssel
-  trägt sonst keiner (mainnet-beta 403, drpc 400, onfinality 429).
-- **Upload**: `https://beta.veerka.mp` steht in `CORS_HERKUNFT` des Workers
-  `upload` (Repo `Savo2610/file-uploader`, vorher Build gegen Live-Code
-  verglichen: identisch). Preflight von beta: 204 mit Freigabe, fremde
-  Herkunft weiter 405.
+**Cache**: `public/_headers` gibt `/assets/*` ein Jahr (die Dateinamen
+tragen einen Hash). Die Startseite setzt der Worker selbst auf `no-cache` –
+die Regel dafür in `_headers` griff nicht mehr, sobald der Worker für `/`
+antwortet.
+
+**Die fremden Dienste**, geprüft am 27.09. von veerka.mp aus:
+
+| Dienst | Im Code | Was freigegeben sein muss | Stand |
+|---|---|---|---|
+| Kurzlink (s.veerka.mp) | `dialogs/kurz.js` | `TURNSTILE_HOSTNAMES` im Worker `kurz` und Domainliste des Turnstile-Widgets „kurz“ | veerka.mp, www und beta eingetragen; Turnstile löst sich, der Knopf wird „Kürzen“ |
+| Upload (upload.veerka.mp) | `dialogs/upload.js` | `CORS_HERKUNFT` im Worker `upload` | veerka.mp, www, beta: Preflight 204; fremde Herkunft 405 |
+| Solana | `dialogs/wallet.js` | nichts – publicnode, CoinGecko und Binance antworten mit CORS `*` | geprüft |
+| Broadcast | `worker/broadcast.js` | nichts – der Worker holt serverseitig | geprüft |
+| Bestenliste | `worker/slalom.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker | an `website` und `skiportfolio-test` |
+
+Die Repos der Dienste liegen unter `~/Git/` (`kurz`, `file-uploader`,
+`broadcast`). **Wer dort deployt, prüft die Hostlisten**: im Repo `kurz`
+stand einmal nur `s.veerka.mp`, live schon drei Hosts – ein Deploy aus dem
+Repo hätte das Kurzlink-Fenster hier still ausgesperrt. Beim Solana-Fenster
+ist der tote Ersatz-RPC leorpc entfernt; ohne Schlüssel trägt sonst keiner
+(mainnet-beta 403, drpc 400, onfinality 429).
+
+Auf localhost zeigen Upload und Kurzlink auf `localhost:8788`/`8790` (ihr
+Entwicklungszweig) und melden ohne die Worker daneben
+`ERR_CONNECTION_REFUSED`. Das ist gewollt.
 
 ## 5. Fahrmodell
 
@@ -817,7 +874,8 @@ dafür hängt jedes Bein an seiner Hüfte (`legSides`, Drehpunkt `HIP`).
 ## 6. Werkzeug zum Prüfen
 
 `window.__ski` = `{ skier, world, camera, renderer, scene, trail, props, sky,
-input, chase, stations, interaction, mapMenu, hints, glints, step, goto }`. `goto('kasse')` stellt den
+input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln,
+goldstaub, flight, bestenliste, step, goto }`. `goto('kasse')` stellt den
 Fahrer vor eine Station (Ids in `stations.js`).
 
 `S.step(frames, dt)` spult die Welt ohne laufenden rAF-Loop vor — unentbehrlich,
@@ -863,30 +921,40 @@ Weitere Fallen aus der Praxis:
 
 ## 7. Die drei Fenster
 
-`src/dialogs/dialog.js`, `wallet.js`, `upload.js`, `kurz.js` sind **wortgleich
-von veerka.mp übernommen**, damit beide Seiten jederzeit abgeglichen werden
-können. Nicht umbauen, nur austauschen. `dialogs.css` ist dieselbe CSS-Datei mit
-der Palette auf `.dialog` statt `:root` und `'Space Mono'` durch `var(--mono)`
-ersetzt — **inzwischen nicht mehr**: `dialogs.css` ist das Glas des
-Skiportfolios, und in `kurz.js` steht Turnstile auf `theme: 'light'`. Beim
-Abgleich die JS-Dateien tauschen, `dialogs.css` nicht. Die drei `<dialog>`-Elemente stehen in `index.html`, geladen werden die
-Module erst beim Benutzen der Station.
+`src/dialogs/dialog.js`, `wallet.js`, `upload.js` und `kurz.js` stammen
+**unverändert von der früheren Kachelseite** (dort `public/*.js`, zuletzt
+`def8f43`); einzige Änderung: Turnstile steht in `kurz.js` auf
+`theme: 'light'`. Früher galt „nicht umbauen, nur austauschen“, damit beide
+Seiten abgleichbar blieben. Seit dem Umzug gibt es nur noch diese Fassung –
+der Grund ist weg, umbauen ist erlaubt. `dialogs.css` ist das Glas des Tals,
+nicht mehr das dunkle Violett von dort. Die drei `<dialog>`-Elemente stehen
+in `index.html`, geladen werden die Module erst beim Benutzen der Station.
 
-**Tastatur** (`dialogs/keyboard.js`, nur hier, nicht auf veerka.mp): wird
-nach dem Öffnen darübergelegt, damit die übernommenen Dateien wortgleich
-bleiben. Fokus gleich im Feld (Betrag, Dateiwahl, Adresse) statt auf dem
+- **Solana** (`wallet.js`) sucht Wallet-Erweiterungen über den Wallet
+  Standard, baut die Überweisung als rohe Bytes selbst und gibt sie der
+  Wallet zum Signieren und Senden. Betrag in SOL oder Euro, gesendet wird
+  immer SOL. Ohne Wallet steht dort eine Empfehlung (Solflare). Am Handy
+  öffnet die Kasse direkt die Wallet-App (Abschnitt 4b).
+- **Briefkasten** (`upload.js`) ist upload.veerka.mp in klein: Dateien
+  wählen oder hineinziehen, Fortschritt, dazu ein Textfeld. Gesprochen wird
+  direkt mit der API dort (CORS, Abschnitt 4c). Anonym gelten 50 MB pro
+  Datei; für mehr führt ein Link auf die volle Seite. Lokal muss der
+  Uploader daneben laufen (Port 8788) mit `DEV_HERKUNFT` auf diese Seite in
+  seiner `.dev.vars`, sonst gingen Probe-Uploads in den echten Speicher.
+- **Kurzlink** (`kurz.js`) ist s.veerka.mp in klein; der fertige Link landet
+  gleich in der Zwischenablage. Turnstile wird erst beim Öffnen des Fensters
+  nachgeladen. Es gelten die öffentlichen Limits: 5 Links pro Minute, 20
+  pro Tag. Der QR-Code bleibt auf der vollen Seite. Lokal läuft der
+  Kurzlink-Worker auf 8790; Turnstile geht dort nur mit den Testschlüsseln
+  (README im Repo `kurz`).
+
+**Tastatur** (`dialogs/keyboard.js`): wird nach dem Öffnen darübergelegt.
+Fokus gleich im Feld (Betrag, Dateiwahl, Adresse) statt auf dem
 Schließen-Knopf; Enter sendet im Betrag, ↑↓ gehen die Betragsvorschläge
 durch, ⌘/Strg+Enter sendet im Textfeld der Rohrpost, Esc schließt. Unten eine
 Tastenzeile wie unter der Stationsauswahl. Beim Schließen wird der Fokus
 abgegeben — sonst löste das nächste Enter im Spiel den Knopf erneut aus. Am
 Handy kein Autofokus, sonst klappt sofort die Tastatur hoch.
-
-Auf localhost zeigen Upload und Kurzlink auf `localhost:8788`/`8790` und melden
-`ERR_CONNECTION_REFUSED` — das ist ihr gewollter Entwicklungszweig und löst sich
-auf veerka.mp von selbst.
-
-Solange das Portfolio noch nicht auf veerka.mp liegt, hängen Upload und Kurzlink
-am Hostnamen. Beim Umzug gegenprüfen.
 
 ---
 
@@ -947,8 +1015,13 @@ Code steckt in `git show 44010bd`.
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
-- **Umzug auf veerka.mp** steht noch aus; beta.veerka.mp ist die Vorstufe.
-- **Kein Git-Remote.** Die Historie liegt nur lokal; ein GitHub-Repo fehlt.
+- **Ohne WebGL oder JavaScript** bleibt die Seite beim Ladebalken stehen;
+  die alte Kachelseite ging ohne beides. Eine schlichte Linkliste als
+  Rückfall (`<noscript>` und bei fehlendem WebGL) wäre klein, ist aber neue
+  Oberfläche – nur auf Ansage.
+- **Arbeitsweise nach dem Umzug**: ob fertige Runden weiter ohne Rückfrage
+  live gehen – jetzt also per Push auf `main` nach veerka.mp – oder erst
+  auf beta warten, ist noch nicht angesagt.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit
@@ -968,7 +1041,14 @@ Code steckt in `git show 44010bd`.
 
 ## 10. Verlauf
 
+Die Historie der Kachelseite hängt seit dem Umzug über einen
+Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
+des Tals sind dabei gleich geblieben.
+
 ```
+ee6f87a  Seite heisst wieder Julian Veerkamp
+b41208f  Worker aufgeteilt, www-Umleitung, Betrieb auf veerka.mp vorbereitet
+93aab7c  Aufraeumen: Menues, Anlagen und Bereiche in eigene Ordner
 6a4679f  Ruckler auf Retina: Schneerelief aus Rauschtextur, 4,2 Mio. Pixel
 5ef97dc  Ruckler behoben, Video aus der gefrorenen Quelle entfernt
 f208498  Kleiner Sendeturm links hinter der gefrorenen Quelle

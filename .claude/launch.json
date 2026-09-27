@@ -12,12 +12,10 @@
     },
     {
       "name": "api",
-      "runtimeExecutable": "npx",
+      "runtimeExecutable": "npm",
       "runtimeArgs": [
-        "wrangler",
-        "dev",
-        "--port",
-        "8787"
+        "run",
+        "dev:api"
       ],
       "port": 8787
     }

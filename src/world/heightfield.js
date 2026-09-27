@@ -80,9 +80,9 @@ function lakeGround(x, z, height) {
 // Nord- und suedwaerts bleibt der Graben, wie er war.
 export const BACH = {
   punkte: [[-86.5, 17.9], [-85.5, 18.4], [-81, 20.6], [-76.5, 22.2], [-72, 22.4], [-67.5, 22.9], [-63.5, 23.6], [-60.3, 24.5], [-58.6, 25.4]],
-  halb: 1.0,     // flache Sohle
-  ufer: 1.7,     // Boeschung bis zur Oberkante
-  tiefe: 0.5,
+  halb: 1.7,     // flache Sohle
+  ufer: 2.6,     // Boeschung bis zur Oberkante, flach, damit es kein Graben ist
+  tiefe: 0.55,
 }
 const SCHWEMMKEGEL = [[-72, 22.4, 0.0], [-67.5, 22.9, 2.0], [-63.5, 23.6, 2.0], [-60.3, 24.5, 0.6], [-58.6, 25.4, 0.0]]
 

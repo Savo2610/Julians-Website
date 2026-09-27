@@ -8,101 +8,88 @@ import { createRocks } from './rocks.js'
 // Fall –, und er erzaehlt, woher das Wasser im Eisfall kam.
 //
 // Ein Band aus Eis liegt in dem Bett, das heightfield.js in den Hang
-// schneidet (BACH). Oben am Rand ist er steil und weiss: gefrorene Kaskaden,
-// in denen Luft steckt. Unten auf dem Schwemmkegel wird er ruhig und klar,
-// mit dunklem Wasser unter dem Eis. Die letzten Meter liegen nicht mehr auf
+// schneidet (BACH). Wo es steil ist, liegt mehr Schnee darauf. Die letzten Meter liegen nicht mehr auf
 // dem Hang, sondern spannen sich als Eislippe von der Boeschungskante zur
 // Oberkante des Falls; dort wird er schmal und laeuft durch die Kerbe im
 // Steinsturz.
 
-const vert = /* glsl */ `
-  attribute float aAcross;
-  attribute float aAlong;
-  attribute float aSteep;
-  varying float vAcross;
-  varying float vAlong;
-  varying float vSteep;
-  varying vec3 vWorld;
-  #include <fog_pars_vertex>
-  void main() {
-    vAcross = aAcross;
-    vAlong = aAlong;
-    vSteep = aSteep;
-    vec4 wp = modelMatrix * vec4(position, 1.0);
-    vWorld = wp.xyz;
-    vec4 mvPosition = viewMatrix * wp;
-    gl_Position = projectionMatrix * mvPosition;
-    #include <fog_vertex>
-  }
+// Der Bach traegt dasselbe Material wie das Gelaende (MeshStandardMaterial),
+// damit Sonne, Hangneigung und die Schatten der Tannen auf ihm liegen wie
+// auf dem Schnee daneben. Ein erster Entwurf war unbeleuchtet, mit eigenem
+// Tuerkis und harter Kante – er sah aus wie aufgemalt. Die Farbe kommt jetzt
+// aus demselben Rezept wie der See (props/lake.js): dieselben Toene, Risse
+// aus gefaltetem Rauschen, Verwehungen in Weltkoordinaten. Zum Ufer hin
+// franst das Eis aus und wird durchsichtig, der Schnee laeuft darueber.
+const ICE_CHUNK = /* glsl */ `
+  float a = abs(vAcross);
+  vec2 wp = vRiverXZ;
+  // Zur Mitte hin dunkler, weil das Eis dort dicker wirkt – wie im See.
+  vec3 col = mix(uShallow, uDeep, smoothstep(0.1, 0.9, 1.0 - a) * 0.85);
+  float veins = abs(riverFbm(wp * 0.35) - 0.5) * 2.0;
+  col = mix(col, uCrack, (1.0 - smoothstep(0.02, 0.1, veins)) * 0.3);
+  // Verwehter Schnee auf dem Eis; wo es steil ist, mehr davon.
+  float drift = smoothstep(0.52, 0.78, riverFbm(wp * 0.26 + 21.0));
+  drift = max(drift, smoothstep(0.2, 0.8, vSteep) * 0.55 * smoothstep(0.35, 0.7, riverFbm(wp * 0.5 + 3.0)));
+  // Ausgefranstes Ufer: der Rand ist keine Linie, sondern Rauschen.
+  float edge = a + (riverFbm(wp * 0.7 + 5.0) - 0.5) * 0.5;
+  drift = max(drift, smoothstep(0.55, 0.9, edge));
+  col = mix(col, vec3(0.96, 0.98, 1.0), drift * 0.7);
+  float alpha = 1.0 - smoothstep(0.78, 1.0, edge);
+  // Oben am Rand kommt er unter dem Schnee hervor.
+  alpha *= smoothstep(1.0, 6.0, vAlong);
+  diffuseColor = vec4(col, alpha);
+  riverGlow = col * (1.0 - drift) * 0.32;
 `
 
-const frag = /* glsl */ `
-  precision highp float;
-  varying float vAcross;
-  varying float vAlong;
-  varying float vSteep;
-  varying vec3 vWorld;
-  uniform vec3 uDeep;
-  uniform vec3 uShallow;
-  uniform vec3 uSunDir;
-  #include <fog_pars_fragment>
-
-  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float noise(vec2 p) {
-    vec2 i = floor(p), f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+function patch(material, uniforms) {
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms)
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+        attribute float aAcross;
+        attribute float aAlong;
+        attribute float aSteep;
+        varying float vAcross;
+        varying float vAlong;
+        varying float vSteep;
+        varying vec2 vRiverXZ;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vAcross = aAcross;
+        vAlong = aAlong;
+        vSteep = aSteep;
+        vRiverXZ = (modelMatrix * vec4(position, 1.0)).xz;`)
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        varying float vAcross;
+        varying float vAlong;
+        varying float vSteep;
+        varying vec2 vRiverXZ;
+        uniform vec3 uDeep;
+        uniform vec3 uShallow;
+        uniform vec3 uCrack;
+        float riverHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float riverNoise(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(riverHash(i), riverHash(i + vec2(1.0, 0.0)), f.x),
+                     mix(riverHash(i + vec2(0.0, 1.0)), riverHash(i + vec2(1.0, 1.0)), f.x), f.y);
+        }
+        float riverFbm(vec2 p) {
+          float s = 0.0, a = 0.5;
+          for (int i = 0; i < 4; i++) { s += riverNoise(p) * a; p *= 2.07; a *= 0.5; }
+          return s;
+        }`)
+      .replace('#include <color_fragment>', `vec3 riverGlow;\n${ICE_CHUNK}`)
+      // Ein Teil der Farbe leuchtet selbst: der See ist unbeleuchtet, und
+      // ganz ohne Eigenlicht wurde das Eis im Schatten grau statt blau.
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += riverGlow;')
   }
-  float fbm(vec2 p) {
-    float s = 0.0, a = 0.5;
-    for (int i = 0; i < 4; i++) { s += noise(p) * a; p = p * 2.03 + 7.1; a *= 0.5; }
-    return s;
-  }
-
-  void main() {
-    float a = abs(vAcross);
-    // In der Mitte tiefer und dunkler, zum Ufer hin flach und hell.
-    vec3 col = mix(uDeep, uShallow, smoothstep(0.0, 0.85, a));
-    // Das Wasser zieht unter dem Eis: lange, laengs gestreckte Schlieren.
-    float flow = noise(vec2(vAcross * 4.0, vAlong * 0.35));
-    col = mix(col, uDeep * 0.8, smoothstep(0.55, 0.85, flow) * (1.0 - a) * 0.5);
-    col += vec3(0.08, 0.1, 0.1) * smoothstep(0.6, 0.9, noise(vec2(vAcross * 9.0 + 3.0, vAlong * 0.6)));
-
-    // Wo es steil ist, ist das Eis weiss und gerippt: gefrorene Kaskaden.
-    float ribs = smoothstep(0.3, 0.95, sin(vAlong * 6.0 + noise(vec2(vAcross * 3.0, vAlong)) * 3.0) * 0.5 + 0.5);
-    // Eisblau mit weissen Rippen – ganz weiss las es sich wie eine Piste.
-    vec3 cascade = mix(mix(uShallow, uDeep, 0.25 * (1.0 - a)), vec3(0.93, 0.98, 1.0), ribs * 0.75);
-    col = mix(col, cascade, smoothstep(0.25, 0.7, vSteep));
-
-    // Eingeschlossene Blasen.
-    vec2 cell = vec2(vAcross * 6.0, vAlong * 3.0);
-    vec2 id = floor(cell);
-    float bubble = step(0.88, hash(id)) * (1.0 - smoothstep(0.08, 0.16, length(fract(cell) - 0.5)));
-    col = mix(col, vec3(0.92, 0.98, 1.0), bubble * 0.5 * (1.0 - vSteep));
-
-    // Schnee: am Rand eine ausgefranste Wehe, in der Mitte vereinzelte
-    // Verwehungen – der Bach ist nicht frisch gefegt.
-    float drift = smoothstep(0.6, 0.95, a + (fbm(vec2(vAcross * 2.0, vAlong * 0.5)) - 0.5) * 0.5);
-    drift = max(drift, smoothstep(0.64, 0.8, fbm(vec2(vAcross * 1.3 + 9.0, vAlong * 0.22))) * 0.85 * (1.0 - vSteep));
-    // Oben am Rand kommt er unter dem Schnee hervor.
-    drift = max(drift, 1.0 - smoothstep(1.0, 5.0, vAlong));
-    col = mix(col, vec3(0.95, 0.975, 1.0), drift);
-
-    // Ein schmaler Glanz, wie auf dem See.
-    vec3 V = normalize(cameraPosition - vWorld);
-    vec3 H = normalize(V + normalize(uSunDir));
-    col += vec3(1.0, 0.97, 0.9) * pow(max(H.y, 0.0), 80.0) * 0.2 * (1.0 - drift);
-
-    gl_FragColor = vec4(col, 1.0);
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
-    #include <fog_fragment>
-  }
-`
+  material.customProgramCacheKey = () => 'frozen-river-v2'
+  return material
+}
 
 // lip: Weltpunkt der Oberkante des Falls, dort endet der Bach.
-export function createFrozenRiver(world, { lip, sunDir }) {
+export function createFrozenRiver(world, { lip }) {
   // Bis zur Boeschungskante liegt der Bach auf dem Hang; ab da spannt er
   // sich zur Lippe. Die Kante ist der hoechste Punkt nahe dem Ende.
   const pts = BACH.punkte.slice(0, -1).map(([x, z]) => new THREE.Vector3(x, 0, z))
@@ -110,7 +97,7 @@ export function createFrozenRiver(world, { lip, sunDir }) {
   const curve = new THREE.CatmullRomCurve3([...pts, new THREE.Vector3(lip.x, 0, lip.z)], false, 'centripetal')
   const length = curve.getLength()
   const n = Math.ceil(length / 0.35)
-  const ACROSS = 9
+  const ACROSS = 13
 
   // Wo auf der Kurve die Kante liegt.
   let kanteU = 1
@@ -131,10 +118,14 @@ export function createFrozenRiver(world, { lip, sunDir }) {
     const nl = Math.hypot(nx, nz) || 1
     // Auf der Bruecke zur Lippe wird der Bach schmal wie ein Ausguss.
     const bruecke = u > kanteU ? (u - kanteU) / (1 - kanteU) : 0
-    const w = (BACH.halb + 0.3) * (1 - 0.45 * bruecke)
     const mid = u <= kanteU ? terrainHeight(p.x, p.z) : kanteY + (lip.y - kanteY) * bruecke
     const s = prevY === null ? 0 : Math.min(1, Math.max(0, (prevY - mid) / (length / n) - 0.35))
     prevY = mid
+    // Nicht ueberall gleich breit: ein Bach, der mit dem Lineal gezogen ist,
+    // liest sich als Strich. In den Kaskaden enger, auf dem Schwemmkegel
+    // weiter, zur Lippe hin schmal wie ein Ausguss.
+    const welle = 0.85 + 0.3 * (0.5 + 0.5 * Math.sin(u * length * 0.23 + 1.3) * Math.cos(u * length * 0.071))
+    const w = (BACH.halb + 0.6) * welle * (1 - 0.25 * s) * (1 - 0.6 * bruecke)
     for (let k = 0; k < ACROSS; k++) {
       const q = k / (ACROSS - 1) * 2 - 1
       const x = p.x + (nx / nl) * q * w
@@ -170,18 +161,19 @@ export function createFrozenRiver(world, { lip, sunDir }) {
   geo.computeVertexNormals()
   geo.computeBoundingSphere()
 
-  const material = new THREE.ShaderMaterial({
-    vertexShader: vert,
-    fragmentShader: frag,
-    fog: true,
-    uniforms: THREE.UniformsUtils.merge([
-      THREE.UniformsLib.fog,
-      {
-        uDeep: { value: new THREE.Color(0x2f6f86) },
-        uShallow: { value: new THREE.Color(0x8cc3d2) },
-        uSunDir: { value: sunDir.clone() },
-      },
-    ]),
+  // Dieselben Toene wie der See (props/lake.js).
+  const material = patch(new THREE.MeshStandardMaterial({
+    roughness: 0.28,
+    metalness: 0.0,
+    envMapIntensity: 0.6,
+    transparent: true,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  }), {
+    uDeep: { value: new THREE.Color(0x397d94) },
+    uShallow: { value: new THREE.Color(0x83b8c8) },
+    uCrack: { value: new THREE.Color(0xe6f3fa) },
   })
   // Verschneite Steine am Ufer, dichter wo es steil ist – dort bricht
   // Fels durch. Klein genug, dass man sie ueberspringt.
@@ -193,7 +185,7 @@ export function createFrozenRiver(world, { lip, sunDir }) {
     const i = Math.round(u * n)
     if (smoothSteep[i * ACROSS] < 0.2 && rng() < 0.6) continue
     const side = rng() < 0.5 ? -1 : 1
-    const off = BACH.halb + 0.6 + rng() * 0.9
+    const off = BACH.halb + 1.2 + rng() * 1.0
     const nl = Math.hypot(t.z, t.x) || 1
     steine.push({
       x: p.x - (t.z / nl) * side * off, z: p.z + (t.x / nl) * side * off,

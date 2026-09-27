@@ -207,7 +207,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
   for (let i = 0; i < BACH.punkte.length - 1; i++) {
     const [x1, z1] = BACH.punkte[i]
     const [x2, z2] = BACH.punkte[i + 1]
-    LANES.push({ x1, z1, x2, z2, r: BACH.halb + 0.8 })
+    LANES.push({ x1, z1, x2, z2, r: BACH.halb + 1.2 })
   }
   // Rennstrecke und Funpark sind praeparierte Bahnen – dort waechst nichts.
   // Die Streifen kommen aus derselben Quelle wie die Gelaendeformung, damit
@@ -334,7 +334,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Karte und im Pistenpass: wer sie findet, hat gestoebert. Enter zoomt
   // heran, dann taut das Eis auf – deshalb eine Auswahl mit nur einem Ziel.
   // Der Bach, der vom Gebirgsrand kommt und oben in den Fall stuerzt.
-  createFrozenRiver(world, { lip: landscape.fall.userData.lip(), sunDir: sky.sunDir })
+  createFrozenRiver(world, { lip: landscape.fall.userData.lip() })
 
   const feed = new BroadcastFeed(landscape.fall, FALL_SPOT)
   const fallGround = terrainHeight(FALL_SPOT.x, FALL_SPOT.z)

@@ -373,12 +373,12 @@ export class MapMenu {
     const eigene = this.race?.best
     fuss.innerHTML = '<span></span><button type="button" class="sb-hin">Zum Slalom-Start</button>'
     fuss.firstElementChild.textContent = eigene ? `Deine Bestzeit hier im Browser: ${eigene.toFixed(2).replace('.', ',')} s` : 'Noch keine eigene Zeit gefahren.'
-    fuss.querySelector('button').addEventListener('click', () => this._zumSlalom())
+    fuss.querySelector('button').addEventListener('click', () => this.zumSlalom())
     ziel.appendChild(fuss)
   }
 
   // Ein paar Meter ueber dem Startbogen, Blick die Bahn hinunter.
-  _zumSlalom() {
+  zumSlalom() {
     if (!this.race) return
     const p = this.race.pointAt(this.race.startS - 6)
     this.travelTo({ x: p.x, z: p.z, heading: Math.atan2(p.dx, p.dz) })
@@ -596,7 +596,7 @@ export class MapMenu {
     if (this.view === 'liste') {
       if (action === 'forward') this.listeEl.scrollBy({ top: -120, behavior: 'smooth' })
       if (action === 'brake') this.listeEl.scrollBy({ top: 120, behavior: 'smooth' })
-      if (action === 'use' || action === 'jump') this._zumSlalom()
+      if (action === 'use' || action === 'jump') this.zumSlalom()
       return true
     }
     if (this.view === 'pass') {

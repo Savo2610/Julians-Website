@@ -548,7 +548,11 @@ richtige Station aktiv, kein Hindernis, 0 Bilder in der Luft.
 ohne Glas, „M Übersicht & alle Links“ mit hellem Hof und langsamem Atmen –
 anklickbar, sie bleibt, bis die
 Übersicht einmal offen war oder man 30 s gefahren ist. **`R`** bringt von
-überall zum Start (derselbe Weg wie die Schnellreise, `travelTo`). Die
+überall zum Start (derselbe Weg wie die Schnellreise, `travelTo`) – außer
+man fährt gerade Slalom oder war in der letzten Minute am Start oder im Ziel
+und ist noch höchstens 26 m von der Bahn weg (`race.slalomNah`): dann geht es
+6 m über den Startbogen, ein laufender Lauf wird ohne Wertung abgebrochen
+(28.09., auf Ansage). Die
 Pille „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
 Gas oder Lenkung, unter 4 m/s und keine 3 m vorangekommen) oder sich
 verfranzt hat (7 s abseits jedes Weges mit ≥ 3 Bäumen im Umkreis von 4 m),

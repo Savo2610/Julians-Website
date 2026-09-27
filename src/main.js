@@ -113,7 +113,8 @@ const interaction = new StationInteraction({ registry: stations, ui: stationUI, 
 input.onAction = (action) => interaction.press(action)
 
 // R und der Rueckweg-Hinweis: zurueck zum Startplatz, hinter derselben Blende
-// wie die Schnellreise.
+// wie die Schnellreise. Wer gerade Slalom faehrt oder eben im Ziel ist,
+// kommt stattdessen an den Slalom-Start (race.slalomNah).
 const start = ORTE.find((o) => o.id === 'start')
 const hints = new Hints({
   map: mapMenu, input, skier, world,
@@ -121,7 +122,10 @@ const hints = new Hints({
     if (skier.tow) return
     interaction.leave()
     mapMenu.close()
-    mapMenu.travelTo(start)
+    if (props.race.slalomNah(skier)) {
+      props.race.abbrechen()
+      mapMenu.zumSlalom()
+    } else mapMenu.travelTo(start)
     hints.afterReset()
   },
 })

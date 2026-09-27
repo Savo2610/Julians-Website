@@ -611,8 +611,9 @@ Löschen: `npx wrangler d1 execute skiportfolio-slalom --remote --command
 
 Seit 27.09. zeigt die Felsquelle am oberen Seeufer, was gerade auf
 broadcast.veerka.mp läuft. Die Quelle ist mitten im Fallen erstarrt
-(`props/frozen-fall.js`), und im Eis steckt die Sendung: Bild, stummes
-Video oder Text. Vorher hing dort nur ein Vorhang aus 13 Zapfen.
+(`props/frozen-fall.js`), und im Eis steckt die Sendung: Bild oder Text.
+Videos liefen nicht zuverlässig und sind seit 27.09. wieder draußen; eine
+Sendung nur mit Video zeigt den Dateinamen. Vorher hing dort nur ein Vorhang aus 13 Zapfen.
 
 **Maße (zweite Runde, 27.09.):** 5,2 × 4,4 m. Der Fuß steht 1,9 m draußen
 auf dem Seeeis, und der Fall reicht die Böschung hinauf bis zu ihrer Kante
@@ -657,20 +658,22 @@ stiehlt, und er steht vor den Tannen statt dazwischen. Beim ersten Versuch
 (5,6 / 3,2 m) steckte er im Wald und war vom See aus kaum zu finden. Das
 Licht blitzt alle 1,6 s, auf Sendung alle 0,8 s. Nur auf Sendung wandern
 rote Funkbögen von der Spitze weg, in der Bildebene. Sie sind rot, nicht
-additiv, weil Licht vor Schnee nur weiß wird.
+additiv, weil Licht vor Schnee nur weiß wird. **Einseitig**, nie
+`DoubleSide` bei transparenten Materialien: three.js zeichnet sie dann
+zweimal und baut dafür jeden Frame den Shaderschlüssel neu. Die sechs Bögen
+taten das 12-mal je Frame; das gab alle 1–2 s einen Ruckler.
 
 **Daten:** `worker/index.js` reicht `/api/broadcast/state` (nur `message`,
-20 s Cache) und `/api/broadcast/file?key=` (mit Range, für Videos) durch.
+20 s Cache) und `/api/broadcast/file?key=` (mit Range) durch.
 Der Broadcast-Dienst schickt keinen CORS-Kopf, und WebGL nimmt fremde
 Bilder nicht als Textur. Am Dienst selbst ist nichts geändert.
 Durchgelassen werden nur Schlüssel in der Form des Dienstes und nur
-JPEG/PNG/WebP/GIF/AVIF/MP4/WebM/MOV. Kein SVG, denn das könnte unter dem Namen des
+JPEG/PNG/WebP/GIF/AVIF. Kein SVG, denn das könnte unter dem Namen des
 Spiels Skript ausführen. Kein Ton, denn das Tal bleibt still. Tests:
 `tests/broadcast-worker.test.js`.
 Gefragt wird erst, wenn der Fahrer näher als 55 m kommt, danach höchstens
 einmal pro Minute. Bilder werden im Browser auf 1280 px verkleinert (das
-erste Testbild hatte 2,6 MB). Mehrere Anhänge wechseln alle 8 s. Videos
-laufen stumm und nur unter 36 m. Kurzer Text (≤ 140 Zeichen) läuft als Zeile
+erste Testbild hatte 2,6 MB). Mehrere Anhänge wechseln alle 8 s. Kurzer Text (≤ 140 Zeichen) läuft als Zeile
 unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
 Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
 expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.

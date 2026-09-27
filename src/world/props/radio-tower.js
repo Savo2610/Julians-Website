@@ -137,7 +137,10 @@ export function createRadioTower() {
   // Kamera nie dreht.
   const waveMat = () => new THREE.MeshBasicMaterial({
     // Rot statt additiv: vor Himmel und Schnee wuerde Licht nur weiss.
-    color: 0xff6b5a, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide,
+    // Einseitig, weil die Kamera nie dahinter kommt: transparent und
+    // doppelseitig zeichnet three.js zweimal und baut dafuer in jedem Frame
+    // den Shaderschluessel neu – 12-mal je Frame, das gab Ruckler.
+    color: 0xff6b5a, transparent: true, opacity: 0, depthWrite: false,
   })
   const arc = new THREE.RingGeometry(0.9, 1, 20, 1, -Math.PI / 4.5, Math.PI / 2.25)
   const waves = []

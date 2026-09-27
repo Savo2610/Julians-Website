@@ -11,12 +11,12 @@ import { CAMERA } from '../config.js'
 // hoechstens einmal pro Minute. Bilder werden im Browser auf 1280 Pixel
 // verkleinert; das Original hatte beim ersten Test 2,6 MB.
 //
-// Mehrere Anhaenge wechseln sich ab, alle acht Sekunden. Videos laufen
-// stumm und nur, solange man nah ist. Ton spielt die Quelle nie ab.
+// Mehrere Anhaenge wechseln sich ab, alle acht Sekunden. Nur Bilder und
+// Text: Videos liefen nicht zuverlaessig und sind seit 27.09. wieder
+// draussen. Eine Sendung nur mit Video zeigt wie andere Dateien den Namen.
 
 const API = '/api/broadcast'
 const NEAR = 55          // m: ab hier wird gefragt
-const PLAY = 36          // m: ab hier laeuft ein Video
 // Klar ist das Bild auf der vorderen Haelfte des Sees (der Fuss des Falls
 // steht 18 m von der Seemitte), dann verschwindet es hinter dem Reif.
 // Seitlich zaehlt jeder Meter 1,6-fach: Stechuhr und Abkuerzung liegen
@@ -195,10 +195,8 @@ export class BroadcastFeed {
     if (m === undefined) return 'broadcast.veerka.mp'
     if (!m) return 'Funkstille · broadcast.veerka.mp'
     const bilder = m.attachments.filter((a) => a.inline === 'image').length
-    const videos = m.attachments.filter((a) => a.inline === 'video').length
-    const art = videos ? (videos > 1 ? `${videos} Videos` : 'Video')
-      : bilder ? (bilder > 1 ? `${bilder} Bilder` : 'Bild')
-        : m.text ? 'Text' : 'Dateien'
+    const art = bilder ? (bilder > 1 ? `${bilder} Bilder` : 'Bild')
+      : m.text ? 'Text' : 'Dateien'
     return `Auf Sendung · ${art} · ${vorWann(m.createdAt)}`
   }
 
@@ -220,14 +218,6 @@ export class BroadcastFeed {
     }
     // Eine Sendung laeuft nach sieben Tagen ab – auch ohne neue Abfrage.
     if (this.message && this.message.expiresAt < Date.now()) this.zeigen(null)
-
-    const slide = this.slides[this.index]
-    if (slide?.video) {
-      const v = slide.video
-      const soll = d < PLAY && document.visibilityState === 'visible'
-      if (soll && v.paused) v.play().catch(() => {})
-      else if (!soll && !v.paused) v.pause()
-    }
 
     if (this.slides.length > 1 && d < NEAR) {
       this.timer += dt
@@ -269,7 +259,7 @@ export class BroadcastFeed {
     }
 
     const text = (m.text ?? '').trim()
-    const inline = m.attachments.filter((a) => a.inline === 'image' || a.inline === 'video').slice(0, MAX_SLIDES)
+    const inline = m.attachments.filter((a) => a.inline === 'image').slice(0, MAX_SLIDES)
     const rest = m.attachments.filter((a) => !inline.includes(a))
     // Kurzer Text laeuft als Zeile unter dem Bild mit, langer bekommt
     // eine eigene Folie.
@@ -277,7 +267,7 @@ export class BroadcastFeed {
 
     const slides = []
     for (const a of inline) {
-      slides.push(a.inline === 'video' ? { kind: 'video', a } : { kind: 'image', a, text: unterzeile })
+      slides.push({ kind: 'image', a, text: unterzeile })
     }
     if (text && (!inline.length || !unterzeile)) slides.push({ kind: 'text', text })
     if (!slides.length && rest.length) slides.push({ kind: 'files', files: rest })
@@ -289,9 +279,7 @@ export class BroadcastFeed {
   async folie(i) {
     const s = this.slides[i]
     if (!s) return
-    const vorher = this.slides[this.index]
     this.index = i
-    if (vorher?.video && vorher !== s) vorher.video.pause()
     if (!s.texture) {
       try {
         await this.bauen(s)
@@ -302,7 +290,7 @@ export class BroadcastFeed {
       // Waehrend des Ladens kam womoeglich eine neue Sendung.
       if (!this.slides.includes(s) || this.slides[this.index] !== s) return
     }
-    this.fall.userData.setMedia?.(s.texture, s.aspect ?? ASPECT)
+    this.fall.userData.setMedia?.(s.texture, ASPECT)
     this.fall.userData.setGlow?.(s.color, 1)
   }
 
@@ -313,44 +301,16 @@ export class BroadcastFeed {
       s.color = new THREE.Color(0x6fb8e8)
       return
     }
-    if (s.kind === 'image') {
-      const r = await fetch(datei(s.a))
-      if (!r.ok) throw new Error(r.status)
-      const bitmap = await createImageBitmap(await r.blob())
-      const c = bildFolie(bitmap, s.text)
-      bitmap.close?.()
-      s.texture = textur(c)
-      s.color = mittel(c)
-      return
-    }
-    // Video: stumm, in Schleife, im Bild bleibend (iOS). Erst hier wird
-    // es angelegt, also erst, wenn jemand davorsteht.
-    const v = document.createElement('video')
-    v.muted = true
-    v.defaultMuted = true
-    v.loop = true
-    v.playsInline = true
-    v.setAttribute('playsinline', '')
-    v.preload = 'metadata'
-    v.src = datei(s.a)
-    await new Promise((ok, fail) => {
-      v.addEventListener('loadeddata', ok, { once: true })
-      v.addEventListener('error', fail, { once: true })
-    })
-    s.video = v
-    s.aspect = v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : ASPECT
-    const t = new THREE.VideoTexture(v)
-    t.colorSpace = THREE.SRGBColorSpace
-    s.texture = t
-    s.color = mittel(v)
+    const r = await fetch(datei(s.a))
+    if (!r.ok) throw new Error(r.status)
+    const bitmap = await createImageBitmap(await r.blob())
+    const c = bildFolie(bitmap, s.text)
+    bitmap.close?.()
+    s.texture = textur(c)
+    s.color = mittel(c)
   }
 
   wegwerfen(s) {
-    if (s.video) {
-      s.video.pause()
-      s.video.removeAttribute('src')
-      s.video.load()
-    }
     // Erst nach der Ueberblendung, sonst blitzt beim Wechsel Schwarz auf.
     if (s.texture) setTimeout(() => s.texture.dispose(), 2000)
   }

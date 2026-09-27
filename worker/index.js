@@ -167,11 +167,11 @@ async function broadcastDatei(request, url) {
   if (range) kopf.range = range
   const r = await fetch(`${BROADCAST}/api/file?key=${encodeURIComponent(key)}`, { headers: kopf })
   if (r.status !== 200 && r.status !== 206) return fehler('Nicht gefunden', r.status === 416 ? 416 : 404)
-  // Nur Bilder und Videos, und kein SVG: alles andere liefe unter dem Namen
-  // des Spiels aus und koennte dort Skript mitbringen. Ton ist bewusst nicht
-  // dabei, das Tal bleibt still.
+  // Nur Bilder, und kein SVG: alles andere liefe unter dem Namen des Spiels
+  // aus und koennte dort Skript mitbringen. Videos liefen nicht zuverlaessig
+  // und sind seit 27.09. wieder draussen; Ton war nie dabei.
   const typ = r.headers.get('content-type') ?? ''
-  if (!/^(image\/(jpeg|png|webp|gif|avif)|video\/(mp4|webm|quicktime))$/.test(typ.split(';')[0].trim())) {
+  if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(typ.split(';')[0].trim())) {
     return fehler('Diese Sorte zeigt die Quelle nicht', 415)
   }
   const aus = new Headers({

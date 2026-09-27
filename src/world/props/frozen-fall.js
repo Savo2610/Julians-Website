@@ -5,7 +5,7 @@ import { createBoulder } from './rocks.js'
 
 // Die gefrorene Quelle am See. Das Wasser, das hier ueber den Fels lief,
 // ist mitten im Fallen erstarrt – und im Eis steckt, was gerade auf
-// broadcast.veerka.mp gesendet wird: ein Bild, ein Video oder ein Text,
+// broadcast.veerka.mp gesendet wird: ein Bild oder ein Text,
 // eingefroren wie ein Blatt im Bach.
 //
 // Aus der Ferne ist es nur ein bereifter Eisfall, durch den etwas Farbe
@@ -400,6 +400,7 @@ export function createFrozenFall() {
   }
 
   group.userData.select = (index) => { focused = index !== null && index !== undefined }
+  let funkenNoetig = true
   group.userData.press = () => {
     uniforms.uFlash.value = 0.55
     for (let i = 0; i < SPARKS; i++) {
@@ -448,13 +449,19 @@ export function createFrozenFall() {
     glowUniforms.uStrength.value = ease(glowUniforms.uStrength.value,
       glowTarget * hasTarget * (0.08 + 0.2 * uniforms.uClear.value), 2)
 
+    // Die Funken laden nur hoch, solange welche fliegen – sonst jeden
+    // Frame 36 Punkte fuer nichts.
+    let aktiv = false
     for (let i = 0; i < SPARKS; i++) {
       if (sparkLife[i] <= 0) continue
+      aktiv = true
       sparkLife[i] -= dt * 0.9
       sparkVel[i * 3 + 1] -= dt * 0.25
       for (let k = 0; k < 3; k++) sparkPos[i * 3 + k] += sparkVel[i * 3 + k] * dt
       if (sparkLife[i] <= 0) sparkPos[i * 3 + 1] = -999
     }
+    if (!aktiv && !funkenNoetig) return
+    funkenNoetig = aktiv
     sparkGeo.attributes.position.needsUpdate = true
     sparkGeo.attributes.life.needsUpdate = true
   }

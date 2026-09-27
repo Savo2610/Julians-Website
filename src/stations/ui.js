@@ -110,8 +110,14 @@ export class StationUI {
     }
     this.el.classList.toggle('hidden', this._focused)
     if (!station || this._focused) return
+    // Manche Hinweise haengen an einem Stand, der erst spaeter ankommt
+    // (die Sendung der gefrorenen Quelle).
+    if (!this.el.classList.contains('dead') && this.subEl.textContent !== station.hint) this.subEl.textContent = station.hint
 
-    this._world.set(station.position.x, station.labelHeight ?? 2.4, station.position.z)
+    // labelAt: eigener Ort fuer die Einladung, wo sie sonst etwas verdeckt
+    // (die gefrorene Quelle – dort stand sie mitten vor dem Bild).
+    const at = station.labelAt ?? station.position
+    this._world.set(at.x, station.labelHeight ?? 2.4, at.z)
     this._world.project(this.camera)
     const x = (this._world.x * 0.5 + 0.5) * window.innerWidth
     const y = (-this._world.y * 0.5 + 0.5) * window.innerHeight

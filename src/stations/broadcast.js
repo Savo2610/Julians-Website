@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { FALL } from '../world/props/frozen-fall.js'
+import { CAMERA } from '../config.js'
 
 // Was gerade auf broadcast.veerka.mp laeuft, eingefroren in die Quelle am
 // See (world/props/frozen-fall.js). Der Worker reicht Stand und Dateien
@@ -17,10 +18,14 @@ const API = '/api/broadcast'
 const NEAR = 55          // m: ab hier wird gefragt
 const PLAY = 36          // m: ab hier laeuft ein Video
 // Klar ist das Bild auf der vorderen Haelfte des Sees (der Fuss des Falls
-// steht 18 m von der Seemitte), dann verschwindet es hinter dem Reif, bis
-// zum anderen Ufer (gut 34 m).
+// steht 18 m von der Seemitte), dann verschwindet es hinter dem Reif.
+// Seitlich zaehlt jeder Meter 1,6-fach: Stechuhr und Abkuerzung liegen
+// 21 und 26 m weg, aber genau seitlich vom Fall (vorn 0,3 und 6,7 m) –
+// dort war das Bild schon klar, gesehen von der Seite. Gewichtet sind es
+// 34 und 40 m, also ganz im Reif; die Seemitte bleibt bei 17 m klar.
 const KLAR = 19
-const WEG = 34
+const WEG = 30
+const SEITE = 1.6
 const EVERY = 60         // s zwischen zwei Abfragen
 const SLIDE = 8          // s je Anhang
 const MAX_SLIDES = 6
@@ -180,9 +185,9 @@ export class BroadcastFeed {
 
   // Fuer die Einladung und die Auswahl.
   get hint() {
-    if (this.message === undefined) return 'Etwas schimmert im Eis'
-    if (!this.message) return 'Funkstille – nur Eis'
-    return 'Da steckt etwas im Eis'
+    if (this.message === undefined) return 'Broadcast'
+    if (!this.message) return 'Funkstille'
+    return 'Gerade auf Sendung'
   }
 
   get sub() {
@@ -200,9 +205,15 @@ export class BroadcastFeed {
   update(dt, skier) {
     this.clock += dt
     if (!skier) return
-    const d = Math.hypot(skier.position.x - this.position.x, skier.position.z - this.position.z)
+    const dx = skier.position.x - this.position.x
+    const dz = skier.position.z - this.position.z
+    const d = Math.hypot(dx, dz)
     this.distance = d
-    this.fall.userData.setSicht?.(1 - THREE.MathUtils.smoothstep(d, KLAR, WEG))
+    // Vorn = zur Kamera hin, seitlich = quer dazu.
+    const vorn = dx * Math.sin(CAMERA.azimuth) + dz * Math.cos(CAMERA.azimuth)
+    const seite = dx * Math.cos(CAMERA.azimuth) - dz * Math.sin(CAMERA.azimuth)
+    this.sichtweite = Math.hypot(vorn, seite * SEITE)
+    this.fall.userData.setSicht?.(1 - THREE.MathUtils.smoothstep(this.sichtweite, KLAR, WEG))
 
     if (d < NEAR && !this.loading && this.clock - this.lastFetch > EVERY && document.visibilityState === 'visible') {
       this.holen()

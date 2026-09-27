@@ -5,7 +5,7 @@ import { BroadcastFeed } from '../stations/broadcast.js'
 import { LINKS } from '../stations/links.js'
 import { CONNECTIONS } from './paths.js'
 import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
-import { WORLD } from '../config.js'
+import { WORLD, CAMERA } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
 import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
@@ -335,8 +335,13 @@ export function populate(world, sky, registry, stationOptions = {}) {
     position: FALL_SPOT,
     radius: 6.5,
     groundY: fallGround,
-    // Die Einladung schwebt am Fuss, nicht mitten vor dem Bild.
-    labelHeight: fallGround + 0.7,
+    // Die Einladung schwebt vor dem Fall auf dem Eis. Am Fuss verdeckte sie
+    // das untere Drittel des Bildes.
+    labelHeight: fallGround + 0.2,
+    labelAt: {
+      x: FALL_SPOT.x + Math.sin(CAMERA.azimuth) * 3.2,
+      z: FALL_SPOT.z + Math.cos(CAMERA.azimuth) * 3.2,
+    },
     object: landscape.fall,
     // Die Mitte des Eises liegt 1,1 m hinter und 1,9 m ueber dem Fuss.
     focus: { abstand: 12.5, hoehe: 1.9, vor: -0.4 },

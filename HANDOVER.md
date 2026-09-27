@@ -626,15 +626,24 @@ Neigung geht nicht, sonst stößt die Böschung durchs Eis (nachgerechnet
 (`VERSTECKT` in `map-menu.js`), nicht im Pistenpass. Aus der Kamerahöhe
 sieht man nur einen bereiften Felsen mit Eis und einem Hauch Farbe.
 **Sichtbarkeit nach Entfernung** (Ansage 27.09.): Auf der vorderen Hälfte
-des Sees, bis 19 m vom Fuß, ist das Bild ganz klar. Bis 34 m taut der Reif
-wieder zu (smoothstep). Die Seemitte liegt 18 m vom Fuß entfernt. Enter
+des Sees, bis 19 m vom Fuß, ist das Bild ganz klar. Bis 30 m taut der Reif
+wieder zu (smoothstep). Die Seemitte liegt 18 m vom Fuß entfernt. Seitlich
+zählt jeder Meter 1,6-fach: Stechuhr und Abkürzung liegen 21 und 26 m weg,
+aber genau seitlich. Dort war das Bild schon klar, gewünscht war es erst
+„ein Stück weiter links“. Gewichtet sind es jetzt 34 und 41,5 m, das Eis ist
+dort zu. Es taut etwa 5 m hinter der Stechuhr Richtung See auf. Enter
 zoomt heran und taut immer ganz auf. Enter öffnet broadcast.veerka.mp, und
 Eiskristalle steigen auf.
 
-**Das Bild steckt im Eis und klebt nicht darauf:** Parallaxe (0,035 in UV)
-setzt es hinter die Oberfläche, die Rinnen des Eisfalls verziehen es
-leicht, der Reif verwischt es über die Mip-Stufen, und zum Fensterrand hin
-verliert es sich. Die rote Lampe des Funkturms (wie auf der
+**Das Bild steckt im Eis:** Parallaxe (0,035 in UV) setzt es hinter die
+Oberfläche, der Reif verwischt es über die Mip-Stufen, und zum Fensterrand
+hin verliert es sich. Aufgetaut liegt **nichts** darüber: Rinnen, Risse,
+Blasen, Restreif und der wandernde Glanzstreif sind über dem Bild auf
+Wunsch weg (27.09.). Sie blieben nur im Eis drumherum; den Glanzstreif gibt
+es gar nicht mehr.
+Die Einladung („Gefrorene Quelle · Gerade auf Sendung“ bzw. „Funkstille“)
+schwebt 3,2 m vor dem Fuß auf dem Eis (`labelAt` in der Station, `ui.js`).
+Am Fuß verdeckte sie das untere Drittel des Bildes. Die rote Lampe des Funkturms (wie auf der
 Broadcast-Seite) atmet rechts im Eis, solange gesendet wird, und leuchtet
 auch durch den Reif. Der Schein auf dem Schnee hat die Mittelfarbe des Bildes.
 Die Fläche lehnt 0,5 rad zurück: bei 36° Kamerahöhe bleiben 86 % der

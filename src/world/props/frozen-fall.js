@@ -120,7 +120,7 @@ const frag = /* glsl */ `
     vec2 windowUv = (uv - vec2(0.07, 0.07)) / vec2(0.86, 0.82);
     vec2 par = vViewT.xy / max(vViewT.z, 0.3) * 0.035;
     vec2 wob = vec2(cos(uv.x * 38.0 + sin(uv.y * 5.0) * 1.4) * 0.006, (grain - 0.5) * 0.012);
-    vec2 muv = windowUv - par + wob * (1.3 - uClear);
+    vec2 muv = windowUv - par + wob * (1.0 - uClear);
 
     // --- Reif: dichter Filz aus Rauschen. Er taut von der Mitte her auf,
     // mit ausgefranster Grenze.
@@ -129,7 +129,7 @@ const frag = /* glsl */ `
     float reach = uClear * 1.25;
     float thawed = 1.0 - smoothstep(reach - 0.22, reach, length(c) + frayed);
     float frostTex = smoothstep(0.3, 0.8, fbm(uv * vec2(9.0 * uAspect, 9.0) + 7.0));
-    float frost = mix(0.55 + 0.4 * frostTex, 0.06 * frostTex, thawed);
+    float frost = mix(0.55 + 0.4 * frostTex, 0.0, thawed);
     frost = max(frost, rim * 0.8);
 
     float blur = frost * 4.5;
@@ -143,19 +143,19 @@ const frag = /* glsl */ `
     vec3 mcol = mix(m.rgb * vec3(0.72, 0.9, 1.0) + vec3(0.02, 0.06, 0.09), m.rgb, 0.35 + 0.6 * thawed);
     vec3 col = mix(ice, mcol, vis * (0.35 + 0.65 * (1.0 - frost)));
 
-    // Die Rinnen des Eisfalls laufen auch ueber das Bild: senkrechte helle
-    // Striche und ein paar Risse, damit es im Eis steckt und nicht darauf klebt.
+    // Rinnen und Risse nur im Eis um das Bild herum. Ueber dem Bild lagen
+    // sie wie Streifen darauf und sind auf Wunsch weg (27.09.).
     float streak = smoothstep(0.75, 1.0, flute) * (0.35 + 0.65 * noise(vec2(uv.x * 40.0, uv.y * 2.0)));
-    col += vec3(0.75, 0.9, 1.0) * streak * 0.16;
+    col += vec3(0.75, 0.9, 1.0) * streak * 0.16 * (1.0 - vis);
     float veins = abs(fbm(uv * vec2(1.4 * uAspect, 1.6) + 4.0) - 0.5) * 2.0;
-    col = mix(col, vec3(0.92, 0.98, 1.0), (1.0 - smoothstep(0.008, 0.03, veins)) * 0.3 * (1.0 - vis * 0.5));
+    col = mix(col, vec3(0.92, 0.98, 1.0), (1.0 - smoothstep(0.008, 0.03, veins)) * 0.3 * (1.0 - vis));
 
     // Eingeschlossene Luftblasen, ein paar Dutzend feine Punkte.
     vec2 cell = uv * vec2(22.0 * uAspect, 22.0);
     vec2 id = floor(cell);
     float h = hash(id);
     float bubble = step(0.86, h) * (1.0 - smoothstep(0.06, 0.13, length(fract(cell) - 0.3 - 0.4 * vec2(hash(id + 1.7), hash(id + 3.1)))));
-    col = mix(col, vec3(0.93, 0.98, 1.0), bubble * 0.55 * (1.0 - vis * 0.6));
+    col = mix(col, vec3(0.93, 0.98, 1.0), bubble * 0.55 * (1.0 - vis));
 
     // Reif obendrauf.
     col = mix(col, vec3(0.84, 0.93, 0.97), frost * (0.45 + 0.35 * frostTex) * (1.0 - vis * 0.25));
@@ -168,11 +168,6 @@ const frag = /* glsl */ `
     float pulse = 0.5 + 0.5 * sin(uTime * 2.4);
     col = mix(col, vec3(1.0, 0.33, 0.27), (1.0 - smoothstep(0.018, 0.028, ld)) * uLive * (0.55 + 0.45 * pulse));
     col += vec3(1.0, 0.32, 0.22) * exp(-ld * 18.0) * uLive * pulse * 0.6;
-
-    // Glanzstreif, der langsam ueber das Eis wandert – aus der Ferne das
-    // Einzige, was hier blinkt.
-    float band = fract((uv.x * 0.8 + uv.y * 0.55) * 0.5 - uTime * 0.045);
-    col += vec3(0.85, 0.95, 1.0) * smoothstep(0.0, 0.04, band) * (1.0 - smoothstep(0.04, 0.1, band)) * 0.22;
 
     // Weisse, dicke Kante, damit der Umriss auf Fels und Schnee steht.
     col = mix(col, vec3(0.94, 0.98, 1.0), rim * 0.75);

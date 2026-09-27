@@ -181,7 +181,7 @@ Strang zu Ende fahren kann.
 | Packlisten-App (Depot) | −48, 0 | packliste.veerka.mp |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | jf.veerka.mp (am Waldrand, eigene Baumgruppen) |
-| Gefrorene Quelle (Eisfall am See) | −57,5, 26,4 | broadcast.veerka.mp, zeigt die laufende Sendung (4a⁵) |
+| Gefrorene Quelle (Eisfall am See) | −56,2, 27,7 (Fuß) | broadcast.veerka.mp, zeigt die laufende Sendung (4a⁵) |
 
 Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
 mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
@@ -614,12 +614,22 @@ broadcast.veerka.mp läuft. Die Quelle ist mitten im Fallen erstarrt
 (`props/frozen-fall.js`), und im Eis steckt die Sendung: Bild, stummes
 Video oder Text. Vorher hing dort nur ein Vorhang aus 13 Zapfen.
 
+**Maße (zweite Runde, 27.09.):** 5,2 × 4,4 m. Der Fuß steht 1,9 m draußen
+auf dem Seeeis, und der Fall reicht die Böschung hinauf bis zu ihrer Kante
+(2,8 m Gefälle auf 3 m). Gerahmt ist er von zehn Findlingen: je drei an den
+Seiten und vier im Sturz oben, alle mit Zapfen und Schneehaube. Die drei
+Findlinge der alten Felsquelle sind darin aufgegangen. Mehr als 0,5 rad
+Neigung geht nicht, sonst stößt die Böschung durchs Eis (nachgerechnet
+über die ganze Breite).
+
 **Versteckt, mit Absicht:** kein Ring im Schnee, nicht auf der Karte
 (`VERSTECKT` in `map-menu.js`), nicht im Pistenpass. Aus der Kamerahöhe
-sieht man nur einen bereiften Eisblock mit einem Hauch Farbe. Kommt man
-näher als 14 m, wird der Reif dünner. Enter zoomt heran (eine Auswahl mit
-einem Ziel), dann taut das Eis von der Mitte her auf (1,6/s). Enter
-öffnet broadcast.veerka.mp, und Eiskristalle steigen auf.
+sieht man nur einen bereiften Felsen mit Eis und einem Hauch Farbe.
+**Sichtbarkeit nach Entfernung** (Ansage 27.09.): Auf der vorderen Hälfte
+des Sees, bis 19 m vom Fuß, ist das Bild ganz klar. Bis 34 m taut der Reif
+wieder zu (smoothstep). Die Seemitte liegt 18 m vom Fuß entfernt. Enter
+zoomt heran und taut immer ganz auf. Enter öffnet broadcast.veerka.mp, und
+Eiskristalle steigen auf.
 
 **Das Bild steckt im Eis und klebt nicht darauf:** Parallaxe (0,035 in UV)
 setzt es hinter die Oberfläche, die Rinnen des Eisfalls verziehen es
@@ -638,10 +648,10 @@ Durchgelassen werden nur Schlüssel in der Form des Dienstes und nur
 JPEG/PNG/WebP/GIF/AVIF/MP4/WebM/MOV. Kein SVG, denn das könnte unter dem Namen des
 Spiels Skript ausführen. Kein Ton, denn das Tal bleibt still. Tests:
 `tests/broadcast-worker.test.js`.
-Gefragt wird erst, wenn der Fahrer näher als 40 m kommt, danach höchstens
-einmal pro Minute. Bilder werden im Browser auf 1024 px verkleinert (das
+Gefragt wird erst, wenn der Fahrer näher als 55 m kommt, danach höchstens
+einmal pro Minute. Bilder werden im Browser auf 1280 px verkleinert (das
 erste Testbild hatte 2,6 MB). Mehrere Anhänge wechseln alle 8 s. Videos
-laufen stumm und nur unter 26 m. Kurzer Text (≤ 140 Zeichen) läuft als Zeile
+laufen stumm und nur unter 36 m. Kurzer Text (≤ 140 Zeichen) läuft als Zeile
 unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
 Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
 expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial, jitter } from '../../core/geometry.js'
 import { makeRng } from '../../core/rng.js'
+import { createBoulder } from './rocks.js'
 
 // Die gefrorene Quelle am See. Das Wasser, das hier ueber den Fels lief,
 // ist mitten im Fallen erstarrt – und im Eis steckt, was gerade auf
@@ -8,15 +9,18 @@ import { makeRng } from '../../core/rng.js'
 // eingefroren wie ein Blatt im Bach.
 //
 // Aus der Ferne ist es nur ein bereifter Eisfall, durch den etwas Farbe
-// schimmert. Wer nah heranfaehrt, sieht den Reif duenner werden; wer mit
-// Enter heranzoomt, dem taut er von der Mitte her weg, und das Bild wird
-// klar. Das ist das Versteck: man muss hin, um es zu sehen.
+// schimmert. Faehrt man auf den See, taut der Reif von der Mitte her weg;
+// auf der vorderen Haelfte des Sees ist das Bild ganz klar. Das ist das
+// Versteck: man muss hin, um es zu sehen.
 //
-// Die Flaeche lehnt sich nach hinten an den Fels. Die Kamera schaut mit 36
-// Grad von oben; senkrecht stehend waere das Bild auf gut die Haelfte
-// seiner Hoehe gestaucht (sin 36° = 0,59), mit LEAN = 0,5 rad sind es 0,86.
+// Der Fall reicht vom Seeeis (Fuss 1,9 m vor dem Ufer) die Boeschung
+// hinauf bis zu ihrer Kante, 5,2 m breit und 4,4 m hoch, gerahmt von
+// Felsen mit Zapfen. Er lehnt 0,5 rad zurueck: senkrecht waere das Bild
+// bei 36 Grad Kamerahoehe auf 59 % seiner Hoehe gestaucht (sin 36°), so
+// sind es 86 %. Steiler geht nicht – bei 0,55 stuende die Boeschung
+// durch das Eis.
 
-export const FALL = { width: 2.5, height: 1.95, lean: 0.5 }
+export const FALL = { width: 5.2, height: 4.4, lean: 0.5 }
 
 const ICE_DEEP = 0x397d94     // dieselben Toene wie der See davor
 const ICE_SHALLOW = 0x83b8c8
@@ -85,7 +89,7 @@ const frag = /* glsl */ `
 
   // Bild so in das innere Fenster legen, dass es es ganz fuellt (cover).
   vec2 cover(vec2 uv, float aspect) {
-    vec2 inner = vec2(uAspect * 0.8, 0.78);
+    vec2 inner = vec2(uAspect * 0.86, 0.82);
     float want = inner.x / inner.y;
     vec2 s = aspect > want ? vec2(want / aspect, 1.0) : vec2(1.0, aspect / want);
     return (uv - 0.5) * s + 0.5;
@@ -113,7 +117,7 @@ const frag = /* glsl */ `
 
     // --- Das Eingefrorene. Es sitzt ein Stueck hinter der Oberflaeche
     // (Parallaxe) und wird von den Rinnen leicht verzogen.
-    vec2 windowUv = (uv - vec2(0.1, 0.1)) / vec2(0.8, 0.78);
+    vec2 windowUv = (uv - vec2(0.07, 0.07)) / vec2(0.86, 0.82);
     vec2 par = vViewT.xy / max(vViewT.z, 0.3) * 0.035;
     vec2 wob = vec2(cos(uv.x * 38.0 + sin(uv.y * 5.0) * 1.4) * 0.006, (grain - 0.5) * 0.012);
     vec2 muv = windowUv - par + wob * (1.3 - uClear);
@@ -133,7 +137,7 @@ const frag = /* glsl */ `
     vec4 before = texture2D(uPrev, cover(muv, uPrevAspect), blur);
     vec4 m = mix(before, now, uMix);
     // Zum Rand des Fensters hin verliert sich das Bild im Eis.
-    vec2 w = smoothstep(vec2(0.0), vec2(0.13), windowUv) * smoothstep(vec2(0.0), vec2(0.13), 1.0 - windowUv);
+    vec2 w = smoothstep(vec2(0.0), vec2(0.09), windowUv) * smoothstep(vec2(0.0), vec2(0.09), 1.0 - windowUv);
     float vis = uHas * m.a * w.x * w.y;
     // Im Eis ist alles etwas kuehler; aufgetaut kommt die echte Farbe durch.
     vec3 mcol = mix(m.rgb * vec3(0.72, 0.9, 1.0) + vec3(0.02, 0.06, 0.09), m.rgb, 0.35 + 0.6 * thawed);
@@ -238,70 +242,102 @@ export function createFrozenFall() {
   sheet.name = 'eisfall'
   tilt.add(sheet)
 
-  // --- Zapfen an der Oberkante. In der gekippten Gruppe muessen sie um
-  // den Neigungswinkel zurueckgedreht werden, sonst haengen sie schraeg.
+  // --- Der Rahmen aus Fels. Links und rechts je drei Steine die Boeschung
+  // hinunter, oben ein Sturz aus vier Steinen, von dem die Quelle kam.
+  // Ohne ihn stand die grosse Eisflaeche frei im Hang wie eine Leinwand im
+  // Schnee; mit ihm ist sie ein Loch im Fels, aus dem das Wasser trat.
+  // Die Steine sitzen in der gekippten Gruppe, damit sie der Flaeche folgen.
+  const halfAt = (v) => 0.5 + (0.39 - 0.5) * (v * v * (3 - 2 * v))
+  const stones = []
+  const stone = (x, y, z, s, seed) => {
+    const m = createBoulder(seed, s)
+    m.position.set(x, y, z)
+    m.rotation.set(rng() * 0.6, rng() * Math.PI * 2, rng() * 0.4)
+    tilt.add(m)
+    stones.push({ mesh: m, r: s * 1.15 })
+    return m
+  }
+  for (const side of [-1, 1]) {
+    ;[[0.08, 0.95], [0.42, 0.85], [0.74, 0.8]].forEach(([v, s], i) => {
+      const x = side * (halfAt(v) * W + s * 0.95)
+      stone(x, v * H, -0.1 - i * 0.1, s * (0.9 + rng() * 0.2), 7100 + i * 7 + (side > 0 ? 3 : 0))
+    })
+  }
+  ;[-0.36, -0.12, 0.12, 0.36].forEach((u, i) => {
+    const s = 0.78 + rng() * 0.22 + (Math.abs(u) < 0.2 ? 0.1 : 0)
+    stone(u * W, H * 0.98 + s * 0.55, -0.4, s, 7200 + i * 5)
+  })
+
+  // --- Schnee auf den Steinen. Die Findlinge im Tal tragen ihn auf den
+  // Oberseiten; hier sind die Steine mit der Flaeche gekippt, dadurch lag
+  // er schief und fast nirgends. Also eigene Hauben, oben auf dem Sturz
+  // dick, an den Seiten nur auf den oberen Steinen.
+  const caps = []
+  stones.forEach(({ mesh, r }, k) => {
+    const oben = k >= 6
+    if (!oben && k % 3 === 0) return
+    const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
+    jitter(g, 0.14, rng)
+    caps.push({
+      geo: g, color: 0xf6fbff,
+      position: [mesh.position.x, mesh.position.y + r * (oben ? 0.62 : 0.55), mesh.position.z - r * 0.15],
+      scale: [r * (oben ? 0.8 : 0.6), r * 0.22, r * 0.62],
+      rotation: [lean, rng() * 3, 0],
+    })
+  })
+  const capMesh = new THREE.Mesh(assemble(caps), vertexColorMaterial({ roughness: 0.9 }))
+  capMesh.castShadow = true
+  capMesh.receiveShadow = true
+  tilt.add(capMesh)
+
+  // --- Zapfen: an der Unterseite jedes Steins, zur Kamera hin, dazu die
+  // Oberkante des Eises. Am Sturz lang, an den Seiten kurz. In der
+  // gekippten Gruppe muessen sie um den Neigungswinkel zurueckgedreht
+  // werden, sonst haengen sie schraeg.
   const icicles = []
-  for (let i = 0; i < 17; i++) {
-    const u = (i + 0.5 + (rng() - 0.5) * 0.6) / 17
-    const x = (u - 0.5) * W * 0.8
-    const topV = 0.97 - 0.09 * Math.pow(Math.abs(u - 0.5) * 2, 1.6) + 0.025 * Math.sin(u * 19)
-    const long = 0.25 + rng() * 0.55 * (1 - Math.abs(u - 0.5))
-    const r = 0.025 + rng() * 0.035
+  const zapfen = (x, y, z, long, r, dunkel) => {
     const g = new THREE.ConeGeometry(r, long, 5)
-    // Basis auf die Kante, Spitze nach der Drehung nach unten.
+    // Basis oben, Spitze nach der Drehung nach unten.
     g.translate(0, long / 2, 0)
     icicles.push({
       geo: g,
-      color: i % 3 ? 0xc4e8ef : 0x8cc3d3,
-      position: [x, topV * H - 0.04, 0.1 + rng() * 0.06],
-      rotation: [Math.PI + lean, 0, (rng() - 0.5) * 0.2],
+      color: dunkel ? 0x8cc3d3 : 0xc4e8ef,
+      position: [x, y, z],
+      rotation: [Math.PI + lean, 0, (rng() - 0.5) * 0.18],
     })
+  }
+  stones.forEach(({ mesh, r }, k) => {
+    const oben = k >= 6
+    const n = oben ? 9 : 4
+    for (let i = 0; i < n; i++) {
+      const a = (i / (n - 1) - 0.5) * 1.5
+      const x = mesh.position.x + Math.sin(a) * r * 0.75
+      const y = mesh.position.y - r * (oben ? 0.28 : 0.1) - Math.abs(Math.sin(a)) * r * 0.12
+      const z = mesh.position.z + Math.cos(a) * r * 0.7
+      const long = oben ? 0.35 + rng() * 0.75 : 0.18 + rng() * 0.4
+      zapfen(x, y, z, long, (oben ? 0.05 : 0.035) + rng() * 0.04, i % 3 === 0)
+    }
+  })
+  for (let i = 0; i < 20; i++) {
+    const u = (i + 0.5 + (rng() - 0.5) * 0.6) / 20
+    const topV = 0.97 - 0.09 * Math.pow(Math.abs(u - 0.5) * 2, 1.6) + 0.025 * Math.sin(u * 19)
+    zapfen((u - 0.5) * W * 0.78, topV * H - 0.06, 0.12 + rng() * 0.08, 0.25 + rng() * 0.5, 0.03 + rng() * 0.035, i % 3 === 0)
   }
   const icicleMesh = new THREE.Mesh(assemble(icicles), vertexColorMaterial({ roughness: 0.2, metalness: 0.05 }))
   icicleMesh.castShadow = true
   tilt.add(icicleMesh)
 
-  // --- Schneehaube auf der Kante: ein paar flache Wuelste.
-  const caps = []
-  for (let i = 0; i < 11; i++) {
-    const u = (i + 0.5) / 11
-    const x = (u - 0.5) * W * 0.8
-    const topV = 0.97 - 0.09 * Math.pow(Math.abs(u - 0.5) * 2, 1.6) + 0.025 * Math.sin(u * 19)
-    const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
-    jitter(g, 0.15, rng)
-    caps.push({
-      geo: g, color: 0xf6fbff,
-      position: [x, topV * H + 0.01, -0.02],
-      scale: [0.16 + rng() * 0.06, 0.09 + rng() * 0.04, 0.12],
-    })
-  }
-  const capMesh = new THREE.Mesh(assemble(caps), vertexColorMaterial({ roughness: 0.9 }))
-  capMesh.castShadow = true
-  tilt.add(capMesh)
-
-  // --- Unten: ein kleines Becken, in dem der Fall aufgeschlagen ist, und
-  // ein paar Eisbrocken, die sich dort gestaut haben. Das Becken liegt
-  // nicht gekippt, sondern flach im Schnee.
-  const pool = new THREE.Mesh(
-    new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0x8cc1cf, roughness: 0.12, metalness: 0.05 }),
-  )
-  pool.scale.set(1.35, 1, 0.55)
-  pool.position.set(0, 0.03, 0.45)
-  pool.receiveShadow = true
-  group.add(pool)
-
+  // --- Unten auf dem Seeeis ein paar Brocken, die sich am Fuss gestaut
+  // haben – an den Seiten, damit sie nicht vor dem Bild liegen.
   const lumps = []
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 12; i++) {
     const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
     jitter(g, 0.2, rng)
-    const s = 0.06 + rng() * 0.08
-    // Die Brocken liegen an den Raendern des Beckens, die Mitte bleibt
-    // frei, damit sie nicht vor dem Bild liegen.
+    const s = 0.08 + rng() * 0.12
     const side = i % 2 ? 1 : -1
     lumps.push({
       geo: g, color: i % 2 ? 0xb3dde7 : 0x9fcfdc,
-      position: [side * (0.55 + rng() * 0.6), s * 0.4, 0.3 + rng() * 0.45],
+      position: [side * (1.6 + rng() * 1.4), s * 0.4, 0.2 + rng() * 0.7],
       scale: [s * 1.3, s, s],
       rotation: [rng() * 3, rng() * 3, rng() * 3],
     })
@@ -313,13 +349,13 @@ export function createFrozenFall() {
   // --- Schein auf dem Schnee, wenn etwas im Eis steckt.
   const glowUniforms = { uColor: { value: new THREE.Color(0x9fd6ff) }, uStrength: { value: 0 } }
   const glow = new THREE.Mesh(
-    new THREE.PlaneGeometry(4.2, 2.6).rotateX(-Math.PI / 2),
+    new THREE.PlaneGeometry(9, 6).rotateX(-Math.PI / 2),
     new THREE.ShaderMaterial({
       vertexShader: glowVert, fragmentShader: glowFrag, uniforms: glowUniforms,
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     }),
   )
-  glow.position.set(0, 0.06, 1.3)
+  glow.position.set(0, 0.03, 2.6)
   glow.renderOrder = 2
   group.add(glow)
 
@@ -344,13 +380,29 @@ export function createFrozenFall() {
   tilt.add(sparks)
 
   // --- Zustand
-  let near = 0            // 0..1 vom Aufrufer, Naehe des Fahrers
+  let sicht = 0           // 0..1 vom Aufrufer: wie klar es aus der Entfernung ist
   let focused = false
   let hasTarget = 0
   let liveTarget = 0
   let glowTarget = 0
 
-  group.userData.colliders = [{ dx: 0, dz: 0.15, r: W * 0.42 }]
+  // Kollision in Weltkoordinaten, erst nach dem Aufstellen abzufragen: die
+  // Steine des Rahmens und eine Reihe Kreise am Fuss des Eises, damit man
+  // vom See aus nicht hineinfaehrt.
+  group.userData.colliders = () => {
+    group.updateMatrixWorld(true)
+    const p = new THREE.Vector3()
+    const out = stones.map(({ mesh, r }) => {
+      mesh.getWorldPosition(p)
+      return { x: p.x, z: p.z, r: r * 0.85 }
+    })
+    for (let x = -W * 0.42; x <= W * 0.42 + 1e-6; x += W * 0.14) {
+      p.set(x, 0, 0.15)
+      group.localToWorld(p)
+      out.push({ x: p.x, z: p.z, r: 0.5 })
+    }
+    return out
+  }
 
   group.userData.select = (index) => { focused = index !== null && index !== undefined }
   group.userData.press = () => {
@@ -365,7 +417,7 @@ export function createFrozenFall() {
       sparkLife[i] = 0.8 + rng() * 0.6
     }
   }
-  group.userData.setNear = (v) => { near = v }
+  group.userData.setSicht = (v) => { sicht = v }
 
   // Neues Bild ins Eis; das alte blendet ueber. Entsorgt werden Texturen
   // von dem, der sie gebaut hat (stations/broadcast.js).
@@ -390,9 +442,10 @@ export function createFrozenFall() {
   group.userData.animate = (t, dt = 1 / 60) => {
     const ease = (v, to, rate) => v + (to - v) * (1 - Math.exp(-rate * dt))
     uniforms.uTime.value = t
-    // Herangezoomt taut es ganz auf, nah dran ein wenig, sonst ist es zu.
-    const clearTo = focused ? 1 : 0.22 * near
-    uniforms.uClear.value = ease(uniforms.uClear.value, clearTo, focused ? 1.6 : 1.0)
+    // Herangezoomt immer ganz aufgetaut, sonst so weit, wie der Aufrufer
+    // es nach der Entfernung will.
+    const clearTo = focused ? 1 : sicht
+    uniforms.uClear.value = ease(uniforms.uClear.value, clearTo, focused ? 1.6 : 1.2)
     uniforms.uHas.value = ease(uniforms.uHas.value, hasTarget, 2.5)
     uniforms.uLive.value = ease(uniforms.uLive.value, liveTarget, 2)
     uniforms.uMix.value = Math.min(1, uniforms.uMix.value + dt / 1.4)

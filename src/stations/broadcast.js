@@ -7,24 +7,29 @@ import { FALL } from '../world/props/frozen-fall.js'
 //
 // Gefragt wird nur, wer in die Naehe kommt – die allermeisten Besucher
 // fahren nie an den See, und fuer sie geht keine Anfrage raus. Danach
-// hoechstens einmal pro Minute. Bilder werden im Browser auf 1024 Pixel
+// hoechstens einmal pro Minute. Bilder werden im Browser auf 1280 Pixel
 // verkleinert; das Original hatte beim ersten Test 2,6 MB.
 //
 // Mehrere Anhaenge wechseln sich ab, alle acht Sekunden. Videos laufen
 // stumm und nur, solange man nah ist. Ton spielt die Quelle nie ab.
 
 const API = '/api/broadcast'
-const NEAR = 40          // m: ab hier wird gefragt
-const PLAY = 26          // m: ab hier laeuft ein Video
+const NEAR = 55          // m: ab hier wird gefragt
+const PLAY = 36          // m: ab hier laeuft ein Video
+// Klar ist das Bild auf der vorderen Haelfte des Sees (der Fuss des Falls
+// steht 18 m von der Seemitte), dann verschwindet es hinter dem Reif, bis
+// zum anderen Ufer (gut 34 m).
+const KLAR = 19
+const WEG = 34
 const EVERY = 60         // s zwischen zwei Abfragen
 const SLIDE = 8          // s je Anhang
 const MAX_SLIDES = 6
 const FONT = 'ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif'
 
-// Seitenverhaeltnis des Fensters im Eis (80 % der Breite, 78 % der Hoehe),
+// Seitenverhaeltnis des Fensters im Eis (86 % der Breite, 82 % der Hoehe),
 // damit die Zeichnung nicht noch einmal beschnitten wird.
-const ASPECT = (FALL.width * 0.8) / (FALL.height * 0.78)
-const CW = 1024
+const ASPECT = (FALL.width * 0.86) / (FALL.height * 0.82)
+const CW = 1280
 const CH = Math.round(CW / ASPECT)
 
 function leinwand() {
@@ -197,7 +202,7 @@ export class BroadcastFeed {
     if (!skier) return
     const d = Math.hypot(skier.position.x - this.position.x, skier.position.z - this.position.z)
     this.distance = d
-    this.fall.userData.setNear?.(THREE.MathUtils.clamp(1 - (d - 4) / 10, 0, 1))
+    this.fall.userData.setSicht?.(1 - THREE.MathUtils.smoothstep(d, KLAR, WEG))
 
     if (d < NEAR && !this.loading && this.clock - this.lastFetch > EVERY && document.visibilityState === 'visible') {
       this.holen()

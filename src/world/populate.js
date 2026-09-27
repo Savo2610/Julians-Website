@@ -333,11 +333,13 @@ export function populate(world, sky, registry, stationOptions = {}) {
     label: 'Gefrorene Quelle',
     color: '#5fa8f0',
     position: FALL_SPOT,
-    radius: 5,
+    radius: 6.5,
     groundY: fallGround,
-    labelHeight: fallGround + 2.5,
+    // Die Einladung schwebt am Fuss, nicht mitten vor dem Bild.
+    labelHeight: fallGround + 0.7,
     object: landscape.fall,
-    focus: { abstand: 6.2, hoehe: 1.0, vor: 0.9 },
+    // Die Mitte des Eises liegt 1,1 m hinter und 1,9 m ueber dem Fuss.
+    focus: { abstand: 12.5, hoehe: 1.9, vor: -0.4 },
     choices: [
       { label: 'Broadcast', sub: () => feed.sub, glyph: 'broadcast', url: LINKS.broadcast, color: '#ff6b5a' },
     ],

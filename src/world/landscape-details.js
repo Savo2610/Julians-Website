@@ -2,30 +2,25 @@ import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../core/geometry.js'
 import { makeRng } from '../core/rng.js'
 import { terrainHeight, LAKE } from './heightfield.js'
-import { createRocks } from './props/rocks.js'
 import { createLakeBench } from './props/lake-bench.js'
 import { createFrozenFall } from './props/frozen-fall.js'
 import { CAMERA } from '../config.js'
 
-// Mitte des Eisfalls an der Quelle; die Station haengt an derselben Stelle.
-export const FALL_SPOT = { x: -57.5, z: 26.4 }
+// Fuss des Eisfalls an der Quelle, 1,9 m draussen auf dem Seeeis; die
+// Station haengt an derselben Stelle.
+export const FALL_SPOT = { x: -56.16, z: 27.74 }
 
 export function createLandscapeDetails(world, trees) {
   const rng = makeRng(210927)
 
-  // Die Quelle sitzt am oberen Seeufer. Fels, Eis und der Schneeruecken
-  // erzaehlen denselben Ort; die Mitte davor bleibt als Aussicht frei.
-  createRocks(world, [
-    { x: -59.9, z: 23.9, variant: 0, scale: 1.8, stretch: 1.2, rotation: 0.7, tilt: 0.1 },
-    { x: -56.2, z: 22.8, variant: 1, scale: 1.55, stretch: 1.2, rotation: 2, tilt: 0 },
-    { x: -61, z: 27, variant: 2, scale: 1.1, stretch: 0.7, rotation: 1, tilt: 0.1 },
-  ], 210928)
-  // Zwischen den Felsen ist die Quelle mitten im Fallen erstarrt, und im
-  // Eis steckt, was gerade auf broadcast.veerka.mp laeuft – siehe
-  // props/frozen-fall.js. Vorher hing hier nur ein Vorhang aus 13 Zapfen.
+  // Die Quelle sitzt am oberen Seeufer: ein Eisfall im Felsrahmen, der
+  // die Boeschung hinunter bis aufs Seeeis reicht. Im Eis steckt, was
+  // gerade auf broadcast.veerka.mp laeuft – siehe props/frozen-fall.js.
+  // Vorher lagen hier drei Findlinge mit einem Vorhang aus 13 Zapfen; die
+  // Findlinge sind jetzt der Rahmen.
   const fall = createFrozenFall()
   world.place(fall, FALL_SPOT.x, FALL_SPOT.z, { rotation: CAMERA.azimuth })
-  for (const c of fall.userData.colliders) world.addCollider(FALL_SPOT.x + c.dx, FALL_SPOT.z + c.dz, c.r, null, 1.2)
+  for (const c of fall.userData.colliders()) world.addCollider(c.x, c.z, c.r, null, 1.2)
 
   // Eine Bank macht das Ufer zum Ziel. Sie schaut aufs Eis und zerbricht,
   // wenn man hineinfaehrt – siehe props/lake-bench.js.

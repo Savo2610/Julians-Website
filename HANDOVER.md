@@ -92,7 +92,7 @@ ebenfalls von selbst geht – nur für Medaillen und Abzeichen, nicht für Orte.
 ## 3. Aufbau
 
 ```
-index.html           Canvas, Ladebalken und das Markup der drei Fenster
+index.html           Canvas, Ladebalken, Markup der drei Fenster, Aussehen der Linkliste
 src/
   main.js            Loop, Renderer, window.__ski (Debug-Zugriff)
   config.js          Alle Stellschrauben: WORLD, SKIER, CAMERA, CHASE, TRICK, COLORS
@@ -141,6 +141,8 @@ src/
     broadcast.js     Laufende Sendung holen und ins Eis der Quelle legen
   menu/              Die einzigen Menüs (CLAUDE.md)
     map-menu.js      Übersicht (M): Links, Talkarte, Pistenpass, Bestenliste
+    kacheln.js       Die Link-Kacheln – reine Daten, auch für die Linkliste
+    linkliste.js     Linkliste ohne Tal (kein WebGL, kein JavaScript)
     hints.js         Hinweispillen: Start-Hinweis, Festgefahren-Erkennung, R
     pistenpass.js    Erkundet, Medaillen, Abzeichen; Speicher und Pille
     pass-regeln.js   Wann was im Pistenpass fällt
@@ -551,6 +553,24 @@ Gas oder Lenkung, unter 4 m/s und keine 3 m vorangekommen) oder sich
 verfranzt hat (7 s abseits jedes Weges mit ≥ 3 Bäumen im Umkreis von 4 m),
 und geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
 Start-Hinweis entfällt dort (Kartenknopf).
+
+**Linkliste ohne Tal** (27.09., auf Ansage): Wer kein WebGL oder kein
+JavaScript hat, sah vorher nur den Ladebalken – die alte Kachelseite ging
+ohne beides. Jetzt steht eine schlichte Liste mit denselben zwölf Kacheln
+wie im Reiter Links da, im Hell der Ladeblende und mit den Wegfarben.
+`menu/kacheln.js` hält die Kacheln als reine Daten (jede mit `link`, dem
+Schlüssel in `LINKS`), `menu/linkliste.js` macht daraus HTML, und ein
+Vite-Plugin (`vite.config.js`) setzt es beim Bauen an die Marke
+`<!-- linkliste -->` in `index.html` – fehlt die Marke, bricht der Build
+ab. Damit stehen alle Links auch für Suchmaschinen im Quelltext. Ohne
+JavaScript schaltet ein `<noscript>`-Stil die Liste ein, ohne WebGL
+`main.js` (Klasse `ohne-3d`, der Fehler bleibt in der Konsole). Das
+Aussehen steht inline in `index.html`, weil `style.css` im Entwickeln am
+Skript hängt; `:root` in den Selektoren hebt die Regeln über die gleich
+starken in `style.css`. Drohne, Löschzug und Quelle fehlen auch hier.
+`solana:` öffnet keinen neuen Tab (der bliebe leer). Geprüft mit
+Headless-Chrome: ohne JS, mit `--disable-3d-apis`, am Handy (390 px) und
+normal (Liste verborgen). Tests: `tests/linkliste.test.js`.
 
 `Skier.versetzen(x, z, heading)` ist der eine Weg, den Fahrer umzusetzen:
 Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
@@ -1021,10 +1041,6 @@ Code steckt in `git show 44010bd`.
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
-- **Ohne WebGL oder JavaScript** bleibt die Seite beim Ladebalken stehen;
-  die alte Kachelseite ging ohne beides. Eine schlichte Linkliste als
-  Rückfall (`<noscript>` und bei fehlendem WebGL) wäre klein, ist aber neue
-  Oberfläche – nur auf Ansage.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit

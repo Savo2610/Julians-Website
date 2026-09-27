@@ -32,11 +32,21 @@ import { Spray } from './player/spray.js'
 
 const canvas = document.getElementById('scene')
 
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: true,
-  powerPreference: 'high-performance',
-})
+// Ohne WebGL gibt es kein Tal. Dann uebernimmt die Linkliste aus index.html
+// (menu/linkliste.js), und der Fehler bleibt in der Konsole stehen, wo man
+// ihn beim Nachsehen braucht.
+let renderer
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    powerPreference: 'high-performance',
+  })
+} catch (e) {
+  document.documentElement.classList.add('ohne-3d')
+  throw e
+}
+
 // Auf dem Handy hoechstens 1,5: bei 3 (iPhone) rechnet die Grafik sonst
 // viermal so viele Pixel wie bei 1,5, fuer einen Unterschied, den man auf
 // sechs Zoll nicht sieht.

@@ -29,6 +29,9 @@ ein Speedcheck, das Kinderland mit Zauberteppich und eine Hütte, deren
 Möbel man umfahren kann. Der Pistenpass merkt sich, was man schon gefunden
 hat. Es gibt keinen Ton, mit Absicht.
 
+Ohne WebGL oder JavaScript zeigt die Seite statt des Tals eine schlichte
+Linkliste mit denselben Kacheln; sie steht schon beim Bauen fertig im HTML.
+
 ## Technik
 
 - **three.js r185** mit **Vite 8**, reines ES-Modul-JavaScript, kein
@@ -85,7 +88,8 @@ src/
     props/        ein Modul je Gegenstand
   player/       Fahrmodell, Figur, Kamera, Drohnen-Rundflug
   stations/     Stationen, ihre Links und was Enter dort tut
-  menu/         Übersicht, Hinweise, Pistenpass, Bestenliste
+  menu/         Übersicht, Kacheln, Linkliste ohne Tal, Hinweise, Pistenpass,
+                Bestenliste
   dialogs/      Solana, Briefkasten, Kurzlink
 worker/         Cloudflare-Worker: Router, Bestenliste, Broadcast
 tests/          node --test

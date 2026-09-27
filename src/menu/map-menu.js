@@ -3,6 +3,7 @@ import { TOUCH } from '../core/device.js'
 import { TRAILS } from '../world/paths.js'
 import { PLATEAU } from '../world/heightfield.js'
 import { LINKS } from '../stations/links.js'
+import { KACHELN } from './kacheln.js'
 import { ABZEICHEN, MEDAILLEN, ORTE_ERKUNDET } from './pistenpass.js'
 import { listeZeichnen } from './bestenliste.js'
 
@@ -30,7 +31,8 @@ import { listeZeichnen } from './bestenliste.js'
 //
 // Drohne, Loeschzug und die gefrorene Quelle fehlen absichtlich, in beiden
 // Reitern: sie liegen abseits, damit man sie findet – auf der alten
-// Kachelseite standen sie auch nicht.
+// Kachelseite standen sie auch nicht. Die Kacheln selbst stehen in
+// kacheln.js, weil auch die Linkliste ohne Tal sie braucht.
 
 const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast'])
 
@@ -40,34 +42,6 @@ const WEG = {
   kontakt: 'social', kasse: 'social',
   worktime: 'tools', upload: 'tools', shortener: 'tools', packlist: 'tools',
 }
-
-// Die Kacheln, in der Reihenfolge und mit den Worten der alten Kachelseite.
-// Die Adressen haengen an den Stationen (station + pick) und stehen nicht ein
-// zweites Mal hier; nur Spotify und Komoot haben noch keinen Platz im Tal.
-const KACHELN = [
-  { titel: 'Karriere', weg: 'career', kacheln: [
-    { icon: '💼', label: 'LinkedIn', sub: 'Meine Erfahrung', station: 'werkstatt', pick: 0 },
-    { icon: '⚙️', label: 'GitHub', sub: 'Meine Projekte', station: 'werkstatt', pick: 1 },
-  ] },
-  { titel: 'Kontakt', weg: 'social', kacheln: [
-    { icon: '💬', label: 'Signal', sub: 'Schreib mir', station: 'kontakt', pick: 0 },
-    { icon: '📸', label: 'Instagram', sub: 'Schöne Fotos', station: 'kontakt', pick: 1 },
-  ] },
-  { titel: 'Geld senden', weg: 'social', kacheln: [
-    { icon: '💸', label: 'PayPal', sub: 'paypal.me/juliansebv', station: 'kasse', pick: 0 },
-    { icon: '◎', label: 'Solana', sub: 'Echtes Geld', station: 'kasse', pick: 1 },
-  ] },
-  { titel: 'Meine Tools', weg: 'tools', kacheln: [
-    { icon: '🔗', label: 'Kurzlink', sub: 'Links kürzen', station: 'shortener' },
-    { icon: '🎒', label: 'Packliste', sub: 'Nichts vergessen', station: 'packlist' },
-    { icon: '⏱️', label: 'Arbeitszeit', sub: 'Wie lange arbeitest du?', station: 'worktime' },
-    { icon: '📤', label: 'File Uploader', sub: 'Sende mir Dateien', station: 'upload' },
-  ] },
-  { titel: 'Außerdem', kacheln: [
-    { icon: '🎵', label: 'Spotify', sub: 'Höre was ich höre', url: LINKS.spotify },
-    { icon: '🏔️', label: 'Komoot', sub: 'Wandern & Radfahren', url: LINKS.komoot },
-  ] },
-]
 
 // Wie auf der alten Kachelseite: ein Satz nach dem anderen, getippt und
 // wieder geloescht.
@@ -229,7 +203,7 @@ export class MapMenu {
           where.addEventListener('click', () => this._travelTile(i))
         }
         grid.appendChild(el)
-        this.tiles.push({ ...k, el, station })
+        this.tiles.push({ ...k, el, station, url: station ? null : LINKS[k.link] })
       }
       this.linksEl.appendChild(sec)
     }

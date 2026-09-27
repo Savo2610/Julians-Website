@@ -154,7 +154,8 @@ worker/              Der Cloudflare-Worker hinter der Seite
   broadcast.js       Durchreiche zu broadcast.veerka.mp
   antwort.js         JSON-Antworten
   migrations/        Schema der D1 skiportfolio-slalom
-public/              _headers (Cache für /assets/), favicon.svg
+public/              _headers (Cache für /assets/), Symbole, site.webmanifest
+tools/               skifahrer-icon.mjs – rendert das Homescreen-Symbol neu
 tests/               node --test (npm test)
 wrangler.jsonc       Worker "website" auf veerka.mp und www.veerka.mp
 ```
@@ -571,6 +572,16 @@ starken in `style.css`. Drohne, Löschzug und Quelle fehlen auch hier.
 `solana:` öffnet keinen neuen Tab (der bliebe leer). Geprüft mit
 Headless-Chrome: ohne JS, mit `--disable-3d-apis`, am Handy (390 px) und
 normal (Liste verborgen). Tests: `tests/linkliste.test.js`.
+
+**Symbole** (27.09., auf Ansage die Kombination): Im Tab die Schneeflocke
+der Ladeblende (`favicon.svg`, dazu `favicon-32.png` und `favicon.ico` für
+Browser und Crawler ohne SVG-Favicon), auf dem Homescreen der Skifahrer aus
+dem Spiel (`apple-touch-icon.png` 180, `icon-192/512.png` über
+`site.webmanifest`). Der Skifahrer war als Tab-Symbol bei 16 px nur ein
+bunter Fleck, die Flocke bleibt lesbar. Die Figur wird mit
+`tools/skifahrer-icon.mjs` aus der laufenden Seite gerendert (Headless-
+Chrome, `window.__ski`), damit sie nach neuen Farben oder goldenen Ski
+wieder passt; die kleinen Größen macht `sips -z`.
 
 `Skier.versetzen(x, z, heading)` ist der eine Weg, den Fahrer umzusetzen:
 Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —

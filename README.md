@@ -92,6 +92,8 @@ src/
                 Bestenliste
   dialogs/      Solana, Briefkasten, Kurzlink
 worker/         Cloudflare-Worker: Router, Bestenliste, Broadcast
+public/         Symbole (Schneeflocke im Tab, Skifahrer für den Homescreen)
+tools/          skifahrer-icon.mjs rendert das Homescreen-Symbol aus dem Spiel
 tests/          node --test
 ```
 

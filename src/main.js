@@ -6,6 +6,7 @@ import './dialogs/dialogs.css'
 import { CAMERA, COLORS, SKIER } from './config.js'
 import { Input } from './core/input.js'
 import { TOUCH } from './core/device.js'
+import { pointScale } from './core/point-scale.js'
 import { TouchControls } from './core/touch.js'
 import { inFunpark, PLATEAU } from './world/heightfield.js'
 import { SnowTrail } from './world/snow-trail.js'
@@ -39,7 +40,20 @@ const renderer = new THREE.WebGLRenderer({
 // Auf dem Handy hoechstens 1,5: bei 3 (iPhone) rechnet die Grafik sonst
 // viermal so viele Pixel wie bei 1,5, fuer einen Unterschied, den man auf
 // sechs Zoll nicht sieht.
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, TOUCH ? 1.5 : 2))
+// Am Desktop hoechstens 4,2 Mio. Pixel: ein MacBook im Vollbild bei 2 sind
+// 7,5 Mio., und ein Bild dauerte 18 ms – auf 120 Hz ruckelte es alle 1–2 s.
+// Mit 1,5 sind es 4,2 Mio. und ~9 ms; mit Kantenglaettung sieht man es nicht.
+const MAX_PIXELS = 4.2e6
+function pixelRatio() {
+  const budget = Math.sqrt(MAX_PIXELS / (window.innerWidth * window.innerHeight))
+  return Math.min(window.devicePixelRatio, TOUCH ? 1.5 : 2, Math.max(1, budget))
+}
+function applyPixelRatio() {
+  const r = pixelRatio()
+  renderer.setPixelRatio(r)
+  pointScale.value = r / Math.min(window.devicePixelRatio, TOUCH ? 1.5 : 2)
+}
+applyPixelRatio()
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -342,6 +356,7 @@ window.__ski = {
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
+  applyPixelRatio()
   renderer.setSize(window.innerWidth, window.innerHeight)
 })
 

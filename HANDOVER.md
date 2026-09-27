@@ -135,6 +135,22 @@ Leuchtsegmente), ist eine `InstancedMesh`.
 **Kennzahlen im Betrieb:** 0.05–0.13 ms/Frame, 300–420 Draw Calls,
 ~800–865 k Dreiecke. Wer etwas hinzufügt, prüft das nach.
 
+**Pixel sind der Engpass, nicht Draw Calls** (gemessen 27.09. auf Julians
+MacBook). Im Vollbild bei Pixelverhältnis 2 (3456 × 2160) dauerte ein Bild
+18 ms, und auf 120 Hz ruckelte es alle 1–2 s. Im kleinen Claude-Browser
+(800 px, Verhältnis 1) sah man davon nichts. Davon kostete das Gelände
+11 ms: das Schneerelief rechnete 72 Sinus-Zufallswerte je Pixel. Es holt
+sie jetzt aus einer 256²-Rauschtextur (`terrain.js`) und kostet noch 6 ms.
+Außerdem ist das Bild am Desktop auf 4,2 Mio. Pixel gedeckelt
+(`pixelRatio()` in `main.js`, auf dem Mac also 1,5). Zusammen sind es
+9,4 statt 17,3 ms. Die eigenen Partikel-Shader rechnen in Gerätepixeln und
+gleichen das über `core/point-scale.js` aus, sonst würden Flocken größer.
+Die fünf Punktlichter kosten jedes Pixel mit (2,7 ms bei Verhältnis 2); kein
+weiteres ohne Not. Transparente Materialien nie `DoubleSide` ohne
+`forceSinglePass`, siehe Sendeturm (4a⁵).
+Zum Messen: `devicePixelRatio` auf 2 überschreiben, `resize` auslösen, dann
+`S.step` mit `gl.readPixels` dahinter takten.
+
 `npm run build` teilt Three.js in ein eigenes Stück (`vite.config.js`): 145 kB
 gzip, die im Cache bleiben, wenn sich nur das Tal ändert (70 kB).
 

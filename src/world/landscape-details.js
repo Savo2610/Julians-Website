@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { pointScale } from '../core/point-scale.js'
 import { assemble, vertexColorMaterial } from '../core/geometry.js'
 import { makeRng } from '../core/rng.js'
 import { terrainHeight, LAKE } from './heightfield.js'
@@ -51,11 +52,12 @@ export function createLandscapeDetails(world, trees) {
   geometry.setAttribute('life', new THREE.BufferAttribute(life, 1).setUsage(THREE.DynamicDrawUsage))
   const material = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false,
-    vertexShader: `attribute float life; varying float alpha;
+    uniforms: { uPointScale: pointScale },
+    vertexShader: `attribute float life; uniform float uPointScale; varying float alpha;
       void main() {
         alpha = clamp(life, 0.0, 1.0);
         vec4 p = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = clamp(95.0 / -p.z, 1.0, 9.0);
+        gl_PointSize = clamp(95.0 / -p.z, 1.0, 9.0) * uPointScale;
         gl_Position = projectionMatrix * p;
       }`,
     fragmentShader: `varying float alpha;

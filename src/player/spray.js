@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { pointScale } from '../core/point-scale.js'
 
 // Schneestaub hinter den Ski. CPU-simuliert, weil es nie viele Partikel sind
 // und die Kontrolle ueber Lebensdauer und Auftrieb hier mehr wert ist als
@@ -8,11 +9,12 @@ import * as THREE from 'three'
 const vert = /* glsl */ `
   attribute float aLife;
   attribute float aSize;
+  uniform float uPointScale;
   varying float vLife;
   void main() {
     vLife = aLife;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = aSize * (300.0 / -mv.z) * (0.35 + aLife * 0.8);
+    gl_PointSize = aSize * (300.0 / -mv.z) * (0.35 + aLife * 0.8) * uPointScale;
     gl_Position = projectionMatrix * mv;
   }
 `
@@ -55,7 +57,7 @@ export class Spray {
       fragmentShader: frag,
       transparent: true,
       depthWrite: false,
-      uniforms: { uColor: { value: new THREE.Color(color) } },
+      uniforms: { uColor: { value: new THREE.Color(color) }, uPointScale: pointScale },
     })
 
     this.points = new THREE.Points(geo, this.material)

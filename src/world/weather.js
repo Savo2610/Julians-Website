@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { pointScale } from '../core/point-scale.js'
 
 // Leichter Schneefall um die Kamera herum. Die Flocken leben in einem Wuerfel,
 // der dem Fahrer folgt und sich an den Raendern wiederholt – so reichen wenige
@@ -12,6 +13,7 @@ const vert = /* glsl */ `
   attribute float aSize;
   attribute float aPhase;
   uniform float uTime;
+  uniform float uPointScale;
   varying float vFade;
 
   void main() {
@@ -21,7 +23,7 @@ const vert = /* glsl */ `
     p.z += cos(uTime * 0.45 + aPhase * 4.2) * 0.9;
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
-    gl_PointSize = aSize * (140.0 / -mv.z);
+    gl_PointSize = aSize * (140.0 / -mv.z) * uPointScale;
     gl_Position = projectionMatrix * mv;
 
     // Nahe Flocken ausblenden, sonst kleben sie auf der Linse.
@@ -71,6 +73,7 @@ export function createSnowfall() {
     depthWrite: false,
     uniforms: {
       uTime: { value: 0 },
+      uPointScale: pointScale,
       uColor: { value: new THREE.Color(0xffffff) },
     },
   })

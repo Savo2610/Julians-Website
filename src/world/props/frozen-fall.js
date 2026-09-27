@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { pointScale } from '../../core/point-scale.js'
 import { assemble, vertexColorMaterial, jitter } from '../../core/geometry.js'
 import { makeRng } from '../../core/rng.js'
 import { createBoulder } from './rocks.js'
@@ -364,9 +365,10 @@ export function createFrozenFall() {
   sparkGeo.setAttribute('life', new THREE.BufferAttribute(sparkLife, 1).setUsage(THREE.DynamicDrawUsage))
   const sparks = new THREE.Points(sparkGeo, new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    vertexShader: `attribute float life; varying float vLife;
+    uniforms: { uPointScale: pointScale },
+    vertexShader: `attribute float life; uniform float uPointScale; varying float vLife;
       void main() { vLife = life; vec4 p = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = clamp(60.0 / -p.z, 1.0, 7.0) * (0.4 + life); gl_Position = projectionMatrix * p; }`,
+        gl_PointSize = clamp(60.0 / -p.z, 1.0, 7.0) * (0.4 + life) * uPointScale; gl_Position = projectionMatrix * p; }`,
     fragmentShader: `varying float vLife;
       void main() { vec2 q = gl_PointCoord - 0.5; float star = max(1.0 - abs(q.x) * 9.0 - abs(q.y) * 1.6, 1.0 - abs(q.y) * 9.0 - abs(q.x) * 1.6);
         float a = clamp(star, 0.0, 1.0) * clamp(vLife, 0.0, 1.0); if (a <= 0.0) discard; gl_FragColor = vec4(vec3(0.85, 0.95, 1.0) * a, 1.0); }`,

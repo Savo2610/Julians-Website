@@ -3,6 +3,24 @@ import { isSnowSurface } from './surfaces.js'
 import { pathPreparation } from './paths.js'
 import { WORLD, TRAIL, COLORS } from '../config.js'
 import { terrainHeight, terrainNormal } from './heightfield.js'
+import { makeRng } from '../core/rng.js'
+
+// Zufallswerte fuer das Schneerelief als Textur. Vorher rechnete der Shader
+// jeden Wert mit sin() aus: 72 je Pixel, und das Gelaende kostete bei
+// Retina-Aufloesung (3456 x 2160) 10 von 18 ms je Bild. Aus der Textur ist es
+// ein Zugriff je Rauschwert, mit derselben weichen Interpolation.
+const NOISE = 256
+function noiseTexture() {
+  const rng = makeRng(4711)
+  const data = new Uint8Array(NOISE * NOISE)
+  for (let i = 0; i < data.length; i++) data[i] = Math.floor(rng() * 256)
+  const t = new THREE.DataTexture(data, NOISE, NOISE, THREE.RedFormat, THREE.UnsignedByteType)
+  t.wrapS = t.wrapT = THREE.RepeatWrapping
+  t.magFilter = t.minFilter = THREE.LinearFilter
+  t.generateMipmaps = false
+  t.needsUpdate = true
+  return t
+}
 
 // Das Terrain-Mesh wird direkt in Weltkoordinaten gebaut (kein Rotieren eines
 // Planes), damit object space == world space gilt. Das macht den Trail-Shader
@@ -107,6 +125,7 @@ function patchMaterial(material, trailTexture) {
     uWorldSize: { value: WORLD.size },
     uDepth: { value: TRAIL.depth },
     uRim: { value: TRAIL.rimHeight },
+    uNoise: { value: noiseTexture() },
   }
   material.userData.uniforms = uniforms
 
@@ -166,17 +185,19 @@ function patchMaterial(material, trailTexture) {
         uniform float uWorldSize;
         uniform float uDepth;
         uniform float uRim;
+        uniform sampler2D uNoise;
         varying vec2 vTerrainXZ;
         varying float vPreparation;
 
         float snowHash(vec2 p) {
           return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
         }
+        // Wertrauschen aus der Textur: die Hardware mischt die vier Ecken,
+        // die geglaettete Position gibt dieselbe weiche Kurve wie vorher.
         float snowNoise(vec2 p) {
           vec2 i = floor(p), f = fract(p);
           f = f * f * (3.0 - 2.0 * f);
-          return mix(mix(snowHash(i), snowHash(i + vec2(1.0, 0.0)), f.x),
-                     mix(snowHash(i + vec2(0.0, 1.0)), snowHash(i + vec2(1.0, 1.0)), f.x), f.y);
+          return texture2D(uNoise, (i + f + 0.5) / ${NOISE}.0).r;
         }
         float snowFbm(vec2 p) {
           float s = 0.0, a = 0.5;
@@ -259,7 +280,7 @@ function patchMaterial(material, trailTexture) {
   }
 
   // Erzwingt einen eigenen Programm-Cache-Eintrag.
-  material.customProgramCacheKey = () => 'snow-terrain-v5'
+  material.customProgramCacheKey = () => 'snow-terrain-v6'
   return material
 }
 

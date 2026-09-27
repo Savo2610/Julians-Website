@@ -665,6 +665,19 @@ unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
 Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
 expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
 
+**Der Bach** (`props/frozen-river.js`, `BACH` in `heightfield.js`, 27.09.,
+ausdrücklich als Versuch). Er kommt vom Gebirgsrand im Westen, auf 18 m
+bei x = −86, und läuft durch den Wald herunter. Durch eine Kerbe in der
+Mitte des Steinsturzes stürzt er in den Eisfall. Das Bett ist 0,5 m tief
+ins Höhenfeld geschnitten, das Eis liegt 4 cm darüber.
+Zwischen Hangfuß und Böschungskante lag ein Graben 2 m unter beiden. Der
+`SCHWEMMKEGEL` füllt ihn nur dort, wo der Bach quert. Die letzten 3 m
+spannen sich als schmale Eislippe von der Kante zur Oberkante des Falls.
+Steil (oben 15 → 4 m auf 8 m) ist er eisblau mit weißen Rippen, unten ruhig
+mit dunklem Wasser unter dem Eis. Am Ufer liegen verschneite Steine, im
+Bett wächst kein Wald, und es bleiben keine Spuren (`surfaces.js`).
+Zurück ohne Bach: `git tag vor-fluss` markiert den Stand davor.
+
 **Beim Umzug auf veerka.mp** muss `/api/broadcast/*` mit, wie die Bestenliste.
 
 ## 4b. Handymodus

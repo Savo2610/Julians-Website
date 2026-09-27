@@ -71,6 +71,46 @@ function lakeGround(x, z, height) {
   return height + (LAKE.level - height) * blend
 }
 
+// --- Der Bach hinter der gefrorenen Quelle ----------------------------------
+// Er kommt vom Gebirgsrand im Westen herunter und stuerzt ueber die Kante der
+// Uferboeschung in den Eisfall (props/frozen-fall.js). Zwischen Hangfuss und
+// Kante lag ein Graben 2 m unter beiden – dort waere der Bach stehen
+// geblieben, statt ueber die Kante zu laufen. Der SCHWEMMKEGEL fuellt ihn
+// dort, wo der Bach quert, so wie ein echter Bach sein Geroell ablagert.
+// Nord- und suedwaerts bleibt der Graben, wie er war.
+export const BACH = {
+  punkte: [[-86.5, 17.9], [-85.5, 18.4], [-81, 20.6], [-76.5, 22.2], [-72, 22.4], [-67.5, 22.9], [-63.5, 23.6], [-60.3, 24.5], [-58.6, 25.4]],
+  halb: 1.0,     // flache Sohle
+  ufer: 1.7,     // Boeschung bis zur Oberkante
+  tiefe: 0.5,
+}
+const SCHWEMMKEGEL = [[-72, 22.4, 0.0], [-67.5, 22.9, 2.0], [-63.5, 23.6, 2.0], [-60.3, 24.5, 0.6], [-58.6, 25.4, 0.0]]
+
+// Naechster Punkt auf der Bachlinie: Abstand quer und Weg laengs (m).
+export function bachAt(x, z) {
+  const p = BACH.punkte
+  let best = Infinity, weg = 0, bestWeg = 0
+  for (let i = 0; i < p.length - 1; i++) {
+    const ax = p[i + 1][0] - p[i][0], az = p[i + 1][1] - p[i][1]
+    const len2 = ax * ax + az * az
+    let t = ((x - p[i][0]) * ax + (z - p[i][1]) * az) / len2
+    t = t < 0 ? 0 : t > 1 ? 1 : t
+    const d = Math.hypot(x - (p[i][0] + ax * t), z - (p[i][1] + az * t))
+    if (d < best) { best = d; bestWeg = weg + t * Math.sqrt(len2) }
+    weg += Math.sqrt(len2)
+  }
+  return { d: best, weg: bestWeg, laenge: weg }
+}
+
+function bachBett(x, z) {
+  const b = bachAt(x, z)
+  if (b.d >= BACH.halb + BACH.ufer) return 0
+  const q = b.d <= BACH.halb ? 0 : (b.d - BACH.halb) / BACH.ufer
+  // Am Ende laeuft das Bett ueber die Kante aus, statt als Stufe zu enden.
+  const ende = 1 - smooth(Math.max(0, Math.min(1, (b.weg - (b.laenge - 1.2)) / 1.2)))
+  return -BACH.tiefe * (1 - smooth(q)) * ende
+}
+
 // Der Startplatz ist ein echtes Plateau: flach genug zum Abstecken, leicht
 // erhoeht, damit man von dort in die drei Taeler blickt.
 export const PLATEAU = { x: 0, z: 30, radius: 11, height: 2.4 }
@@ -700,6 +740,8 @@ export function terrainHeight(x, z) {
   // Handgeformte Ruecken und Wellen gliedern die bisher leeren Talraeume.
   // Vor den Pistenbaendern, damit bestehende Anlagen ihre Hoehen behalten.
   h += landscapeHeight(x, z)
+  h += ridgeAlong(x, z, SCHWEMMKEGEL, 5.5)
+  h += bachBett(x, z)
 
   // Zugefrorener See. Bewusst flach: man soll hineinfahren koennen, ohne in
   // ein Loch zu fallen.

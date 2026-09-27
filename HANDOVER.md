@@ -940,6 +940,9 @@ Code steckt in `git show 44010bd`.
 ## 10. Verlauf
 
 ```
+56ca9ab  Bach wieder entfernt, zurueck auf vor-fluss
+44010bd  Bach wie der See: beleuchtet, ausgefranst, breiter
+1e0a99e  Gefrorener Bach vom Gebirgsrand in die gefrorene Quelle
 00c2813  Gefrorene Quelle: erst ab dem See sichtbar, Pille vor dem Eis, ohne Schleier
 fefc225  Gefrorene Quelle gross, im Felsrahmen, klar vom See aus
 596e0e5  Gefrorene Quelle: laufende Broadcast-Sendung im Eis am See

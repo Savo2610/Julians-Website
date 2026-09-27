@@ -953,6 +953,7 @@ Code steckt in `git show 44010bd`.
 ## 10. Verlauf
 
 ```
+5ef97dc  Ruckler behoben, Video aus der gefrorenen Quelle entfernt
 f208498  Kleiner Sendeturm links hinter der gefrorenen Quelle
 56ca9ab  Bach wieder entfernt, zurueck auf vor-fluss
 44010bd  Bach wie der See: beleuchtet, ausgefranst, breiter

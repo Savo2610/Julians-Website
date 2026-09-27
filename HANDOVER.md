@@ -969,6 +969,7 @@ Code steckt in `git show 44010bd`.
 ## 10. Verlauf
 
 ```
+6a4679f  Ruckler auf Retina: Schneerelief aus Rauschtextur, 4,2 Mio. Pixel
 5ef97dc  Ruckler behoben, Video aus der gefrorenen Quelle entfernt
 f208498  Kleiner Sendeturm links hinter der gefrorenen Quelle
 56ca9ab  Bach wieder entfernt, zurueck auf vor-fluss

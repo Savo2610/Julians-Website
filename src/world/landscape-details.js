@@ -4,11 +4,15 @@ import { makeRng } from '../core/rng.js'
 import { terrainHeight, LAKE } from './heightfield.js'
 import { createLakeBench } from './props/lake-bench.js'
 import { createFrozenFall } from './props/frozen-fall.js'
+import { createRadioTower } from './props/radio-tower.js'
 import { CAMERA } from '../config.js'
 
 // Fuss des Eisfalls an der Quelle, 1,9 m draussen auf dem Seeeis; die
 // Station haengt an derselben Stelle.
 export const FALL_SPOT = { x: -56.16, z: 27.74 }
+// Sendeturm: 4,9 m links und 1,4 m hangaufwaerts von der Quelle, im Bild
+// knapp neben dem Felsrahmen und vor den Tannen.
+export const TOWER_OFFSET = [-4.9, -1.4]
 
 export function createLandscapeDetails(world, trees) {
   const rng = makeRng(210927)
@@ -21,6 +25,14 @@ export function createLandscapeDetails(world, trees) {
   const fall = createFrozenFall()
   world.place(fall, FALL_SPOT.x, FALL_SPOT.z, { rotation: CAMERA.azimuth })
   for (const c of fall.userData.colliders()) world.addCollider(c.x, c.z, c.r, null, 1.2)
+
+  // Links hinter der Quelle der kleine Sender, von dem das Bild kommt.
+  // Versatz im Bild der Quelle: links (-x) und zum Hang (-z).
+  const tower = createRadioTower()
+  const [lx, lz] = TOWER_OFFSET
+  const ca = Math.cos(CAMERA.azimuth), sa = Math.sin(CAMERA.azimuth)
+  world.place(tower, FALL_SPOT.x + lx * ca + lz * sa, FALL_SPOT.z - lx * sa + lz * ca, { rotation: CAMERA.azimuth })
+  for (const c of tower.userData.colliders()) world.addCollider(c.x, c.z, c.r, null, 3)
 
   // Eine Bank macht das Ufer zum Ziel. Sie schaut aufs Eis und zerbricht,
   // wenn man hineinfaehrt – siehe props/lake-bench.js.
@@ -66,6 +78,7 @@ export function createLandscapeDetails(world, trees) {
     get treeCount() { return sources.length },
     bench,
     fall,
+    tower,
     update(dt, skier) {
       bench.update(dt, skier)
       if (!skier) return

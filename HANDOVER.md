@@ -649,6 +649,16 @@ auch durch den Reif. Der Schein auf dem Schnee hat die Mittelfarbe des Bildes.
 Die Fläche lehnt 0,5 rad zurück: bei 36° Kamerahöhe bleiben 86 % der
 Bildhöhe statt 59 %.
 
+**Sendeturm (27.09.):** Links hinter der Quelle steht ein kleiner rot-weißer
+Gittermast mit Hütte, Schüssel und Warnlicht (`props/radio-tower.js`,
+`TOWER_OFFSET` in `landscape-details.js`: 4,9 m links, 1,4 m hangauf). Mit
+3,4 m ist er kleiner als der Eisfall (4,4 m), damit er ihm nicht die Schau
+stiehlt, und er steht vor den Tannen statt dazwischen. Beim ersten Versuch
+(5,6 / 3,2 m) steckte er im Wald und war vom See aus kaum zu finden. Das
+Licht blitzt alle 1,6 s, auf Sendung alle 0,8 s. Nur auf Sendung wandern
+rote Funkbögen von der Spitze weg, in der Bildebene. Sie sind rot, nicht
+additiv, weil Licht vor Schnee nur weiß wird.
+
 **Daten:** `worker/index.js` reicht `/api/broadcast/state` (nur `message`,
 20 s Cache) und `/api/broadcast/file?key=` (mit Range, für Videos) durch.
 Der Broadcast-Dienst schickt keinen CORS-Kopf, und WebGL nimmt fremde

@@ -354,6 +354,8 @@ export function populate(world, sky, registry, stationOptions = {}) {
   Object.defineProperty(registry.stations.at(-1), 'hint', { get: () => feed.hint })
   animatedProps.push((t, dt) => {
     landscape.fall.userData.animate(t, dt)
+    landscape.tower.userData.setLive(!!feed.message)
+    landscape.tower.userData.animate(t, dt)
     feed.update(dt, skierRef.current)
   })
 

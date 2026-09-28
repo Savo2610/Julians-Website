@@ -4,11 +4,17 @@
 die Begründungen und was offen ist.
 
 Das ist **veerka.mp**: Jeder Push auf `main` geht über Cloudflare Workers
-Builds live, eine Vorstufe gibt es nicht mehr. Deshalb wird in einem
-**eigenen Branch** gebaut und nur lokal geprüft (`npm run dev`); auf `main`
-kommt etwas erst, wenn Julian es sagt (Ansage 29.09. – das frühere „ohne
-Rückfrage auf main“ stammte aus der Betaphase vor veerka.mp). Nach einem
-Push auf `main` prüfen, dass veerka.mp den neuen Stand ausliefert. Die Seite heißt **Julian Veerkamp** – nicht Portfolio, nicht
+Builds live, eine Vorstufe gibt es nicht mehr. Deshalb (Ansage 29.09.):
+
+- **Große Änderungen** – neue Anlagen, Umbauten am Fahrmodell oder Gelände,
+  Prototypen – bekommen einen **eigenen Branch** und werden nur lokal geprüft
+  (`npm run dev`). Auf `main` kommen sie erst, wenn Julian es sagt.
+- **Kleine Verbesserungen** – Korrekturen, Feinschliff, Doku – dürfen nach
+  `npm test` und `npm run build` direkt auf `main`.
+- Im Zweifel ist es groß. Nach jedem Push auf `main` prüfen, dass veerka.mp
+  den neuen Stand ausliefert.
+
+Die Seite heißt **Julian Veerkamp** – nicht Portfolio, nicht
 Skiportfolio (das war der Arbeitsname).
 
 Das Wichtigste in Kürze:

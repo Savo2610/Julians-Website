@@ -1038,6 +1038,15 @@ zweite hatte Seefarben, Licht und Schatten und einen ausgefransten Rand,
 hat aber trotzdem nicht überzeugt. Zurück auf den Stand `vor-fluss`. Der
 Code steckt in `git show 44010bd`.
 
+**Schwung auf der Rückseite** (29.09., Branch `schwung-rueckseite`, nie
+gepusht, auf Ansage gelöscht). Tempo aufsummiert statt Zieltempo (Hang,
+Reibung, Luft, Kurven; W nur bis 13 m/s), dazu Kante und zwei Wellen auf der
+Nordabfahrt, ein gespannter Absprung mit Timing und Landungen, die nur den
+Anteil entlang des Hangs behalten, ohne automatische Schwünge. Gemessen
+5,72 statt 6,12 s. Urteil: *gefällt nicht*. Damit ist auch Skicross auf
+dem heutigen Fahrmodell vom Tisch; die Rückseite bleibt offen (Ideen in
+Abschnitt 1, Nordabfahrt).
+
 ---
 
 ## 9. Offen

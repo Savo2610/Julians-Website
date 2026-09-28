@@ -15,7 +15,7 @@ Das Wichtigste in Kürze:
   oben). WASD steuert klassisch aus Sicht des Fahrers. Alles mit einer
   Schauseite muss der Kamera zugewandt sein.
   Genau **zwei** dokumentierte Ausnahmen: auf der Nordabfahrt geht sie hinter
-  den Fahrer und dreht mit (`CHASE`), und im Drohnen-Rundflug fliegt sie ums
+  den Fahrer und dreht mit (`CHASE`, seit 28.09. mit `CHASE.an` abgeschaltet), und im Drohnen-Rundflug fliegt sie ums
   Tal (`player/drone-flight.js`, niemand steuert). Weitere nur nach Rückfrage.
 - Was man **befährt**, ist Gelände; was man **sieht**, ist Aufbau. Schanzen,
   Steg und Bahnen stecken im Höhenfeld, das Holz liegt nur darauf.

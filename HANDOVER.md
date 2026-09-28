@@ -60,6 +60,11 @@ Fahrer, sonst nichts. Daraus folgt:
 dreht mit ihm (`CHASE` in `config.js`, Abschnitt 4). Das war eine ausdrückliche
 Ansage und gilt nur dort. Die Steuerung blieb davon unberührt, weil A/D ohnehin
 aus Sicht des Fahrers lenken — genau deshalb war der Modus überhaupt möglich.
+**Seit 28.09. abgeschaltet** (`CHASE.an = false`): die Nordabfahrt macht nicht
+so viel Spaß wie gedacht, die Rückseite wird neu gedacht, und dafür soll man
+sie aus der festen Kamera sehen. Die Anlage steht noch, `true` schaltet sie
+wieder ein. Vorschläge für die Rückseite: Sprung über die Klamm statt Steg,
+Geisterfahrer, Skisprungschanze, Gipfelbuch mit Komoot.
 
 *Die zweite Ausnahme* (26.09., auf Ansage): der **Drohnen-Rundflug**
 (Abschnitt 4a‴). Dort steuert niemand – der Fahrer steht, jede Taste beendet

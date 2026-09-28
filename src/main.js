@@ -3,7 +3,7 @@ import { isSnowSurface } from './world/surfaces.js'
 import './style.css'
 import './dialogs/dialogs.css'
 
-import { CAMERA, COLORS, SKIER } from './config.js'
+import { CAMERA, CHASE, COLORS, SKIER } from './config.js'
 import { Input } from './core/input.js'
 import { TOUCH } from './core/device.js'
 import { pointScale } from './core/point-scale.js'
@@ -284,7 +284,10 @@ function advance(dt) {
   // Die Nordabfahrt entscheidet vor der Kamera, ob sie hinter den Fahrer geht.
   // Sie muss nach skier.update() laufen, sonst urteilt sie ueber die Position
   // des vorigen Bildes – und am Tor waere das genau ein Bild zu spaet.
-  chase.verfolgen(props.northRun.update(dt, skier))
+  // update() laeuft auch ohne Verfolger weiter: der Pistenpass liest daraus,
+  // ob die Nordabfahrt bis unten gefahren wurde.
+  const aufNord = props.northRun.update(dt, skier)
+  chase.verfolgen(CHASE.an && aufNord)
   // Im Rundflug gehoert die Kamera der Drohne; die feste Kamera wartet und
   // springt nach der Landung ohne Anfahrt zurueck (snap).
   if (flight.active) flight.update(dt)

@@ -113,6 +113,10 @@ export const CAMERA = {
 // sieht man den Hang auf sich zukommen, und 46 Grad Bildwinkel geben bei 14
 // Metern Abstand das Tempo zurueck, das der kleine Ausschnitt sonst schluckt.
 export const CHASE = {
+  // Abgeschaltet (28.09., auf Ansage): die Rueckseite wird neu gedacht, und
+  // dafuer soll man sie aus derselben festen Kamera sehen wie den Rest des
+  // Tals. Die Anlage bleibt, ein true schaltet sie wieder ein.
+  an: false,
   elevation: 0.30,    // rad ueber dem Horizont, ~17 Grad
   distance: 14,
   fov: 46,

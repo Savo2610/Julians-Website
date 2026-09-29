@@ -460,7 +460,7 @@ Mesh – die Werkstatt führt als `object` nur die Bank. Ein Tipp ist unter
 zählt beim Drücken, weil `main.js` beim Drücken eine offene Auswahl
 schließt. Am Rechner wird der Zeiger über der Station zur Hand.
 
-**Rohrpost verschickt (Zweig `rohrpost-versand`, 30.09.).** Vorher schoss
+**Rohrpost verschickt (Zweig `rohrpost-versand`, 30.09., per `--no-ff` in `main`).** Vorher schoss
 beim *Öffnen* des Upload-Fensters eine Kapsel aus dem Rohr, bevor etwas
 geschickt war. Jetzt klappt beim Öffnen nur die Klappe weit auf; verschickt
 wird beim **Schließen**. `dialogs/upload.js` zählt je Sitzung, was angekommen
@@ -1227,6 +1227,7 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+e298036  Rohrpost verschickt: Kapseln, Maulwurf zum Funkmast, Vorschau im Eis (Merge)
 6c5cb7d  Stationen mit Auftritt: Stechuhr, Depot und Loeschzug zoomen heran (Merge)
 225c7c1  Oberflaeche ohne Pillen: Frost, Leuchtfeld, Register, Stempelheft (Merge)
 be201b3  Auswahl nebeneinander mit Leuchtfeld, keine Linien mehr zum Anklicken

@@ -460,7 +460,8 @@ Mesh – die Werkstatt führt als `object` nur die Bank. Ein Tipp ist unter
 zählt beim Drücken, weil `main.js` beim Drücken eine offene Auswahl
 schließt. Am Rechner wird der Zeiger über der Station zur Hand.
 
-**Frost statt Pillen (29.09., Branch `oberflaeche-ohne-pillen`).** Alles,
+**Frost statt Pillen (29.09., als Zweig `oberflaeche-ohne-pillen` gebaut und
+per `--no-ff` in `main` geführt).** Alles,
 was nur kurz über dem Tal steht – Einladung, Hinweise unten, Zeitnahme,
 Trickmeldung, Abzeichen, Bestenlisten-Angebot –, hat keinen Behälter mehr:
 Schrift mit hellem Hof (`text-shadow`) und dahinter ein Hauch
@@ -474,7 +475,7 @@ genommen: Frosttext mit Nebel als Hauch. Für die Einladung standen danach
 Sucher-Ecken, Pistenstange, Leitlinie und Farbwort zur Wahl; genommen das
 Farbwort, der Sucher war zu technisch.
 
-**Register, Leuchtfeld und Stempel (29.09., derselbe Branch).** Was man
+**Register, Leuchtfeld und Stempel (29.09., derselbe Zweig).** Was man
 bedient, bleibt Glas, aber ohne Kärtchen darin. Regel für die ganze Seite:
 **ein Strich heißt schreiben, ein farbiger Schein heißt klicken.** Die
 **Auswahl** an einer Station stellt die Ziele nebeneinander (passt zu ←/→
@@ -1122,10 +1123,11 @@ Abschnitt 1, Nordabfahrt).
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
-- **Frost statt Pillen, Register, Stempel, Fenster** liegen im Branch
-  `oberflaeche-ohne-pillen` und sind
-  nur lokal geprüft (Chrome, Handy-Emulation). Vor dem Zusammenführen in
+- **Frost statt Pillen, Register, Stempel, Fenster** sind seit 29.09. in
+  `main`, vorher nur in Chrome und der Handy-Emulation geprüft. Noch in
   Safari ansehen: `backdrop-filter` zusammen mit `mask-image` am Hauch.
+  Zurücknehmen lässt sich alles mit einem `git revert -m 1` auf den
+  Zusammenführungs-Commit.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit

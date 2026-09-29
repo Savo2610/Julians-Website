@@ -484,6 +484,15 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
   Kein eigener Kopf-Buckel: der sah am Rohr aus wie ein Schneeball;
 - **nichts geschickt:** die Klappe fällt zu, ein Hauch Dampf, nach 1,4 s
   steht sie wieder offen.
+- **ein Bild dabei:** das erste geglückte Bild (kein SVG) kommt im Ereignis
+  als `bild` mit, wird sofort im Browser gelesen (`feed.vorbereiten`), und
+  statt zum Fahrer schwenkt die Kamera vom Rohr zur Quelle. Kommt der
+  Maulwurf an, steht es 3,5 s ganz aufgetaut im Eis (`feed.vorschau`,
+  `fall.userData.setKlar`), die laufende Sendung ist solange angehalten
+  und kommt danach zurück. Es geht nie an einen Server – sehen kann es nur,
+  wer es eingeworfen hat. Kann der Browser das Bild nicht lesen (HEIC in
+  Chrome) oder ist es beim Loslaufen des Maulwurfs noch nicht fertig, fällt
+  die Vorschau samt Schwenk aus.
 Esc, Enter, `M` oder Tippen holen die Kamera schon während des Einwerfens
 zurück. Mit `prefers-reduced-motion` keine Kamerafahrt.
 

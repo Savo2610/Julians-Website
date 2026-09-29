@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { CAMERA } from '../config.js'
 
 // Die Rohrpost ist ein Netz unter dem Schnee. Nach einer Sendung (das
 // Upload-Fenster geht zu) fallen die Kapseln in den Trichter, das Rohr
@@ -6,7 +7,9 @@ import * as THREE from 'three'
 // Maulwurf unter der Schneedecke zum Funkmast hinter der gefrorenen Quelle,
 // der kurz funkt: angekommen. Zum Einwerfen zoomt die Kamera ans Rohr –
 // dieselbe Kamerafahrt wie beim Heranzoomen an eine Station –, sobald der
-// Maulwurf loslaeuft, ist sie wieder beim Fahrer.
+// Maulwurf loslaeuft, ist sie wieder beim Fahrer. War ein Bild dabei,
+// schwenkt sie stattdessen zur Quelle, und das Bild steht dort 3,5 s im
+// Eis – aus der Datei im Browser, also nur fuer den, der es eingeworfen hat.
 //
 // Die Spur ist nicht in die Schneetextur gestempelt: die haelt fuer immer
 // (Max-Blending, siehe snow-trail.js), eine Maulwurfspur soll aber wieder
@@ -30,11 +33,19 @@ const KLUMPEN = 0.45      // Anteil der Schritte, die einen Klumpen zur Seite we
 const STEHEN = 3.2        // s, bis ein Huegelchen einsinkt
 const TAUEN = 2.4         // s bis es ganz weg ist
 const FUNKEN = 2.2        // s Funkspruch am Mast
+const VORSCHAU = 3.5      // s steht ein hochgeladenes Bild im Eis der Quelle
 
 export class RohrpostNetz {
-  constructor({ pipe, tower, world, camera, input }) {
+  // quelle: die Station der gefrorenen Quelle (Position, Boden, Fokus),
+  // feed: ihre Anzeige (stations/broadcast.js) – dort steht nach der
+  // Ankunft kurz das hochgeladene Bild.
+  constructor({ pipe, tower, world, camera, input, quelle = null, feed = null }) {
     this.pipe = pipe
     this.tower = tower
+    this.quelle = quelle
+    this.feed = feed
+    this._lauf = 0
+    this._folie = null
     this.world = world
     this.camera = camera
     this.input = input
@@ -78,7 +89,7 @@ export class RohrpostNetz {
   }
 
   // { angekommen, gescheitert } aus dem Upload-Fenster.
-  versenden({ angekommen = 0, gescheitert = 0 } = {}) {
+  versenden({ angekommen = 0, gescheitert = 0, bild = null } = {}) {
     if (this.aktiv) return
     const fehler = gescheitert > 0
     if (!angekommen && !fehler) {
@@ -96,6 +107,18 @@ export class RohrpostNetz {
       ende: unten === null ? 3.2 : unten + this._laenge / TEMPO,
       fertig: unten === null ? 3.4 : unten + this._laenge / TEMPO + FUNKEN,
       gefunkt: false,
+      zurQuelle: false,
+      gestartet: false,
+    }
+    // Ein Bild dabei: schon jetzt lesen, damit es fertig ist, wenn der
+    // Maulwurf ankommt. Kommt es erst spaeter, faellt die Vorschau aus.
+    const lauf = ++this._lauf
+    this._folieWeg()
+    if (bild && this.feed && this.quelle && !this._ruhig) {
+      this.feed.vorbereiten(bild).then((f) => {
+        if (lauf === this._lauf && this.aktiv && !this._plan.gestartet) this._folie = f
+        else f?.texture.dispose()
+      })
     }
     // Erst ans Rohr heran. Wer Bewegung abgeschaltet hat, bekommt keine
     // Kamerafahrt, nur was am Rohr passiert.
@@ -111,6 +134,11 @@ export class RohrpostNetz {
   // allein weiter.
   ueberspringen() {
     this._kameraZurueck()
+  }
+
+  _folieWeg() {
+    this._folie?.texture.dispose()
+    this._folie = null
   }
 
   _kameraZurueck() {
@@ -153,7 +181,31 @@ export class RohrpostNetz {
       // Die Kamera bleibt nur fuers Einwerfen am Rohr. Dem Maulwurf fuhr
       // sie erst bis zum Mast hinterher; Julian wollte danach wieder die
       // normale Kamera (30.09.). Wer hinsieht, sieht die Spur loslaufen.
-      this._kameraZurueck()
+      // Einzige Ausnahme: war ein Bild dabei, schwenkt sie vom Rohr zur
+      // Quelle und zeigt es dort kurz im Eis.
+      if (!plan.gestartet) {
+        plan.gestartet = true
+        if (this._folie && this._kamera) {
+          plan.zurQuelle = true
+          const q = this.quelle
+          const f = q.focus
+          const az = CAMERA.azimuth
+          this.camera.fokus({
+            x: q.position.x + Math.sin(az) * f.vor,
+            y: q.groundY + f.hoehe,
+            z: q.position.z + Math.cos(az) * f.vor,
+            abstand: f.abstand,
+          })
+          plan.fertig = Math.max(plan.fertig, plan.ende + VORSCHAU + 0.3)
+        } else {
+          this._folieWeg()
+          this._kameraZurueck()
+        }
+      }
+      if (plan.zurQuelle && plan.gefunkt && this._folie) {
+        this.feed.vorschau(this._folie, VORSCHAU)
+        this._folie = null
+      }
     }
 
     if (t >= plan.fertig) {

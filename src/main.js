@@ -117,7 +117,10 @@ input.onAction = (action) => interaction.press(action)
 // Die Rohrpost verschickt, wenn das Upload-Fenster zugeht: Kapseln in den
 // Trichter, dann unter dem Schnee zum Funkmast. Das Fenster meldet sich per
 // Ereignis, damit dialogs/upload.js nichts vom Tal wissen muss.
-const rohrpost = new RohrpostNetz({ pipe: props.rohrpost, tower: props.landscape.tower, world, camera: chase, input })
+const rohrpost = new RohrpostNetz({
+  pipe: props.rohrpost, tower: props.landscape.tower, world, camera: chase, input,
+  quelle: stations.stations.find((s) => s.id === 'broadcast'), feed: props.broadcast,
+})
 interaction.rohrpost = rohrpost
 addEventListener('rohrpost', (e) => rohrpost.versenden(e.detail))
 

@@ -181,6 +181,47 @@ export class BroadcastFeed {
     this.clock = 0
     this.loading = false
     this.distance = Infinity
+    this._vorschau = null      // { texture, color, bis } solange ein Upload im Eis steht
+  }
+
+  // Ein eben hochgeladenes Bild kurz ins Eis (world/rohrpost-netz.js). Es
+  // kommt aus der Datei im Browser, nicht vom Server: sehen kann es nur,
+  // wer es gerade eingeworfen hat, und nach dem Neuladen ist es weg.
+  // Gibt die fertige Folie zurueck oder null, wenn der Browser das Bild
+  // nicht lesen kann (HEIC in Chrome zum Beispiel).
+  async vorbereiten(datei) {
+    try {
+      const bitmap = await createImageBitmap(datei)
+      const c = bildFolie(bitmap, '')
+      bitmap.close?.()
+      return { texture: textur(c), color: mittel(c) }
+    } catch {
+      return null
+    }
+  }
+
+  // Folie zeigen, fuer so viele Sekunden ganz aufgetaut. Die laufende
+  // Sendung steht solange still und kommt danach zurueck.
+  vorschau(folie, sekunden) {
+    this._vorschau = { ...folie, bis: this.clock + sekunden }
+    this.fall.userData.setMedia?.(folie.texture, ASPECT)
+    this.fall.userData.setGlow?.(folie.color, 1)
+    this.fall.userData.setKlar?.(true)
+  }
+
+  _vorschauEnde() {
+    const v = this._vorschau
+    this._vorschau = null
+    this.fall.userData.setKlar?.(false)
+    const s = this.slides[this.index]
+    if (s?.texture) {
+      this.fall.userData.setMedia?.(s.texture, ASPECT)
+      this.fall.userData.setGlow?.(s.color, 1)
+    } else {
+      this.fall.userData.setMedia?.(null)
+      this.fall.userData.setGlow?.(null, 0)
+    }
+    setTimeout(() => v.texture.dispose(), 2000)
   }
 
   // Fuer die Einladung und die Auswahl.
@@ -202,6 +243,7 @@ export class BroadcastFeed {
 
   update(dt, skier) {
     this.clock += dt
+    if (this._vorschau && this.clock > this._vorschau.bis) this._vorschauEnde()
     if (!skier) return
     const dx = skier.position.x - this.position.x
     const dz = skier.position.z - this.position.z
@@ -219,7 +261,7 @@ export class BroadcastFeed {
     // Eine Sendung laeuft nach sieben Tagen ab – auch ohne neue Abfrage.
     if (this.message && this.message.expiresAt < Date.now()) this.zeigen(null)
 
-    if (this.slides.length > 1 && d < NEAR) {
+    if (this.slides.length > 1 && d < NEAR && !this._vorschau) {
       this.timer += dt
       if (this.timer > SLIDE) {
         this.timer = 0
@@ -252,6 +294,9 @@ export class BroadcastFeed {
     this.index = 0
     this.timer = 0
     this.fall.userData.setLive?.(!!m)
+    // Waehrend einer Vorschau bleibt das Eis beim Upload; was danach kommt,
+    // setzt _vorschauEnde().
+    if (!m && this._vorschau) return
     if (!m) {
       this.fall.userData.setMedia?.(null)
       this.fall.userData.setGlow?.(null, 0)
@@ -290,6 +335,7 @@ export class BroadcastFeed {
       // Waehrend des Ladens kam womoeglich eine neue Sendung.
       if (!this.slides.includes(s) || this.slides[this.index] !== s) return
     }
+    if (this._vorschau) return
     this.fall.userData.setMedia?.(s.texture, ASPECT)
     this.fall.userData.setGlow?.(s.color, 1)
   }

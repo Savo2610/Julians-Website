@@ -37,6 +37,10 @@ let laeuft = false;
 // Fehler in der Liste steht: ein zweiter, geglückter Versuch löscht ihn.
 let angekommen = 0;
 let textGescheitert = false;
+// Das erste Bild, das durchkam: es steht danach kurz im Eis der Quelle, nur
+// in diesem Browser. Kein SVG – das Tal zeigt nur, was ein Foto ist.
+let bild = null;
+const istBild = (datei) => /^image\//.test(datei.type) && datei.type !== 'image/svg+xml';
 
 function groesse(zahl) {
   if (zahl >= 1024 ** 3) return (zahl / 1024 ** 3).toFixed(1) + ' GB';
@@ -276,6 +280,7 @@ async function senden() {
   const gescheitert = [];
   for (const eintrag of dateien) {
     if (!(await dateiSenden(eintrag))) gescheitert.push(eintrag);
+    else if (!bild && istBild(eintrag.datei)) bild = eintrag.datei;
   }
 
   // Was durch ist, verschwindet aus der Liste; was nicht, bleibt zum
@@ -328,9 +333,10 @@ function verdrahten() {
   schliessbar($('up-dialog'), $('up-zu'));
   $('up-dialog').addEventListener('close', () => {
     const gescheitert = dateien.filter((e) => e.fehler).length + (textGescheitert ? 1 : 0);
-    dispatchEvent(new CustomEvent('rohrpost', { detail: { angekommen, gescheitert } }));
+    dispatchEvent(new CustomEvent('rohrpost', { detail: { angekommen, gescheitert, bild } }));
     angekommen = 0;
     textGescheitert = false;
+    bild = null;
   });
 
   const auswahl = $('up-auswahl');

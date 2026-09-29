@@ -199,7 +199,10 @@ export class MapMenu {
     const byId = (id) => this.registry.stations.find((s) => s.id === id)
     for (const gruppe of KACHELN) {
       const sec = document.createElement('div')
-      sec.className = 'ov-group'
+      // Mehr als zwei Ziele (die Tools) stehen in zwei Spalten ueber die
+      // Breite von zwei Gruppen – untereinander liessen sie rechts eine
+      // halbe Tafel leer.
+      sec.className = 'ov-group' + (gruppe.kacheln.length > 2 ? ' breit' : '')
       sec.style.setProperty('--c', TRAILS[gruppe.weg]?.color ?? '#5f6f80')
       sec.innerHTML = '<h3></h3><div class="ov-grid"></div>'
       sec.querySelector('h3').textContent = gruppe.titel
@@ -425,6 +428,10 @@ export class MapMenu {
 
   // --- Karte ------------------------------------------------------------
 
+  // Gruppiert nach den Wegen im Tal, in derselben Farbe und Reihenfolge wie
+  // die Links. Vorher eine lange Liste „Stationen“, in der nur die Farbe
+  // des Punkts verriet, was zusammengehoert; was an keinem Weg haengt, sind
+  // die Lifte.
   _collect() {
     const stations = this.registry.stations
       .filter((s) => !VERSTECKT.has(s.id))
@@ -434,13 +441,20 @@ export class MapMenu {
         sub: s.hint,
         x: s.position.x,
         z: s.position.z,
+        weg: WEG[s.id] ?? null,
         color: TRAILS[WEG[s.id]]?.color ?? s.color,
         station: s,
       }))
+    const wege = ['career', 'social', 'tools'].map((w) => ({
+      group: TRAILS[w].label,
+      color: TRAILS[w].color,
+      items: stations.filter((s) => s.weg === w),
+    }))
     return [
-      { group: 'Stationen', items: stations },
-      { group: 'Orte', items: ORTE.map((o) => ({ ...o })) },
-    ]
+      ...wege,
+      { group: 'Lifte', color: '#5f6f80', items: stations.filter((s) => !s.weg) },
+      { group: 'Orte', color: '#5f6f80', items: ORTE.map((o) => ({ ...o })) },
+    ].filter((g) => g.items.length)
   }
 
   // Die Karte malt die Panoramatafel beim Aufbau; hier wird sie nur
@@ -465,6 +479,7 @@ export class MapMenu {
     for (const g of groups) {
       const h = document.createElement('div')
       h.className = 'map-group'
+      h.style.setProperty('--c', g.color)
       h.textContent = g.group
       this.list.appendChild(h)
       for (const item of g.items) {

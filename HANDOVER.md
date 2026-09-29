@@ -585,8 +585,11 @@ Die Tafel ist eine Station (`id: 'talplan'`, `map: base`). **`M` überall**
   wer sie mit Esc oder × schließt, ist wieder in der Übersicht auf derselben
   Kachel (ein `close`-Horcher in der Capture-Phase des Dokuments).
   Spotify und Komoot stehen nur hier (noch kein Platz im Tal).
-- *Talkarte*: links die Karte mit Pins und „Du“, rechts die Ziele
-  (Stationen, dann Orte: Start, Gipfel, Funpark, Hütte, See).
+- *Talkarte*: links die Karte mit Pins und „Du“, rechts die Legende,
+  gruppiert nach den Wegen wie die Links (Karriere, Kontakt & Gipfel,
+  Tools), dann Lifte und Orte (Start, Gipfel, Funpark, Hütte, See).
+  In den *Links* stehen Gruppen mit mehr als zwei Zielen (die Tools) in
+  zwei Spalten über die Breite von zwei Gruppen.
 - *Fuß*: die ganze Steuerung.
 
 Pfeiltasten gehen im Register räumlich (nächste Zeile in Richtung,

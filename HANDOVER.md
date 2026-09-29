@@ -474,14 +474,16 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
   liegt, sonst fährt die Kamera weg, bevor man sie sieht;
 - dann läuft ein **Maulwurf** unter dem Schnee zum Funkmast (11 m/s, gut
   47 m, handgelegter Weg an Tunnel, Bank, Seeufer und Quellrahmen vorbei,
-  gegen die ausgelesenen Hindernisse geprüft), die Kamera fährt mit (ohne
-  Drehung), der Mast funkt 2,2 s (`tower.userData.funken`). Die Spur ist
+  gegen die ausgelesenen Hindernisse geprüft), der Mast funkt 2,2 s
+  (`tower.userData.funken`). Die Kamera zoomt nur zum Einwerfen ans Rohr
+  und ist zurück beim Fahrer, sobald der Maulwurf losläuft – ihm bis zum
+  Mast zu folgen war Julian zu viel. Die Spur ist
   **nicht** in die Schneetextur gestempelt – die hält für immer –, sondern
   ein InstancedMesh aus Hügelchen, die nach 3,2 s in 2,4 s wieder zutauen;
 - **nichts geschickt:** die Klappe fällt zu, ein Hauch Dampf, nach 1,4 s
   steht sie wieder offen.
-Esc, Enter, `M` oder Tippen holen die Kamera sofort zurück, der Maulwurf
-läuft allein weiter. Mit `prefers-reduced-motion` keine Kamerafahrt.
+Esc, Enter, `M` oder Tippen holen die Kamera schon während des Einwerfens
+zurück. Mit `prefers-reduced-motion` keine Kamerafahrt.
 
 **Jede Station zoomt (Zweig `stationen-mit-auftritt`, 29./30.09., per `--no-ff` in `main`).** Stechuhr,
 Depot und Löschzug öffneten ihre Seite sofort – wer im Tal gelernt hat,

@@ -4,8 +4,9 @@ import * as THREE from 'three'
 // Upload-Fenster geht zu) fallen die Kapseln in den Trichter, das Rohr
 // schluckt (props/upload-pipe.js), und dann laeuft eine Beule wie ein
 // Maulwurf unter der Schneedecke zum Funkmast hinter der gefrorenen Quelle,
-// der kurz funkt: angekommen. Die Kamera faehrt mit, ohne sich zu drehen –
-// es ist dieselbe Kamerafahrt wie beim Heranzoomen an eine Station.
+// der kurz funkt: angekommen. Zum Einwerfen zoomt die Kamera ans Rohr –
+// dieselbe Kamerafahrt wie beim Heranzoomen an eine Station –, sobald der
+// Maulwurf loslaeuft, ist sie wieder beim Fahrer.
 //
 // Die Spur ist nicht in die Schneetextur gestempelt: die haelt fuer immer
 // (Max-Blending, siehe snow-trail.js), eine Maulwurfspur soll aber wieder
@@ -160,11 +161,10 @@ export class RohrpostNetz {
           for (let i = 0; i < 6; i++) this._kruemelWerfen(this._p.x, y + 0.2, this._p.z)
         }
       }
-      if (this._kamera) {
-        // Beim Mast etwas naeher, damit die Funkboegen zu sehen sind.
-        const amMast = t >= plan.ende
-        this.camera.fokus({ x: this._p.x, y: y + (amMast ? 2 : 0.6), z: this._p.z, abstand: amMast ? 15 : 19 })
-      }
+      // Die Kamera bleibt nur fuers Einwerfen am Rohr. Dem Maulwurf fuhr
+      // sie erst bis zum Mast hinterher; Julian wollte danach wieder die
+      // normale Kamera (30.09.). Wer hinsieht, sieht die Spur loslaufen.
+      this._kameraZurueck()
     }
 
     if (t >= plan.fertig) {

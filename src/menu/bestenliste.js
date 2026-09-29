@@ -183,7 +183,7 @@ export class Bestenliste {
       <button type="button" class="dialog-zu" aria-label="Schließen">×</button>
       <div class="dialog-kopf">
         <span class="dialog-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4.5a2.5 2.5 0 0 0 2.8 3.4M17 6h2.5a2.5 2.5 0 0 1-2.8 3.4M12 13v4M8.5 20h7l-1-3h-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
-        <strong id="sb-titel">In die Bestenliste</strong>
+        <span class="dialog-name"><span class="dialog-ort">Slalom</span><strong id="sb-titel">In die Bestenliste</strong></span>
       </div>
       <form class="sb-form" autocomplete="off">
         <div class="sb-lauf"><span class="sb-lauf-zeit"></span><span class="sb-lauf-sub"></span></div>

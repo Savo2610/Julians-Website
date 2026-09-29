@@ -8,6 +8,7 @@ import { Input } from './core/input.js'
 import { TOUCH } from './core/device.js'
 import { pointScale } from './core/point-scale.js'
 import { TouchControls } from './core/touch.js'
+import { Antippen } from './stations/antippen.js'
 import { inFunpark, PLATEAU } from './world/heightfield.js'
 import { SnowTrail } from './world/snow-trail.js'
 import { World } from './world/world.js'
@@ -110,7 +111,7 @@ props.race.onAbort = () => bestenliste.abbruch()
 const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase, pass, bestenliste, race: props.race })
 flight = new DroneFlight({ camera, input, onEnd: () => chase.snap() })
 const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu, flight, bestenliste })
-input.onAction = (action) => interaction.press(action)
+input.onAction = (action, code) => interaction.press(action, code)
 
 // R und der Rueckweg-Hinweis: zurueck zum Startplatz, hinter derselben Blende
 // wie die Schnellreise. Solange die Slalomzeit eingeblendet ist, geht es
@@ -145,6 +146,11 @@ const touch = TOUCH
   })
   : null
 if (TOUCH) document.documentElement.classList.add('touch')
+// Vor dem Horcher darunter, damit es noch sieht, ob eine Auswahl offen war.
+new Antippen(canvas, camera, stations, {
+  onUse: () => interaction.press('use'),
+  darf: () => !interaction.focus && !mapMenu.open && !flight.active && !skier.tow,
+})
 canvas.addEventListener('pointerdown', () => {
   if (flight.active) flight.stop()
   interaction.leave()

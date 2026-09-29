@@ -449,9 +449,16 @@ Leertaste springen (im Park Tricks), Enter/E benutzen, `M` Übersicht,
 `R` zurück zum Start, `Tab` Reiter der Übersicht (Links, Talkarte, Pistenpass, Bestenliste), Esc/Backspace zurück.
 
 **Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
-schwebt die Einladung mit Name, einem Wort und dem ⏎-Zeichen – Frosttext,
-gefasst von vier Eckmarken in der Stationsfarbe, die sich beim Erscheinen
-zusammenziehen wie ein Sucher, der die Station anpeilt.
+schwebt die Einladung: oben der Hinweis als kleines Wort in der
+Stationsfarbe, darunter der Name, davor das ⏎-Zeichen (am Handy statt dessen
+ein › hinter dem Namen) – Frosttext ohne Rahmen. **Die Station selbst ist
+antippbar** (`stations/antippen.js`): Beobachtet wurde, dass Freunde am
+Handy auf die Hütte tippten statt auf die Pille. Getroffen wird eine Kugel
+(3,4 m, 1,8 m über dem Boden) um die Station, vor der man steht, nicht ein
+Mesh – die Werkstatt führt als `object` nur die Bank. Ein Tipp ist unter
+10 px und 450 ms, sonst ist es der Daumenstick. Ob getippt werden darf,
+zählt beim Drücken, weil `main.js` beim Drücken eine offene Auswahl
+schließt. Am Rechner wird der Zeiger über der Station zur Hand.
 
 **Frost statt Pillen (29.09., Branch `oberflaeche-ohne-pillen`).** Alles,
 was nur kurz über dem Tal steht – Einladung, Hinweise unten, Zeitnahme,
@@ -463,7 +470,24 @@ waren es Glaspillen, und jede sah aus wie ein Knopf. Glas bleibt für das,
 was man bedient (Auswahl, Übersicht, Fenster, Handyknöpfe); die Reiter der
 Übersicht sind Wörter mit Strich statt Pillen-Umschalter. Fünf Entwürfe
 standen zur Wahl (Frosttext, Eisscheibe, Wegweiser, Sucher, Nebelrand);
-genommen: Frosttext mit Nebel als Hauch, Sucher-Ecken nur an der Einladung.
+genommen: Frosttext mit Nebel als Hauch. Für die Einladung standen danach
+Sucher-Ecken, Pistenstange, Leitlinie und Farbwort zur Wahl; genommen das
+Farbwort, der Sucher war zu technisch.
+
+**Register und Stempel (29.09., derselbe Branch).** Was man bedient, bleibt
+Glas, aber ohne Kärtchen darin. Die **Auswahl** an einer Station, die
+**Links** der Übersicht und die **Talkarte** sind Register wie die Legende
+einer Pistenkarte: Zeilen mit Zeichen in der Zielfarbe, gepunktete Führung,
+die gewählte Zeile färbt sich und die Punkte werden zur Linie. Gruppen
+beginnen mit einem Strich in ihrer Wegfarbe. Der **Pistenpass** ist ein
+Stempelheft (Orte als Abhakliste, Medaillen und Abzeichen als runde
+Farbstempel, schief nach einem Hash der Kennung, damit nichts wackelt).
+Die **Fenster** (Solana, Upload, Kurzlink, Bestenliste) haben ein Zeichen
+statt der Farbkachel, oben den Ort im Tal, Felder nur mit Unterstrich, und
+die Hauptaktion ist eine Zeile „Senden ——— →“, gepunktet, solange sie nicht
+geht. Entwurf „An den Geräten“ (Beschriftung über jedem Terminal) war
+beliebt, scheiterte aber an Kontakt (schräg, Telefon und Fernglas
+verdeckt), Skikasse (Rundflug hat kein Gerät) und Drohne.
 **Falle:** Unter `opacity` 1 schaltet der Browser die Unschärfe des Hauchs
 ab (das Element wird zur Backdrop Root). Deshalb atmet der Start-Hinweis
 über die Schriftfarbe, und eine tote Station dimmt nur ihren Text. Beim
@@ -472,8 +496,10 @@ Ein- und Ausblenden fehlt der Hauch darum kurz – bisher unauffällig.
 - Station mit **einem Ziel**: Enter öffnet es sofort.
 - Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
   LinkedIn/GitHub, Kontakt: Signal/Instagram): Enter **zoomt heran**. Der Fahrer bleibt stehen
-  (`input.locked`), unten klappt eine Glas-Auswahl auf, ←/→ (auch A/D)
-  wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
+  (`input.locked`), unten klappt die Auswahl als Register auf, ↑/↓ und ←/→
+  (auch A/D) wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. ↑/↓
+  sind im Fahren dieselben Aktionen wie W/S; `input.onAction` reicht darum
+  den Tastencode mit, und nur die Pfeile wählen. Die Ziffern `1`/`2`
   gehen weiterhin direkt. Das 3D-Objekt zeigt die Wahl mit: das gewählte
   Terminal bzw. der Bildschirm leuchtet und hebt sich (`userData.select`),
   beim Öffnen blitzt es (`userData.press`), an der Kasse schiebt das Terminal
@@ -557,7 +583,7 @@ Die Tafel ist eine Station (`id: 'talplan'`, `map: base`). **`M` überall**
   (Stationen, dann Orte: Start, Gipfel, Funpark, Hütte, See).
 - *Fuß*: die ganze Steuerung.
 
-Pfeiltasten gehen im Kachelraster räumlich (nächste Kachel in Richtung,
+Pfeiltasten gehen im Register räumlich (nächste Zeile in Richtung,
 seitlicher Versatz zählt 2,5-fach). In der Karte gilt: ↑↓/←→ wählen (am Ende bleibt die Auswahl stehen — der
 Sprung nach oben passierte außerhalb des sichtbaren Teils und sah aus wie
 ein Fehler), Enter reist, Esc/M schließen; am Handy Ziel oder Pin antippen,
@@ -1091,7 +1117,8 @@ Abschnitt 1, Nordabfahrt).
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
-- **Frost statt Pillen** liegt im Branch `oberflaeche-ohne-pillen` und ist
+- **Frost statt Pillen, Register, Stempel, Fenster** liegen im Branch
+  `oberflaeche-ohne-pillen` und sind
   nur lokal geprüft (Chrome, Handy-Emulation). Vor dem Zusammenführen in
   Safari ansehen: `backdrop-filter` zusammen mit `mask-image` am Hauch.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten

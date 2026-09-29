@@ -66,7 +66,7 @@ export class Input {
       const action = KEY_MAP[e.code]
       if (!action || this._blocked()) return
       if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault()
-      if (!e.repeat && this.onAction?.(action)) {
+      if (!e.repeat && this.onAction?.(action, e.code)) {
         e.preventDefault()
         return
       }

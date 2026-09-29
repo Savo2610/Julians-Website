@@ -1,5 +1,11 @@
 /* Die drei Fenster – Solana, Briefkasten, Kurzlink – im Glas des Tals.
  *
+ * Seit 29.09. in derselben Sprache wie Auswahl und Uebersicht: ein Zeichen
+ * in der Farbe statt einer farbigen Kachel, oben ein Wort fuer den Ort im
+ * Tal, Felder nur mit Unterstrich wie auf einem Formular, und die Aktion
+ * als Zeile mit Fuehrungslinie – dieselbe Form wie das gewaehlte Ziel an
+ * einer Station. Keine Pillen, keine Kaestchen im Kasten.
+ *
  * Markup (index.html) und Code (src/dialogs/) stammen unveraendert von der
  * frueheren Kachelseite; alle Klassen und Ids sind geblieben. Neu ist nur,
  * wie sie aussehen: dort das dunkle Violett, hier dasselbe helle Glas wie
@@ -14,6 +20,7 @@
   --field: rgba(255, 255, 255, 0.55);
   --field-focus: rgba(255, 255, 255, 0.85);
   --accent: #2b6fd6;
+  --tile: #4a6c93;
   --accent2: #d0453a;
   --accent3: #1f8a5b;
   --glow: rgba(43, 111, 214, 0.35);
@@ -36,7 +43,7 @@
   max-height: calc(100dvh - 2rem);
   overflow-y: auto;
   padding: 1.35rem;
-  border-radius: 26px;
+  border-radius: 22px;
   color: var(--ink);
   background:
     linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(233, 243, 252, 0.46) 55%, rgba(214, 231, 248, 0.52));
@@ -73,42 +80,46 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 0 #fff;
-  color: #3b4f64;
-  font: 500 1.2rem/1 system-ui, sans-serif;
+  background: none;
+  color: #5b6f84;
+  font: 400 1.4rem/1 system-ui, sans-serif;
   cursor: pointer;
+  transition: color 0.2s ease;
 }
-.dialog-zu:hover { background: rgba(255, 255, 255, 0.85); }
+.dialog-zu:hover { color: var(--ink); }
 
 .dialog-kopf {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding-right: 2.2rem;
+  padding: 0 2.2rem 0.75rem 0;
   margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--line);
 }
 
-/* Farbige Kachel wie bei den Zielen der Stationsauswahl. */
+/* Das Zeichen in der Farbe, ohne Kachel darum – wie bei den Zielen der
+   Stationsauswahl. */
 .dialog-symbol {
   flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
   display: grid;
   place-items: center;
-  border-radius: 13px;
-  color: #fff;
-  font-size: 1.3rem;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--tile, #4a6c93) 75%, #fff), var(--tile, #4a6c93));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 10px -3px color-mix(in srgb, var(--tile, #4a6c93) 60%, transparent);
+  color: var(--tile);
 }
-.dialog-symbol svg { width: 1.35rem; height: 1.35rem; }
+.dialog-symbol svg { width: 1.7rem; height: 1.7rem; }
+.dialog-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.15; }
+.dialog-ort {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tile) 85%, #13212f);
+}
 #sol-dialog { --tile: #9945ff; --accent: #7b3fe0; --glow: rgba(153, 69, 255, 0.35); }
 #up-dialog { --tile: #37b87c; --accent: #23905f; --glow: rgba(55, 184, 124, 0.35); }
 #kz-dialog { --tile: #5b7fa6; --accent: #3f6690; --glow: rgba(91, 127, 166, 0.35); }
+#sb-dialog { --tile: #d0662f; --accent: #c0552a; --glow: rgba(208, 102, 47, 0.35); }
 
-.dialog-kopf strong { font-size: 1.05rem; font-weight: 780; }
+.dialog-kopf strong { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.005em; }
 
 /* Eigene display-Regeln stechen sonst das hidden-Attribut aus. */
 .dialog [hidden] { display: none; }
@@ -120,52 +131,67 @@
   font-size: 0.72rem;
   font-weight: 650;
   color: var(--muted);
-  margin: 0 0 0.4rem 0.2rem;
+  margin: 0 0 0.2rem;
 }
 
-/* Alles, was man anfasst oder beschreibt, ist eine hellere Glasschicht im
-   Glas: Adresse, Betrag, Liste, Textfeld. */
+/* Alles, was man anfasst oder beschreibt, ist eine Zeile auf dem Glas
+   mit einem Strich darunter – wie ein Formular. Im Fokus wird der Strich
+   farbig und kraeftiger. */
 .sol-adresse,
 .sol-betrag,
 .sol-wahl,
-.up-datei,
 .up-notiz,
 .kz-feld,
 .kz-out {
-  background: var(--field);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 1px 2px rgba(40, 70, 105, 0.08);
-  border-radius: 14px;
+  background: none;
+  border: 0;
+  border-bottom: 1.5px solid rgba(40, 70, 105, 0.28);
+  border-radius: 0;
   color: var(--ink);
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .sol-betrag:focus-within,
 .up-notiz:focus,
 .kz-feld:focus,
+.sol-wahl:focus,
 .sol-adresse:hover {
-  background: var(--field-focus);
-  box-shadow: inset 0 1px 2px rgba(40, 70, 105, 0.08), 0 0 0 3px var(--glow);
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1px 0 var(--accent);
 }
 
+/* Die Aktion als Zeile: Wort, durchgezogene Linie, Pfeil – dieselbe Form
+   wie das gewaehlte Ziel in der Stationsauswahl. Solange sie noch nicht
+   geht, ist die Linie gepunktet und alles blass. */
 .dialog-los {
   width: 100%;
-  margin-top: 1rem;
-  padding: 0.8rem;
+  margin-top: 1.1rem;
+  padding: 0.55rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   border: 0;
-  border-radius: 16px;
-  color: #fff;
+  background: none;
+  color: var(--accent);
   font-family: inherit;
-  font-size: 0.92rem;
-  font-weight: 720;
-  letter-spacing: 0.01em;
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-align: left;
   cursor: pointer;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 20px -8px var(--glow);
-  transition: transform 0.2s cubic-bezier(0.2, 1.4, 0.4, 1), filter 0.2s ease;
+  transition: color 0.2s ease;
 }
-.dialog-los:hover { filter: brightness(1.06); transform: translateY(-1px); }
-.dialog-los:active { transform: scale(0.98); }
-.dialog-los:disabled { filter: grayscale(0.6) opacity(0.55); transform: none; cursor: default; }
+.dialog-los::before {
+  content: '';
+  order: 1;
+  flex: 1;
+  border-bottom: 2px solid currentColor;
+  transition: border-color 0.2s ease;
+}
+.dialog-los::after { content: '→'; order: 2; font-weight: 900; transition: translate 0.2s ease; }
+.dialog-los:hover::after { translate: 3px 0; }
+.dialog-los:active { opacity: 0.8; }
+.dialog-los:disabled { color: #8a9bad; cursor: default; }
+.dialog-los:disabled::before { border-bottom: 1.5px dotted currentColor; }
+.dialog-los:disabled::after { translate: 0 0; }
 
 .dialog-text {
   font-size: 0.82rem;
@@ -181,16 +207,15 @@
 
 .dialog-status {
   margin-top: 0.9rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.45);
   font-size: 0.8rem;
   line-height: 1.5;
   color: var(--muted);
   word-break: break-word;
 }
-.dialog-status[data-art="fehler"] { color: var(--accent2); background: rgba(255, 235, 232, 0.7); }
-.dialog-status[data-art="gut"] { color: var(--accent3); background: rgba(228, 248, 238, 0.75); }
+.dialog-status[data-art="fehler"] { color: var(--accent2); font-weight: 650; }
+.dialog-status[data-art="gut"] { color: var(--accent3); font-weight: 650; }
+.dialog-status[data-art="fehler"]::before { content: '! '; font-weight: 900; }
+.dialog-status[data-art="gut"]::before { content: '✓ '; font-weight: 900; }
 
 /* --- Solana ---------------------------------------------------------------- */
 
@@ -200,7 +225,7 @@
   justify-content: space-between;
   gap: 0.6rem;
   width: 100%;
-  padding: 0.65rem 0.8rem;
+  padding: 0.6rem 0;
   cursor: pointer;
   font: inherit;
 }
@@ -213,10 +238,7 @@
 }
 .sol-adresse span {
   flex: none;
-  padding: 0.2rem 0.5rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.7);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--accent);
 }
@@ -225,7 +247,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 0.8rem;
+  padding: 0.45rem 0;
 }
 .sol-betrag input {
   flex: 1;
@@ -240,10 +262,9 @@
 }
 .sol-einheit {
   flex: none;
-  padding: 0.25rem 0.55rem;
+  padding: 0.25rem 0;
   border: 0;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.7);
+  background: none;
   font-family: var(--mono);
   font-size: 0.75rem;
   font-weight: 700;
@@ -255,36 +276,35 @@
 .sol-einheit[data-tauschbar]::after { content: ' ⇄'; opacity: 0.6; }
 
 .sol-umrechnung {
-  margin: 0.4rem 0 0 0.2rem;
+  margin: 0.4rem 0 0;
   font-family: var(--mono);
   font-size: 0.72rem;
   color: var(--muted);
 }
 
+/* Betraege zum Antippen: nur die Zahlen, unterstrichen beim Zeigen. */
 .sol-chips {
   display: flex;
-  gap: 0.4rem;
+  gap: 1.1rem;
   margin-top: 0.6rem;
 }
 .sol-chips button {
-  flex: 1;
-  padding: 0.45rem 0;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.4);
-  color: var(--ink);
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
   font-family: var(--mono);
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  text-underline-offset: 3px;
 }
-.sol-chips button:hover { background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 2px var(--glow); }
+.sol-chips button:hover { text-decoration: underline; }
 
 .sol-wahl {
   width: 100%;
   margin-top: 0.75rem;
-  padding: 0.55rem 0.7rem;
+  padding: 0.45rem 0;
   font-family: inherit;
   font-size: 0.85rem;
 }
@@ -297,8 +317,8 @@
   padding: 1.4rem 1rem;
   text-align: center;
   border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  background: none;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -306,7 +326,7 @@
 .up-zone:focus-within,
 .up-zone[data-zieht] {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.35);
 }
 /* Das Eingabefeld selbst deckt die Flaeche ab: ein Klick irgendwo in der
    Zone oeffnet die Dateiauswahl, und die Tastatur kommt auch hin. */
@@ -326,9 +346,8 @@
   margin-top: 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
 }
-.up-datei { padding: 0.55rem 0.7rem; }
+.up-datei { padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
 .up-kopfzeile { display: flex; align-items: center; gap: 0.5rem; }
 .up-name {
   flex: 1;
@@ -375,7 +394,7 @@
   width: 100%;
   min-height: 3.4rem;
   resize: vertical;
-  padding: 0.6rem 0.75rem;
+  padding: 0.45rem 0;
   font-family: inherit;
   font-size: 0.85rem;
   line-height: 1.5;
@@ -394,7 +413,7 @@
 
 .kz-feld {
   width: 100%;
-  padding: 0.65rem 0.8rem;
+  padding: 0.5rem 0;
   font-family: inherit;
   font-size: 0.88rem;
   outline: none;
@@ -409,7 +428,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.9rem;
-  padding: 0.55rem 0.55rem 0.55rem 0.8rem;
+  padding: 0.5rem 0;
 }
 .kz-kurz {
   flex: 1;
@@ -422,17 +441,17 @@
 }
 .kz-kopieren {
   flex: none;
-  padding: 0.38rem 0.75rem;
+  padding: 0.2rem 0;
   border: 0;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
+  background: none;
+  color: var(--accent);
   font-family: inherit;
-  font-size: 0.74rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 800;
   cursor: pointer;
+  text-underline-offset: 3px;
 }
-.kz-kopieren:hover { filter: brightness(1.08); }
+.kz-kopieren:hover { text-decoration: underline; }
 
 /* --- Tastatur -------------------------------------------------------------
    Siehe dialogs/keyboard.js. Der Fokusrahmen ist derselbe Schein wie beim

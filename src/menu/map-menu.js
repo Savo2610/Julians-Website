@@ -81,6 +81,32 @@ const STEUERUNG = TOUCH
     ['<kbd>R</kbd>', 'zurück zum Start'],
   ]
 
+// Stempelfarben: Medaillen in ihrem Metall, Abzeichen reihum in Tinten,
+// die auf dem hellen Glas alle gleich kraeftig stehen.
+const TINTE = { bronze: '#9a5a2c', silber: '#5f6f82', gold: '#a8780f' }
+const TINTEN = ['#b0462f', '#2f6a8f', '#3b3f8f', '#2f7a5c', '#8a4d9c', '#a8780f', '#9a3f5f', '#4f6a2a']
+
+// Jeder Stempel sitzt etwas schief, aber immer gleich schief: der Winkel
+// kommt aus seiner Kennung, nicht aus dem Zufall, sonst wackelte der Pass
+// bei jedem Oeffnen.
+function schraeg(id) {
+  let h = 0
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0
+  return ((Math.abs(h) % 15) - 7)
+}
+
+function stempel({ id, icon, name, text, ink, hat, verborgen = false }) {
+  const el = document.createElement('div')
+  el.className = 'pass-stempel' + (hat ? ' hat' : '') + (verborgen ? ' verborgen' : '')
+  el.style.setProperty('--ink', ink)
+  el.style.setProperty('--r', `${hat ? schraeg(id) : 0}deg`)
+  el.innerHTML = '<span class="st-rund"><span class="st-icon"></span><span class="st-name"></span></span><span class="st-text"></span>'
+  el.querySelector('.st-icon').textContent = icon
+  el.querySelector('.st-name').textContent = name
+  el.querySelector('.st-text').textContent = text
+  return el
+}
+
 export class MapMenu {
   constructor({ registry, input, skier, world, camera, pass = null, bestenliste = null, race = null }) {
     this.pass = pass
@@ -183,10 +209,14 @@ export class MapMenu {
         const i = this.tiles.length
         const el = document.createElement('div')
         el.className = 'ov-tile'
+        // Eine Zeile wie in der Legende einer Pistenkarte: Name, gepunktete
+        // Fuehrung, dahinter der Ort im Tal. Vorher eine Kachel mit Rand,
+        // Schatten und darunter noch einer Pille fuer den Ort.
         el.innerHTML = `
           <button type="button" class="ov-open">
             <span class="ov-icon"></span>
             <span class="ov-text"><span class="ov-label"></span><span class="ov-sub"></span></span>
+            <span class="ov-dots" aria-hidden="true"></span>
             <span class="ov-go" aria-hidden="true">↗</span>
           </button>
           ${station ? '<button type="button" class="ov-where"><span class="ov-pin" aria-hidden="true"></span><span></span></button>' : ''}
@@ -198,7 +228,7 @@ export class MapMenu {
         el.addEventListener('pointermove', (e) => this._hover(e, () => this._selectTile(i)))
         if (station) {
           const where = el.querySelector('.ov-where')
-          where.lastElementChild.textContent = `im Tal: ${station.label}`
+          where.lastElementChild.textContent = station.label
           where.title = `Hinfahren: ${station.label}`
           where.addEventListener('click', () => this._travelTile(i))
         }
@@ -281,13 +311,24 @@ export class MapMenu {
 
   // Jedes Mal neu: der Pass ist klein, und so stimmt er auch dann, wenn
   // waehrend des Oeffnens etwas dazukommt.
+  //
+  // Ein Stempelheft (29.09.): links, was fehlt, und die Orte als Abhakliste,
+  // rechts Medaillen und Abzeichen als runde Farbstempel, leicht schief
+  // aufgedrueckt. Offene sind ein gestrichelter Abdruck, geheime ein
+  // Fragezeichen. Vorher dieselben Dinge als gestrichelte Kaertchen – der
+  // Pass sah aus wie ein Formular und nicht wie etwas, das man vollkriegen will.
   _buildPass() {
     const p = this.pass
     if (!p) return
-    const karte = (klasse, farbe) => {
+    const spalte = () => {
       const el = document.createElement('div')
-      el.className = `ov-group ${klasse}`
-      el.style.setProperty('--c', farbe)
+      el.className = 'pass-spalte'
+      return el
+    }
+    const titel = (text) => {
+      const el = document.createElement('h3')
+      el.className = 'pass-titel'
+      el.textContent = text
       return el
     }
 
@@ -305,50 +346,49 @@ export class MapMenu {
       ? 'Du hast sie. Schau auf deine Füße.'
       : `Fehlt: ${fehlt.join(', ')}.`
 
-    // Erkundet: ein Balken und die Orte als kleine Marken.
-    const erk = karte('pass-erkundet', '#346782')
-    erk.innerHTML = '<h3></h3><span class="pass-balken"><i></i></span><div class="pass-orte"></div>'
-    erk.querySelector('h3').textContent = `Erkundet · ${p.erkundet}/${ORTE_ERKUNDET.length}`
-    erk.querySelector('.pass-balken i').style.width = `${(p.erkundet / ORTE_ERKUNDET.length) * 100}%`
-    const orte = erk.querySelector('.pass-orte')
+    // Erkundet: ein duenner Balken und die Orte zum Abhaken.
+    const links = spalte()
+    const balken = document.createElement('span')
+    balken.className = 'pass-balken'
+    balken.innerHTML = '<i></i>'
+    balken.firstElementChild.style.width = `${(p.erkundet / ORTE_ERKUNDET.length) * 100}%`
+    const orte = document.createElement('ul')
+    orte.className = 'pass-orte'
     for (const o of ORTE_ERKUNDET) {
       const kennt = p.kennt(o.id)
-      const el = document.createElement('span')
+      const el = document.createElement('li')
       el.className = 'pass-ort' + (kennt ? ' hat' : '')
       el.textContent = kennt || !o.versteckt ? o.name : '???'
       orte.appendChild(el)
     }
+    links.append(kopf, titel(`Erkundet · ${p.erkundet} von ${ORTE_ERKUNDET.length}`), balken, orte)
 
-    // Medaillen im Slalom.
-    const med = karte('pass-medaillen', '#a86738')
-    med.innerHTML = '<h3>Slalom</h3><div class="pass-reihe"></div>'
+    // Medaillen und Abzeichen als Stempel.
+    const rechts = spalte()
+    const reihe = document.createElement('div')
+    reihe.className = 'pass-stempel-reihe'
     for (const m of MEDAILLEN) {
-      const el = document.createElement('div')
-      el.className = 'pass-medaille' + (p.hat(m.id) ? ' hat' : '')
-      el.innerHTML = '<span class="pass-icon"></span><span class="pass-text"><span class="pass-name"></span><span class="pass-sub"></span></span>'
-      el.querySelector('.pass-icon').textContent = m.icon
-      el.querySelector('.pass-name').textContent = m.name
-      el.querySelector('.pass-sub').textContent = `unter ${m.zeit} s`
-      med.lastElementChild.appendChild(el)
+      reihe.appendChild(stempel({ id: m.id, icon: m.icon, name: m.name, text: `unter ${m.zeit} s`, ink: TINTE[m.id], hat: p.hat(m.id) }))
     }
-
-    // Abzeichen: wenige, offen oder geheim.
-    const abz = karte('pass-abzeichen', '#935976')
-    abz.innerHTML = '<h3></h3><div class="pass-grid"></div>'
-    abz.querySelector('h3').textContent = `Abzeichen · ${ABZEICHEN.filter((a) => p.hat(a.id)).length}/${ABZEICHEN.length}`
-    for (const a of ABZEICHEN) {
+    const feld = document.createElement('div')
+    feld.className = 'pass-stempel-reihe'
+    ABZEICHEN.forEach((a, i) => {
       const hat = p.hat(a.id)
       const verborgen = a.geheim && !hat
-      const el = document.createElement('div')
-      el.className = 'pass-stempel' + (hat ? ' hat' : '') + (verborgen ? ' verborgen' : '')
-      el.innerHTML = '<span class="pass-icon"></span><span class="pass-text"><span class="pass-name"></span><span class="pass-sub"></span></span>'
-      el.querySelector('.pass-icon').textContent = verborgen ? '?' : a.icon
-      el.querySelector('.pass-name').textContent = verborgen ? 'Geheim' : a.name
-      el.querySelector('.pass-sub').textContent = verborgen ? '' : a.text
-      abz.lastElementChild.appendChild(el)
-    }
+      feld.appendChild(stempel({
+        id: a.id,
+        icon: verborgen ? '' : a.icon,
+        name: verborgen ? '?' : a.name,
+        text: verborgen ? '' : a.text,
+        ink: TINTEN[i % TINTEN.length],
+        hat,
+        verborgen,
+      }))
+    })
+    const zahl = ABZEICHEN.filter((a) => p.hat(a.id)).length
+    rechts.append(titel('Slalom'), reihe, titel(`Abzeichen · ${zahl} von ${ABZEICHEN.length}`), feld)
 
-    this.passEl.replaceChildren(kopf, erk, med, abz)
+    this.passEl.replaceChildren(links, rechts)
   }
 
   // --- Bestenliste ---------------------------------------------------------

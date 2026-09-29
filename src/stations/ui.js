@@ -4,11 +4,12 @@ import { TOUCH } from '../core/device.js'
 // Zwei Einblendungen:
 //
 // - die Einladung, die ueber einer Station schwebt, solange man davor steht:
-//   Name, ein Wort dazu und die Enter-Taste. Frosttext ohne Glas, gefasst
-//   von vier Eckmarken in der Stationsfarbe, die sich beim Erscheinen wie
-//   ein Sucher auf die Station zusammenziehen;
-// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat, aus
-//   Glas.
+//   ein Wort in der Stationsfarbe, darunter der Name und die Enter-Taste.
+//   Frosttext ohne Glas und ohne Rahmen; die Farbe allein bindet sie an die
+//   Station. Antippen laesst sich auch die Station selbst (antippen.js) –
+//   Freunde tippten am Handy auf die Huette statt auf die Pille;
+// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat: ein
+//   Register wie in der Uebersicht, Zeilen statt Karten.
 //
 // Vorher war die Einladung ein Pistenschild mit Ziffern fuer zwei Ziele.
 // Das trug, solange es nur Tasten gab; auf dem Handy gibt es keine 1 und 2,
@@ -57,8 +58,8 @@ export class StationUI {
     this.el.innerHTML = `
       ${ENTER}
       <span class="prompt-text">
-        <span class="prompt-title"></span>
         <span class="prompt-sub"></span>
+        <span class="prompt-title"></span>
       </span>
     `
     this.el.tabIndex = -1
@@ -75,15 +76,13 @@ export class StationUI {
     this.sheet.setAttribute('role', 'dialog')
     this.sheet.innerHTML = `
       <div class="sheet-head">
-        <span class="sheet-dot"></span>
-        <span class="sheet-title"></span>
-        <span class="sheet-sub"></span>
+        <span class="sheet-name"><span class="sheet-sub"></span><span class="sheet-title"></span></span>
         <button type="button" class="sheet-close" aria-label="Zurück">×</button>
       </div>
       <div class="sheet-options"></div>
       <div class="sheet-keys">${TOUCH
         ? 'Antippen zum Öffnen'
-        : '<kbd>←</kbd><kbd>→</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd>esc</kbd> zurück'}</div>
+        : '<kbd>↑</kbd><kbd>↓</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd>esc</kbd> zurück'}</div>
     `
     this.sheet.querySelector('.sheet-close').addEventListener('click', () => this.onClose?.())
     container.appendChild(this.sheet)
@@ -144,6 +143,7 @@ export class StationUI {
       b.innerHTML = `
         <span class="opt-glyph">${GLYPHS[choice.glyph] ?? ''}</span>
         <span class="opt-text"><span class="opt-label"></span><span class="opt-sub"></span></span>
+        <span class="opt-dots" aria-hidden="true"></span>
         <span class="opt-go" aria-hidden="true">${TOUCH ? '↗' : '⏎'}</span>
       `
       b.querySelector('.opt-label').textContent = choice.label

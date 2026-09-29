@@ -200,14 +200,37 @@ export function createTimeClock() {
   group.add(slip)
 
   let stamp = 0
+  // Herangezoomt rast die Zeit: die Zeiger drehen auf, und das Gehaeuse
+  // scheppert zweimal wie ein Wecker – brrrt, brrrt –, dann laeuft sie
+  // wieder normal. Dauerhaft rasseln machte nervoes (Julian, 29.09.). Die
+  // Geschwindigkeit zieht weich nach, damit die Zeiger nicht springen.
+  const KLINGELN = [[0.05, 0.5], [0.75, 1.2]]
+  const RASEN = 1.6   // s
+  let wecker = -1     // s seit dem Heranzoomen, -1 = nicht herangezoomt
+  let tempo = 0.5     // rad/s des Minutenzeigers
+  let winkel = 0
+  let wackeln = 0
 
   group.userData.stamp = () => { stamp = 1.6 }
+  group.userData.select = (i) => {
+    if (i === null) wecker = -1
+    else if (wecker < 0) wecker = 0
+  }
+  group.userData.press = () => { stamp = 1.6 }
 
   group.userData.animate = (t, dt = 0) => {
     // Die Uhr laeuft schneller als die Wirklichkeit. Eine echte Minute pro
     // Minute waere von aussen Stillstand; so sieht man ihr beim Laufen zu.
-    minPivot.rotation.z = -t * 0.5
-    hourPivot.rotation.z = -t * 0.5 / 12
+    if (wecker >= 0) wecker += dt
+    const rasen = wecker >= 0 && wecker < RASEN
+    const klingelt = KLINGELN.some(([a, b]) => wecker >= a && wecker < b)
+    tempo += ((rasen ? 16 : 0.5) - tempo) * (1 - Math.exp(-(rasen ? 5 : 2) * dt))
+    winkel += tempo * dt
+    minPivot.rotation.z = -winkel
+    hourPivot.rotation.z = -winkel / 12
+    wackeln += ((klingelt ? 1 : 0) - wackeln) * (1 - Math.exp(-30 * dt))
+    face.rotation.z = Math.sin(t * 46) * 0.05 * wackeln
+    face.position.x = Math.sin(t * 61) * 0.012 * wackeln
 
     if (stamp > 0) {
       stamp = Math.max(0, stamp - dt)

@@ -238,10 +238,10 @@ Strang zu Ende fahren kann.
 | Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
 | Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |
 | Abkürzung (Felstunnel) | −34, 15 | Kurzlink-Fenster |
-| Arbeitszeitrechner (Stechuhr) | −41, 13 | stempelt, dann zeit.veerka.mp |
-| Packlisten-App (Depot) | −48, 0 | packliste.veerka.mp |
+| Arbeitszeitrechner (Stechuhr) | −41, 13 | zoomt, Zeiger rasen; öffnen stempelt, dann zeit.veerka.mp |
+| Packlisten-App (Depot) | −48, 0 | zoomt, Deckel klappt, Inhalt hüpft; packliste.veerka.mp |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
-| Löschzug (Feuerwehrauto) | −15, 43 | jf.veerka.mp (am Waldrand, eigene Baumgruppen) |
+| Löschzug (Feuerwehrauto) | −15, 43 | zoomt, Blaulicht an; „Ausrücken“ fährt los und wechselt im selben Tab zu jf.veerka.mp/?einfahrt=1 (am Waldrand, eigene Baumgruppen) |
 | Gefrorene Quelle (Eisfall am See) | −56,2, 27,7 (Fuß) | broadcast.veerka.mp, zeigt die laufende Sendung (4a⁵) |
 
 Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
@@ -459,6 +459,37 @@ Mesh – die Werkstatt führt als `object` nur die Bank. Ein Tipp ist unter
 10 px und 450 ms, sonst ist es der Daumenstick. Ob getippt werden darf,
 zählt beim Drücken, weil `main.js` beim Drücken eine offene Auswahl
 schließt. Am Rechner wird der Zeiger über der Station zur Hand.
+
+**Jede Station zoomt (Zweig `stationen-mit-auftritt`, 29.09.).** Stechuhr,
+Depot und Löschzug öffneten ihre Seite sofort – wer im Tal gelernt hat,
+dass man heranfährt und etwas auslöst, stand plötzlich woanders. Jetzt
+haben sie eine Auswahl mit **einem** Ziel (`.station-sheet.einzeln`:
+schmaler, ohne ←/→) und führen beim Heranzoomen etwas vor, über
+`object.userData.select`: die Uhr rast und scheppert, im Depot klappt der
+Deckel zu und weit auf, dann hüpft der Inhalt der Reihe nach (beim Öffnen
+springt der Rucksack), der Löschzug schaltet Blaulicht und Scheinwerfer an
+(vorher blinkte er immer – ein Auto, das schon blinkt, kann nicht
+aufwachen). Uhr und Depot spielen ihr Stück **einmal** (die Uhr zweimal
+„brrrt“, dann läuft sie normal) – in Schleife machte es nervös. Die
+Lichthöfe sind additive Sprites, keine Lichtquellen. „Ausrücken“ lässt ihn
+0,8 m zurücksetzen – die Nase schwenkt dabei schon zur Lücke hin
+(Radius 5 m; zur Kamera hin ergab Rangieren keinen Sinn) – und dann in einem
+flachen Linksbogen (Radius 6 m, 29°) auf die Lücke zwischen den Tannen
+hinter ihm zufahren – geradeaus fuhr er zuerst durch eine Tanne, danach in einer
+Rechtskurve zur Kamera; Julian wollte die Lücke (30.09.), Ausrichtung
+unverändert. Gegen die ausgelesenen Stämme gerechnet bleibt jede Ecke
+≥ 2,7 m von allen anderen weg (so nah wie geparkt); durch die Lücke selbst muss er nicht passen.
+Dabei schließt eine Blende (`.ausfahrt`) in der Farbe, in der die
+Lernwerkstatt aufwacht, und die hängt vom Farbschema ab: dunkel ist ihr
+erstes Bild `#080b14`, hell schon die unscharfe Straße am Tag (erste Bilder
+gemessen) – deshalb hell ein Verlauf aus diesem Bild, in zehn Streifen
+gemittelt. Die Lernwerkstatt folgt nur `prefers-color-scheme`. Nach 1,9 s
+geht es **im selben Tab** zu `jf.veerka.mp/?einfahrt=1`.
+Ein neuer Tab zeigte weder Anfahren noch Übergang. `location.href` braucht
+keine Nutzergeste, die Verzögerung ist also auch in Safari erlaubt. Kommt
+man per Zurück aus dem bfcache, setzt `pageshow` Auto und Blende zurück.
+Die Packliste klebt jetzt innen am Deckel, der an einem Scharnier hängt:
+vorher zeigte sie vom Bild weg, was erst herangezoomt auffiel.
 
 **Frost statt Pillen (29.09., als Zweig `oberflaeche-ohne-pillen` gebaut und
 per `--no-ff` in `main` geführt).** Alles,

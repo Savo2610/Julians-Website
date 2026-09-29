@@ -2,8 +2,9 @@ import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 
 // Kleines Feuerwehrauto, das im Tal steht: Kabine, Geraeteaufbau mit Rollos,
-// Drehleiter auf dem Dach, Blaulichter. Bewusst spielzeughaft proportioniert –
-// kurz, hoch und rund, nicht wie ein echtes Fahrzeug.
+// Drehleiter auf dem Dach, Blaulichter und Scheinwerfer. Bewusst
+// spielzeughaft proportioniert – kurz, hoch und rund, nicht wie ein echtes
+// Fahrzeug.
 
 const RED = 0xc8352c
 const RED_DARK = 0x9c261f
@@ -12,6 +13,32 @@ const GLASS = 0x9fc4d8
 const TIRE = 0x22262b
 const CHROME = 0xb8c0c8
 const SILVER = 0x9aa3ac
+
+// Ein weicher Lichtfleck um eine Lampe. Additiv und ohne Tiefe, damit er
+// auch am Tag leuchtet; eine echte Lichtquelle muesste jedes Material im
+// Tal neu uebersetzen, nur weil ein Auto blinkt.
+let haloTex = null
+function halo(color, size, position) {
+  if (!haloTex) {
+    const c = document.createElement('canvas')
+    c.width = c.height = 64
+    const g = c.getContext('2d')
+    const r = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+    r.addColorStop(0, 'rgba(255,255,255,1)')
+    r.addColorStop(0.35, 'rgba(255,255,255,.45)')
+    r.addColorStop(1, 'rgba(255,255,255,0)')
+    g.fillStyle = r
+    g.fillRect(0, 0, 64, 64)
+    haloTex = new THREE.CanvasTexture(c)
+  }
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: haloTex, color, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }))
+  s.scale.setScalar(size)
+  s.position.set(...position)
+  return s
+}
 
 export function createFireTruck() {
   const group = new THREE.Group()
@@ -122,21 +149,36 @@ export function createFireTruck() {
     group.add(side)
   }
 
-  // --- Blaulichter ---------------------------------------------------------
+  // --- Blaulichter und Scheinwerfer ---------------------------------------
+  // Sie sind aus, solange niemand vor dem Fahrzeug steht. Vorher blinkten sie
+  // immer gemaechlich vor sich hin; jetzt ist das Anschalten das, was beim
+  // Heranzoomen passiert – ein Fahrzeug, das schon blinkt, kann nicht mehr
+  // aufwachen.
   const beacons = []
   for (const sx of [-0.42, 0.42]) {
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x3f7de8,
+      color: 0x2a4f94,
       emissive: new THREE.Color(0x3f7de8),
-      emissiveIntensity: 0.8,
+      emissiveIntensity: 0.05,
       roughness: 0.25,
       flatShading: true,
     })
     const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.13, 8), mat)
     beacon.position.set(sx, 1.66, L / 2 - 0.62)
     group.add(beacon)
-    beacons.push(mat)
+    beacons.push({ mat, halo: halo(0x5b95ff, 1.8, [sx, 1.7, L / 2 - 0.62]) })
   }
+  const headMat = new THREE.MeshStandardMaterial({
+    color: 0xd9dde2, emissive: new THREE.Color(0xfff1c8), emissiveIntensity: 0, roughness: 0.3,
+  })
+  const heads = []
+  for (const sx of [-1, 1]) {
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.15, 0.05), headMat)
+    lamp.position.set(sx * 0.56, 0.98, L / 2 + 0.05)
+    group.add(lamp)
+    heads.push(halo(0xffe7b0, 0.9, [sx * 0.56, 0.98, L / 2 + 0.16]))
+  }
+  for (const h of [...beacons.map((b) => b.halo), ...heads]) group.add(h)
 
   // Schnee auf Dach und Leiter – das Fahrzeug steht schon eine Weile.
   const snowMat = new THREE.MeshStandardMaterial({ color: 0xf7fbff, roughness: 0.95, flatShading: true })
@@ -144,11 +186,88 @@ export function createFireTruck() {
   roofSnow.position.set(0, 1.68, -0.62)
   group.add(roofSnow)
 
-  group.userData.animate = (t) => {
-    // Wechselblinker, aber sehr gemaechlich – niemand hat es eilig.
-    const phase = Math.sin(t * 3.4)
-    beacons[0].emissiveIntensity = phase > 0 ? 2.8 : 0.25
-    beacons[1].emissiveIntensity = phase > 0 ? 0.25 : 2.8
+  let an = false
+  let licht = 0       // 0 aus … 1 an, weich nachgezogen
+  let fahrt = null    // { t, boden, x0, z0, hoch } solange es ausrueckt
+
+  // Die Auswahl hat nur ein Ziel; gewaehlt heisst herangezoomt.
+  group.userData.select = (i) => { an = i !== null }
+
+  // Losfahren. Hinter ihm, schraeg links vor der Nase, ist eine Luecke
+  // zwischen zwei Tannen, gut drei Meter entfernt; da will er hindurch.
+  // Erst setzt er 0,8 m zurueck und schlaegt dabei so ein, dass die Nase
+  // schon zur Luecke schwenkt (Radius 5 m), dann faehrt er einen flachen
+  // Linksbogen (Radius 6 m, 29 Grad) und zeigt genau auf ihre Mitte.
+  // Beim ersten Versuch schwenkte die Nase beim Zuruecksetzen zur Kamera,
+  // also weg vom Ziel – dann ergibt Rangieren keinen Sinn (Julian, 30.09.).
+  // Gegen die ausgelesenen Staemme gerechnet: allen anderen Tannen kommt
+  // keine Ecke naeher als 2,7 m, so nah wie geparkt. Durch die Luecke
+  // selbst muss er nicht passen, die Blende ist vorher zu.
+  // Frueher fuhr er geradeaus mitten durch die Tanne vor ihm.
+  // boden(x, z) ist die Gelaendehoehe, damit er nicht durch den Hang faehrt.
+  // kruemmung > 0 dreht nach rechts (die Gierung nimmt ab), < 0 nach links.
+  const RUECK = { weg: 0.8, dauer: 0.6, kruemmung: -1 / 5 }
+  const KURVE = { kruemmung: -1 / 6, winkel: 0.5, start: 0.7, beschl: 3.5 }
+  group.userData.losfahren = (boden) => {
+    if (fahrt) return
+    an = true
+    const { x, z } = group.position
+    fahrt = {
+      t: 0, boden, x0: x, z0: z, h0: group.rotation.y,
+      hoch: group.position.y - boden(x, z),
+      x, z, h: group.rotation.y, zurueck: 0, vor: 0, gedreht: 0,
+    }
+  }
+  // Zurueck an den Platz – wenn der Browser die Seite aus dem Verlauf
+  // wiederholt, stuende er sonst zwischen den Tannen.
+  group.userData.zurueck = () => {
+    if (!fahrt) return
+    group.position.set(fahrt.x0, fahrt.boden(fahrt.x0, fahrt.z0) + fahrt.hoch, fahrt.z0)
+    group.rotation.y = fahrt.h0
+    fahrt = null
+  }
+  // Ein Stueck Weg; vorwaerts (ds > 0) oder rueckwaerts, mit Einschlag.
+  const rollen = (ds, kruemmung) => {
+    const n = Math.ceil(Math.abs(ds) / 0.02)
+    for (let i = 0; i < n; i++) {
+      const d = ds / n
+      fahrt.x += Math.sin(fahrt.h) * d
+      fahrt.z += Math.cos(fahrt.h) * d
+      fahrt.h -= Math.abs(d) * kruemmung(Math.abs(d))
+    }
+  }
+
+  group.userData.animate = (t, dt = 0) => {
+    licht += ((an ? 1 : 0) - licht) * (1 - Math.exp(-8 * dt))
+    // Wechselblinker, schnell wie im Einsatz.
+    const phase = Math.sin(t * 11) > 0
+    beacons.forEach((b, i) => {
+      const hell = (i === 0) === phase ? 1 : 0.12
+      b.mat.emissiveIntensity = 0.05 + licht * hell * 3.2
+      b.halo.material.opacity = licht * hell * 0.85
+    })
+    headMat.emissiveIntensity = licht * 2.4
+    for (const h of heads) h.material.opacity = licht * 0.7
+
+    if (fahrt) {
+      const f = fahrt
+      f.t += dt
+      // Rueckwaerts weich an- und abrollen, kurz stehen, dann Gas.
+      const u = Math.min(1, f.t / RUECK.dauer)
+      const zurueck = RUECK.weg * u * u * (3 - 2 * u)
+      rollen(-(zurueck - f.zurueck), () => RUECK.kruemmung)
+      f.zurueck = zurueck
+      const tv = Math.max(0, f.t - KURVE.start)
+      const vor = 0.5 * KURVE.beschl * tv * tv
+      rollen(vor - f.vor, (d) => {
+        if (f.gedreht >= KURVE.winkel) return 0
+        f.gedreht += d * Math.abs(KURVE.kruemmung)
+        return KURVE.kruemmung
+      })
+      f.vor = vor
+      group.position.set(f.x, f.boden(f.x, f.z) + f.hoch, f.z)
+      group.rotation.y = f.h
+    }
   }
 
   group.userData.footprint = { width: W + 0.5, depth: L + 0.4 }

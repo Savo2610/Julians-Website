@@ -476,9 +476,10 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
   45 m, verlegt wie ein Rohr: zwei Geraden mit gerundetem Knick an Tunnel,
   Bank, Seeufer und Quellrahmen vorbei, gegen die ausgelesenen Hindernisse
   geprüft; der Schnee darauf dagegen ungleich, mit Klumpen daneben), der Mast funkt 2,2 s
-  (`tower.userData.funken`). Die Kamera zoomt nur zum Einwerfen ans Rohr
-  und ist zurück beim Fahrer, sobald der Maulwurf losläuft – ihm bis zum
-  Mast zu folgen war Julian zu viel. Die Spur ist
+  (`tower.userData.funken`). Die Kamera zoomt zum Einwerfen ans Rohr und
+  folgt dann dem Maulwurf mit 28 m Abstand bis zum Mast (22 m, solange er
+  funkt). Erst folgte sie mit 19 m, dann gar nicht; zu nah war das Problem,
+  nicht das Folgen. Die Spur ist
   **nicht** in die Schneetextur gestempelt – die hält für immer –, sondern
   ein InstancedMesh aus Hügelchen, die nach 3,2 s in 2,4 s wieder zutauen.
   Kein eigener Kopf-Buckel: der sah am Rohr aus wie ein Schneeball;
@@ -486,13 +487,12 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
   steht sie wieder offen.
 - **ein Bild dabei:** das erste geglückte Bild (kein SVG) kommt im Ereignis
   als `bild` mit, wird sofort im Browser gelesen (`feed.vorbereiten`), und
-  statt zum Fahrer schwenkt die Kamera vom Rohr zur Quelle. Kommt der
-  Maulwurf an, steht es 3,5 s ganz aufgetaut im Eis (`feed.vorschau`,
+  kommt der Maulwurf an, schwenkt die Kamera vom Mast zur Quelle; dort steht es 3,5 s ganz aufgetaut im Eis (`feed.vorschau`,
   `fall.userData.setKlar`), die laufende Sendung ist solange angehalten
   und kommt danach zurück. Es geht nie an einen Server – sehen kann es nur,
   wer es eingeworfen hat. Kann der Browser das Bild nicht lesen (HEIC in
   Chrome) oder ist es beim Loslaufen des Maulwurfs noch nicht fertig, fällt
-  die Vorschau samt Schwenk aus.
+  die Vorschau samt Schwenk zur Quelle aus.
 Esc, Enter, `M` oder Tippen holen die Kamera schon während des Einwerfens
 zurück. Mit `prefers-reduced-motion` keine Kamerafahrt.
 

@@ -472,12 +472,13 @@ springt der Rucksack), der Löschzug schaltet Blaulicht und Scheinwerfer an
 aufwachen). Uhr und Depot spielen ihr Stück **einmal** (die Uhr zweimal
 „brrrt“, dann läuft sie normal) – in Schleife machte es nervös. Die
 Lichthöfe sind additive Sprites, keine Lichtquellen. „Ausrücken“ lässt ihn
-0,8 m zurücksetzen (die Nase schwenkt dabei zur Kamera) und dann in einer
-Linkskurve (Radius 3 m, 52°) in die Lücke zwischen den Tannen hinter ihm
-fahren – geradeaus fuhr er zuerst durch eine Tanne, danach in einer
+0,8 m zurücksetzen – die Nase schwenkt dabei schon zur Lücke hin
+(Radius 5 m; zur Kamera hin ergab Rangieren keinen Sinn) – und dann in einem
+flachen Linksbogen (Radius 6 m, 29°) auf die Lücke zwischen den Tannen
+hinter ihm zufahren – geradeaus fuhr er zuerst durch eine Tanne, danach in einer
 Rechtskurve zur Kamera; Julian wollte die Lücke (30.09.), Ausrichtung
 unverändert. Gegen die ausgelesenen Stämme gerechnet bleibt jede Ecke
-≥ 2,5 m von allen anderen weg; durch die Lücke selbst muss er nicht passen.
+≥ 2,7 m von allen anderen weg (so nah wie geparkt); durch die Lücke selbst muss er nicht passen.
 Dabei schließt eine Blende (`.ausfahrt`) in der Farbe, in der die
 Lernwerkstatt aufwacht, und die hängt vom Farbschema ab: dunkel ist ihr
 erstes Bild `#080b14`, hell schon die unscharfe Straße am Tag (erste Bilder

@@ -196,18 +196,18 @@ export function createFireTruck() {
   // Losfahren. Hinter ihm, schraeg links vor der Nase, ist eine Luecke
   // zwischen zwei Tannen, gut drei Meter entfernt; da will er hindurch.
   // Erst setzt er 0,8 m zurueck und schlaegt dabei so ein, dass die Nase
-  // zur Kamera schwenkt – das schafft Platz –, dann faehrt er eine
-  // Linkskurve (Radius 3 m, 52 Grad) genau auf die Mitte der Luecke.
+  // schon zur Luecke schwenkt (Radius 5 m), dann faehrt er einen flachen
+  // Linksbogen (Radius 6 m, 29 Grad) und zeigt genau auf ihre Mitte.
+  // Beim ersten Versuch schwenkte die Nase beim Zuruecksetzen zur Kamera,
+  // also weg vom Ziel – dann ergibt Rangieren keinen Sinn (Julian, 30.09.).
   // Gegen die ausgelesenen Staemme gerechnet: allen anderen Tannen kommt
-  // keine Ecke naeher als 2,5 m, geparkt sind es 2,7. Durch die Luecke
+  // keine Ecke naeher als 2,7 m, so nah wie geparkt. Durch die Luecke
   // selbst muss er nicht passen, die Blende ist vorher zu.
-  // Frueher fuhr er geradeaus mitten durch die Tanne vor ihm, dann in einer
-  // Rechtskurve zur Kamera; in den Wald hinein liest es sich mehr nach
-  // Ausfahrt (Julian, 30.09.).
+  // Frueher fuhr er geradeaus mitten durch die Tanne vor ihm.
   // boden(x, z) ist die Gelaendehoehe, damit er nicht durch den Hang faehrt.
   // kruemmung > 0 dreht nach rechts (die Gierung nimmt ab), < 0 nach links.
-  const RUECK = { weg: 0.8, dauer: 0.6, kruemmung: 1 / 3.5 }
-  const KURVE = { kruemmung: -1 / 3, winkel: 0.9, start: 0.7, beschl: 3.5 }
+  const RUECK = { weg: 0.8, dauer: 0.6, kruemmung: -1 / 5 }
+  const KURVE = { kruemmung: -1 / 6, winkel: 0.5, start: 0.7, beschl: 3.5 }
   group.userData.losfahren = (boden) => {
     if (fahrt) return
     an = true

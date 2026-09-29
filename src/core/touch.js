@@ -75,7 +75,7 @@ export class TouchControls {
     document.body.appendChild(this.map)
 
     this.hint = document.createElement('div')
-    this.hint.className = 'glass touch-hint'
+    this.hint.className = 'frost touch-hint'
     this.hint.innerHTML = '<span class="touch-hint-dot"></span>Daumen auf den Schnee und ziehen'
     document.body.appendChild(this.hint)
 

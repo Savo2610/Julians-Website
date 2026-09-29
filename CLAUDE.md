@@ -36,8 +36,10 @@ Das Wichtigste in Kürze:
   ausgekippte Spielzeugkiste.
 - Minimale Oberfläche: keine Leiste. Einzige Menüs (alle in `src/menu/`): die
   Übersicht hinter `M` (Links, Talkarte, Pistenpass, Bestenliste), die zwei
-  Hinweispillen (für Nicht-Spieler gewünscht) und die Abzeichen-Pille oben
-  links. Hinweise gehen von selbst. Ohne WebGL oder JavaScript steht statt
+  Hinweise unten (für Nicht-Spieler gewünscht) und die Abzeichen-Meldung oben
+  links. Hinweise gehen von selbst. Was nur kurz über dem Tal steht, ist
+  **Frosttext** ohne Behälter (`.frost`), keine Pille; Glas nur für das,
+  was man bedient. Ohne WebGL oder JavaScript steht statt
   des Tals eine Linkliste aus denselben Kacheln (`menu/kacheln.js`).
 - Pistenpass: stiller Erkundungsstand, Slalom-Medaillen, acht schwere
   Abzeichen. **Nie** etwas fürs Hochladen, Wallet, Kurzlink oder Bezahlen.

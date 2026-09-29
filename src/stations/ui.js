@@ -1,11 +1,16 @@
 import * as THREE from 'three'
 import { TOUCH } from '../core/device.js'
 
-// Zwei Einblendungen, beide aus demselben Glas:
+// Zwei Einblendungen:
 //
 // - die Einladung, die ueber einer Station schwebt, solange man davor steht:
-//   Name, ein Wort dazu und die Enter-Taste;
-// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat.
+//   ein Wort in der Stationsfarbe, darunter der Name und die Enter-Taste.
+//   Frosttext ohne Glas und ohne Rahmen; die Farbe allein bindet sie an die
+//   Station. Antippen laesst sich auch die Station selbst (antippen.js) –
+//   Freunde tippten am Handy auf die Huette statt auf die Pille;
+// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat: die
+//   Ziele nebeneinander, damit ←/→ und A/D zum Bild passen; hinter dem
+//   gewaehlten glimmt ein Schein in seiner Farbe.
 //
 // Vorher war die Einladung ein Pistenschild mit Ziffern fuer zwei Ziele.
 // Das trug, solange es nur Tasten gab; auf dem Handy gibt es keine 1 und 2,
@@ -13,8 +18,8 @@ import { TOUCH } from '../core/device.js'
 // Enter lernen musste. Jetzt ist es ueberall dieselbe Taste – oder derselbe
 // Finger.
 //
-// Das Glas ist bewusst hell getoent: der Hintergrund ist fast immer Schnee,
-// und klares Glas auf Weiss ist unsichtbar.
+// Das Glas der Auswahl ist bewusst hell getoent: der Hintergrund ist fast
+// immer Schnee, und klares Glas auf Weiss ist unsichtbar.
 
 const ENTER = TOUCH ? '' : '<kbd class="k-enter" aria-hidden="true">⏎</kbd>'
 
@@ -50,12 +55,12 @@ export class StationUI {
 
     this.el = document.createElement('button')
     this.el.type = 'button'
-    this.el.className = 'glass station-prompt'
+    this.el.className = 'frost station-prompt'
     this.el.innerHTML = `
       ${ENTER}
       <span class="prompt-text">
-        <span class="prompt-title"></span>
         <span class="prompt-sub"></span>
+        <span class="prompt-title"></span>
       </span>
     `
     this.el.tabIndex = -1
@@ -72,9 +77,7 @@ export class StationUI {
     this.sheet.setAttribute('role', 'dialog')
     this.sheet.innerHTML = `
       <div class="sheet-head">
-        <span class="sheet-dot"></span>
-        <span class="sheet-title"></span>
-        <span class="sheet-sub"></span>
+        <span class="sheet-name"><span class="sheet-sub"></span><span class="sheet-title"></span></span>
         <button type="button" class="sheet-close" aria-label="Zurück">×</button>
       </div>
       <div class="sheet-options"></div>

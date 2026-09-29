@@ -86,10 +86,10 @@ hinein.
 der Ecke. Die Steuerung steht als Tastenstempel im Schnee
 (`src/world/snow-writing.js`). Was sonst eingeblendet wird, verschwindet von
 selbst. Zwei ausdrücklich gewünschte Ausnahmen (26.09.): die **Übersicht**
-hinter `M` (Abschnitt 4a′) und die beiden **Hinweispillen** unten
+hinter `M` (Abschnitt 4a′) und die beiden **Hinweise** unten
 (`menu/hints.js`) – beide sind für Besucher, die nicht spielen wollen
 oder mit WASD nicht zurechtkommen (beobachtet: vor allem Ältere).
-Dazu seit 26.09. die Pistenpass-Pille oben links (Abschnitt 4a″), die
+Dazu seit 26.09. die Pistenpass-Meldung oben links (Abschnitt 4a″), die
 ebenfalls von selbst geht – nur für Medaillen und Abzeichen, nicht für Orte.
 
 ---
@@ -101,7 +101,7 @@ index.html           Canvas, Ladebalken, Markup der drei Fenster, Aussehen der L
 src/
   main.js            Loop, Renderer, window.__ski (Debug-Zugriff)
   config.js          Alle Stellschrauben: WORLD, SKIER, CAMERA, CHASE, TRICK, COLORS
-  style.css          Glas, Einladung, Auswahl, Übersicht, Pillen, Handymodus
+  style.css          Frost, Glas, Einladung, Auswahl, Übersicht, Handymodus
   core/              Werkzeug ohne Spielwissen: geometry.js (assemble,
                      vertexColorMaterial), input.js, touch.js (Handymodus),
                      device.js (TOUCH), noise.js, rng.js, point-scale.js
@@ -148,8 +148,8 @@ src/
     map-menu.js      Übersicht (M): Links, Talkarte, Pistenpass, Bestenliste
     kacheln.js       Die Link-Kacheln – reine Daten, auch für die Linkliste
     linkliste.js     Linkliste ohne Tal (kein WebGL, kein JavaScript)
-    hints.js         Hinweispillen: Start-Hinweis, Festgefahren-Erkennung, R
-    pistenpass.js    Erkundet, Medaillen, Abzeichen; Speicher und Pille
+    hints.js         Hinweise unten: Start-Hinweis, Festgefahren-Erkennung, R
+    pistenpass.js    Erkundet, Medaillen, Abzeichen; Speicher und Meldung
     pass-regeln.js   Wann was im Pistenpass fällt
     bestenliste.js   Slalom-Bestenliste: Marken holen, eintragen, anzeigen
   dialogs/           Solana, Briefkasten, Kurzlink – siehe Abschnitt 7
@@ -449,13 +449,63 @@ Leertaste springen (im Park Tricks), Enter/E benutzen, `M` Übersicht,
 `R` zurück zum Start, `Tab` Reiter der Übersicht (Links, Talkarte, Pistenpass, Bestenliste), Esc/Backspace zurück.
 
 **Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
-schwebt eine Glasblase mit Name, einem Wort und dem ⏎-Zeichen.
+schwebt die Einladung: oben der Hinweis als kleines Wort in der
+Stationsfarbe, darunter der Name, davor das ⏎-Zeichen (am Handy statt dessen
+ein › hinter dem Namen) – Frosttext ohne Rahmen. **Die Station selbst ist
+antippbar** (`stations/antippen.js`): Beobachtet wurde, dass Freunde am
+Handy auf die Hütte tippten statt auf die Pille. Getroffen wird eine Kugel
+(3,4 m, 1,8 m über dem Boden) um die Station, vor der man steht, nicht ein
+Mesh – die Werkstatt führt als `object` nur die Bank. Ein Tipp ist unter
+10 px und 450 ms, sonst ist es der Daumenstick. Ob getippt werden darf,
+zählt beim Drücken, weil `main.js` beim Drücken eine offene Auswahl
+schließt. Am Rechner wird der Zeiger über der Station zur Hand.
+
+**Frost statt Pillen (29.09., als Zweig `oberflaeche-ohne-pillen` gebaut und
+per `--no-ff` in `main` geführt).** Alles,
+was nur kurz über dem Tal steht – Einladung, Hinweise unten, Zeitnahme,
+Trickmeldung, Abzeichen, Bestenlisten-Angebot –, hat keinen Behälter mehr:
+Schrift mit hellem Hof (`text-shadow`) und dahinter ein Hauch
+(`.frost::before`: `backdrop-filter` mit radialer `mask-image`), der ohne
+Kante ausläuft. Der Hof allein trug auf Schnee, über Tannen nicht. Vorher
+waren es Glaspillen, und jede sah aus wie ein Knopf. Glas bleibt für das,
+was man bedient (Auswahl, Übersicht, Fenster, Handyknöpfe); die Reiter der
+Übersicht sind Wörter mit Strich statt Pillen-Umschalter. Fünf Entwürfe
+standen zur Wahl (Frosttext, Eisscheibe, Wegweiser, Sucher, Nebelrand);
+genommen: Frosttext mit Nebel als Hauch. Für die Einladung standen danach
+Sucher-Ecken, Pistenstange, Leitlinie und Farbwort zur Wahl; genommen das
+Farbwort, der Sucher war zu technisch.
+
+**Register, Leuchtfeld und Stempel (29.09., derselbe Zweig).** Was man
+bedient, bleibt Glas, aber ohne Kärtchen darin. Regel für die ganze Seite:
+**ein Strich heißt schreiben, ein farbiger Schein heißt klicken.** Die
+**Auswahl** an einer Station stellt die Ziele nebeneinander (passt zu ←/→
+und A/D); hinter dem gewählten glimmt ein Schein in seiner Farbe, die
+anderen sind grau. Am Handy sind alle farbig und der Schein kommt unter
+dem Finger – grau sähe dort gesperrt aus. Die **Links** der Übersicht und
+die **Talkarte** sind Register wie die Legende einer Pistenkarte: Gruppen
+beginnen mit einem Strich in ihrer Wegfarbe, die gewählte Zeile glimmt.
+Verworfen: erst gepunktete Führungslinien (wirkten wie Eingabefelder),
+dann die Auswahl untereinander (man erwartet W/S, die aber hinausführen),
+und ein Karussell (Ziele wandern, Maus-Zeigen würde sie wegdrehen, am
+Handy zwei Tipps, und nur die Skikasse hat drei Ziele). Der **Pistenpass** ist ein
+Stempelheft (Orte als Abhakliste, Medaillen und Abzeichen als runde
+Farbstempel, schief nach einem Hash der Kennung, damit nichts wackelt).
+Die **Fenster** (Solana, Upload, Kurzlink, Bestenliste) haben ein Zeichen
+statt der Farbkachel, oben den Ort im Tal, Felder nur mit Unterstrich, und
+die Hauptaktion ist „Senden →“ auf einem Schein in der Fensterfarbe, grau,
+solange sie nicht geht. Entwurf „An den Geräten“ (Beschriftung über jedem Terminal) war
+beliebt, scheiterte aber an Kontakt (schräg, Telefon und Fernglas
+verdeckt), Skikasse (Rundflug hat kein Gerät) und Drohne.
+**Falle:** Unter `opacity` 1 schaltet der Browser die Unschärfe des Hauchs
+ab (das Element wird zur Backdrop Root). Deshalb atmet der Start-Hinweis
+über die Schriftfarbe, und eine tote Station dimmt nur ihren Text. Beim
+Ein- und Ausblenden fehlt der Hauch darum kurz – bisher unauffällig.
 
 - Station mit **einem Ziel**: Enter öffnet es sofort.
 - Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
   LinkedIn/GitHub, Kontakt: Signal/Instagram): Enter **zoomt heran**. Der Fahrer bleibt stehen
-  (`input.locked`), unten klappt eine Glas-Auswahl auf, ←/→ (auch A/D)
-  wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
+  (`input.locked`), unten klappt die Auswahl auf, die Ziele nebeneinander,
+  ←/→ (auch A/D) wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
   gehen weiterhin direkt. Das 3D-Objekt zeigt die Wahl mit: das gewählte
   Terminal bzw. der Bildschirm leuchtet und hebt sich (`userData.select`),
   beim Öffnen blitzt es (`userData.press`), an der Kasse schiebt das Terminal
@@ -539,7 +589,7 @@ Die Tafel ist eine Station (`id: 'talplan'`, `map: base`). **`M` überall**
   (Stationen, dann Orte: Start, Gipfel, Funpark, Hütte, See).
 - *Fuß*: die ganze Steuerung.
 
-Pfeiltasten gehen im Kachelraster räumlich (nächste Kachel in Richtung,
+Pfeiltasten gehen im Register räumlich (nächste Zeile in Richtung,
 seitlicher Versatz zählt 2,5-fach). In der Karte gilt: ↑↓/←→ wählen (am Ende bleibt die Auswahl stehen — der
 Sprung nach oben passierte außerhalb des sichtbaren Teils und sah aus wie
 ein Fehler), Enter reist, Esc/M schließen; am Handy Ziel oder Pin antippen,
@@ -558,7 +608,7 @@ die Slalomzeit ist noch eingeblendet – im Lauf und 6 s nach dem Ziel
 (`race.zeitSichtbar`): dann geht es
 6 m über den Startbogen, ein laufender Lauf wird ohne Wertung abgebrochen
 (28.09., auf Ansage). Die
-Pille „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
+Hinweis „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
 Gas oder Lenkung, unter 4 m/s und keine 3 m vorangekommen) oder sich
 verfranzt hat (7 s abseits jedes Weges mit ≥ 3 Bäumen im Umkreis von 4 m),
 und geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
@@ -598,7 +648,7 @@ Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
 
 ## 4a″. Pistenpass
 
-`menu/pistenpass.js` (Listen, Speicher, Pille) und `menu/pass-regeln.js`
+`menu/pistenpass.js` (Listen, Speicher, Meldung) und `menu/pass-regeln.js`
 (wann was fällt). Dritter Reiter **Pistenpass** in der Übersicht hinter `M`.
 Speicher: `localStorage` `skiportfolio.pass`. Zurücksetzen:
 `__ski.pass.zuruecksetzen()`.
@@ -612,7 +662,7 @@ Jetzt drei Teile:
   `registry.active`), See, Gipfel, Hüttenterrasse, Funpark, Kinderland
   (auf dem Teppich), Nordabfahrt (bis unten). Ein Balken und Namensmarken,
   Drohne und Löschzug als „???“. **Keine Pille pro Ort**, nur beim letzten.
-- **Slalom-Medaillen** 4,50 / 4,20 / 3,90 (`MEDALS`), mit Pille.
+- **Slalom-Medaillen** 4,50 / 4,20 / 3,90 (`MEDALS`), mit Meldung.
 - **Abzeichen** (8): offen *Raser* (58 km/h am Speedcheck – mit gerader
   Ideallinie gemessen 59–60, 60 hätte nur ein Autopilot) und *540er*.
   Geheim, nur „?“ ohne Hinweis: 720er, Hausverbot (vier Seitenwechsel am
@@ -622,8 +672,9 @@ Jetzt drei Teile:
 Nie ein Abzeichen fürs **Benutzen** (Hochladen, Wallet, Kurzlink,
 Bezahlen) – sonst Datenmüll und Cent-Beträge für einen Stempel.
 
-Pille oben links (oben Mitte ist die Zeitnahme, unten Trick und Hinweise),
-geht nach 3 s. Die Umrechnung von Spielständen der ersten Fassung
+Meldung oben links (oben Mitte ist die Zeitnahme, unten Trick und Hinweise),
+geht nach 3 s. Am Handy rutscht sie unter die Zeit, solange die Zeitnahme
+steht – Medaillen kommen genau dann, und nebeneinander passt es nicht. Die Umrechnung von Spielständen der ersten Fassung
 (`ALT_ORTE`) ist mit beta weggefallen: auf veerka.mp beginnt jeder neu,
 `localStorage` gilt je Adresse.
 
@@ -1072,6 +1123,11 @@ Abschnitt 1, Nordabfahrt).
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
+- **Frost statt Pillen, Register, Stempel, Fenster** sind seit 29.09. in
+  `main`, vorher nur in Chrome und der Handy-Emulation geprüft. Noch in
+  Safari ansehen: `backdrop-filter` zusammen mit `mask-image` am Hauch.
+  Zurücknehmen lässt sich alles mit einem `git revert -m 1` auf den
+  Zusammenführungs-Commit.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit

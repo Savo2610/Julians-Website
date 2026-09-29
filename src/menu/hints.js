@@ -1,8 +1,8 @@
 import { TOUCH } from '../core/device.js'
 import { pathPreparation } from '../world/paths.js'
 
-// Zwei kleine Glaspillen unten in der Mitte. Beide sind Knoepfe – wer mit
-// Tasten nichts anfangen kann, klickt sie einfach an.
+// Zwei kleine Hinweise unten in der Mitte, Frosttext ohne Behaelter. Beide
+// sind Knoepfe – wer mit Tasten nichts anfangen kann, klickt sie einfach an.
 //
 // - "M  Übersicht & alle Links": beim Start. Beobachtet wurde, dass gerade
 //   aeltere Besucher mit WASD nicht zurechtkommen und dann gar nichts finden.
@@ -30,8 +30,8 @@ export class Hints {
     this.world = world
     this.onReset = onReset
 
-    this.start = this._pill(TOUCH ? null : 'M', 'Übersicht & alle Links', () => this.map.show('links'))
-    this.reset = this._pill(TOUCH ? null : 'R', 'Zurück zum Start', () => this.onReset())
+    this.start = this._hinweis(TOUCH ? null : 'M', 'Übersicht & alle Links', () => this.map.show('links'))
+    this.reset = this._hinweis(TOUCH ? null : 'R', 'Zurück zum Start', () => this.onReset())
     this.start.classList.add('hint-start')
 
     this._startDone = TOUCH
@@ -42,15 +42,15 @@ export class Hints {
     this._lost = 0
     this._clear = 0
     this._resetShown = false
-    // Nach dem Laden kurz warten, sonst erscheint die Pille unter dem
+    // Nach dem Laden kurz warten, sonst erscheint der Hinweis unter dem
     // abblendenden Ladebildschirm.
     if (!TOUCH) setTimeout(() => { if (!this._startDone) this.start.classList.add('visible') }, 1400)
   }
 
-  _pill(key, text, onClick) {
+  _hinweis(key, text, onClick) {
     const b = document.createElement('button')
     b.type = 'button'
-    b.className = 'glass hint-pill'
+    b.className = 'frost hinweis'
     b.tabIndex = -1
     b.innerHTML = `${key ? `<kbd>${key}</kbd>` : ''}<span></span>`
     b.querySelector('span').textContent = text
@@ -76,7 +76,7 @@ export class Hints {
     if (on === this._resetShown) return
     this._resetShown = on
     this.reset.classList.toggle('visible', on)
-    // Beide gleichzeitig waeren zwei Pillen uebereinander; der Rueckweg ist
+    // Beide gleichzeitig waeren zwei Hinweise uebereinander; der Rueckweg ist
     // dann die dringendere Nachricht.
     if (!this._startDone) this.start.classList.toggle('visible', !on)
   }

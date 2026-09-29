@@ -118,7 +118,56 @@ kbd {
 }
 kbd.k-enter { font-size: 13px; min-width: 28px; }
 
-/* --- Einladung an der Station -------------------------------------------- */
+/* --- Frost -----------------------------------------------------------------
+   Alles, was nur kurz ueber dem Tal steht – Einladung, Hinweise, Zeitnahme,
+   Meldungen –, hat keinen Behaelter: Schrift mit hellem Hof, dahinter ein
+   Hauch, der das Bild weich beschlagen laesst und ohne Kante auslaeuft.
+   Vorher waren es vier Pillen aus Glas, und jede sah aus wie ein Knopf,
+   auch wo man nichts druecken soll. Der Hof allein traegt auf Schnee, ueber
+   Tannen und Fels nicht; dafuer ist der Hauch da. Das Glas bleibt fuer das,
+   was man wirklich bedient: Auswahl, Uebersicht, Fenster. */
+
+.frost {
+  --halo: 0 0 5px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.85), 0 0 26px rgba(255, 255, 255, 0.6);
+  color: #1b2a3a;
+  text-shadow: var(--halo);
+  isolation: isolate;
+}
+.frost::before {
+  content: '';
+  position: absolute;
+  inset: -16px -30px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  -webkit-backdrop-filter: blur(10px) brightness(1.08) saturate(1.15);
+  backdrop-filter: blur(10px) brightness(1.08) saturate(1.15);
+  -webkit-mask-image: radial-gradient(closest-side, #000 50%, transparent);
+  mask-image: radial-gradient(closest-side, #000 50%, transparent);
+  transition: background 0.2s ease;
+}
+button.frost:hover::before { background: radial-gradient(closest-side, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)); }
+/* Tasten als duenn umrandete Kappen: der weisse Klotz war selbst eine
+   kleine Pille im Bild. */
+.frost kbd {
+  color: #1b2a3a;
+  text-shadow: none;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid rgba(27, 42, 58, 0.5);
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+}
+.frost-art {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* --- Einladung an der Station --------------------------------------------
+   Vier Eckmarken in der Stationsfarbe statt einer Pille mit Farbpunkt. Beim
+   Erscheinen ziehen sie sich von aussen zusammen, wie ein Sucher, der die
+   Station anpeilt – so ist klar, welches Ding im Tal gemeint ist. */
 
 .station-prompt {
   position: fixed;
@@ -127,8 +176,9 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 14px 7px 8px;
-  border-radius: 999px;
+  padding: 9px 16px 10px 12px;
+  border: 0;
+  background: none;
   font: inherit;
   text-align: left;
   white-space: nowrap;
@@ -141,45 +191,47 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
 }
 .station-prompt.visible { opacity: 1; pointer-events: auto; }
 .station-prompt.hidden { opacity: 0; pointer-events: none; }
-.station-prompt.pop { animation: promptIn 0.38s cubic-bezier(0.2, 1.5, 0.4, 1); }
-@keyframes promptIn {
-  from { scale: 0.8; translate: 0 6px; }
-  to { scale: 1; translate: 0 0; }
-}
+.station-prompt.pop { animation: promptIn 0.38s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes promptIn { from { translate: 0 6px; } }
 .station-prompt.used { animation: glassPulse 0.35s ease; }
 @keyframes glassPulse {
   40% { scale: 0.94; }
   100% { scale: 1; }
 }
-/* Ein Farbpunkt vorn statt eines farbigen Kopfes: die Station hat ihre
-   Farbe, aber das Glas bleibt Glas. Ohne Enter-Taste (Handy) steht er
-   allein am Anfang. */
-.station-prompt::after {
-  content: '';
-  order: -1;
-  width: 8px;
-  height: 8px;
-  margin-left: 4px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+/* Oben ein Wort in der Stationsfarbe, darunter der Name. Die Farbe ist das
+   Einzige, was die Einladung an ihre Station bindet – Sucherecken standen
+   zur Wahl und waren fuer ein Spielzeugtal zu technisch (29.09.). */
+.prompt-text { display: flex; flex-direction: column; gap: 2px; line-height: 1.15; }
+.prompt-sub {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 85%, #13212f);
 }
-.station-prompt kbd { order: 0; }
-.prompt-text { display: flex; flex-direction: column; line-height: 1.15; }
-.prompt-title { font-size: 13px; font-weight: 750; letter-spacing: 0.01em; }
-.prompt-sub { font-size: 11px; font-weight: 550; color: #4a5f75; }
-.station-prompt.dead { opacity: 0.7; }
+.prompt-title { font-size: 16px; font-weight: 800; letter-spacing: 0.005em; }
+/* Am Handy gibt es keine Enter-Taste, die sagt, dass hier etwas geht:
+   ein Pfeil hinter dem Namen. */
+html.touch .prompt-title::after { content: ' ›'; font-weight: 900; color: var(--accent); }
+.station-prompt.dead .prompt-text { opacity: 0.7; }
+.station-prompt.dead .prompt-sub { color: #6b7f94; }
 .station-prompt.dead kbd { display: none; }
 
-/* --- Auswahl nach dem Heranzoomen ---------------------------------------- */
+/* --- Auswahl nach dem Heranzoomen ----------------------------------------
+   Die Ziele nebeneinander, damit ←/→ und A/D zum Bild passen. Hinter dem
+   gewaehlten glimmt ein Schein in seiner Farbe, wie der Hauch hinter dem
+   Frosttext; die anderen stehen grau daneben. Zuerst stand hier ein
+   Register mit Fuehrungslinien – die sahen aus wie Eingabefelder, und
+   untereinander haette man W/S erwartet, die aber hinausfuehren (29.09.).
+   Auf der ganzen Seite gilt: ein Strich heisst schreiben, ein Schein klicken. */
 
 .station-sheet {
   position: fixed;
   left: 50%;
   bottom: max(22px, env(safe-area-inset-bottom));
-  width: min(480px, calc(100vw - 24px));
-  padding: 14px 14px 12px;
-  border-radius: 26px;
+  width: min(440px, calc(100vw - 24px));
+  padding: 16px 20px 12px;
+  border-radius: 22px;
   translate: -50% 24px;
   scale: 0.96;
   opacity: 0;
@@ -191,87 +243,89 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
 
 .sheet-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 8px;
-  padding: 0 4px 10px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid rgba(40, 70, 105, 0.12);
 }
-.sheet-dot {
-  align-self: center;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-.sheet-title { font-size: 16px; font-weight: 780; }
-.sheet-sub { font-size: 12.5px; font-weight: 550; color: #4a5f75; }
+.sheet-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.15; }
+.sheet-title { font-size: 18px; font-weight: 800; letter-spacing: -0.005em; }
+.sheet-sub { font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--accent) 85%, #13212f); }
+/* Nur das Zeichen, ohne Kreis darum. */
 .sheet-close {
   margin-left: auto;
-  align-self: center;
+  flex: none;
   width: 28px;
   height: 28px;
+  margin-right: -6px;
   border: 0;
-  border-radius: 50%;
-  font: 500 19px/1 system-ui, sans-serif;
-  color: #3b4f64;
-  background: rgba(255, 255, 255, 0.5);
+  background: none;
+  font: 400 22px/1 system-ui, sans-serif;
+  color: #5b6f84;
   cursor: pointer;
+  transition: color 0.2s ease;
 }
+.sheet-close:hover { color: #13212f; }
 
 .sheet-options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 10px 0 2px;
+  isolation: isolate;
 }
 .sheet-option {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 11px;
+  gap: 5px;
   min-width: 0;
-  padding: 11px 12px;
-  border-radius: 18px;
+  padding: 10px 4px 6px;
+  border: 0;
+  background: none;
   font: inherit;
-  text-align: left;
+  text-align: center;
   color: inherit;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.34);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  transition: background 0.2s ease, box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
   -webkit-tap-highlight-color: transparent;
 }
-.sheet-option.selected {
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow:
-    inset 0 1px 0 #fff,
-    0 0 0 2px var(--c),
-    0 8px 22px -6px color-mix(in srgb, var(--c) 55%, transparent);
-  transform: translateY(-2px);
+.sheet-option::before {
+  content: '';
+  position: absolute;
+  inset: 0 6px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 24%, transparent), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 .sheet-option.used { animation: glassPulse 0.35s ease; }
 .sheet-option.off { opacity: 0.4; pointer-events: none; }
-.opt-glyph {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 78%, #fff), var(--c));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 3px 8px -2px color-mix(in srgb, var(--c) 60%, transparent);
+.opt-glyph { display: grid; place-items: center; height: 30px; color: #7b8ea2; transition: color 0.2s ease; }
+.opt-glyph svg { width: 28px; height: 28px; }
+.opt-text { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; max-width: 100%; line-height: 1.2; }
+.opt-label { font-size: 15.5px; font-weight: 800; color: #3d5166; transition: color 0.2s ease; }
+.opt-sub {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4a5f75;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.opt-glyph svg { width: 22px; height: 22px; }
-.opt-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.opt-label { font-size: 14.5px; font-weight: 750; }
-.opt-sub { font-size: 11.5px; font-weight: 550; color: #4a5f75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.opt-go {
-  margin-left: auto;
-  font-size: 14px;
-  color: var(--c);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
+.opt-go { height: 16px; font-size: 13px; font-weight: 900; color: var(--c); opacity: 0; transition: opacity 0.2s ease; }
+.sheet-option.selected::before { opacity: 1; }
+.sheet-option.selected .opt-glyph, .sheet-option.selected .opt-label { color: var(--c); }
 .sheet-option.selected .opt-go { opacity: 1; }
+/* Am Handy gibt es kein Gewaehltes vor dem Tippen: alle Ziele in Farbe,
+   der Schein kommt unter dem Finger. Grau saehe dort gesperrt aus. */
+html.touch .sheet-option .opt-glyph, html.touch .sheet-option .opt-label { color: var(--c); }
+html.touch .sheet-option::before { opacity: 0; }
+html.touch .sheet-option:active::before { opacity: 1; }
+html.touch .sheet-option .opt-go { display: none; }
 
 .sheet-keys {
   display: flex;
@@ -288,21 +342,18 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
 
 /* --- Zeitnahme der Rennstrecke -------------------------------------------
    Erscheint nur waehrend eines Laufs und ein paar Sekunden danach. Der Rest
-   der Welt kommt ohne Anzeige aus, das soll hier auch so bleiben. */
+   der Welt kommt ohne Anzeige aus, das soll hier auch so bleiben. Frost wie
+   alles andere: grosse duenne Ziffern wie auf einer Anzeigetafel statt der
+   fast deckenden weissen Karte, die als einzige aus dem Glas fiel. */
 .race-hud {
   position: fixed;
-  top: 22px;
+  top: max(16px, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 20px 9px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 26px rgba(40, 70, 110, 0.2), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  gap: 4px;
   pointer-events: none;
   opacity: 0;
   z-index: 12;
@@ -311,35 +362,35 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
 .race-hud.visible { opacity: 1; }
 
 .race-time {
-  font: 700 30px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  font: 300 48px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   color: #1b2430;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
 }
 .race-hud[data-tone='good'] .race-time { color: #1f7a4d; }
 .race-hud[data-tone='warn'] .race-time { color: #b8501f; }
 
 .race-note {
-  font: 600 12px/1.2 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
-  color: #5b6a7c;
-  min-height: 14px;
+  font: 800 10.5px/1.2 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #3d5166;
+  min-height: 13px;
 }
 
 /* --- Trickmeldung ---------------------------------------------------------
    Kurz und weit unten, damit sie der Zeitnahme oben nicht ins Gehege kommt.
-   Sie steigt beim Erscheinen ein Stueck auf und verschwindet von selbst. */
+   Sie steigt beim Erscheinen ein Stueck auf und verschwindet von selbst.
+   Dunkle Schrift im Frost statt heller auf dunklem Kasten: der war das
+   einzige Schwarze ueber dem ganzen Tal. */
 .trick-hud {
   position: fixed;
   bottom: 96px;
   left: 50%;
   transform: translate(-50%, 8px);
-  padding: 6px 16px 7px;
-  border-radius: 14px;
-  background: rgba(20, 30, 44, 0.72);
-  backdrop-filter: blur(8px);
-  font: 700 20px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
-  letter-spacing: 0.06em;
-  color: #f6fbff;
+  font: 800 24px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   pointer-events: none;
   opacity: 0;
   z-index: 12;
@@ -433,11 +484,9 @@ html.touch, html.touch body {
   translate: -50% 0;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 650;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
   pointer-events: none;
   z-index: 11;
@@ -462,10 +511,8 @@ html.touch, html.touch body {
 
 /* Am Handy steht die Auswahl ueber die volle Breite, die Ziele untereinander:
    zwei Spalten a 160 Pixel waren fuer "paypal.me/juliansebv" zu schmal. */
-html.touch .sheet-options { grid-template-columns: 1fr; }
-html.touch .sheet-option { padding: 13px 14px; }
-html.touch .station-prompt { padding: 10px 16px 10px 10px; }
-html.touch .prompt-title { font-size: 14px; }
+html.touch .sheet-option { padding: 12px 2px 10px; }
+html.touch .station-prompt { padding: 12px 18px 13px 16px; }
 
 /* --- Talkarte ---------------------------------------------------------------
    Dasselbe Glas wie die Stationsauswahl, nur gross: links die Karte, rechts
@@ -548,14 +595,11 @@ html.touch .prompt-title { font-size: 14px; }
   left: 50%;
   bottom: calc(100% + 7px);
   translate: -50% 4px;
-  padding: 4px 9px;
-  border-radius: 999px;
   white-space: nowrap;
-  font-size: 11.5px;
-  font-weight: 750;
+  font-size: 12px;
+  font-weight: 800;
   color: #13212f;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 4px 12px -3px rgba(28, 58, 96, 0.35);
+  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px rgba(255, 255, 255, 0.8);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, translate 0.25s ease;
@@ -612,9 +656,8 @@ html.touch .prompt-title { font-size: 14px; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 11px;
-  border-radius: 14px;
-  border: 1px solid transparent;
+  padding: 7px 10px;
+  border: 0;
   background: transparent;
   font: inherit;
   color: inherit;
@@ -623,12 +666,12 @@ html.touch .prompt-title { font-size: 14px; }
   transition: background 0.2s ease, box-shadow 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.map-item:hover { background: rgba(255, 255, 255, 0.35); }
-.map-item.selected {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 2px var(--c), 0 6px 16px -6px color-mix(in srgb, var(--c) 55%, transparent);
-}
+/* Wie das Register der Links: die gewaehlte Zeile faerbt sich, statt in
+   einem Kaertchen mit Farbring zu stehen. */
+.map-item { border-radius: 12px; transition: background 0.2s ease; }
+.map-item .opt-label { transition: color 0.2s ease; }
+.map-item:hover .opt-label, .map-item.selected .opt-label { color: var(--c); }
+.map-item.selected { background: radial-gradient(120% 160% at 15% 50%, color-mix(in srgb, var(--c) 16%, transparent), transparent 72%); }
 .map-item-dot {
   flex: none;
   width: 11px;
@@ -677,27 +720,27 @@ html.touch .prompt-title { font-size: 14px; }
 }
 @keyframes caret { 50% { opacity: 0; } }
 
+/* Reiter als Woerter mit einem Strich unter dem aktiven, statt eines
+   Umschalters aus Pillen. */
 .ov-tabs {
   display: flex;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(40, 70, 105, 0.08);
+  gap: 20px;
+  padding: 0 4px;
 }
 .ov-tabs button {
-  padding: 7px 16px;
+  padding: 8px 0 6px;
   border: 0;
-  border-radius: 999px;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  font: 700 13.5px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-  color: #3d5166;
+  font: 700 14px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  color: #5b6f84;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
+.ov-tabs button:hover { color: #13212f; }
 .ov-tabs button[aria-selected="true"] {
-  background: #fff;
   color: #13212f;
-  box-shadow: 0 2px 8px -2px rgba(28, 58, 96, 0.3);
+  border-bottom-color: #13212f;
 }
 .ov-head .sheet-close { position: static; flex: none; }
 
@@ -707,51 +750,54 @@ html.touch .prompt-title { font-size: 14px; }
 .map-panel:not([data-view="pass"]) .ov-pass,
 .map-panel:not([data-view="liste"]) .ov-liste { display: none; }
 
+/* Links als Register, wie die Legende einer Pistenkarte: jede Gruppe
+   beginnt mit einem Strich in ihrer Wegfarbe, darunter Zeilen, rechts der
+   Ort im Tal. Die gewaehlte glimmt. Keine Kacheln, keine Kaestchen. */
 .ov-links {
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   align-content: start;
-  gap: 16px 18px;
-  padding: 4px 6px 6px;
+  gap: 22px 40px;
+  padding: 6px 6px 8px;
   scrollbar-width: thin;
 }
 .ov-group h3 {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 2px 4px 8px;
+  margin: 2px 0 4px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c);
 }
-.ov-group h3::after { content: ''; flex: 1; height: 1px; background: color-mix(in srgb, var(--c) 30%, transparent); }
-.ov-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ov-group h3::before { content: ''; flex: none; width: 26px; height: 4px; border-radius: 1px; background: var(--c); }
+.ov-group { min-width: 0; }
+.ov-grid { display: flex; flex-direction: column; }
 
 .ov-tile {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  box-shadow: 0 2px 8px -4px rgba(28, 58, 96, 0.25);
-  overflow: hidden;
-  transition: background 0.2s ease, box-shadow 0.2s ease, translate 0.2s ease;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin: 0 -10px;
+  padding: 0 10px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
 }
-.ov-tile.selected {
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 0 0 2px var(--c), 0 8px 20px -8px color-mix(in srgb, var(--c) 60%, transparent);
-  translate: 0 -1px;
-}
+/* Die gewaehlte Zeile glimmt in ihrer Wegfarbe, von links her. */
+.ov-tile.selected { background: radial-gradient(120% 160% at 15% 50%, color-mix(in srgb, var(--c) 16%, transparent), transparent 72%); }
 .ov-tile.used { animation: glassPulse 0.35s ease; }
 .ov-open {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  flex: 1;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 12px 9px;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 0;
   border: 0;
   background: transparent;
   font: inherit;
@@ -759,32 +805,31 @@ html.touch .prompt-title { font-size: 14px; }
   text-align: left;
   cursor: pointer;
 }
-.ov-icon { font-size: 22px; line-height: 1; }
+.ov-icon { flex: none; width: 24px; text-align: center; font-size: 19px; line-height: 1; }
 .ov-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.ov-label { font-size: 14.5px; font-weight: 780; }
-.ov-sub { font-size: 11.5px; font-weight: 550; color: #4a5f75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ov-go { font-size: 14px; font-weight: 800; color: var(--c); opacity: 0.35; transition: opacity 0.2s ease; }
+.ov-label { font-size: 15.5px; font-weight: 800; transition: color 0.2s ease; }
+.ov-sub { font-size: 12px; font-weight: 600; color: #4a5f75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-go { flex: none; margin-left: auto; font-size: 14px; font-weight: 900; color: var(--c); opacity: 0; transition: opacity 0.2s ease; }
+.ov-tile.selected .ov-label, .ov-open:hover .ov-label { color: var(--c); }
 .ov-tile.selected .ov-go, .ov-open:hover .ov-go { opacity: 1; }
 .ov-where {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin: 0 8px 8px;
-  padding: 4px 8px;
+  gap: 5px;
+  padding: 8px 0;
   border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--c) 10%, transparent);
-  font: 650 11px/1.2 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  background: none;
+  font: 700 11.5px/1.2 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   color: color-mix(in srgb, var(--c) 80%, #13212f);
   text-align: left;
   cursor: pointer;
-  transition: background 0.2s ease;
 }
-.ov-where:hover { background: color-mix(in srgb, var(--c) 22%, transparent); }
+.ov-where:hover span:last-child { text-decoration: underline; text-underline-offset: 3px; }
 .ov-pin {
   flex: none;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50% 50% 50% 0;
   rotate: -45deg;
   background: var(--c);
@@ -814,17 +859,17 @@ kbd.k-space { min-width: 64px; font-size: 10px; }
 
 /* --- Hinweise unten ------------------------------------------------------ */
 
-.hint-pill {
+.hinweis {
   position: fixed;
   left: 50%;
   bottom: max(28px, calc(env(safe-area-inset-bottom) + 14px));
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 18px 9px 9px;
-  border-radius: 999px;
-  font: 700 14px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-  color: #13212f;
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  font: 700 15px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   white-space: nowrap;
   cursor: pointer;
   z-index: 11;
@@ -833,33 +878,20 @@ kbd.k-space { min-width: 64px; font-size: 10px; }
   pointer-events: none;
   transition: opacity 0.5s ease, translate 0.5s cubic-bezier(0.2, 1.2, 0.3, 1);
 }
-.hint-pill.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
-.hint-pill:hover { background: rgba(255, 255, 255, 0.8); }
-.hint-pill kbd { min-width: 26px; height: 26px; font-size: 12.5px; }
-html.touch .hint-pill { padding: 12px 20px; }
+.hinweis.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
+.hinweis kbd { min-width: 26px; height: 26px; font-size: 12.5px; }
+html.touch .hinweis { padding: 12px 20px; }
 
-/* Der Start-Hinweis ohne Glas: nur Taste und Wort, mit einem weichen hellen
-   Hof, damit es auf Schnee wie auf Tannen lesbar bleibt. Als Kachel stand er
-   lauter da als alles andere im Bild. Ein langsames Atmen haelt ihn im
-   Augenwinkel, ohne zu blinken. */
-.hint-pill.hint-start {
-  background: none;
-  border: 0;
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  padding: 6px 10px;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 650;
-  color: #2a3d52;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.8);
-}
-.hint-pill.hint-start::before { display: none; }
-.hint-pill.hint-start kbd { min-width: 22px; height: 22px; font-size: 11px; }
-.hint-pill.hint-start.visible { opacity: 0.82; animation: hintBreath 4.5s ease-in-out 2s infinite; }
-.hint-pill.hint-start:hover { background: none; opacity: 1; animation: none; }
-@keyframes hintBreath { 50% { opacity: 0.5; } }
+/* Der Start-Hinweis leiser als der Rueckweg: er steht die ganze erste
+   halbe Minute im Bild. Ein langsames Atmen haelt ihn im Augenwinkel, ohne
+   zu blinken. Es atmet die Schriftfarbe, nicht die Deckkraft: unter
+   opacity 1 schaltet der Browser die Unschaerfe des Hauchs ab, und ueber
+   Tannen war der Hinweis dann kaum noch zu lesen. */
+.hinweis.hint-start { gap: 8px; font-size: 13px; font-weight: 650; color: rgba(42, 61, 82, 0.85); }
+.hinweis.hint-start kbd { min-width: 22px; height: 22px; font-size: 11px; }
+.hinweis.hint-start.visible { animation: hintBreath 4.5s ease-in-out 2s infinite; }
+.hinweis.hint-start:hover { color: #1b2a3a; animation: none; }
+@keyframes hintBreath { 50% { color: rgba(42, 61, 82, 0.5); } }
 
 /* Hochformat: Karte oben, Liste darunter; Kacheln einspaltig. */
 @media (max-width: 760px) {
@@ -872,8 +904,13 @@ html.touch .hint-pill { padding: 12px 20px; }
   .ov-name { flex-basis: calc(100% - 60px); }
   .ov-tabs { order: 3; width: 100%; }
   /* Vier Reiter auf 390 px: mit 16 px Rand ragte der vierte hinaus. */
-  .ov-tabs button { flex: 1; min-width: 0; padding: 7px 4px; font-size: 12.5px; }
-  .ov-links { grid-template-columns: 1fr; }
+  .ov-tabs { gap: 12px; justify-content: space-between; }
+  .ov-tabs button { min-width: 0; font-size: 13px; }
+  /* minmax(0, …): mit 1fr setzte die ungekuerzte Unterzeile die Breite,
+     und die Orte rechts ragten am Handy aus dem Glas. */
+  .ov-links, .ov-pass { grid-template-columns: minmax(0, 1fr); }
+  .pass-stempel-reihe { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .st-rund { width: 80px; height: 80px; }
   .ov-karte {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
@@ -889,152 +926,109 @@ html.touch .hint-pill { padding: 12px 20px; }
 
 .ov-pass {
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 4px 6px 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  align-content: start;
+  gap: 18px 44px;
+  padding: 8px 6px 8px;
   scrollbar-width: thin;
 }
-.pass-kopf {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+.pass-spalte { display: flex; flex-direction: column; min-width: 0; }
+.pass-titel {
+  margin: 18px 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5b6f84;
 }
+.pass-spalte > .pass-titel:first-child { margin-top: 2px; }
+.pass-kopf { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; }
 .pass-ski { font-size: 30px; line-height: 1; filter: grayscale(1); opacity: 0.55; }
 .pass-kopf.gold .pass-ski { filter: none; opacity: 1; }
-.pass-kopf-text { display: flex; flex-direction: column; line-height: 1.25; }
-.pass-kopf-text strong { font-size: 15.5px; font-weight: 800; }
-.pass-kopf-text small { font-size: 12px; font-weight: 600; color: #4a5f75; }
-.pass-kopf.gold { box-shadow: 0 0 0 2px #e9b93c, 0 8px 24px -8px rgba(200, 150, 30, 0.6); }
-.pass-balken {
-  display: block;
-  height: 6px;
-  margin: 0 4px 10px;
-  border-radius: 999px;
-  background: rgba(40, 70, 105, 0.1);
-  overflow: hidden;
-}
-.pass-balken i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--c);
-}
-.pass-orte { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
-.pass-ort {
-  padding: 5px 11px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 650;
-  color: #7a8b9c;
-  border: 1px dashed rgba(60, 90, 125, 0.3);
-}
-.pass-ort.hat {
-  color: #13212f;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
-}
-.pass-reihe { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.pass-medaille {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.3);
-  border: 1px dashed rgba(60, 90, 125, 0.28);
-}
-.pass-medaille.hat {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c) 45%, transparent);
-}
-.pass-medaille.hat .pass-icon { filter: none; opacity: 1; background: color-mix(in srgb, var(--c) 14%, #fff); }
-html.touch .pass-reihe { grid-template-columns: 1fr; }
+.pass-kopf-text { display: flex; flex-direction: column; gap: 2px; line-height: 1.25; }
+.pass-kopf-text strong { font-size: 18px; font-weight: 800; }
+.pass-kopf-text small { font-size: 12.5px; font-weight: 600; color: #4a5f75; }
+.pass-kopf.gold strong { color: #8a5d00; }
+.pass-balken { display: block; height: 3px; margin-bottom: 12px; background: rgba(40, 70, 105, 0.12); }
+.pass-balken i { display: block; height: 100%; background: #13212f; }
+/* Die Orte als Abhakliste in zwei Spalten. */
+.pass-orte { columns: 2; column-gap: 24px; margin: 0; padding: 0; list-style: none; }
+.pass-ort { font-size: 13.5px; font-weight: 600; line-height: 1.9; color: #8797a8; break-inside: avoid; }
+.pass-ort::before { content: '·'; display: inline-block; width: 20px; font-weight: 900; }
+.pass-ort.hat { font-weight: 700; color: #13212f; }
+.pass-ort.hat::before { content: '✓'; color: #2f8a57; }
 
-.pass-grid {
+/* Stempel: ein Doppelring in der Tinte des Abzeichens, leicht schief und
+   nicht ganz deckend, darunter in klein, wofuer es ihn gibt. */
+.pass-stempel-reihe {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 14px 12px;
 }
-.pass-stempel {
+.pass-stempel { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; text-align: center; }
+.st-rund {
   display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.3);
-  border: 1px dashed rgba(60, 90, 125, 0.28);
-}
-.pass-stempel.hat {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c) 45%, transparent), 0 4px 12px -6px rgba(28, 58, 96, 0.3);
-}
-.pass-icon {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  width: 86px;
+  height: 86px;
+  padding: 8px;
   border-radius: 50%;
-  font-size: 20px;
-  line-height: 1;
-  background: rgba(40, 70, 105, 0.07);
-  filter: grayscale(1);
-  opacity: 0.45;
+  color: rgba(60, 90, 125, 0.5);
+  border: 2px dashed rgba(60, 90, 125, 0.32);
 }
-.pass-stempel.hat .pass-icon {
-  filter: none;
-  opacity: 1;
-  background: color-mix(in srgb, var(--c) 14%, #fff);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c) 55%, transparent);
+.st-icon { font-size: 22px; line-height: 1; filter: grayscale(1); opacity: 0.35; }
+.st-icon:empty { display: none; }
+.st-name { font-size: 9.5px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.15; overflow-wrap: anywhere; hyphens: auto; }
+.st-text { font-size: 11px; font-weight: 600; line-height: 1.3; color: #5b6f84; }
+.pass-stempel.verborgen .st-name { font-size: 20px; letter-spacing: 0; }
+.pass-stempel.hat .st-rund {
+  color: var(--ink);
+  border: 2.5px solid var(--ink);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35), inset 0 0 0 4.5px var(--ink);
+  rotate: var(--r);
+  opacity: 0.9;
 }
-.pass-stempel.verborgen .pass-icon { font-size: 17px; font-weight: 800; color: #6b7f94; filter: none; }
-.pass-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.22; }
-.pass-name { font-size: 13.5px; font-weight: 780; }
-.pass-stempel:not(.hat) .pass-name { color: #4a5f75; }
-.pass-sub { font-size: 11.5px; font-weight: 550; color: #4a5f75; }
-.pass-stempel.verborgen .pass-sub { display: none; }
+.pass-stempel.hat .st-icon { filter: saturate(0.7); opacity: 1; }
+.pass-stempel.hat .st-text { color: #3d5166; }
+.pass-stempel.hat { animation: stempeln 0.3s ease both; }
+@keyframes stempeln { from { scale: 1.12; opacity: 0; } }
+html.touch .ov-pass { grid-template-columns: 1fr; }
 
-.pass-pille {
+.pass-meldung {
   position: fixed;
-  top: max(16px, env(safe-area-inset-top));
-  left: 16px;
+  top: max(22px, env(safe-area-inset-top));
+  left: 28px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  max-width: calc(100vw - 32px);
-  padding: 8px 16px 8px 8px;
-  border-radius: 999px;
+  gap: 12px;
+  max-width: calc(100vw - 56px);
   z-index: 13;
   opacity: 0;
   translate: 0 -12px;
   pointer-events: none;
   transition: opacity 0.4s ease, translate 0.45s cubic-bezier(0.2, 1.2, 0.3, 1);
 }
-.pass-pille.visible { opacity: 1; translate: 0 0; }
-.pass-pille-icon {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 19px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 0 0 2px rgba(233, 185, 60, 0.7);
+.pass-meldung.visible { opacity: 1; translate: 0 0; }
+.pm-icon { font-size: 30px; line-height: 1; text-shadow: none; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
+.pm-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.2; }
+.pm-art { font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a620a; }
+.pm-text strong { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.pm-text small { font-size: 12.5px; font-weight: 600; color: #3d5166; white-space: normal; }
+/* Goldene Ski: ein goldener Hof statt eines goldenen Rings. */
+.pass-meldung.gold { --halo: 0 0 5px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 244, 210, 0.9), 0 0 30px rgba(233, 185, 60, 0.65); }
+.pass-meldung.gold::before { background: radial-gradient(closest-side, rgba(255, 236, 180, 0.6), rgba(255, 236, 180, 0)); }
+.pass-meldung.gold strong { color: #6e4b00; }
+html.touch .pass-meldung { top: max(16px, env(safe-area-inset-top)); left: 18px; max-width: calc(100vw - 96px); }
+/* Medaillen kommen im Ziel, waehrend die Zeitnahme noch steht. Am Handy
+   reicht die Breite nicht fuer beide nebeneinander, und ohne Kasten lagen
+   Zeit und Meldung als Buchstabensalat uebereinander: dann eine Zeile
+   tiefer, unter Zeit und Bestenlisten-Angebot. */
+@media (max-width: 640px) {
+  html:has(.race-hud.visible) .pass-meldung { top: calc(max(16px, env(safe-area-inset-top)) + 136px); }
 }
-.pass-pille-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.pass-pille-text strong { font-size: 14px; font-weight: 800; }
-.pass-pille-text small { font-size: 11.5px; font-weight: 600; color: #4a5f75; }
-.pass-pille.gold { box-shadow: 0 0 0 2px #e9b93c, 0 12px 32px -8px rgba(200, 150, 30, 0.55); }
-html.touch .pass-pille { top: max(12px, env(safe-area-inset-top)); left: 12px; max-width: calc(100vw - 88px); }
 
 /* --- Rundflug der Drohne -------------------------------------------------- */
 /* Kein Glas: ueber dem Bild einer Drohnenkamera liegt Sucherschrift, weiss
@@ -1095,7 +1089,7 @@ html.touch .pass-pille { top: max(12px, env(safe-area-inset-top)); left: 12px; m
   70% { translate: -3px 0; }
 }
 /* Hinweise und Handyknoepfe gehoeren dem Fahrer, nicht der Drohne. */
-html.rundflug .hint-pill,
+html.rundflug .hinweis,
 html.rundflug .touch-jump,
 html.rundflug .touch-hint,
 html.rundflug .touch-stick { visibility: hidden; }
@@ -1107,16 +1101,16 @@ html.rundflug .touch-stick { visibility: hidden; }
 
 .sb-angebot {
   position: fixed;
-  top: 98px;
+  top: 104px;
   left: 50%;
   translate: -50% -6px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 15px 7px 9px;
-  border-radius: 999px;
-  font: 700 13.5px/1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  color: #13212f;
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  font: 700 14px/1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   cursor: pointer;
   z-index: 12;
   opacity: 0;
@@ -1124,7 +1118,7 @@ html.rundflug .touch-stick { visibility: hidden; }
   transition: opacity 0.3s ease, translate 0.35s cubic-bezier(0.2, 1.3, 0.3, 1);
 }
 .sb-angebot.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
-html.touch .sb-angebot { padding: 10px 18px; }
+html.touch .sb-angebot { padding: 12px 20px; }
 
 .ov-liste {
   overflow-y: auto;
@@ -1150,8 +1144,6 @@ html.touch .sb-angebot { padding: 10px 18px; }
   font-size: 13.5px;
   font-weight: 600;
   color: #4a5f75;
-  border-radius: 18px;
-  border: 1px dashed rgba(60, 90, 125, 0.3);
 }
 
 .sb-podest {
@@ -1216,16 +1208,14 @@ html.touch .sb-angebot { padding: 10px 18px; }
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
-.sb-zeilen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.sb-zeilen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .sb-zeile {
   display: grid;
   grid-template-columns: 26px 10px minmax(0, 1fr) auto auto 52px;
   align-items: center;
   gap: 9px;
-  padding: 8px 12px;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(40, 70, 105, 0.1);
   font-size: 13.5px;
 }
 .sb-zeile .sb-rang { font-weight: 800; color: #6b7f94; font-variant-numeric: tabular-nums; text-align: right; }
@@ -1241,10 +1231,8 @@ html.touch .sb-angebot { padding: 10px 18px; }
 .sb-punkt[data-m="gold"] { background: #e2ac2c; }
 .sb-punkt[data-m="silber"] { background: #a4b1bf; }
 .sb-punkt[data-m="bronze"] { background: #c98552; }
-.sb-zeile.eigen {
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 0 2px #2b6fd6;
-}
+.sb-zeile.eigen .sb-name, .sb-zeile.eigen .sb-zeit { color: #1f5fbf; }
+.sb-zeile.eigen { border-bottom: 2px solid #2b6fd6; }
 html.touch .sb-zeile { grid-template-columns: 22px 10px minmax(0, 1fr) auto 48px; }
 html.touch .sb-zeile .sb-wann { display: none; }
 
@@ -1260,16 +1248,17 @@ html.touch .sb-zeile .sb-wann { display: none; }
 }
 .sb-hin {
   flex: none;
-  padding: 8px 14px;
-  border-radius: 999px;
+  padding: 6px 0;
   font: inherit;
-  font-weight: 750;
-  color: #fff;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #c0552a;
   cursor: pointer;
   border: 0;
-  background: linear-gradient(150deg, #e7874f, #c9582b);
-  box-shadow: 0 4px 12px -4px rgba(201, 88, 43, 0.7);
+  background: none;
 }
+.sb-hin::after { content: ' →'; font-weight: 900; }
+.sb-hin:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Das Fenster: dieselbe Glasart wie Solana und Kurzlink, etwas breiter,
    damit das Treppchen darin Platz hat. */
@@ -1288,12 +1277,12 @@ html.touch .sb-zeile .sb-wann { display: none; }
   font-variant-numeric: tabular-nums;
 }
 .sb-lauf-sub { font-size: 0.8rem; font-weight: 650; color: var(--muted); }
-.sb-dialog .sb-form .kz-feld { width: 100%; padding: 0.75rem 0.9rem; font: inherit; font-size: 1rem; outline: none; }
+.sb-dialog .sb-form .kz-feld { width: 100%; padding: 0.55rem 0; font: inherit; font-size: 1.05rem; outline: none; }
 .sb-dialog .sb-ergebnis { margin-top: 1rem; }
 .sb-dialog .sb-platz { margin-bottom: 0.9rem; font-weight: 750; text-align: center; }
 .sb-dialog .sb-podest { gap: 6px; }
 .sb-dialog .sb-fuss { margin-top: 0.9rem; font-size: 0.72rem; }
-.sb-dialog .sb-zeile { padding: 7px 10px; }
+.sb-dialog .sb-zeile { padding: 7px 4px; }
 .sb-dialog .sb-stufe .sb-rang { margin-bottom: 4px; }
 .sb-dialog .sb-sockel { margin-top: 6px; }
 .sb-dialog .sb-leer { padding: 20px 14px; }

@@ -8,6 +8,7 @@ import { Input } from './core/input.js'
 import { TOUCH } from './core/device.js'
 import { pointScale } from './core/point-scale.js'
 import { TouchControls } from './core/touch.js'
+import { Antippen } from './stations/antippen.js'
 import { inFunpark, PLATEAU } from './world/heightfield.js'
 import { SnowTrail } from './world/snow-trail.js'
 import { World } from './world/world.js'
@@ -145,6 +146,11 @@ const touch = TOUCH
   })
   : null
 if (TOUCH) document.documentElement.classList.add('touch')
+// Vor dem Horcher darunter, damit es noch sieht, ob eine Auswahl offen war.
+new Antippen(canvas, camera, stations, {
+  onUse: () => interaction.press('use'),
+  darf: () => !interaction.focus && !mapMenu.open && !flight.active && !skier.tow,
+})
 canvas.addEventListener('pointerdown', () => {
   if (flight.active) flight.stop()
   interaction.leave()
@@ -256,7 +262,7 @@ function emitSpray(dt) {
 
 // --- Trickmeldung ------------------------------------------------------------
 const trickHud = document.createElement('div')
-trickHud.className = 'trick-hud'
+trickHud.className = 'frost trick-hud'
 document.body.appendChild(trickHud)
 let trickTimer = 0
 

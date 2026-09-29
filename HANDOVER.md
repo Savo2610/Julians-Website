@@ -460,7 +460,7 @@ Mesh – die Werkstatt führt als `object` nur die Bank. Ein Tipp ist unter
 zählt beim Drücken, weil `main.js` beim Drücken eine offene Auswahl
 schließt. Am Rechner wird der Zeiger über der Station zur Hand.
 
-**Jede Station zoomt (Zweig `stationen-mit-auftritt`, 29.09.).** Stechuhr,
+**Jede Station zoomt (Zweig `stationen-mit-auftritt`, 29./30.09., per `--no-ff` in `main`).** Stechuhr,
 Depot und Löschzug öffneten ihre Seite sofort – wer im Tal gelernt hat,
 dass man heranfährt und etwas auslöst, stand plötzlich woanders. Jetzt
 haben sie eine Auswahl mit **einem** Ziel (`.station-sheet.einzeln`:
@@ -1186,6 +1186,7 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+6c5cb7d  Stationen mit Auftritt: Stechuhr, Depot und Loeschzug zoomen heran (Merge)
 225c7c1  Oberflaeche ohne Pillen: Frost, Leuchtfeld, Register, Stempelheft (Merge)
 be201b3  Auswahl nebeneinander mit Leuchtfeld, keine Linien mehr zum Anklicken
 f670e31  Farbwort, antippbare Stationen, Register, Stempelheft, Fenster ohne Kaestchen

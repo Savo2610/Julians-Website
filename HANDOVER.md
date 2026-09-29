@@ -472,14 +472,15 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
 - **gescheitert:** das Rohr hustet, eine Kapsel fliegt mit Rauch heraus,
   rollt vor dem Rohr aus und sinkt nach 6 s ein; die Spur wartet, bis sie
   liegt, sonst fährt die Kamera weg, bevor man sie sieht;
-- dann läuft ein **Maulwurf** unter dem Schnee zum Funkmast (11 m/s, gut
+- dann läuft ein **Maulwurf** unter dem Schnee zum Funkmast (26 m/s, gut
   47 m, handgelegter Weg an Tunnel, Bank, Seeufer und Quellrahmen vorbei,
   gegen die ausgelesenen Hindernisse geprüft), der Mast funkt 2,2 s
   (`tower.userData.funken`). Die Kamera zoomt nur zum Einwerfen ans Rohr
   und ist zurück beim Fahrer, sobald der Maulwurf losläuft – ihm bis zum
   Mast zu folgen war Julian zu viel. Die Spur ist
   **nicht** in die Schneetextur gestempelt – die hält für immer –, sondern
-  ein InstancedMesh aus Hügelchen, die nach 3,2 s in 2,4 s wieder zutauen;
+  ein InstancedMesh aus Hügelchen, die nach 3,2 s in 2,4 s wieder zutauen.
+  Kein eigener Kopf-Buckel: der sah am Rohr aus wie ein Schneeball;
 - **nichts geschickt:** die Klappe fällt zu, ein Hauch Dampf, nach 1,4 s
   steht sie wieder offen.
 Esc, Enter, `M` oder Tippen holen die Kamera schon während des Einwerfens

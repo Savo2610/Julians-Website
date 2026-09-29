@@ -21,7 +21,9 @@ const WEG = [
   [-21.6, 19.8], [-27, 21.5], [-34, 21.7], [-40, 22.4], [-46, 23.0],
   [-52, 23.2], [-56.5, 22.9], [-61, 23.6], [-61.4, 27.5], [-60.9, 29.1],
 ]
-const TEMPO = 11          // m/s unter dem Schnee
+// Erst 11 m/s: gut vier Sekunden, das wirkte wie ein Spaziergang. Mit 26
+// ist sie in knapp zwei Sekunden am Mast – das ist Rohrpost (30.09.).
+const TEMPO = 26          // m/s unter dem Schnee
 const HUEGEL_ALLE = 0.3   // m zwischen zwei Huegelchen – dicht, sonst eine Perlenkette
 const STEHEN = 3.2        // s, bis ein Huegelchen einsinkt
 const TAUEN = 2.4         // s bis es ganz weg ist
@@ -55,11 +57,9 @@ export class RohrpostNetz {
     world.scene.add(this._huegel)
     this._geboren = []   // { x, y, z, t, r, richtung }
 
-    // Der Kopf: ein groesserer Buckel, der wackelt, und Kruemel davor.
-    this._kopf = new THREE.Mesh(geo, mat)
-    this._kopf.castShadow = true
-    this._kopf.visible = false
-    world.scene.add(this._kopf)
+    // Vorn fliegen nur Kruemel. Einen eigenen, wackelnden Buckel als Kopf
+    // gab es: am Rohr sah er aus wie ein Schneeball, der losrollt, und nahm
+    // die Vorstellung, dass sich etwas *unter* dem Schnee bewegt.
     this._kruemel = []
     const kGeo = new THREE.IcosahedronGeometry(0.07, 0)
     for (let i = 0; i < 14; i++) {
@@ -133,7 +133,7 @@ export class RohrpostNetz {
       const y = this.world.heightAt(this._p.x, this._p.z)
 
       if (t < plan.ende) {
-        // Huegelchen nachziehen, bis der Kopf da ist, wo er jetzt ist.
+        // Huegelchen nachziehen bis dahin, wo der Maulwurf jetzt ist.
         while (this._geboren.length * HUEGEL_ALLE < s) {
           const w = (this._geboren.length * HUEGEL_ALLE) / this._laenge
           const q = this._kurve.getPointAt(w)
@@ -148,13 +148,8 @@ export class RohrpostNetz {
             r: 0.42 + Math.random() * 0.12,
           })
         }
-        this._kopf.visible = true
-        const wackel = Math.sin(t * 26) * 0.06
-        this._kopf.position.set(this._p.x, y - 0.08, this._p.z)
-        this._kopf.scale.set(0.55 + wackel, 0.36 - wackel, 0.55 + wackel)
         if (Math.random() < dt * 30) this._kruemelWerfen(this._p.x, y + 0.2, this._p.z)
       } else {
-        this._kopf.visible = false
         if (!plan.gefunkt) {
           plan.gefunkt = true
           this.tower.userData.funken?.(FUNKEN)

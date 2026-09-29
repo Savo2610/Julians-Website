@@ -1152,6 +1152,10 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+225c7c1  Oberflaeche ohne Pillen: Frost, Leuchtfeld, Register, Stempelheft (Merge)
+be201b3  Auswahl nebeneinander mit Leuchtfeld, keine Linien mehr zum Anklicken
+f670e31  Farbwort, antippbare Stationen, Register, Stempelheft, Fenster ohne Kaestchen
+d0e551b  Frost statt Pillen: Anzeigen ueber dem Tal ohne Behaelter
 098f9df  R zum Slalom-Start nur bei eingeblendeter Zeit
 2b284bf  R im Slalom fuehrt zum Slalom-Start
 459c2d5  Symbole: Schneeflocke im Tab, Skifahrer auf dem Homescreen

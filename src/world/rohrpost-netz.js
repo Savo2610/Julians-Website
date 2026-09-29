@@ -12,19 +12,21 @@ import * as THREE from 'three'
 // (Max-Blending, siehe snow-trail.js), eine Maulwurfspur soll aber wieder
 // zutauen. Deshalb eigene Huegelchen, die wachsen und wieder einsinken.
 //
-// Der Weg ist handgelegt und gegen die ausgelesenen Hindernisse geprueft
-// (30.09.): nordlich am Tunnel der Abkuerzung vorbei, zwischen Bank und
-// Tunnel hindurch, oberhalb des Seeufers (jeder Punkt > 17 m vom
-// Seemittelpunkt) an den Tannen vorbei und hinter dem Felsrahmen der
-// Quelle herum zum Mast. Gut 47 m.
-const WEG = [
-  [-21.6, 19.8], [-27, 21.5], [-34, 21.7], [-40, 22.4], [-46, 23.0],
-  [-52, 23.2], [-56.5, 22.9], [-61, 23.6], [-61.4, 27.5], [-60.9, 29.1],
-]
+// Der Weg ist verlegt wie ein Rohr: zwei Geraden und ein gerundeter Knick.
+// Vorher lief er durch zehn Punkte und schlingerte – niemand verlegt so
+// ein krummes Rohr (Julian, 30.09.). Die erste Gerade geht vom Rohr
+// nordlich am Tunnel der Abkuerzung und an der Bank vorbei, oberhalb des
+// Seeufers (ueberall mehr als 19 m vom Seemittelpunkt, das Ufer liegt bei
+// 17) bis hinter den Felsrahmen der Quelle; die zweite biegt zum Mast ab.
+// Gegen die ausgelesenen Hindernisse geprueft: mindestens 0,6 m bis zum
+// Rand von Fels, Baum oder Tunnel. Gut 45 m.
+const WEG = [[-21.6, 19.8], [-61.2, 23.4], [-61.3, 29.0]]
+const KNICK = 1.6         // m Radius der Rundung am Knick
 // Erst 11 m/s: gut vier Sekunden, das wirkte wie ein Spaziergang. Mit 26
 // ist sie in knapp zwei Sekunden am Mast – das ist Rohrpost (30.09.).
 const TEMPO = 26          // m/s unter dem Schnee
 const HUEGEL_ALLE = 0.3   // m zwischen zwei Huegelchen – dicht, sonst eine Perlenkette
+const KLUMPEN = 0.45      // Anteil der Schritte, die einen Klumpen zur Seite werfen
 const STEHEN = 3.2        // s, bis ein Huegelchen einsinkt
 const TAUEN = 2.4         // s bis es ganz weg ist
 const FUNKEN = 2.2        // s Funkspruch am Mast
@@ -41,12 +43,12 @@ export class RohrpostNetz {
     this._plan = null
     this._kamera = false
 
-    const punkte = WEG.map(([x, z]) => new THREE.Vector3(x, 0, z))
-    this._kurve = new THREE.CatmullRomCurve3(punkte, false, 'centripetal')
+    this._kurve = rohrweg(WEG, KNICK)
     this._laenge = this._kurve.getLength()
 
-    // Huegelchen als ein InstancedMesh: bis zu 170 auf einmal, ein Draw Call.
-    const n = Math.ceil(this._laenge / HUEGEL_ALLE) + 4
+    // Huegelchen als ein InstancedMesh, ein Draw Call. Platz fuer einen
+    // Huegel je Schritt und einen Klumpen daneben.
+    const n = Math.ceil(this._laenge / HUEGEL_ALLE) * 2 + 8
     const geo = new THREE.SphereGeometry(1, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2)
     const mat = new THREE.MeshStandardMaterial({ color: 0xf2f6fa, roughness: 0.95, flatShading: true })
     this._huegel = new THREE.InstancedMesh(geo, mat, n)
@@ -55,7 +57,8 @@ export class RohrpostNetz {
     this._huegel.receiveShadow = true
     this._huegel.frustumCulled = false
     world.scene.add(this._huegel)
-    this._geboren = []   // { x, y, z, t, r, richtung }
+    this._geboren = []   // { x, y, z, t, breit, hoch, lang, richtung, stehen, tauen }
+    this._gelegt = 0     // m Spur, die schon aufgeworfen ist
 
     // Vorn fliegen nur Kruemel. Einen eigenen, wackelnden Buckel als Kopf
     // gab es: am Rohr sah er aus wie ein Schneeball, der losrollt, und nahm
@@ -86,6 +89,7 @@ export class RohrpostNetz {
     this.aktiv = true
     this._uhr = 0
     this._geboren.length = 0
+    this._gelegt = 0
     this._plan = {
       // Laeuft nichts durch, bleibt es beim Husten am Rohr.
       start: unten,
@@ -134,19 +138,9 @@ export class RohrpostNetz {
 
       if (t < plan.ende) {
         // Huegelchen nachziehen bis dahin, wo der Maulwurf jetzt ist.
-        while (this._geboren.length * HUEGEL_ALLE < s) {
-          const w = (this._geboren.length * HUEGEL_ALLE) / this._laenge
-          const q = this._kurve.getPointAt(w)
-          const quer = this._kurve.getTangentAt(w)
-          // Nicht schnurgerade: ein Maulwurf schlingert.
-          const seit = Math.sin(this._geboren.length * 0.9) * 0.16
-          q.x += -quer.z * seit
-          q.z += quer.x * seit
-          this._geboren.push({
-            x: q.x, z: q.z, y: this.world.heightAt(q.x, q.z), t,
-            richtung: Math.atan2(quer.x, quer.z) + (Math.random() - 0.5) * 0.4,
-            r: 0.42 + Math.random() * 0.12,
-          })
+        while (this._gelegt < s) {
+          this._aufwerfen(this._gelegt / this._laenge, t)
+          this._gelegt += HUEGEL_ALLE * (0.8 + Math.random() * 0.4)
         }
         if (Math.random() < dt * 30) this._kruemelWerfen(this._p.x, y + 0.2, this._p.z)
       } else {
@@ -165,6 +159,33 @@ export class RohrpostNetz {
     if (t >= plan.fertig) {
       this.aktiv = false
       this._kameraZurueck()
+    }
+  }
+
+  // Ein Schritt Spur: der Wall selbst folgt dem Rohr fast genau, der
+  // Schnee darauf ist ungleich – verschieden breit, hoch und gedreht, dazu
+  // hier und da ein Klumpen, der zur Seite geworfen wurde. Vorher war jeder
+  // Huegel gleich gross und die Spur sah gegossen aus. Getaut wird auch
+  // ungleich, sonst verschwaende sie wie ein Strich.
+  _aufwerfen(w, t) {
+    const q = this._kurve.getPointAt(Math.min(1, w))
+    const tan = this._kurve.getTangentAt(Math.min(1, w))
+    const richtung = Math.atan2(tan.x, tan.z)
+    const zufall = Math.random
+    const neu = (seit, vor, groesse, flach, verzug) => {
+      const x = q.x - tan.z * seit + tan.x * vor
+      const z = q.z + tan.x * seit + tan.z * vor
+      this._geboren.push({
+        x, z, y: this.world.heightAt(x, z), t: t + verzug,
+        breit: groesse * (0.75 + zufall() * 0.5), lang: groesse * (0.9 + zufall() * 0.9), hoch: groesse * flach,
+        richtung: richtung + (zufall() - 0.5) * 1.1,
+        stehen: STEHEN * (0.7 + zufall() * 0.6), tauen: TAUEN * (0.7 + zufall() * 0.6),
+      })
+    }
+    neu((zufall() - 0.5) * 0.14, 0, 0.36 + zufall() * 0.26, 0.3 + zufall() * 0.22, 0)
+    if (zufall() < KLUMPEN) {
+      const seite = zufall() < 0.5 ? -1 : 1
+      neu(seite * (0.45 + zufall() * 0.5), (zufall() - 0.5) * 0.3, 0.1 + zufall() * 0.16, 0.55 + zufall() * 0.4, 0.04 + zufall() * 0.08)
     }
   }
 
@@ -193,15 +214,17 @@ export class RohrpostNetz {
     let n = 0
     for (const h of this._geboren) {
       const a = jetzt - h.t
+      if (a < 0) continue
       let hoch
       if (a < 0.15) hoch = a / 0.15
-      else if (a < STEHEN) hoch = 1
-      else hoch = Math.max(0, 1 - (a - STEHEN) / TAUEN)
+      else if (a < h.stehen) hoch = 1
+      else hoch = Math.max(0, 1 - (a - h.stehen) / h.tauen)
       if (hoch <= 0) continue
       this._dummy.position.set(h.x, h.y - 0.05, h.z)
       // Laengs zur Spur gestreckt, damit die Huegel zu einem Wall verschmelzen.
       this._dummy.rotation.set(0, h.richtung, 0)
-      this._dummy.scale.set(h.r * (0.8 + 0.2 * hoch), h.r * 0.42 * hoch, h.r * 1.25 * (0.8 + 0.2 * hoch))
+      const k = 0.8 + 0.2 * hoch
+      this._dummy.scale.set(h.breit * k, h.hoch * hoch, h.lang * k)
       this._dummy.updateMatrix()
       this._huegel.setMatrixAt(n++, this._dummy.matrix)
     }
@@ -209,4 +232,23 @@ export class RohrpostNetz {
     this._huegel.count = n
     this._huegel.instanceMatrix.needsUpdate = true
   }
+}
+
+// Geraden zwischen den Punkten, an jedem inneren Punkt eine Rundung mit
+// dem Radius r – wie ein Rohr mit Bogenstueck.
+function rohrweg(punkte, r) {
+  const v = punkte.map(([x, z]) => new THREE.Vector3(x, 0, z))
+  const weg = new THREE.CurvePath()
+  let von = v[0]
+  for (let i = 1; i < v.length - 1; i++) {
+    const rein = v[i].clone().sub(v[i - 1]).normalize()
+    const raus = v[i + 1].clone().sub(v[i]).normalize()
+    const a = v[i].clone().addScaledVector(rein, -r)
+    const b = v[i].clone().addScaledVector(raus, r)
+    weg.add(new THREE.LineCurve3(von, a))
+    weg.add(new THREE.QuadraticBezierCurve3(a, v[i], b))
+    von = b
+  }
+  weg.add(new THREE.LineCurve3(von, v.at(-1)))
+  return weg
 }

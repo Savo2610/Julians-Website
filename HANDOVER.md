@@ -473,8 +473,9 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
   rollt vor dem Rohr aus und sinkt nach 6 s ein; die Spur wartet, bis sie
   liegt, sonst fährt die Kamera weg, bevor man sie sieht;
 - dann läuft ein **Maulwurf** unter dem Schnee zum Funkmast (26 m/s, gut
-  47 m, handgelegter Weg an Tunnel, Bank, Seeufer und Quellrahmen vorbei,
-  gegen die ausgelesenen Hindernisse geprüft), der Mast funkt 2,2 s
+  45 m, verlegt wie ein Rohr: zwei Geraden mit gerundetem Knick an Tunnel,
+  Bank, Seeufer und Quellrahmen vorbei, gegen die ausgelesenen Hindernisse
+  geprüft; der Schnee darauf dagegen ungleich, mit Klumpen daneben), der Mast funkt 2,2 s
   (`tower.userData.funken`). Die Kamera zoomt nur zum Einwerfen ans Rohr
   und ist zurück beim Fahrer, sobald der Maulwurf losläuft – ihm bis zum
   Mast zu folgen war Julian zu viel. Die Spur ist

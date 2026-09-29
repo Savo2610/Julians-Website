@@ -127,12 +127,18 @@ function solanaApp() {
 }
 
 // Der Loeschzug faehrt aus dem Tal hinaus und in der Lernwerkstatt wieder
-// ein: dort startet jf.veerka.mp mit ?einfahrt=1 dunkel in #080b14 und
-// laesst das Fahrzeug vor der Wache ausrollen. Hier faehrt es an, und die
-// Blende schliesst in genau dieser Farbe. Deshalb im selben Tab – in einem
-// neuen saehe man weder das Anfahren noch den Uebergang.
-// location.href braucht keine Nutzergeste; die 1,9 s Verzoegerung sind also
-// auch in Safari kein Problem, anders als bei window.open.
+// ein: dort startet jf.veerka.mp mit ?einfahrt=1 und laesst das Fahrzeug
+// vor der Wache ausrollen. Hier faehrt es an, und eine Blende schliesst in
+// der Farbe, in der die Lernwerkstatt aufwacht – und die haengt vom
+// Farbschema ab: dunkel ist das erste Bild #080b14, hell ein Tag, der
+// blass aus der Unschaerfe kommt (gemessen 30.09., erste Bilder der
+// Einfahrt). Ein schwarzer Vorhang vor einem hellen Tag waere ein Blitz.
+// Die Lernwerkstatt folgt nur prefers-color-scheme, einen eigenen Schalter
+// hat sie nicht; die Abfrage hier trifft also dasselbe Schema.
+// Im selben Tab – in einem neuen saehe man weder das Anfahren noch den
+// Uebergang. location.href braucht keine Nutzergeste; die 1,9 s
+// Verzoegerung sind also auch in Safari kein Problem, anders als bei
+// window.open.
 const AUSFAHRT_MS = 1900
 function ausruecken(truck, boden) {
   const ziel = new URL(LINKS.jugendfeuerwehr)

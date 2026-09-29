@@ -193,16 +193,21 @@ export function createFireTruck() {
   // Die Auswahl hat nur ein Ziel; gewaehlt heisst herangezoomt.
   group.userData.select = (i) => { an = i !== null }
 
-  // Losfahren. Geradeaus stand eine Tanne im Weg, und er fuhr mitten durch
-  // (29.09.). Jetzt setzt er erst 0,8 m zurueck und schlaegt dabei ein, dann
-  // faehrt er in einer engen Kurve (Radius 2,6 m, 57 Grad) zur Kamera hin
-  // aus der Lichtung. Gegen die ausgelesenen Staemme gerechnet: keine Ecke
-  // kommt naeher als 2,4 m an einen Stamm, geparkt sind es 2,7. Ohne das
-  // Zuruecksetzen waere es bestenfalls 1,2 – durch die Krone. Das Ende zeigt
-  // nach rechts unten im Bild; auf jf.veerka.mp rollt er von links herein.
+  // Losfahren. Hinter ihm, schraeg links vor der Nase, ist eine Luecke
+  // zwischen zwei Tannen, gut drei Meter entfernt; da will er hindurch.
+  // Erst setzt er 0,8 m zurueck und schlaegt dabei so ein, dass die Nase
+  // zur Kamera schwenkt – das schafft Platz –, dann faehrt er eine
+  // Linkskurve (Radius 3 m, 52 Grad) genau auf die Mitte der Luecke.
+  // Gegen die ausgelesenen Staemme gerechnet: allen anderen Tannen kommt
+  // keine Ecke naeher als 2,5 m, geparkt sind es 2,7. Durch die Luecke
+  // selbst muss er nicht passen, die Blende ist vorher zu.
+  // Frueher fuhr er geradeaus mitten durch die Tanne vor ihm, dann in einer
+  // Rechtskurve zur Kamera; in den Wald hinein liest es sich mehr nach
+  // Ausfahrt (Julian, 30.09.).
   // boden(x, z) ist die Gelaendehoehe, damit er nicht durch den Hang faehrt.
-  const RUECK = { weg: 0.8, dauer: 0.6, radius: 3.5 }
-  const KURVE = { radius: 2.6, winkel: 1.0, start: 0.7, beschl: 3.5 }
+  // kruemmung > 0 dreht nach rechts (die Gierung nimmt ab), < 0 nach links.
+  const RUECK = { weg: 0.8, dauer: 0.6, kruemmung: 1 / 3.5 }
+  const KURVE = { kruemmung: -1 / 3, winkel: 0.9, start: 0.7, beschl: 3.5 }
   group.userData.losfahren = (boden) => {
     if (fahrt) return
     an = true
@@ -214,7 +219,7 @@ export function createFireTruck() {
     }
   }
   // Zurueck an den Platz – wenn der Browser die Seite aus dem Verlauf
-  // wiederholt, stuende er sonst am Waldrand.
+  // wiederholt, stuende er sonst zwischen den Tannen.
   group.userData.zurueck = () => {
     if (!fahrt) return
     group.position.set(fahrt.x0, fahrt.boden(fahrt.x0, fahrt.z0) + fahrt.hoch, fahrt.z0)
@@ -250,14 +255,14 @@ export function createFireTruck() {
       // Rueckwaerts weich an- und abrollen, kurz stehen, dann Gas.
       const u = Math.min(1, f.t / RUECK.dauer)
       const zurueck = RUECK.weg * u * u * (3 - 2 * u)
-      rollen(-(zurueck - f.zurueck), () => 1 / RUECK.radius)
+      rollen(-(zurueck - f.zurueck), () => RUECK.kruemmung)
       f.zurueck = zurueck
       const tv = Math.max(0, f.t - KURVE.start)
       const vor = 0.5 * KURVE.beschl * tv * tv
       rollen(vor - f.vor, (d) => {
         if (f.gedreht >= KURVE.winkel) return 0
-        f.gedreht += d / KURVE.radius
-        return 1 / KURVE.radius
+        f.gedreht += d * Math.abs(KURVE.kruemmung)
+        return KURVE.kruemmung
       })
       f.vor = vor
       group.position.set(f.x, f.boden(f.x, f.z) + f.hoch, f.z)

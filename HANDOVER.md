@@ -472,12 +472,18 @@ springt der Rucksack), der Löschzug schaltet Blaulicht und Scheinwerfer an
 aufwachen). Uhr und Depot spielen ihr Stück **einmal** (die Uhr zweimal
 „brrrt“, dann läuft sie normal) – in Schleife machte es nervös. Die
 Lichthöfe sind additive Sprites, keine Lichtquellen. „Ausrücken“ lässt ihn
-0,8 m zurücksetzen und dann in einer engen Kurve zur Kamera hin
-hinausfahren – geradeaus stand eine Tanne, durch die er fuhr; gerechnet
-gegen die Stämme bleibt jede Ecke ≥ 2,4 m weg. Dabei schließt eine Blende in
-`#080b14`; nach 1,9 s geht es **im selben Tab** zu
-`jf.veerka.mp/?einfahrt=1`, das in genau dieser Farbe aufwacht und das
-Fahrzeug von links einrollen lässt – im Tal fährt es nach rechts hinaus.
+0,8 m zurücksetzen (die Nase schwenkt dabei zur Kamera) und dann in einer
+Linkskurve (Radius 3 m, 52°) in die Lücke zwischen den Tannen hinter ihm
+fahren – geradeaus fuhr er zuerst durch eine Tanne, danach in einer
+Rechtskurve zur Kamera; Julian wollte die Lücke (30.09.), Ausrichtung
+unverändert. Gegen die ausgelesenen Stämme gerechnet bleibt jede Ecke
+≥ 2,5 m von allen anderen weg; durch die Lücke selbst muss er nicht passen.
+Dabei schließt eine Blende (`.ausfahrt`) in der Farbe, in der die
+Lernwerkstatt aufwacht, und die hängt vom Farbschema ab: dunkel ist ihr
+erstes Bild `#080b14`, hell schon die unscharfe Straße am Tag (erste Bilder
+gemessen) – deshalb hell ein Verlauf aus diesem Bild, in zehn Streifen
+gemittelt. Die Lernwerkstatt folgt nur `prefers-color-scheme`. Nach 1,9 s
+geht es **im selben Tab** zu `jf.veerka.mp/?einfahrt=1`.
 Ein neuer Tab zeigte weder Anfahren noch Übergang. `location.href` braucht
 keine Nutzergeste, die Verzögerung ist also auch in Safari erlaubt. Kommt
 man per Zurück aus dem bfcache, setzt `pageshow` Auto und Blende zurück.

@@ -346,16 +346,22 @@ html.touch .sheet-option .opt-go { display: none; }
 .station-sheet.einzeln .k-waehlen { display: none; }
 
 /* Die Blende, hinter der der Loeschzug ins Tal der Lernwerkstatt faehrt.
-   Die Farbe ist die, in der jf.veerka.mp mit ?einfahrt=1 aufwacht. Sie
-   beginnt erst, wenn das Auto nach dem Zuruecksetzen vorwaerts rollt. */
+   Die Farbe ist die, in der jf.veerka.mp mit ?einfahrt=1 aufwacht: nachts
+   ihr Grundton #080b14; am Tag ist das erste Bild dort schon die helle
+   Strasse, unscharf, und kein Vorhang. Der Verlauf ist dieses Bild in zehn
+   Streifen gemittelt: Himmel, Haeuser, Strasse, Wiese. Sie beginnt erst,
+   wenn das Auto nach dem Zuruecksetzen vorwaerts rollt. */
 .ausfahrt {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #080b14;
+  background: linear-gradient(#b0d7ea, #bcdeea 30%, #a2c2ad 47%, #9a9a8c 62%, #7a6f72 70%, #bcc4bb 82%, #abcd99);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.9s cubic-bezier(0.5, 0, 0.75, 0) 0.9s;
+}
+@media (prefers-color-scheme: dark) {
+  .ausfahrt { background: #080b14; }
 }
 .ausfahrt.an { opacity: 1; pointer-events: auto; }
 

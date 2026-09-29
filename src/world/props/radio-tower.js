@@ -167,7 +167,11 @@ export function createRadioTower() {
 
   let live = 0
   let liveTarget = 0
+  // Ein kurzer Funkspruch, wenn die Rohrpost unter dem Schnee ankommt
+  // (rohrpost-netz.js): so lange sendet der Mast, auch ohne Sendung.
+  let funkspruch = 0
   group.userData.setLive = (v) => { liveTarget = v ? 1 : 0 }
+  group.userData.funken = (sekunden) => { funkspruch = Math.max(funkspruch, sekunden) }
   // Mast und Huette als zwei Kreise; die Welt rechnet sie in ihre
   // Koordinaten um.
   group.userData.colliders = () => {
@@ -178,7 +182,11 @@ export function createRadioTower() {
     })
   }
   group.userData.animate = (t, dt = 1 / 60) => {
-    live += (liveTarget - live) * Math.min(1, dt * 2)
+    funkspruch = Math.max(0, funkspruch - dt)
+    const ziel = funkspruch > 0 ? 1 : liveTarget
+    // Ein Funkspruch setzt schlagartig ein; sonst zoege die Kamera am Mast
+    // vorbei, bevor die ersten Boegen zu sehen sind.
+    live += (ziel - live) * Math.min(1, dt * (funkspruch > 0 ? 8 : 2))
     // Warnlicht: ein kurzes Aufblitzen je 1,6 s, auf Sendung doppelt so oft.
     const period = live > 0.5 ? 0.8 : 1.6
     const f = (t % period) / period

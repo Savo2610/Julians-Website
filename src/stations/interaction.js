@@ -24,6 +24,7 @@ export class StationInteraction {
     this.skier = skier
     this.focus = null
     this.selected = 0
+    this.rohrpost = null
 
     ui.onUse = () => this.press('use')
     ui.onPick = (i) => this._open(i)
@@ -34,6 +35,12 @@ export class StationInteraction {
   // true = die Aktion ist hier verbraucht und bewegt den Fahrer nicht.
   press(action) {
     if (this.flight?.active) return this.flight.press(action)
+    // Waehrend die Kamera der Rohrpost folgt: Esc, Enter oder die Karte
+    // holen sie zurueck; Lenken ist ohnehin gesperrt.
+    if (this.rohrpost?.aktiv && this.input.locked) {
+      if (action === 'back' || action === 'use' || action === 'map') this.rohrpost.ueberspringen()
+      return true
+    }
     if (this.map?.open) return this.map.press(action)
     if (action === 'map' && this.map && !this.skier.tow) {
       this.leave()

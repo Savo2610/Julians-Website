@@ -30,6 +30,7 @@ import { TopCamera } from './player/top-camera.js'
 import { DroneFlight } from './player/drone-flight.js'
 import { Bestenliste } from './menu/bestenliste.js'
 import { Spray } from './player/spray.js'
+import { RohrpostNetz } from './world/rohrpost-netz.js'
 
 const canvas = document.getElementById('scene')
 
@@ -113,6 +114,13 @@ flight = new DroneFlight({ camera, input, onEnd: () => chase.snap() })
 const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu, flight, bestenliste })
 input.onAction = (action) => interaction.press(action)
 
+// Die Rohrpost verschickt, wenn das Upload-Fenster zugeht: Kapseln in den
+// Trichter, dann unter dem Schnee zum Funkmast. Das Fenster meldet sich per
+// Ereignis, damit dialogs/upload.js nichts vom Tal wissen muss.
+const rohrpost = new RohrpostNetz({ pipe: props.rohrpost, tower: props.landscape.tower, world, camera: chase, input })
+interaction.rohrpost = rohrpost
+addEventListener('rohrpost', (e) => rohrpost.versenden(e.detail))
+
 // R und der Rueckweg-Hinweis: zurueck zum Startplatz, hinter derselben Blende
 // wie die Schnellreise. Solange die Slalomzeit eingeblendet ist, geht es
 // stattdessen an den Slalom-Start (race.zeitSichtbar).
@@ -153,6 +161,7 @@ new Antippen(canvas, camera, stations, {
 })
 canvas.addEventListener('pointerdown', () => {
   if (flight.active) flight.stop()
+  if (rohrpost.aktiv) rohrpost.ueberspringen()
   interaction.leave()
 })
 
@@ -330,6 +339,7 @@ function advance(dt) {
   // stations/interaction.js, warum.
   stations.update(dt, skier)
   interaction.update()
+  rohrpost.update(dt)
   hints.update(dt)
   regeln.update(dt)
   // dt kommt mit, weil inzwischen nicht mehr alles eine Funktion der Uhrzeit

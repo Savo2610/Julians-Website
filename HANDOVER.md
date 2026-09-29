@@ -236,7 +236,7 @@ Strang zu Ende fahren kann.
 | Werkstatt (Hütte) | 22, 28 | Auswahl: LinkedIn / GitHub (Weg heißt KARRIERE) |
 | Skikasse | −40, −2 | Auswahl: PayPal / Solana (Wallet-Fenster) |
 | Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
-| Rohrpost | −19, 25 | Kapsel fliegt, dann Upload-Fenster |
+| Rohrpost | −19, 25 | Klappe auf, Upload-Fenster; beim Schließen der Versand (4a, Rohrpost) |
 | Abkürzung (Felstunnel) | −34, 15 | Kurzlink-Fenster |
 | Arbeitszeitrechner (Stechuhr) | −41, 13 | zoomt, Zeiger rasen; öffnen stempelt, dann zeit.veerka.mp |
 | Packlisten-App (Depot) | −48, 0 | zoomt, Deckel klappt, Inhalt hüpft; packliste.veerka.mp |
@@ -459,6 +459,29 @@ Mesh – die Werkstatt führt als `object` nur die Bank. Ein Tipp ist unter
 10 px und 450 ms, sonst ist es der Daumenstick. Ob getippt werden darf,
 zählt beim Drücken, weil `main.js` beim Drücken eine offene Auswahl
 schließt. Am Rechner wird der Zeiger über der Station zur Hand.
+
+**Rohrpost verschickt (Zweig `rohrpost-versand`, 30.09.).** Vorher schoss
+beim *Öffnen* des Upload-Fensters eine Kapsel aus dem Rohr, bevor etwas
+geschickt war. Jetzt klappt beim Öffnen nur die Klappe weit auf; verschickt
+wird beim **Schließen**. `dialogs/upload.js` zählt je Sitzung, was angekommen
+ist (jede Datei und der Text je eins), und meldet beim `close` ein
+Ereignis `rohrpost` mit `{ angekommen, gescheitert }` – so muss das Fenster
+nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
+- je Sendung eine Kapsel (höchstens fünf) plopp in den Trichter, Klappe
+  zu, je Kapsel eine Beule durchs Rohr, Schnee stiebt am Kragen;
+- **gescheitert:** das Rohr hustet, eine Kapsel fliegt mit Rauch heraus,
+  rollt vor dem Rohr aus und sinkt nach 6 s ein; die Spur wartet, bis sie
+  liegt, sonst fährt die Kamera weg, bevor man sie sieht;
+- dann läuft ein **Maulwurf** unter dem Schnee zum Funkmast (11 m/s, gut
+  47 m, handgelegter Weg an Tunnel, Bank, Seeufer und Quellrahmen vorbei,
+  gegen die ausgelesenen Hindernisse geprüft), die Kamera fährt mit (ohne
+  Drehung), der Mast funkt 2,2 s (`tower.userData.funken`). Die Spur ist
+  **nicht** in die Schneetextur gestempelt – die hält für immer –, sondern
+  ein InstancedMesh aus Hügelchen, die nach 3,2 s in 2,4 s wieder zutauen;
+- **nichts geschickt:** die Klappe fällt zu, ein Hauch Dampf, nach 1,4 s
+  steht sie wieder offen.
+Esc, Enter, `M` oder Tippen holen die Kamera sofort zurück, der Maulwurf
+läuft allein weiter. Mit `prefers-reduced-motion` keine Kamerafahrt.
 
 **Jede Station zoomt (Zweig `stationen-mit-auftritt`, 29./30.09., per `--no-ff` in `main`).** Stechuhr,
 Depot und Löschzug öffneten ihre Seite sofort – wer im Tal gelernt hat,

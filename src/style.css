@@ -118,7 +118,56 @@ kbd {
 }
 kbd.k-enter { font-size: 13px; min-width: 28px; }
 
-/* --- Einladung an der Station -------------------------------------------- */
+/* --- Frost -----------------------------------------------------------------
+   Alles, was nur kurz ueber dem Tal steht – Einladung, Hinweise, Zeitnahme,
+   Meldungen –, hat keinen Behaelter: Schrift mit hellem Hof, dahinter ein
+   Hauch, der das Bild weich beschlagen laesst und ohne Kante auslaeuft.
+   Vorher waren es vier Pillen aus Glas, und jede sah aus wie ein Knopf,
+   auch wo man nichts druecken soll. Der Hof allein traegt auf Schnee, ueber
+   Tannen und Fels nicht; dafuer ist der Hauch da. Das Glas bleibt fuer das,
+   was man wirklich bedient: Auswahl, Uebersicht, Fenster. */
+
+.frost {
+  --halo: 0 0 5px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.85), 0 0 26px rgba(255, 255, 255, 0.6);
+  color: #1b2a3a;
+  text-shadow: var(--halo);
+  isolation: isolate;
+}
+.frost::before {
+  content: '';
+  position: absolute;
+  inset: -16px -30px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  -webkit-backdrop-filter: blur(10px) brightness(1.08) saturate(1.15);
+  backdrop-filter: blur(10px) brightness(1.08) saturate(1.15);
+  -webkit-mask-image: radial-gradient(closest-side, #000 50%, transparent);
+  mask-image: radial-gradient(closest-side, #000 50%, transparent);
+  transition: background 0.2s ease;
+}
+button.frost:hover::before { background: radial-gradient(closest-side, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)); }
+/* Tasten als duenn umrandete Kappen: der weisse Klotz war selbst eine
+   kleine Pille im Bild. */
+.frost kbd {
+  color: #1b2a3a;
+  text-shadow: none;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid rgba(27, 42, 58, 0.5);
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+}
+.frost-art {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* --- Einladung an der Station --------------------------------------------
+   Vier Eckmarken in der Stationsfarbe statt einer Pille mit Farbpunkt. Beim
+   Erscheinen ziehen sie sich von aussen zusammen, wie ein Sucher, der die
+   Station anpeilt – so ist klar, welches Ding im Tal gemeint ist. */
 
 .station-prompt {
   position: fixed;
@@ -127,8 +176,9 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 14px 7px 8px;
-  border-radius: 999px;
+  padding: 9px 16px 10px 12px;
+  border: 0;
+  background: none;
   font: inherit;
   text-align: left;
   white-space: nowrap;
@@ -139,36 +189,42 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
   transition: opacity 0.22s ease;
   -webkit-tap-highlight-color: transparent;
 }
+.station-prompt::after {
+  --c: var(--accent);
+  --len: 11px;
+  --w: 2.5px;
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--len) var(--w),
+    linear-gradient(var(--c), var(--c)) top left / var(--w) var(--len),
+    linear-gradient(var(--c), var(--c)) top right / var(--len) var(--w),
+    linear-gradient(var(--c), var(--c)) top right / var(--w) var(--len),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--len) var(--w),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--w) var(--len),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--len) var(--w),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--w) var(--len);
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
+}
 .station-prompt.visible { opacity: 1; pointer-events: auto; }
 .station-prompt.hidden { opacity: 0; pointer-events: none; }
-.station-prompt.pop { animation: promptIn 0.38s cubic-bezier(0.2, 1.5, 0.4, 1); }
-@keyframes promptIn {
-  from { scale: 0.8; translate: 0 6px; }
-  to { scale: 1; translate: 0 0; }
+.station-prompt.pop::after { animation: anpeilen 0.5s cubic-bezier(0.2, 1.3, 0.35, 1); }
+@keyframes anpeilen {
+  from { inset: -14px -22px; opacity: 0; }
 }
 .station-prompt.used { animation: glassPulse 0.35s ease; }
 @keyframes glassPulse {
   40% { scale: 0.94; }
   100% { scale: 1; }
 }
-/* Ein Farbpunkt vorn statt eines farbigen Kopfes: die Station hat ihre
-   Farbe, aber das Glas bleibt Glas. Ohne Enter-Taste (Handy) steht er
-   allein am Anfang. */
-.station-prompt::after {
-  content: '';
-  order: -1;
-  width: 8px;
-  height: 8px;
-  margin-left: 4px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-.station-prompt kbd { order: 0; }
-.prompt-text { display: flex; flex-direction: column; line-height: 1.15; }
-.prompt-title { font-size: 13px; font-weight: 750; letter-spacing: 0.01em; }
-.prompt-sub { font-size: 11px; font-weight: 550; color: #4a5f75; }
-.station-prompt.dead { opacity: 0.7; }
+.prompt-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+.prompt-title { font-size: 15px; font-weight: 800; letter-spacing: 0.005em; }
+.prompt-sub { font-size: 11.5px; font-weight: 600; color: #3d5166; }
+.station-prompt.dead .prompt-text { opacity: 0.7; }
+.station-prompt.dead::after { --c: #7a8b9c; }
 .station-prompt.dead kbd { display: none; }
 
 /* --- Auswahl nach dem Heranzoomen ---------------------------------------- */
@@ -288,21 +344,18 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
 
 /* --- Zeitnahme der Rennstrecke -------------------------------------------
    Erscheint nur waehrend eines Laufs und ein paar Sekunden danach. Der Rest
-   der Welt kommt ohne Anzeige aus, das soll hier auch so bleiben. */
+   der Welt kommt ohne Anzeige aus, das soll hier auch so bleiben. Frost wie
+   alles andere: grosse duenne Ziffern wie auf einer Anzeigetafel statt der
+   fast deckenden weissen Karte, die als einzige aus dem Glas fiel. */
 .race-hud {
   position: fixed;
-  top: 22px;
+  top: max(16px, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 20px 9px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 26px rgba(40, 70, 110, 0.2), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  gap: 4px;
   pointer-events: none;
   opacity: 0;
   z-index: 12;
@@ -311,35 +364,35 @@ kbd.k-enter { font-size: 13px; min-width: 28px; }
 .race-hud.visible { opacity: 1; }
 
 .race-time {
-  font: 700 30px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  font: 300 48px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   color: #1b2430;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
 }
 .race-hud[data-tone='good'] .race-time { color: #1f7a4d; }
 .race-hud[data-tone='warn'] .race-time { color: #b8501f; }
 
 .race-note {
-  font: 600 12px/1.2 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
-  color: #5b6a7c;
-  min-height: 14px;
+  font: 800 10.5px/1.2 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #3d5166;
+  min-height: 13px;
 }
 
 /* --- Trickmeldung ---------------------------------------------------------
    Kurz und weit unten, damit sie der Zeitnahme oben nicht ins Gehege kommt.
-   Sie steigt beim Erscheinen ein Stueck auf und verschwindet von selbst. */
+   Sie steigt beim Erscheinen ein Stueck auf und verschwindet von selbst.
+   Dunkle Schrift im Frost statt heller auf dunklem Kasten: der war das
+   einzige Schwarze ueber dem ganzen Tal. */
 .trick-hud {
   position: fixed;
   bottom: 96px;
   left: 50%;
   transform: translate(-50%, 8px);
-  padding: 6px 16px 7px;
-  border-radius: 14px;
-  background: rgba(20, 30, 44, 0.72);
-  backdrop-filter: blur(8px);
-  font: 700 20px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
-  letter-spacing: 0.06em;
-  color: #f6fbff;
+  font: 800 24px/1 ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   pointer-events: none;
   opacity: 0;
   z-index: 12;
@@ -433,11 +486,9 @@ html.touch, html.touch body {
   translate: -50% 0;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 650;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
   pointer-events: none;
   z-index: 11;
@@ -464,8 +515,7 @@ html.touch, html.touch body {
    zwei Spalten a 160 Pixel waren fuer "paypal.me/juliansebv" zu schmal. */
 html.touch .sheet-options { grid-template-columns: 1fr; }
 html.touch .sheet-option { padding: 13px 14px; }
-html.touch .station-prompt { padding: 10px 16px 10px 10px; }
-html.touch .prompt-title { font-size: 14px; }
+html.touch .station-prompt { padding: 12px 18px 13px 16px; }
 
 /* --- Talkarte ---------------------------------------------------------------
    Dasselbe Glas wie die Stationsauswahl, nur gross: links die Karte, rechts
@@ -548,14 +598,11 @@ html.touch .prompt-title { font-size: 14px; }
   left: 50%;
   bottom: calc(100% + 7px);
   translate: -50% 4px;
-  padding: 4px 9px;
-  border-radius: 999px;
   white-space: nowrap;
-  font-size: 11.5px;
-  font-weight: 750;
+  font-size: 12px;
+  font-weight: 800;
   color: #13212f;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 4px 12px -3px rgba(28, 58, 96, 0.35);
+  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px rgba(255, 255, 255, 0.8);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, translate 0.25s ease;
@@ -677,27 +724,27 @@ html.touch .prompt-title { font-size: 14px; }
 }
 @keyframes caret { 50% { opacity: 0; } }
 
+/* Reiter als Woerter mit einem Strich unter dem aktiven, statt eines
+   Umschalters aus Pillen. */
 .ov-tabs {
   display: flex;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(40, 70, 105, 0.08);
+  gap: 20px;
+  padding: 0 4px;
 }
 .ov-tabs button {
-  padding: 7px 16px;
+  padding: 8px 0 6px;
   border: 0;
-  border-radius: 999px;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  font: 700 13.5px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-  color: #3d5166;
+  font: 700 14px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  color: #5b6f84;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
+.ov-tabs button:hover { color: #13212f; }
 .ov-tabs button[aria-selected="true"] {
-  background: #fff;
   color: #13212f;
-  box-shadow: 0 2px 8px -2px rgba(28, 58, 96, 0.3);
+  border-bottom-color: #13212f;
 }
 .ov-head .sheet-close { position: static; flex: none; }
 
@@ -769,18 +816,17 @@ html.touch .prompt-title { font-size: 14px; }
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0 8px 8px;
-  padding: 4px 8px;
+  margin: 0 12px 10px;
+  padding: 2px 0;
   border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--c) 10%, transparent);
+  background: none;
   font: 650 11px/1.2 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   color: color-mix(in srgb, var(--c) 80%, #13212f);
   text-align: left;
   cursor: pointer;
   transition: background 0.2s ease;
 }
-.ov-where:hover { background: color-mix(in srgb, var(--c) 22%, transparent); }
+.ov-where:hover { text-decoration: underline; text-underline-offset: 3px; }
 .ov-pin {
   flex: none;
   width: 8px;
@@ -814,17 +860,17 @@ kbd.k-space { min-width: 64px; font-size: 10px; }
 
 /* --- Hinweise unten ------------------------------------------------------ */
 
-.hint-pill {
+.hinweis {
   position: fixed;
   left: 50%;
   bottom: max(28px, calc(env(safe-area-inset-bottom) + 14px));
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 18px 9px 9px;
-  border-radius: 999px;
-  font: 700 14px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-  color: #13212f;
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  font: 700 15px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   white-space: nowrap;
   cursor: pointer;
   z-index: 11;
@@ -833,33 +879,20 @@ kbd.k-space { min-width: 64px; font-size: 10px; }
   pointer-events: none;
   transition: opacity 0.5s ease, translate 0.5s cubic-bezier(0.2, 1.2, 0.3, 1);
 }
-.hint-pill.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
-.hint-pill:hover { background: rgba(255, 255, 255, 0.8); }
-.hint-pill kbd { min-width: 26px; height: 26px; font-size: 12.5px; }
-html.touch .hint-pill { padding: 12px 20px; }
+.hinweis.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
+.hinweis kbd { min-width: 26px; height: 26px; font-size: 12.5px; }
+html.touch .hinweis { padding: 12px 20px; }
 
-/* Der Start-Hinweis ohne Glas: nur Taste und Wort, mit einem weichen hellen
-   Hof, damit es auf Schnee wie auf Tannen lesbar bleibt. Als Kachel stand er
-   lauter da als alles andere im Bild. Ein langsames Atmen haelt ihn im
-   Augenwinkel, ohne zu blinken. */
-.hint-pill.hint-start {
-  background: none;
-  border: 0;
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  padding: 6px 10px;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 650;
-  color: #2a3d52;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.8);
-}
-.hint-pill.hint-start::before { display: none; }
-.hint-pill.hint-start kbd { min-width: 22px; height: 22px; font-size: 11px; }
-.hint-pill.hint-start.visible { opacity: 0.82; animation: hintBreath 4.5s ease-in-out 2s infinite; }
-.hint-pill.hint-start:hover { background: none; opacity: 1; animation: none; }
-@keyframes hintBreath { 50% { opacity: 0.5; } }
+/* Der Start-Hinweis leiser als der Rueckweg: er steht die ganze erste
+   halbe Minute im Bild. Ein langsames Atmen haelt ihn im Augenwinkel, ohne
+   zu blinken. Es atmet die Schriftfarbe, nicht die Deckkraft: unter
+   opacity 1 schaltet der Browser die Unschaerfe des Hauchs ab, und ueber
+   Tannen war der Hinweis dann kaum noch zu lesen. */
+.hinweis.hint-start { gap: 8px; font-size: 13px; font-weight: 650; color: rgba(42, 61, 82, 0.85); }
+.hinweis.hint-start kbd { min-width: 22px; height: 22px; font-size: 11px; }
+.hinweis.hint-start.visible { animation: hintBreath 4.5s ease-in-out 2s infinite; }
+.hinweis.hint-start:hover { color: #1b2a3a; animation: none; }
+@keyframes hintBreath { 50% { color: rgba(42, 61, 82, 0.5); } }
 
 /* Hochformat: Karte oben, Liste darunter; Kacheln einspaltig. */
 @media (max-width: 760px) {
@@ -872,7 +905,8 @@ html.touch .hint-pill { padding: 12px 20px; }
   .ov-name { flex-basis: calc(100% - 60px); }
   .ov-tabs { order: 3; width: 100%; }
   /* Vier Reiter auf 390 px: mit 16 px Rand ragte der vierte hinaus. */
-  .ov-tabs button { flex: 1; min-width: 0; padding: 7px 4px; font-size: 12.5px; }
+  .ov-tabs { gap: 12px; justify-content: space-between; }
+  .ov-tabs button { min-width: 0; font-size: 13px; }
   .ov-links { grid-template-columns: 1fr; }
   .ov-karte {
     grid-template-columns: 1fr;
@@ -915,7 +949,7 @@ html.touch .hint-pill { padding: 12px 20px; }
   display: block;
   height: 6px;
   margin: 0 4px 10px;
-  border-radius: 999px;
+  border-radius: 2px;
   background: rgba(40, 70, 105, 0.1);
   overflow: hidden;
 }
@@ -927,8 +961,8 @@ html.touch .hint-pill { padding: 12px 20px; }
 }
 .pass-orte { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
 .pass-ort {
-  padding: 5px 11px;
-  border-radius: 999px;
+  padding: 5px 10px;
+  border-radius: 6px;
   font-size: 12.5px;
   font-weight: 650;
   color: #7a8b9c;
@@ -1003,38 +1037,38 @@ html.touch .pass-reihe { grid-template-columns: 1fr; }
 .pass-sub { font-size: 11.5px; font-weight: 550; color: #4a5f75; }
 .pass-stempel.verborgen .pass-sub { display: none; }
 
-.pass-pille {
+.pass-meldung {
   position: fixed;
-  top: max(16px, env(safe-area-inset-top));
-  left: 16px;
+  top: max(22px, env(safe-area-inset-top));
+  left: 28px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  max-width: calc(100vw - 32px);
-  padding: 8px 16px 8px 8px;
-  border-radius: 999px;
+  gap: 12px;
+  max-width: calc(100vw - 56px);
   z-index: 13;
   opacity: 0;
   translate: 0 -12px;
   pointer-events: none;
   transition: opacity 0.4s ease, translate 0.45s cubic-bezier(0.2, 1.2, 0.3, 1);
 }
-.pass-pille.visible { opacity: 1; translate: 0 0; }
-.pass-pille-icon {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 19px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 0 0 2px rgba(233, 185, 60, 0.7);
+.pass-meldung.visible { opacity: 1; translate: 0 0; }
+.pm-icon { font-size: 30px; line-height: 1; text-shadow: none; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)); }
+.pm-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.2; }
+.pm-art { font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8a620a; }
+.pm-text strong { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.pm-text small { font-size: 12.5px; font-weight: 600; color: #3d5166; white-space: normal; }
+/* Goldene Ski: ein goldener Hof statt eines goldenen Rings. */
+.pass-meldung.gold { --halo: 0 0 5px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 244, 210, 0.9), 0 0 30px rgba(233, 185, 60, 0.65); }
+.pass-meldung.gold::before { background: radial-gradient(closest-side, rgba(255, 236, 180, 0.6), rgba(255, 236, 180, 0)); }
+.pass-meldung.gold strong { color: #6e4b00; }
+html.touch .pass-meldung { top: max(16px, env(safe-area-inset-top)); left: 18px; max-width: calc(100vw - 96px); }
+/* Medaillen kommen im Ziel, waehrend die Zeitnahme noch steht. Am Handy
+   reicht die Breite nicht fuer beide nebeneinander, und ohne Kasten lagen
+   Zeit und Meldung als Buchstabensalat uebereinander: dann eine Zeile
+   tiefer, unter Zeit und Bestenlisten-Angebot. */
+@media (max-width: 640px) {
+  html:has(.race-hud.visible) .pass-meldung { top: calc(max(16px, env(safe-area-inset-top)) + 136px); }
 }
-.pass-pille-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.pass-pille-text strong { font-size: 14px; font-weight: 800; }
-.pass-pille-text small { font-size: 11.5px; font-weight: 600; color: #4a5f75; }
-.pass-pille.gold { box-shadow: 0 0 0 2px #e9b93c, 0 12px 32px -8px rgba(200, 150, 30, 0.55); }
-html.touch .pass-pille { top: max(12px, env(safe-area-inset-top)); left: 12px; max-width: calc(100vw - 88px); }
 
 /* --- Rundflug der Drohne -------------------------------------------------- */
 /* Kein Glas: ueber dem Bild einer Drohnenkamera liegt Sucherschrift, weiss
@@ -1095,7 +1129,7 @@ html.touch .pass-pille { top: max(12px, env(safe-area-inset-top)); left: 12px; m
   70% { translate: -3px 0; }
 }
 /* Hinweise und Handyknoepfe gehoeren dem Fahrer, nicht der Drohne. */
-html.rundflug .hint-pill,
+html.rundflug .hinweis,
 html.rundflug .touch-jump,
 html.rundflug .touch-hint,
 html.rundflug .touch-stick { visibility: hidden; }
@@ -1107,16 +1141,16 @@ html.rundflug .touch-stick { visibility: hidden; }
 
 .sb-angebot {
   position: fixed;
-  top: 98px;
+  top: 104px;
   left: 50%;
   translate: -50% -6px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 15px 7px 9px;
-  border-radius: 999px;
-  font: 700 13.5px/1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  color: #13212f;
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  font: 700 14px/1 ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   cursor: pointer;
   z-index: 12;
   opacity: 0;
@@ -1124,7 +1158,7 @@ html.rundflug .touch-stick { visibility: hidden; }
   transition: opacity 0.3s ease, translate 0.35s cubic-bezier(0.2, 1.3, 0.3, 1);
 }
 .sb-angebot.visible { opacity: 1; translate: -50% 0; pointer-events: auto; }
-html.touch .sb-angebot { padding: 10px 18px; }
+html.touch .sb-angebot { padding: 12px 20px; }
 
 .ov-liste {
   overflow-y: auto;
@@ -1261,7 +1295,7 @@ html.touch .sb-zeile .sb-wann { display: none; }
 .sb-hin {
   flex: none;
   padding: 8px 14px;
-  border-radius: 999px;
+  border-radius: 10px;
   font: inherit;
   font-weight: 750;
   color: #fff;

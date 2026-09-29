@@ -86,10 +86,10 @@ hinein.
 der Ecke. Die Steuerung steht als Tastenstempel im Schnee
 (`src/world/snow-writing.js`). Was sonst eingeblendet wird, verschwindet von
 selbst. Zwei ausdrücklich gewünschte Ausnahmen (26.09.): die **Übersicht**
-hinter `M` (Abschnitt 4a′) und die beiden **Hinweispillen** unten
+hinter `M` (Abschnitt 4a′) und die beiden **Hinweise** unten
 (`menu/hints.js`) – beide sind für Besucher, die nicht spielen wollen
 oder mit WASD nicht zurechtkommen (beobachtet: vor allem Ältere).
-Dazu seit 26.09. die Pistenpass-Pille oben links (Abschnitt 4a″), die
+Dazu seit 26.09. die Pistenpass-Meldung oben links (Abschnitt 4a″), die
 ebenfalls von selbst geht – nur für Medaillen und Abzeichen, nicht für Orte.
 
 ---
@@ -101,7 +101,7 @@ index.html           Canvas, Ladebalken, Markup der drei Fenster, Aussehen der L
 src/
   main.js            Loop, Renderer, window.__ski (Debug-Zugriff)
   config.js          Alle Stellschrauben: WORLD, SKIER, CAMERA, CHASE, TRICK, COLORS
-  style.css          Glas, Einladung, Auswahl, Übersicht, Pillen, Handymodus
+  style.css          Frost, Glas, Einladung, Auswahl, Übersicht, Handymodus
   core/              Werkzeug ohne Spielwissen: geometry.js (assemble,
                      vertexColorMaterial), input.js, touch.js (Handymodus),
                      device.js (TOUCH), noise.js, rng.js, point-scale.js
@@ -148,8 +148,8 @@ src/
     map-menu.js      Übersicht (M): Links, Talkarte, Pistenpass, Bestenliste
     kacheln.js       Die Link-Kacheln – reine Daten, auch für die Linkliste
     linkliste.js     Linkliste ohne Tal (kein WebGL, kein JavaScript)
-    hints.js         Hinweispillen: Start-Hinweis, Festgefahren-Erkennung, R
-    pistenpass.js    Erkundet, Medaillen, Abzeichen; Speicher und Pille
+    hints.js         Hinweise unten: Start-Hinweis, Festgefahren-Erkennung, R
+    pistenpass.js    Erkundet, Medaillen, Abzeichen; Speicher und Meldung
     pass-regeln.js   Wann was im Pistenpass fällt
     bestenliste.js   Slalom-Bestenliste: Marken holen, eintragen, anzeigen
   dialogs/           Solana, Briefkasten, Kurzlink – siehe Abschnitt 7
@@ -449,7 +449,25 @@ Leertaste springen (im Park Tricks), Enter/E benutzen, `M` Übersicht,
 `R` zurück zum Start, `Tab` Reiter der Übersicht (Links, Talkarte, Pistenpass, Bestenliste), Esc/Backspace zurück.
 
 **Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
-schwebt eine Glasblase mit Name, einem Wort und dem ⏎-Zeichen.
+schwebt die Einladung mit Name, einem Wort und dem ⏎-Zeichen – Frosttext,
+gefasst von vier Eckmarken in der Stationsfarbe, die sich beim Erscheinen
+zusammenziehen wie ein Sucher, der die Station anpeilt.
+
+**Frost statt Pillen (29.09., Branch `oberflaeche-ohne-pillen`).** Alles,
+was nur kurz über dem Tal steht – Einladung, Hinweise unten, Zeitnahme,
+Trickmeldung, Abzeichen, Bestenlisten-Angebot –, hat keinen Behälter mehr:
+Schrift mit hellem Hof (`text-shadow`) und dahinter ein Hauch
+(`.frost::before`: `backdrop-filter` mit radialer `mask-image`), der ohne
+Kante ausläuft. Der Hof allein trug auf Schnee, über Tannen nicht. Vorher
+waren es Glaspillen, und jede sah aus wie ein Knopf. Glas bleibt für das,
+was man bedient (Auswahl, Übersicht, Fenster, Handyknöpfe); die Reiter der
+Übersicht sind Wörter mit Strich statt Pillen-Umschalter. Fünf Entwürfe
+standen zur Wahl (Frosttext, Eisscheibe, Wegweiser, Sucher, Nebelrand);
+genommen: Frosttext mit Nebel als Hauch, Sucher-Ecken nur an der Einladung.
+**Falle:** Unter `opacity` 1 schaltet der Browser die Unschärfe des Hauchs
+ab (das Element wird zur Backdrop Root). Deshalb atmet der Start-Hinweis
+über die Schriftfarbe, und eine tote Station dimmt nur ihren Text. Beim
+Ein- und Ausblenden fehlt der Hauch darum kurz – bisher unauffällig.
 
 - Station mit **einem Ziel**: Enter öffnet es sofort.
 - Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
@@ -558,7 +576,7 @@ die Slalomzeit ist noch eingeblendet – im Lauf und 6 s nach dem Ziel
 (`race.zeitSichtbar`): dann geht es
 6 m über den Startbogen, ein laufender Lauf wird ohne Wertung abgebrochen
 (28.09., auf Ansage). Die
-Pille „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
+Hinweis „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
 Gas oder Lenkung, unter 4 m/s und keine 3 m vorangekommen) oder sich
 verfranzt hat (7 s abseits jedes Weges mit ≥ 3 Bäumen im Umkreis von 4 m),
 und geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
@@ -598,7 +616,7 @@ Spurkette reißen, `_prevGroundY` auf die **neue Bodenhöhe** (nicht `null` —
 
 ## 4a″. Pistenpass
 
-`menu/pistenpass.js` (Listen, Speicher, Pille) und `menu/pass-regeln.js`
+`menu/pistenpass.js` (Listen, Speicher, Meldung) und `menu/pass-regeln.js`
 (wann was fällt). Dritter Reiter **Pistenpass** in der Übersicht hinter `M`.
 Speicher: `localStorage` `skiportfolio.pass`. Zurücksetzen:
 `__ski.pass.zuruecksetzen()`.
@@ -612,7 +630,7 @@ Jetzt drei Teile:
   `registry.active`), See, Gipfel, Hüttenterrasse, Funpark, Kinderland
   (auf dem Teppich), Nordabfahrt (bis unten). Ein Balken und Namensmarken,
   Drohne und Löschzug als „???“. **Keine Pille pro Ort**, nur beim letzten.
-- **Slalom-Medaillen** 4,50 / 4,20 / 3,90 (`MEDALS`), mit Pille.
+- **Slalom-Medaillen** 4,50 / 4,20 / 3,90 (`MEDALS`), mit Meldung.
 - **Abzeichen** (8): offen *Raser* (58 km/h am Speedcheck – mit gerader
   Ideallinie gemessen 59–60, 60 hätte nur ein Autopilot) und *540er*.
   Geheim, nur „?“ ohne Hinweis: 720er, Hausverbot (vier Seitenwechsel am
@@ -622,8 +640,9 @@ Jetzt drei Teile:
 Nie ein Abzeichen fürs **Benutzen** (Hochladen, Wallet, Kurzlink,
 Bezahlen) – sonst Datenmüll und Cent-Beträge für einen Stempel.
 
-Pille oben links (oben Mitte ist die Zeitnahme, unten Trick und Hinweise),
-geht nach 3 s. Die Umrechnung von Spielständen der ersten Fassung
+Meldung oben links (oben Mitte ist die Zeitnahme, unten Trick und Hinweise),
+geht nach 3 s. Am Handy rutscht sie unter die Zeit, solange die Zeitnahme
+steht – Medaillen kommen genau dann, und nebeneinander passt es nicht. Die Umrechnung von Spielständen der ersten Fassung
 (`ALT_ORTE`) ist mit beta weggefallen: auf veerka.mp beginnt jeder neu,
 `localStorage` gilt je Adresse.
 
@@ -1072,6 +1091,9 @@ Abschnitt 1, Nordabfahrt).
 - **Slalomtore** kippen bewusst *nicht* um — sie sind Fahnenblätter, keine
   Pfosten. Angeboten, keine Antwort. Falls doch gewünscht, siehe
   `createPisteMarkers` in `props/fence.js` als Vorlage.
+- **Frost statt Pillen** liegt im Branch `oberflaeche-ohne-pillen` und ist
+  nur lokal geprüft (Chrome, Handy-Emulation). Vor dem Zusammenführen in
+  Safari ansehen: `backdrop-filter` zusammen mit `mask-image` am Hauch.
 - Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
   iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit

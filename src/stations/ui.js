@@ -1,11 +1,14 @@
 import * as THREE from 'three'
 import { TOUCH } from '../core/device.js'
 
-// Zwei Einblendungen, beide aus demselben Glas:
+// Zwei Einblendungen:
 //
 // - die Einladung, die ueber einer Station schwebt, solange man davor steht:
-//   Name, ein Wort dazu und die Enter-Taste;
-// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat.
+//   Name, ein Wort dazu und die Enter-Taste. Frosttext ohne Glas, gefasst
+//   von vier Eckmarken in der Stationsfarbe, die sich beim Erscheinen wie
+//   ein Sucher auf die Station zusammenziehen;
+// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat, aus
+//   Glas.
 //
 // Vorher war die Einladung ein Pistenschild mit Ziffern fuer zwei Ziele.
 // Das trug, solange es nur Tasten gab; auf dem Handy gibt es keine 1 und 2,
@@ -13,8 +16,8 @@ import { TOUCH } from '../core/device.js'
 // Enter lernen musste. Jetzt ist es ueberall dieselbe Taste – oder derselbe
 // Finger.
 //
-// Das Glas ist bewusst hell getoent: der Hintergrund ist fast immer Schnee,
-// und klares Glas auf Weiss ist unsichtbar.
+// Das Glas der Auswahl ist bewusst hell getoent: der Hintergrund ist fast
+// immer Schnee, und klares Glas auf Weiss ist unsichtbar.
 
 const ENTER = TOUCH ? '' : '<kbd class="k-enter" aria-hidden="true">⏎</kbd>'
 
@@ -50,7 +53,7 @@ export class StationUI {
 
     this.el = document.createElement('button')
     this.el.type = 'button'
-    this.el.className = 'glass station-prompt'
+    this.el.className = 'frost station-prompt'
     this.el.innerHTML = `
       ${ENTER}
       <span class="prompt-text">

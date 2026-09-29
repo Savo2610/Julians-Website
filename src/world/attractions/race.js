@@ -204,7 +204,7 @@ export class RaceCourse {
 
   _buildHud() {
     const el = document.createElement('div')
-    el.className = 'race-hud'
+    el.className = 'frost race-hud'
     el.innerHTML = `
       <div class="race-time">0.00</div>
       <div class="race-note"></div>

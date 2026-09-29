@@ -34,7 +34,7 @@ export class PassRegeln {
     const wach = () => { this._still = 0 }
     for (const ev of ['keydown', 'pointerdown', 'wheel']) window.addEventListener(ev, wach, { passive: true, capture: true })
 
-    // Erst wenn der Ladebildschirm weg ist – sonst verpufft die Pille darunter.
+    // Erst wenn der Ladebildschirm weg ist – sonst verpufft die Meldung darunter.
     setTimeout(() => { if (new Date().getHours() < 5) pass.erreiche('nacht') }, 2200)
   }
 

@@ -121,7 +121,7 @@ export class Bestenliste {
 
     this.angebotEl = document.createElement('button')
     this.angebotEl.type = 'button'
-    this.angebotEl.className = 'glass sb-angebot'
+    this.angebotEl.className = 'frost sb-angebot'
     this.angebotEl.innerHTML = `${TOUCH ? '' : '<kbd class="k-enter">⏎</kbd>'}<span>In die Bestenliste</span>`
     this.angebotEl.addEventListener('click', () => this.oeffnen())
     document.body.appendChild(this.angebotEl)

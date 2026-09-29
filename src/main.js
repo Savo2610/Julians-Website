@@ -256,7 +256,7 @@ function emitSpray(dt) {
 
 // --- Trickmeldung ------------------------------------------------------------
 const trickHud = document.createElement('div')
-trickHud.className = 'trick-hud'
+trickHud.className = 'frost trick-hud'
 document.body.appendChild(trickHud)
 let trickTimer = 0
 

@@ -7,7 +7,7 @@ import { MEDALS } from '../world/attractions/race.js'
 // sind drei Dinge:
 //
 // - ERKUNDET ist ein stiller Fortschritt: fuenfzehn Orte, ein Balken im Pass,
-//   keine Pille pro Ort. Nur wer alles gefunden hat, bekommt eine Meldung.
+//   keine Meldung pro Ort. Nur wer alles gefunden hat, bekommt eine.
 // - MEDAILLEN im Slalom, wie an der Zeitnahme.
 // - ABZEICHEN sind wenige und schwer. Zwei stehen offen im Pass, sechs sind
 //   geheim und zeigen nur ein Fragezeichen, ohne Hinweis.
@@ -86,11 +86,11 @@ export class Pistenpass {
     this.onGold = null      // wird von aussen gesetzt: goldene Ski anlegen
     this.onChange = null    // der Reiter in der Uebersicht zeichnet neu
 
-    this.pille = document.createElement('div')
-    this.pille.className = 'glass pass-pille'
-    this.pille.setAttribute('role', 'status')
-    this.pille.innerHTML = '<span class="pass-pille-icon"></span><span class="pass-pille-text"><strong></strong><small></small></span>'
-    document.body.appendChild(this.pille)
+    this.meldung = document.createElement('div')
+    this.meldung.className = 'frost pass-meldung'
+    this.meldung.setAttribute('role', 'status')
+    this.meldung.innerHTML = '<span class="pm-icon"></span><span class="pm-text"><span class="pm-art">Neu im Pistenpass</span><strong></strong><small></small></span>'
+    document.body.appendChild(this.meldung)
   }
 
   hat(id) { return !!this.daten.erreicht[id] }
@@ -124,7 +124,7 @@ export class Pistenpass {
   }
 
   // Still: ein neuer Ort meldet sich nicht, er fuellt nur den Balken. Erst
-  // der letzte bekommt eine Pille.
+  // der letzte bekommt eine Meldung.
   entdecke(ort) {
     if (!IST_ORT.has(ort) || this.kennt(ort)) return false
     const warGold = this.gold
@@ -146,13 +146,13 @@ export class Pistenpass {
     const a = this._warteschlange.shift()
     if (!a) { this._zeigt = false; return }
     this._zeigt = true
-    this.pille.querySelector('.pass-pille-icon').textContent = a.icon
-    this.pille.querySelector('strong').textContent = a.name
-    this.pille.querySelector('small').textContent = a.text
-    this.pille.classList.toggle('gold', !!a.gold)
-    this.pille.classList.add('visible')
+    this.meldung.querySelector('.pm-icon').textContent = a.icon
+    this.meldung.querySelector('strong').textContent = a.name
+    this.meldung.querySelector('small').textContent = a.text
+    this.meldung.classList.toggle('gold', !!a.gold)
+    this.meldung.classList.add('visible')
     setTimeout(() => {
-      this.pille.classList.remove('visible')
+      this.meldung.classList.remove('visible')
       setTimeout(() => this._naechste(), 450)
     }, a.gold ? 4200 : 3000)
   }

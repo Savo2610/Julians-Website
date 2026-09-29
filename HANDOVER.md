@@ -469,9 +469,13 @@ schmaler, ohne ←/→) und führen beim Heranzoomen etwas vor, über
 Deckel zu und weit auf, dann hüpft der Inhalt der Reihe nach (beim Öffnen
 springt der Rucksack), der Löschzug schaltet Blaulicht und Scheinwerfer an
 (vorher blinkte er immer – ein Auto, das schon blinkt, kann nicht
-aufwachen). Die Lichthöfe sind additive Sprites, keine Lichtquellen.
-„Ausrücken“ lässt ihn anfahren (8 m/s², folgt dem Gelände) und schließt
-eine Blende in `#080b14`; nach 1,3 s geht es **im selben Tab** zu
+aufwachen). Uhr und Depot spielen ihr Stück **einmal** (die Uhr zweimal
+„brrrt“, dann läuft sie normal) – in Schleife machte es nervös. Die
+Lichthöfe sind additive Sprites, keine Lichtquellen. „Ausrücken“ lässt ihn
+0,8 m zurücksetzen und dann in einer engen Kurve zur Kamera hin
+hinausfahren – geradeaus stand eine Tanne, durch die er fuhr; gerechnet
+gegen die Stämme bleibt jede Ecke ≥ 2,4 m weg. Dabei schließt eine Blende in
+`#080b14`; nach 1,9 s geht es **im selben Tab** zu
 `jf.veerka.mp/?einfahrt=1`, das in genau dieser Farbe aufwacht und das
 Fahrzeug von links einrollen lässt – im Tal fährt es nach rechts hinaus.
 Ein neuer Tab zeigte weder Anfahren noch Übergang. `location.href` braucht

@@ -134,9 +134,8 @@ export function createGearDepot() {
   }
 
   // Herangezoomt huepft der Inhalt der Reihe nach heraus und wieder hinein,
-  // als wuerde jemand abhaken; beim Oeffnen springt der Rucksack. Ein
-  // Durchgang dauert 1,8 s, danach eine kurze Pause und von vorn.
-  const RUNDE = 1.8
+  // als wuerde jemand abhaken; beim Oeffnen springt der Rucksack. Nur ein
+  // Durchgang: in Schleife machte es nervoes (Julian, 29.09.).
   const SPRUNG = 0.42
   const DECKEL = 0.7    // s: zu und wieder auf, bevor gezaehlt wird
   let zaehlt = false
@@ -166,11 +165,11 @@ export function createGearDepot() {
       scharnier.rotation.x += (OFFEN - scharnier.rotation.x) * (1 - Math.exp(-6 * dt))
     }
 
-    // Eine angefangene Runde darf zu Ende huepfen, sonst fiele alles mitten
-    // in der Luft zurueck.
-    if ((zaehlt && auf > DECKEL) || uhr > 0) uhr += dt
-    if (!zaehlt && uhr % RUNDE > 1.05) uhr = 0
-    const r = uhr % RUNDE
+    // Eine angefangene Runde darf auch nach dem Wegzoomen zu Ende huepfen,
+    // sonst fiele alles mitten in der Luft zurueck.
+    const ENDE = (inhalt.length - 1) * 0.3 + SPRUNG
+    if (((zaehlt && auf > DECKEL) || uhr > 0) && uhr < ENDE) uhr = Math.min(ENDE, uhr + dt)
+    const r = uhr
     inhalt.forEach((m, i) => {
       const u = (r - i * 0.3) / SPRUNG
       const h = u > 0 && u < 1 ? Math.sin(u * Math.PI) : 0

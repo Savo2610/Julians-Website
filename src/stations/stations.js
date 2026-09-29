@@ -131,9 +131,9 @@ function solanaApp() {
 // laesst das Fahrzeug vor der Wache ausrollen. Hier faehrt es an, und die
 // Blende schliesst in genau dieser Farbe. Deshalb im selben Tab – in einem
 // neuen saehe man weder das Anfahren noch den Uebergang.
-// location.href braucht keine Nutzergeste; die 1,3 s Verzoegerung sind also
+// location.href braucht keine Nutzergeste; die 1,9 s Verzoegerung sind also
 // auch in Safari kein Problem, anders als bei window.open.
-const AUSFAHRT_MS = 1300
+const AUSFAHRT_MS = 1900
 function ausruecken(truck, boden) {
   const ziel = new URL(LINKS.jugendfeuerwehr)
   ziel.searchParams.set('einfahrt', '1')

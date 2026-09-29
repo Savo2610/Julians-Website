@@ -193,25 +193,43 @@ export function createFireTruck() {
   // Die Auswahl hat nur ein Ziel; gewaehlt heisst herangezoomt.
   group.userData.select = (i) => { an = i !== null }
 
-  // Losfahren, ein Stueck geradeaus aus der Lichtung. boden(x, z) ist die
-  // Gelaendehoehe, damit es nicht durch den Hang faehrt. 8 m/s² bringen
-  // es in 1,3 s knapp sieben Meter weit – bis die Blende zu ist, sieht man
-  // es noch anfahren, aber nicht im Wald verschwinden.
+  // Losfahren. Geradeaus stand eine Tanne im Weg, und er fuhr mitten durch
+  // (29.09.). Jetzt setzt er erst 0,8 m zurueck und schlaegt dabei ein, dann
+  // faehrt er in einer engen Kurve (Radius 2,6 m, 57 Grad) zur Kamera hin
+  // aus der Lichtung. Gegen die ausgelesenen Staemme gerechnet: keine Ecke
+  // kommt naeher als 2,4 m an einen Stamm, geparkt sind es 2,7. Ohne das
+  // Zuruecksetzen waere es bestenfalls 1,2 – durch die Krone. Das Ende zeigt
+  // nach rechts unten im Bild; auf jf.veerka.mp rollt er von links herein.
+  // boden(x, z) ist die Gelaendehoehe, damit er nicht durch den Hang faehrt.
+  const RUECK = { weg: 0.8, dauer: 0.6, radius: 3.5 }
+  const KURVE = { radius: 2.6, winkel: 1.0, start: 0.7, beschl: 3.5 }
   group.userData.losfahren = (boden) => {
     if (fahrt) return
     an = true
+    const { x, z } = group.position
     fahrt = {
-      t: 0, boden,
-      x0: group.position.x, z0: group.position.z,
-      hoch: group.position.y - boden(group.position.x, group.position.z),
+      t: 0, boden, x0: x, z0: z, h0: group.rotation.y,
+      hoch: group.position.y - boden(x, z),
+      x, z, h: group.rotation.y, zurueck: 0, vor: 0, gedreht: 0,
     }
   }
   // Zurueck an den Platz – wenn der Browser die Seite aus dem Verlauf
-  // wiederholt, stuende es sonst mitten im Wald.
+  // wiederholt, stuende er sonst am Waldrand.
   group.userData.zurueck = () => {
     if (!fahrt) return
     group.position.set(fahrt.x0, fahrt.boden(fahrt.x0, fahrt.z0) + fahrt.hoch, fahrt.z0)
+    group.rotation.y = fahrt.h0
     fahrt = null
+  }
+  // Ein Stueck Weg; vorwaerts (ds > 0) oder rueckwaerts, mit Einschlag.
+  const rollen = (ds, kruemmung) => {
+    const n = Math.ceil(Math.abs(ds) / 0.02)
+    for (let i = 0; i < n; i++) {
+      const d = ds / n
+      fahrt.x += Math.sin(fahrt.h) * d
+      fahrt.z += Math.cos(fahrt.h) * d
+      fahrt.h -= Math.abs(d) * kruemmung(Math.abs(d))
+    }
   }
 
   group.userData.animate = (t, dt = 0) => {
@@ -227,11 +245,23 @@ export function createFireTruck() {
     for (const h of heads) h.material.opacity = licht * 0.7
 
     if (fahrt) {
-      fahrt.t += dt
-      const weg = 4 * fahrt.t * fahrt.t
-      const x = fahrt.x0 + Math.sin(group.rotation.y) * weg
-      const z = fahrt.z0 + Math.cos(group.rotation.y) * weg
-      group.position.set(x, fahrt.boden(x, z) + fahrt.hoch, z)
+      const f = fahrt
+      f.t += dt
+      // Rueckwaerts weich an- und abrollen, kurz stehen, dann Gas.
+      const u = Math.min(1, f.t / RUECK.dauer)
+      const zurueck = RUECK.weg * u * u * (3 - 2 * u)
+      rollen(-(zurueck - f.zurueck), () => 1 / RUECK.radius)
+      f.zurueck = zurueck
+      const tv = Math.max(0, f.t - KURVE.start)
+      const vor = 0.5 * KURVE.beschl * tv * tv
+      rollen(vor - f.vor, (d) => {
+        if (f.gedreht >= KURVE.winkel) return 0
+        f.gedreht += d / KURVE.radius
+        return 1 / KURVE.radius
+      })
+      f.vor = vor
+      group.position.set(f.x, f.boden(f.x, f.z) + f.hoch, f.z)
+      group.rotation.y = f.h
     }
   }
 

@@ -347,7 +347,7 @@ html.touch .sheet-option .opt-go { display: none; }
 
 /* Die Blende, hinter der der Loeschzug ins Tal der Lernwerkstatt faehrt.
    Die Farbe ist die, in der jf.veerka.mp mit ?einfahrt=1 aufwacht. Sie
-   beginnt erst, wenn das Auto schon rollt. */
+   beginnt erst, wenn das Auto nach dem Zuruecksetzen vorwaerts rollt. */
 .ausfahrt {
   position: fixed;
   inset: 0;
@@ -355,7 +355,7 @@ html.touch .sheet-option .opt-go { display: none; }
   background: #080b14;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.85s cubic-bezier(0.5, 0, 0.75, 0) 0.35s;
+  transition: opacity 0.9s cubic-bezier(0.5, 0, 0.75, 0) 0.9s;
 }
 .ausfahrt.an { opacity: 1; pointer-events: auto; }
 

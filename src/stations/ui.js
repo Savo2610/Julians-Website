@@ -8,8 +8,9 @@ import { TOUCH } from '../core/device.js'
 //   Frosttext ohne Glas und ohne Rahmen; die Farbe allein bindet sie an die
 //   Station. Antippen laesst sich auch die Station selbst (antippen.js) –
 //   Freunde tippten am Handy auf die Huette statt auf die Pille;
-// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat: ein
-//   Register wie in der Uebersicht, Zeilen statt Karten.
+// - die Auswahl unten im Bild, sobald man mit Enter herangezoomt hat: die
+//   Ziele nebeneinander, damit ←/→ und A/D zum Bild passen; hinter dem
+//   gewaehlten glimmt ein Schein in seiner Farbe.
 //
 // Vorher war die Einladung ein Pistenschild mit Ziffern fuer zwei Ziele.
 // Das trug, solange es nur Tasten gab; auf dem Handy gibt es keine 1 und 2,
@@ -82,7 +83,7 @@ export class StationUI {
       <div class="sheet-options"></div>
       <div class="sheet-keys">${TOUCH
         ? 'Antippen zum Öffnen'
-        : '<kbd>↑</kbd><kbd>↓</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd>esc</kbd> zurück'}</div>
+        : '<kbd>←</kbd><kbd>→</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd>esc</kbd> zurück'}</div>
     `
     this.sheet.querySelector('.sheet-close').addEventListener('click', () => this.onClose?.())
     container.appendChild(this.sheet)
@@ -143,7 +144,6 @@ export class StationUI {
       b.innerHTML = `
         <span class="opt-glyph">${GLYPHS[choice.glyph] ?? ''}</span>
         <span class="opt-text"><span class="opt-label"></span><span class="opt-sub"></span></span>
-        <span class="opt-dots" aria-hidden="true"></span>
         <span class="opt-go" aria-hidden="true">${TOUCH ? '↗' : '⏎'}</span>
       `
       b.querySelector('.opt-label').textContent = choice.label

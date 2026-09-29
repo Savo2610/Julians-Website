@@ -474,18 +474,25 @@ genommen: Frosttext mit Nebel als Hauch. Für die Einladung standen danach
 Sucher-Ecken, Pistenstange, Leitlinie und Farbwort zur Wahl; genommen das
 Farbwort, der Sucher war zu technisch.
 
-**Register und Stempel (29.09., derselbe Branch).** Was man bedient, bleibt
-Glas, aber ohne Kärtchen darin. Die **Auswahl** an einer Station, die
-**Links** der Übersicht und die **Talkarte** sind Register wie die Legende
-einer Pistenkarte: Zeilen mit Zeichen in der Zielfarbe, gepunktete Führung,
-die gewählte Zeile färbt sich und die Punkte werden zur Linie. Gruppen
-beginnen mit einem Strich in ihrer Wegfarbe. Der **Pistenpass** ist ein
+**Register, Leuchtfeld und Stempel (29.09., derselbe Branch).** Was man
+bedient, bleibt Glas, aber ohne Kärtchen darin. Regel für die ganze Seite:
+**ein Strich heißt schreiben, ein farbiger Schein heißt klicken.** Die
+**Auswahl** an einer Station stellt die Ziele nebeneinander (passt zu ←/→
+und A/D); hinter dem gewählten glimmt ein Schein in seiner Farbe, die
+anderen sind grau. Am Handy sind alle farbig und der Schein kommt unter
+dem Finger – grau sähe dort gesperrt aus. Die **Links** der Übersicht und
+die **Talkarte** sind Register wie die Legende einer Pistenkarte: Gruppen
+beginnen mit einem Strich in ihrer Wegfarbe, die gewählte Zeile glimmt.
+Verworfen: erst gepunktete Führungslinien (wirkten wie Eingabefelder),
+dann die Auswahl untereinander (man erwartet W/S, die aber hinausführen),
+und ein Karussell (Ziele wandern, Maus-Zeigen würde sie wegdrehen, am
+Handy zwei Tipps, und nur die Skikasse hat drei Ziele). Der **Pistenpass** ist ein
 Stempelheft (Orte als Abhakliste, Medaillen und Abzeichen als runde
 Farbstempel, schief nach einem Hash der Kennung, damit nichts wackelt).
 Die **Fenster** (Solana, Upload, Kurzlink, Bestenliste) haben ein Zeichen
 statt der Farbkachel, oben den Ort im Tal, Felder nur mit Unterstrich, und
-die Hauptaktion ist eine Zeile „Senden ——— →“, gepunktet, solange sie nicht
-geht. Entwurf „An den Geräten“ (Beschriftung über jedem Terminal) war
+die Hauptaktion ist „Senden →“ auf einem Schein in der Fensterfarbe, grau,
+solange sie nicht geht. Entwurf „An den Geräten“ (Beschriftung über jedem Terminal) war
 beliebt, scheiterte aber an Kontakt (schräg, Telefon und Fernglas
 verdeckt), Skikasse (Rundflug hat kein Gerät) und Drohne.
 **Falle:** Unter `opacity` 1 schaltet der Browser die Unschärfe des Hauchs
@@ -496,10 +503,8 @@ Ein- und Ausblenden fehlt der Hauch darum kurz – bisher unauffällig.
 - Station mit **einem Ziel**: Enter öffnet es sofort.
 - Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
   LinkedIn/GitHub, Kontakt: Signal/Instagram): Enter **zoomt heran**. Der Fahrer bleibt stehen
-  (`input.locked`), unten klappt die Auswahl als Register auf, ↑/↓ und ←/→
-  (auch A/D) wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. ↑/↓
-  sind im Fahren dieselben Aktionen wie W/S; `input.onAction` reicht darum
-  den Tastencode mit, und nur die Pfeile wählen. Die Ziffern `1`/`2`
+  (`input.locked`), unten klappt die Auswahl auf, die Ziele nebeneinander,
+  ←/→ (auch A/D) wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
   gehen weiterhin direkt. Das 3D-Objekt zeigt die Wahl mit: das gewählte
   Terminal bzw. der Bildschirm leuchtet und hebt sich (`userData.select`),
   beim Öffnen blitzt es (`userData.press`), an der Kasse schiebt das Terminal

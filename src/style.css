@@ -218,10 +218,12 @@ html.touch .prompt-title::after { content: ' ›'; font-weight: 900; color: var(
 .station-prompt.dead kbd { display: none; }
 
 /* --- Auswahl nach dem Heranzoomen ----------------------------------------
-   Ein Register wie die Links in der Uebersicht: Zeilen mit Zeichen in der
-   Zielfarbe und einer gepunkteten Fuehrung zum Enter-Zeichen. Die gewaehlte
-   Zeile faerbt sich, die Punkte werden zur Linie. Vorher zwei Karten mit
-   Farbring – jede ein Knopf in einer Schale. */
+   Die Ziele nebeneinander, damit ←/→ und A/D zum Bild passen. Hinter dem
+   gewaehlten glimmt ein Schein in seiner Farbe, wie der Hauch hinter dem
+   Frosttext; die anderen stehen grau daneben. Zuerst stand hier ein
+   Register mit Fuehrungslinien – die sahen aus wie Eingabefelder, und
+   untereinander haette man W/S erwartet, die aber hinausfuehren (29.09.).
+   Auf der ganzen Seite gilt: ein Strich heisst schreiben, ein Schein klicken. */
 
 .station-sheet {
   position: fixed;
@@ -265,48 +267,65 @@ html.touch .prompt-title::after { content: ' ›'; font-weight: 900; color: var(
 }
 .sheet-close:hover { color: #13212f; }
 
-.sheet-options { display: flex; flex-direction: column; padding: 4px 0 2px; }
+.sheet-options {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 10px 0 2px;
+  isolation: isolate;
+}
 .sheet-option {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 5px;
   min-width: 0;
-  padding: 10px 0;
+  padding: 10px 4px 6px;
   border: 0;
   background: none;
   font: inherit;
-  text-align: left;
+  text-align: center;
   color: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.sheet-option + .sheet-option { border-top: 1px solid rgba(40, 70, 105, 0.07); }
+.sheet-option::before {
+  content: '';
+  position: absolute;
+  inset: 0 6px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 24%, transparent), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
 .sheet-option.used { animation: glassPulse 0.35s ease; }
 .sheet-option.off { opacity: 0.4; pointer-events: none; }
-.opt-glyph { flex: none; display: grid; place-items: center; width: 26px; color: var(--c); }
-.opt-glyph svg { width: 24px; height: 24px; }
-.opt-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
-.opt-label { font-size: 16px; font-weight: 800; transition: color 0.2s ease; }
-.opt-sub { font-size: 12px; font-weight: 600; color: #4a5f75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.opt-dots {
-  flex: 1;
-  min-width: 16px;
-  align-self: flex-end;
-  margin-bottom: 9px;
-  border-bottom: 1.5px dotted rgba(40, 70, 105, 0.3);
-  transition: border-color 0.2s ease;
+.opt-glyph { display: grid; place-items: center; height: 30px; color: #7b8ea2; transition: color 0.2s ease; }
+.opt-glyph svg { width: 28px; height: 28px; }
+.opt-text { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; max-width: 100%; line-height: 1.2; }
+.opt-label { font-size: 15.5px; font-weight: 800; color: #3d5166; transition: color 0.2s ease; }
+.opt-sub {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4a5f75;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.opt-go {
-  margin-left: auto;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--c);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.sheet-option.selected .opt-label { color: var(--c); }
-.sheet-option.selected .opt-dots { border-bottom: 2px solid var(--c); }
+.opt-go { height: 16px; font-size: 13px; font-weight: 900; color: var(--c); opacity: 0; transition: opacity 0.2s ease; }
+.sheet-option.selected::before { opacity: 1; }
+.sheet-option.selected .opt-glyph, .sheet-option.selected .opt-label { color: var(--c); }
 .sheet-option.selected .opt-go { opacity: 1; }
+/* Am Handy gibt es kein Gewaehltes vor dem Tippen: alle Ziele in Farbe,
+   der Schein kommt unter dem Finger. Grau saehe dort gesperrt aus. */
+html.touch .sheet-option .opt-glyph, html.touch .sheet-option .opt-label { color: var(--c); }
+html.touch .sheet-option::before { opacity: 0; }
+html.touch .sheet-option:active::before { opacity: 1; }
+html.touch .sheet-option .opt-go { display: none; }
 
 .sheet-keys {
   display: flex;
@@ -492,7 +511,7 @@ html.touch, html.touch body {
 
 /* Am Handy steht die Auswahl ueber die volle Breite, die Ziele untereinander:
    zwei Spalten a 160 Pixel waren fuer "paypal.me/juliansebv" zu schmal. */
-html.touch .sheet-option { padding: 13px 0; }
+html.touch .sheet-option { padding: 12px 2px 10px; }
 html.touch .station-prompt { padding: 12px 18px 13px 16px; }
 
 /* --- Talkarte ---------------------------------------------------------------
@@ -637,7 +656,7 @@ html.touch .station-prompt { padding: 12px 18px 13px 16px; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 4px;
+  padding: 7px 10px;
   border: 0;
   background: transparent;
   font: inherit;
@@ -649,8 +668,10 @@ html.touch .station-prompt { padding: 12px 18px 13px 16px; }
 }
 /* Wie das Register der Links: die gewaehlte Zeile faerbt sich, statt in
    einem Kaertchen mit Farbring zu stehen. */
+.map-item { border-radius: 12px; transition: background 0.2s ease; }
 .map-item .opt-label { transition: color 0.2s ease; }
 .map-item:hover .opt-label, .map-item.selected .opt-label { color: var(--c); }
+.map-item.selected { background: radial-gradient(120% 160% at 15% 50%, color-mix(in srgb, var(--c) 16%, transparent), transparent 72%); }
 .map-item-dot {
   flex: none;
   width: 11px;
@@ -730,8 +751,8 @@ html.touch .station-prompt { padding: 12px 18px 13px 16px; }
 .map-panel:not([data-view="liste"]) .ov-liste { display: none; }
 
 /* Links als Register, wie die Legende einer Pistenkarte: jede Gruppe
-   beginnt mit einem Strich in ihrer Wegfarbe, darunter Zeilen mit
-   gepunkteter Fuehrung zum Ort im Tal. Keine Kacheln, keine Kaestchen. */
+   beginnt mit einem Strich in ihrer Wegfarbe, darunter Zeilen, rechts der
+   Ort im Tal. Die gewaehlte glimmt. Keine Kacheln, keine Kaestchen. */
 .ov-links {
   overflow-y: auto;
   display: grid;
@@ -757,11 +778,18 @@ html.touch .station-prompt { padding: 12px 18px 13px 16px; }
 .ov-grid { display: flex; flex-direction: column; }
 
 .ov-tile {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+  margin: 0 -10px;
+  padding: 0 10px;
+  border-radius: 12px;
+  transition: background 0.2s ease;
 }
+/* Die gewaehlte Zeile glimmt in ihrer Wegfarbe, von links her. */
+.ov-tile.selected { background: radial-gradient(120% 160% at 15% 50%, color-mix(in srgb, var(--c) 16%, transparent), transparent 72%); }
 .ov-tile.used { animation: glassPulse 0.35s ease; }
 .ov-open {
   flex: 1;
@@ -781,16 +809,8 @@ html.touch .station-prompt { padding: 12px 18px 13px 16px; }
 .ov-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
 .ov-label { font-size: 15.5px; font-weight: 800; transition: color 0.2s ease; }
 .ov-sub { font-size: 12px; font-weight: 600; color: #4a5f75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ov-dots {
-  flex: 1;
-  min-width: 14px;
-  align-self: flex-end;
-  margin-bottom: 11px;
-  border-bottom: 1.5px dotted rgba(40, 70, 105, 0.3);
-}
-.ov-go { flex: none; font-size: 14px; font-weight: 900; color: var(--c); opacity: 0; transition: opacity 0.2s ease; }
+.ov-go { flex: none; margin-left: auto; font-size: 14px; font-weight: 900; color: var(--c); opacity: 0; transition: opacity 0.2s ease; }
 .ov-tile.selected .ov-label, .ov-open:hover .ov-label { color: var(--c); }
-.ov-tile.selected .ov-dots { border-bottom: 2px solid var(--c); }
 .ov-tile.selected .ov-go, .ov-open:hover .ov-go { opacity: 1; }
 .ov-where {
   flex: none;

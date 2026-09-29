@@ -32,7 +32,7 @@ export class StationInteraction {
   }
 
   // true = die Aktion ist hier verbraucht und bewegt den Fahrer nicht.
-  press(action, code = '') {
+  press(action) {
     if (this.flight?.active) return this.flight.press(action)
     if (this.map?.open) return this.map.press(action)
     if (action === 'map' && this.map && !this.skier.tow) {
@@ -56,16 +56,9 @@ export class StationInteraction {
         case 'pick2': this._open(1); return true
         case 'pick3': if (n > 2) this._open(2); return true
         case 'back': this.leave(); return true
-        // Die Ziele stehen seit dem Register untereinander: ↑ und ↓ waehlen.
-        // W und S fuehren weiter aus der Auswahl hinaus – und W faehrt
-        // gleich los, deshalb wird es nicht verbraucht.
-        case 'forward': case 'brake':
-          if (code.startsWith('Arrow')) {
-            this._select((this.selected + (action === 'forward' ? n - 1 : 1)) % n)
-            return true
-          }
-          this.leave()
-          return false
+        // W und S fuehren aus der Auswahl hinaus – und W faehrt gleich los,
+        // deshalb wird es nicht verbraucht.
+        case 'forward': case 'brake': this.leave(); return false
         default: return false
       }
     }

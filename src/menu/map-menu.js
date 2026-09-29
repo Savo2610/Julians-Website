@@ -209,14 +209,13 @@ export class MapMenu {
         const i = this.tiles.length
         const el = document.createElement('div')
         el.className = 'ov-tile'
-        // Eine Zeile wie in der Legende einer Pistenkarte: Name, gepunktete
-        // Fuehrung, dahinter der Ort im Tal. Vorher eine Kachel mit Rand,
-        // Schatten und darunter noch einer Pille fuer den Ort.
+        // Eine Zeile wie in der Legende einer Pistenkarte: Name, dahinter
+        // der Ort im Tal. Vorher eine Kachel mit Rand, Schatten und darunter
+        // noch einer Pille fuer den Ort.
         el.innerHTML = `
           <button type="button" class="ov-open">
             <span class="ov-icon"></span>
             <span class="ov-text"><span class="ov-label"></span><span class="ov-sub"></span></span>
-            <span class="ov-dots" aria-hidden="true"></span>
             <span class="ov-go" aria-hidden="true">↗</span>
           </button>
           ${station ? '<button type="button" class="ov-where"><span class="ov-pin" aria-hidden="true"></span><span></span></button>' : ''}

@@ -111,7 +111,7 @@ props.race.onAbort = () => bestenliste.abbruch()
 const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase, pass, bestenliste, race: props.race })
 flight = new DroneFlight({ camera, input, onEnd: () => chase.snap() })
 const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu, flight, bestenliste })
-input.onAction = (action, code) => interaction.press(action, code)
+input.onAction = (action) => interaction.press(action)
 
 // R und der Rueckweg-Hinweis: zurueck zum Startplatz, hinter derselben Blende
 // wie die Schnellreise. Solange die Slalomzeit eingeblendet ist, geht es

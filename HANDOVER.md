@@ -491,9 +491,10 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
   Browser gezeichnet (`feed.vorbereiten`): das Bild, sonst der Text –
   beides zusammen zeigt nur das Bild, ohne Zeile darunter. Die
   Kamera folgt dem Maulwurf und schwenkt bei der Ankunft zur Quelle; dort
-  steht es 3,5 s ganz aufgetaut im Eis (`feed.vorschau`,
-  `fall.userData.setKlar`), die laufende Sendung ist solange angehalten
-  und kommt danach zurück. Es geht nie an einen Server – sehen kann es nur,
+  steht es 3,5 s ganz aufgetaut vor der Kamera (`fall.userData.setKlar`)
+  und bleibt danach insgesamt 30 s im Eis (`feed.vorschau`), getaut nur
+  noch nach der Entfernung wie eine Sendung – wer hinfährt, sieht es noch.
+  Die laufende Sendung ist solange angehalten und kommt danach zurück. Es geht nie an einen Server – sehen kann es nur,
   wer es eingeworfen hat. Kann der Browser das Bild nicht lesen (HEIC in
   Chrome), bleibt der Text; ist nichts fertig, wenn der Maulwurf losläuft,
   fällt die Vorschau samt Kamerafahrt aus.

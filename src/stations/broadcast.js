@@ -206,10 +206,15 @@ export class BroadcastFeed {
     return { texture: textur(textFolie(text)), color: new THREE.Color(0x6fb8e8) }
   }
 
-  // Folie zeigen, fuer so viele Sekunden ganz aufgetaut. Die laufende
-  // Sendung steht solange still und kommt danach zurueck.
-  vorschau(folie, sekunden) {
-    this._vorschau = { ...folie, bis: this.clock + sekunden }
+  // Folie zeigen, fuer `sekunden` im Eis und die ersten `klar` davon ganz
+  // aufgetaut – solange die Kamera davor steht. Danach taut es nur noch
+  // nach der Entfernung, wie eine Sendung: wer hinfaehrt, sieht es noch.
+  // Die laufende Sendung steht solange still und kommt danach zurueck.
+  vorschau(folie, sekunden, klar = sekunden) {
+    // Eine zweite Sendung innerhalb der Zeit loest die erste ab.
+    const alt = this._vorschau
+    if (alt) setTimeout(() => alt.texture.dispose(), 2000)
+    this._vorschau = { ...folie, bis: this.clock + sekunden, klarBis: this.clock + klar }
     this.fall.userData.setMedia?.(folie.texture, ASPECT)
     this.fall.userData.setGlow?.(folie.color, 1)
     this.fall.userData.setKlar?.(true)
@@ -249,6 +254,7 @@ export class BroadcastFeed {
 
   update(dt, skier) {
     this.clock += dt
+    if (this._vorschau && this.clock > this._vorschau.klarBis) this.fall.userData.setKlar?.(false)
     if (this._vorschau && this.clock > this._vorschau.bis) this._vorschauEnde()
     if (!skier) return
     const dx = skier.position.x - this.position.x

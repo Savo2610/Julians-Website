@@ -8,7 +8,7 @@ import { CAMERA } from '../config.js'
 // der kurz funkt: angekommen. Zum Einwerfen zoomt die Kamera ans Rohr –
 // dieselbe Kamerafahrt wie beim Heranzoomen an eine Station. War ein Bild
 // oder Text dabei, folgt sie dem Maulwurf weit draussen bis zum Mast, ohne
-// sich zu drehen, und weiter zur Quelle, wo es 3,5 s im Eis steht – aus
+// sich zu drehen, und weiter zur Quelle, wo es 30 s im Eis steht – aus
 // dem Browser, also nur fuer den, der es eingeworfen hat. Sonst ist sie
 // zurueck beim Fahrer, sobald der Maulwurf loslaeuft.
 //
@@ -34,7 +34,11 @@ const KLUMPEN = 0.45      // Anteil der Schritte, die einen Klumpen zur Seite we
 const STEHEN = 3.2        // s, bis ein Huegelchen einsinkt
 const TAUEN = 2.4         // s bis es ganz weg ist
 const FUNKEN = 2.2        // s Funkspruch am Mast
-const VORSCHAU = 3.5      // s steht ein hochgeladenes Bild im Eis der Quelle
+// Was hochgeladen wurde, bleibt 30 s im Eis der Quelle; die Kamera steht
+// davor nur die ersten 3,5 s. Erst verschwand es mit ihr, und wer danach
+// selbst hinfuhr, fand nichts mehr (Julian, 30.09.).
+const VORSCHAU = 3.5      // s Kamera vor der Quelle, ganz aufgetaut
+const IM_EIS = 30         // s steht es insgesamt im Eis
 
 export class RohrpostNetz {
   // quelle: die Station der gefrorenen Quelle (Position, Boden, Fokus),
@@ -213,7 +217,7 @@ export class RohrpostNetz {
         }
       }
       if (plan.zurQuelle && plan.gefunkt && this._folie) {
-        this.feed.vorschau(this._folie, VORSCHAU)
+        this.feed.vorschau(this._folie, IM_EIS, VORSCHAU)
         this._folie = null
       }
     }

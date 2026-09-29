@@ -40,6 +40,9 @@ let textGescheitert = false;
 // Das erste Bild, das durchkam: es steht danach kurz im Eis der Quelle, nur
 // in diesem Browser. Kein SVG – das Tal zeigt nur, was ein Foto ist.
 let bild = null;
+// Ebenso der Text, der durchkam – er steht dann im Eis, allein oder als
+// Zeile unter dem Bild.
+let text = '';
 const istBild = (datei) => /^image\//.test(datei.type) && datei.type !== 'image/svg+xml';
 
 function groesse(zahl) {
@@ -271,6 +274,7 @@ async function senden() {
       await api('/api/note', { text: notiz });
       $('up-notiz').value = '';
       angekommen++;
+      if (!text) text = notiz;
     } catch (fehler) {
       textFehler = fehler;
     }
@@ -333,10 +337,11 @@ function verdrahten() {
   schliessbar($('up-dialog'), $('up-zu'));
   $('up-dialog').addEventListener('close', () => {
     const gescheitert = dateien.filter((e) => e.fehler).length + (textGescheitert ? 1 : 0);
-    dispatchEvent(new CustomEvent('rohrpost', { detail: { angekommen, gescheitert, bild } }));
+    dispatchEvent(new CustomEvent('rohrpost', { detail: { angekommen, gescheitert, bild, text } }));
     angekommen = 0;
     textGescheitert = false;
     bild = null;
+    text = '';
   });
 
   const auswahl = $('up-auswahl');

@@ -184,20 +184,26 @@ export class BroadcastFeed {
     this._vorschau = null      // { texture, color, bis } solange ein Upload im Eis steht
   }
 
-  // Ein eben hochgeladenes Bild kurz ins Eis (world/rohrpost-netz.js). Es
-  // kommt aus der Datei im Browser, nicht vom Server: sehen kann es nur,
-  // wer es gerade eingeworfen hat, und nach dem Neuladen ist es weg.
-  // Gibt die fertige Folie zurueck oder null, wenn der Browser das Bild
-  // nicht lesen kann (HEIC in Chrome zum Beispiel).
-  async vorbereiten(datei) {
-    try {
-      const bitmap = await createImageBitmap(datei)
-      const c = bildFolie(bitmap, '')
-      bitmap.close?.()
-      return { texture: textur(c), color: mittel(c) }
-    } catch {
-      return null
+  // Was eben eingeworfen wurde, kurz ins Eis (world/rohrpost-netz.js): das
+  // Bild, sonst der Text. Beides zusammen zeigt nur das Bild – anders als
+  // bei einer Sendung ohne Zeile darunter, das Eis steht nur 3,5 s
+  // (Julian, 30.09.). Alles kommt aus dem Browser, nicht vom Server:
+  // sehen kann es nur, wer es gerade eingeworfen hat, und nach dem
+  // Neuladen ist es weg. Gibt die fertige Folie zurueck oder null, wenn
+  // es nichts zu zeigen gibt. Kann der Browser das Bild nicht lesen (HEIC
+  // in Chrome), bleibt der Text.
+  async vorbereiten({ bild = null, text = '' } = {}) {
+    text = text.trim()
+    if (bild) {
+      try {
+        const bitmap = await createImageBitmap(bild)
+        const c = bildFolie(bitmap, '')
+        bitmap.close?.()
+        return { texture: textur(c), color: mittel(c) }
+      } catch { /* dann eben nur der Text */ }
     }
+    if (!text) return null
+    return { texture: textur(textFolie(text)), color: new THREE.Color(0x6fb8e8) }
   }
 
   // Folie zeigen, fuer so viele Sekunden ganz aufgetaut. Die laufende

@@ -6,10 +6,11 @@ import { CAMERA } from '../config.js'
 // schluckt (props/upload-pipe.js), und dann laeuft eine Beule wie ein
 // Maulwurf unter der Schneedecke zum Funkmast hinter der gefrorenen Quelle,
 // der kurz funkt: angekommen. Zum Einwerfen zoomt die Kamera ans Rohr –
-// dieselbe Kamerafahrt wie beim Heranzoomen an eine Station –, dann folgt
-// sie dem Maulwurf weit draussen bis zum Mast, ohne sich zu drehen. War ein
-// Bild dabei, geht es von dort zur Quelle, und das Bild steht 3,5 s im
-// Eis – aus der Datei im Browser, also nur fuer den, der es eingeworfen hat.
+// dieselbe Kamerafahrt wie beim Heranzoomen an eine Station. War ein Bild
+// oder Text dabei, folgt sie dem Maulwurf weit draussen bis zum Mast, ohne
+// sich zu drehen, und weiter zur Quelle, wo es 3,5 s im Eis steht – aus
+// dem Browser, also nur fuer den, der es eingeworfen hat. Sonst ist sie
+// zurueck beim Fahrer, sobald der Maulwurf loslaeuft.
 //
 // Die Spur ist nicht in die Schneetextur gestempelt: die haelt fuer immer
 // (Max-Blending, siehe snow-trail.js), eine Maulwurfspur soll aber wieder
@@ -89,7 +90,7 @@ export class RohrpostNetz {
   }
 
   // { angekommen, gescheitert } aus dem Upload-Fenster.
-  versenden({ angekommen = 0, gescheitert = 0, bild = null } = {}) {
+  versenden({ angekommen = 0, gescheitert = 0, bild = null, text = '' } = {}) {
     if (this.aktiv) return
     const fehler = gescheitert > 0
     if (!angekommen && !fehler) {
@@ -110,12 +111,12 @@ export class RohrpostNetz {
       zurQuelle: false,
       gestartet: false,
     }
-    // Ein Bild dabei: schon jetzt lesen, damit es fertig ist, wenn der
-    // Maulwurf ankommt. Kommt es erst spaeter, faellt die Vorschau aus.
+    // Bild oder Text dabei: schon jetzt zeichnen, damit es fertig ist, wenn
+    // der Maulwurf loslaeuft. Kommt es erst spaeter, faellt die Vorschau aus.
     const lauf = ++this._lauf
     this._folieWeg()
-    if (bild && this.feed && this.quelle && !this._ruhig) {
-      this.feed.vorbereiten(bild).then((f) => {
+    if ((bild || text.trim()) && this.feed && this.quelle && !this._ruhig) {
+      this.feed.vorbereiten({ bild, text }).then((f) => {
         if (lauf === this._lauf && this.aktiv && !this._plan.gestartet) this._folie = f
         else f?.texture.dispose()
       })
@@ -178,17 +179,21 @@ export class RohrpostNetz {
           for (let i = 0; i < 6; i++) this._kruemelWerfen(this._p.x, y + 0.2, this._p.z)
         }
       }
-      // Die Kamera folgt dem Maulwurf, weit draussen, damit man die Spur
-      // als Linie durchs Tal sieht und nicht nur Schnee vor der Nase. Erst
-      // folgte sie mit 19 m Abstand, dann gar nicht mehr; jetzt wieder, mit
-      // 28 (Julian, 30.09.). Am Mast bleibt sie, solange er funkt. War ein
-      // Bild dabei, geht es von dort zur Quelle, und es steht kurz im Eis.
+      // Die Kamera folgt dem Maulwurf nur, wenn am Ende etwas im Eis der
+      // Quelle steht – ein Bild oder der Text. Dann weit draussen (28 m),
+      // damit man die Spur als Linie durchs Tal sieht, und weiter zur
+      // Quelle. Ohne etwas zu zeigen ist sie zurueck beim
+      // Fahrer, sobald der Maulwurf loslaeuft: nur fuer einen Funkspruch
+      // quer durchs Tal zu fahren war zu viel (Julian, 30.09.).
       if (!plan.gestartet) {
         plan.gestartet = true
         if (this._folie && this._kamera) {
           plan.zurQuelle = true
           plan.fertig = Math.max(plan.fertig, plan.ende + VORSCHAU + 0.3)
-        } else this._folieWeg()
+        } else {
+          this._folieWeg()
+          this._kameraZurueck()
+        }
       }
       if (this._kamera) {
         if (plan.zurQuelle && plan.gefunkt) {
@@ -202,8 +207,9 @@ export class RohrpostNetz {
             abstand: f.abstand,
           })
         } else {
-          const amMast = plan.gefunkt
-          this.camera.fokus({ x: this._p.x, y: y + (amMast ? 1.6 : 0.4), z: this._p.z, abstand: amMast ? 22 : 28 })
+          // Der Mast steht gleich neben der Quelle; wer dort ankommt, sieht
+          // ihn im Bild funken, ein eigener Halt am Mast braucht es nicht.
+          this.camera.fokus({ x: this._p.x, y: y + 0.4, z: this._p.z, abstand: 28 })
         }
       }
       if (plan.zurQuelle && plan.gefunkt && this._folie) {

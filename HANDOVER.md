@@ -476,23 +476,27 @@ nichts vom Tal wissen. `world/rohrpost-netz.js` spielt es ab:
   45 m, verlegt wie ein Rohr: zwei Geraden mit gerundetem Knick an Tunnel,
   Bank, Seeufer und Quellrahmen vorbei, gegen die ausgelesenen Hindernisse
   geprüft; der Schnee darauf dagegen ungleich, mit Klumpen daneben), der Mast funkt 2,2 s
-  (`tower.userData.funken`). Die Kamera zoomt zum Einwerfen ans Rohr und
-  folgt dann dem Maulwurf mit 28 m Abstand bis zum Mast (22 m, solange er
-  funkt). Erst folgte sie mit 19 m, dann gar nicht; zu nah war das Problem,
-  nicht das Folgen. Die Spur ist
+  (`tower.userData.funken`). Die Kamera zoomt zum Einwerfen ans Rohr. Dem
+  Maulwurf folgt sie (mit 28 m Abstand) **nur, wenn danach etwas im Eis der
+  Quelle steht**, sonst ist sie zurück beim Fahrer, sobald er losläuft.
+  Erst folgte sie immer mit 19 m – zu nah, und nur für einen Funkspruch
+  quer durchs Tal zu viel. Die Spur ist
   **nicht** in die Schneetextur gestempelt – die hält für immer –, sondern
   ein InstancedMesh aus Hügelchen, die nach 3,2 s in 2,4 s wieder zutauen.
   Kein eigener Kopf-Buckel: der sah am Rohr aus wie ein Schneeball;
 - **nichts geschickt:** die Klappe fällt zu, ein Hauch Dampf, nach 1,4 s
   steht sie wieder offen.
-- **ein Bild dabei:** das erste geglückte Bild (kein SVG) kommt im Ereignis
-  als `bild` mit, wird sofort im Browser gelesen (`feed.vorbereiten`), und
-  kommt der Maulwurf an, schwenkt die Kamera vom Mast zur Quelle; dort steht es 3,5 s ganz aufgetaut im Eis (`feed.vorschau`,
+- **Bild oder Text dabei:** das erste geglückte Bild (kein SVG) und der
+  Text kommen im Ereignis als `bild` und `text` mit und werden sofort im
+  Browser gezeichnet (`feed.vorbereiten`): das Bild, sonst der Text –
+  beides zusammen zeigt nur das Bild, ohne Zeile darunter. Die
+  Kamera folgt dem Maulwurf und schwenkt bei der Ankunft zur Quelle; dort
+  steht es 3,5 s ganz aufgetaut im Eis (`feed.vorschau`,
   `fall.userData.setKlar`), die laufende Sendung ist solange angehalten
   und kommt danach zurück. Es geht nie an einen Server – sehen kann es nur,
   wer es eingeworfen hat. Kann der Browser das Bild nicht lesen (HEIC in
-  Chrome) oder ist es beim Loslaufen des Maulwurfs noch nicht fertig, fällt
-  die Vorschau samt Schwenk zur Quelle aus.
+  Chrome), bleibt der Text; ist nichts fertig, wenn der Maulwurf losläuft,
+  fällt die Vorschau samt Kamerafahrt aus.
 Esc, Enter, `M` oder Tippen holen die Kamera schon während des Einwerfens
 zurück. Mit `prefers-reduced-motion` keine Kamerafahrt.
 

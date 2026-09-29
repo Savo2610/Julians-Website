@@ -13,9 +13,11 @@ const skyVert = /* glsl */ `
   }
 `
 
-const skyFrag = /* glsl */ `
-  precision highp float;
-  varying vec3 vDir;
+// Die Farbe des Himmels in einer Richtung, als eigene Funktion: die ferne
+// Bergkette (props/backdrop.js) mischt sich mit genau diesem Wert in den
+// Dunst. Nur wenn beide dieselbe Rechnung benutzen, verschwinden ihre Gipfel
+// im Himmel, statt als blasse Flaeche davor zu stehen.
+export const skyColorGlsl = /* glsl */ `
   uniform vec3 uTop;
   uniform vec3 uHorizon;
   uniform vec3 uSun;
@@ -35,19 +37,29 @@ const skyFrag = /* glsl */ `
     return s;
   }
 
-  void main() {
-    float h = clamp(vDir.y * 0.5 + 0.5, 0.0, 1.0);
+  vec3 skyColor(vec3 dir) {
+    float h = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
     vec3 col = mix(uHorizon, uTop, pow(h, 0.75));
     // Diffuser Sonnenschein am Horizont, kein harter Ball.
-    float sun = pow(max(dot(normalize(vDir), normalize(uSunDir)), 0.0), 8.0);
+    float sun = pow(max(dot(normalize(dir), normalize(uSunDir)), 0.0), 8.0);
     col += uSun * sun * 0.4;
-    col += uSun * pow(max(dot(normalize(vDir), normalize(uSunDir)), 0.0), 64.0) * 0.7;
+    col += uSun * pow(max(dot(normalize(dir), normalize(uSunDir)), 0.0), 64.0) * 0.7;
 
     // Sanfte Wolkenbaender – nur eine Andeutung, damit der Himmel nicht leer wirkt.
-    vec2 cp = vDir.xz / max(abs(vDir.y) + 0.22, 0.05);
+    vec2 cp = dir.xz / max(abs(dir.y) + 0.22, 0.05);
     float band = fbm(cp * 0.9 + vec2(uTime * 0.006, 0.0));
-    float clouds = smoothstep(0.52, 0.86, band) * smoothstep(0.02, 0.4, vDir.y);
-    col = mix(col, vec3(1.02, 1.0, 0.99), clouds * 0.4);
+    float clouds = smoothstep(0.52, 0.86, band) * smoothstep(0.02, 0.4, dir.y);
+    return mix(col, vec3(1.02, 1.0, 0.99), clouds * 0.4);
+  }
+`
+
+const skyFrag = /* glsl */ `
+  precision highp float;
+  varying vec3 vDir;
+  ${skyColorGlsl}
+
+  void main() {
+    vec3 col = skyColor(vDir);
 
     // Dithering gegen sichtbare Streifen im Verlauf.
     float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;

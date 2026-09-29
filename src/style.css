@@ -339,6 +339,25 @@ html.touch .sheet-option .opt-go { display: none; }
 }
 .sheet-keys kbd { height: 20px; min-width: 20px; font-size: 10.5px; }
 .sheet-keys i { width: 3px; height: 3px; margin: 0 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+.k-waehlen { display: contents; }
+/* Ein einzelnes Ziel (Stechuhr, Depot, Loeschzug): schmaler, sonst wird der
+   Schein zu einem langen Oval, und ohne Wahl auch ohne Pfeiltasten. */
+.station-sheet.einzeln { width: min(280px, calc(100vw - 24px)); }
+.station-sheet.einzeln .k-waehlen { display: none; }
+
+/* Die Blende, hinter der der Loeschzug ins Tal der Lernwerkstatt faehrt.
+   Die Farbe ist die, in der jf.veerka.mp mit ?einfahrt=1 aufwacht. Sie
+   beginnt erst, wenn das Auto schon rollt. */
+.ausfahrt {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #080b14;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.85s cubic-bezier(0.5, 0, 0.75, 0) 0.35s;
+}
+.ausfahrt.an { opacity: 1; pointer-events: auto; }
 
 /* --- Zeitnahme der Rennstrecke -------------------------------------------
    Erscheint nur waehrend eines Laufs und ein paar Sekunden danach. Der Rest

@@ -37,6 +37,10 @@ const GLYPHS = {
   uni: '<svg viewBox="0 0 24 24"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z" fill="currentColor"/><path d="M6.5 11.6v4.2c1.4 1.5 3.3 2.2 5.5 2.2s4.1-.7 5.5-2.2v-4.2M20 10.3v5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   // Der Funkturm von broadcast.veerka.mp: Mast mit zwei Wellen.
   broadcast: '<svg viewBox="0 0 24 24"><path d="M12 10.5 8.2 21M12 10.5l3.8 10.5M9.4 17.6h5.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8.6" r="1.9" fill="currentColor"/><path d="M8.3 5.2a5 5 0 0 0 0 6.8M15.7 5.2a5 5 0 0 1 0 6.8M5.6 2.8a8.6 8.6 0 0 0 0 11.6M18.4 2.8a8.6 8.6 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+  // Stechuhr, Klemmbrett mit Haken, Blaulicht mit Strahlen.
+  uhr: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.4 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  liste: '<svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 3.5h6v2.6H9z" fill="currentColor"/><path d="m8 11 1.4 1.4L12 10M8 16l1.4 1.4L12 15M14 11.4h2.5M14 16.4h2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  blaulicht: '<svg viewBox="0 0 24 24"><path d="M7.5 19v-5a4.5 4.5 0 0 1 9 0v5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 19.5h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 2.8v2.6M4.6 6l1.8 1.8M19.4 6l-1.8 1.8M2.8 12.6h2.4M18.8 12.6h2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   solana: '<svg viewBox="0 0 24 24"><path d="M6.5 6h13l-2 2.6h-13zM4.5 10.7h13l2 2.6h-13zM6.5 15.4h13l-2 2.6h-13z" fill="currentColor"/></svg>',
 }
 
@@ -83,7 +87,7 @@ export class StationUI {
       <div class="sheet-options"></div>
       <div class="sheet-keys">${TOUCH
         ? 'Antippen zum Öffnen'
-        : '<kbd>←</kbd><kbd>→</kbd> wählen <i></i> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd>esc</kbd> zurück'}</div>
+        : '<span class="k-waehlen"><kbd>←</kbd><kbd>→</kbd> wählen <i></i></span> <kbd class="k-enter">⏎</kbd> öffnen <i></i> <kbd>esc</kbd> zurück'}</div>
     `
     this.sheet.querySelector('.sheet-close').addEventListener('click', () => this.onClose?.())
     container.appendChild(this.sheet)
@@ -134,6 +138,8 @@ export class StationUI {
     this.sheet.querySelector('.sheet-title').textContent = station.label
     this.sheet.querySelector('.sheet-sub').textContent = station.hint
     this.sheet.style.setProperty('--accent', station.color || '#4a6c93')
+    // Mit nur einem Ziel gibt es nichts zu waehlen – dann fehlen die Pfeile.
+    this.sheet.classList.toggle('einzeln', station.choices.length === 1)
     this.optionsEl.replaceChildren()
     station.choices.forEach((choice, i) => {
       const b = document.createElement('button')

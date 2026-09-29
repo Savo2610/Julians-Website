@@ -126,6 +126,34 @@ function solanaApp() {
   }, 1600)
 }
 
+// Der Loeschzug faehrt aus dem Tal hinaus und in der Lernwerkstatt wieder
+// ein: dort startet jf.veerka.mp mit ?einfahrt=1 dunkel in #080b14 und
+// laesst das Fahrzeug vor der Wache ausrollen. Hier faehrt es an, und die
+// Blende schliesst in genau dieser Farbe. Deshalb im selben Tab – in einem
+// neuen saehe man weder das Anfahren noch den Uebergang.
+// location.href braucht keine Nutzergeste; die 1,3 s Verzoegerung sind also
+// auch in Safari kein Problem, anders als bei window.open.
+const AUSFAHRT_MS = 1300
+function ausruecken(truck, boden) {
+  const ziel = new URL(LINKS.jugendfeuerwehr)
+  ziel.searchParams.set('einfahrt', '1')
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    location.href = ziel.href
+    return
+  }
+  let blende = document.querySelector('.ausfahrt')
+  if (blende?.classList.contains('an')) return
+  if (!blende) {
+    blende = document.createElement('div')
+    blende.className = 'ausfahrt'
+    document.body.appendChild(blende)
+    void blende.offsetWidth
+  }
+  truck.userData.losfahren?.(boden)
+  blende.classList.add('an')
+  setTimeout(() => { location.href = ziel.href }, AUSFAHRT_MS)
+}
+
 export function populateStations(world, registry, { rundflug = () => {} } = {}) {
   const animated = []
 
@@ -297,8 +325,17 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     onUse: () => kurzDialog(),
   })
 
+  // Stechuhr, Depot und Loeschzug oeffneten frueher sofort ihre Seite. Wer
+  // im Tal gelernt hat, dass man ueberall heranfahren und etwas ausloesen
+  // kann, stand dann ploetzlich woanders. Jetzt zoomen sie heran wie die
+  // Stationen mit zwei Zielen und fuehren erst etwas vor: die Uhr rast,
+  // das Depot zaehlt durch, der Loeschzug schaltet das Blaulicht an. Die
+  // Auswahl hat dann nur ein Ziel – Enter oder Tippen oeffnet es.
   const clock = createTimeClock()
   place(clock, STATION_SPOTS.clock, { rotation: FACING, collider: 0.5 })
+  const stempeln = () => {
+    if (LINKS.worktime) window.open(LINKS.worktime, '_blank', 'noopener,noreferrer')
+  }
   register({
     id: 'worktime',
     label: 'Arbeitszeitrechner',
@@ -307,12 +344,18 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     position: STATION_SPOTS.clock,
     radius: 4.5,
     labelHeight: world.heightAt(STATION_SPOTS.clock.x, STATION_SPOTS.clock.z) + 3.2,
-    // Erst stempelt sie, dann oeffnet sie. Die Karte faehrt auch dann heraus,
-    // wenn noch keine Adresse hinterlegt ist – das Geraet funktioniert, nur
-    // der Link fehlt, und das soll man am Geraet sehen und nicht raten.
+    object: clock,
+    focus: { abstand: 7, hoehe: 1.7, vor: 0.6 },
+    // Beim Oeffnen stempelt sie (press in time-clock.js). Die Karte faehrt
+    // auch dann heraus, wenn noch keine Adresse hinterlegt ist – das Geraet
+    // funktioniert, nur der Link fehlt, und das soll man am Geraet sehen.
+    choices: [
+      { label: 'Arbeitszeit', sub: 'zeit.veerka.mp', glyph: 'uhr', color: '#37b87c', action: stempeln },
+    ],
+    // Aus der Uebersicht heraus, ohne Heranzoomen.
     onUse: () => {
       clock.userData.stamp?.()
-      if (LINKS.worktime) window.open(LINKS.worktime, '_blank', 'noopener,noreferrer')
+      stempeln()
     },
   })
 
@@ -327,6 +370,12 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     position: STATION_SPOTS.depot,
     radius: 5,
     labelHeight: world.heightAt(STATION_SPOTS.depot.x, STATION_SPOTS.depot.z) + 2.6,
+    object: depot,
+    // Die Kiste ist kaum anderthalb Meter breit.
+    focus: { abstand: 6.5, hoehe: 0.6, vor: 0.9 },
+    choices: [
+      { label: 'Packliste', sub: 'packliste.veerka.mp', glyph: 'liste', url: LINKS.packlist, color: '#c98a3a' },
+    ],
   })
 
   // --- Abseits: die Fundstuecke -------------------------------------------
@@ -366,12 +415,27 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
   register({
     id: 'firetruck',
     label: 'Löschzug',
-    hint: 'Lernwerkstatt öffnen',
+    hint: 'Jugendfeuerwehr',
     color: '#c8352c',
     url: LINKS.jugendfeuerwehr,
     position: STATION_SPOTS.firetruck,
     radius: 5.5,
     labelHeight: world.heightAt(STATION_SPOTS.firetruck.x, STATION_SPOTS.firetruck.z) + 2.8,
+    object: truck,
+    focus: { abstand: 9, hoehe: 1.0, vor: 1.0 },
+    choices: [
+      {
+        label: 'Ausrücken', sub: 'zur Lernwerkstatt', glyph: 'blaulicht', color: '#c8352c',
+        action: () => ausruecken(truck, world.heightAt),
+      },
+    ],
+  })
+  // Kommt man mit Zurueck wieder, holt der Browser die Seite oft unveraendert
+  // aus dem Speicher – mit geschlossener Blende und dem Auto im Wald.
+  addEventListener('pageshow', (e) => {
+    if (!e.persisted) return
+    truck.userData.zurueck?.()
+    document.querySelector('.ausfahrt')?.classList.remove('an')
   })
 
   return { animated }

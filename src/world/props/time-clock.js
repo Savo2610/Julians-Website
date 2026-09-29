@@ -200,14 +200,28 @@ export function createTimeClock() {
   group.add(slip)
 
   let stamp = 0
+  // Herangezoomt rast die Zeit: die Zeiger drehen auf, und das Gehaeuse
+  // scheppert wie ein Wecker. Die Geschwindigkeit zieht weich nach, damit
+  // die Zeiger nicht springen, wenn es losgeht oder aufhoert.
+  let eilig = false
+  let tempo = 0.5     // rad/s des Minutenzeigers
+  let winkel = 0
 
   group.userData.stamp = () => { stamp = 1.6 }
+  group.userData.select = (i) => { eilig = i !== null }
+  group.userData.press = () => { stamp = 1.6 }
 
   group.userData.animate = (t, dt = 0) => {
     // Die Uhr laeuft schneller als die Wirklichkeit. Eine echte Minute pro
     // Minute waere von aussen Stillstand; so sieht man ihr beim Laufen zu.
-    minPivot.rotation.z = -t * 0.5
-    hourPivot.rotation.z = -t * 0.5 / 12
+    tempo += ((eilig ? 16 : 0.5) - tempo) * (1 - Math.exp(-2.5 * dt))
+    winkel += tempo * dt
+    minPivot.rotation.z = -winkel
+    hourPivot.rotation.z = -winkel / 12
+    // Scheppern: je schneller, desto mehr zittert der Kopf.
+    const wackeln = Math.max(0, tempo - 2) / 14
+    face.rotation.z = Math.sin(t * 46) * 0.05 * wackeln
+    face.position.x = Math.sin(t * 61) * 0.012 * wackeln
 
     if (stamp > 0) {
       stamp = Math.max(0, stamp - dt)

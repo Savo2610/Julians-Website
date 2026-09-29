@@ -181,6 +181,58 @@ export class BroadcastFeed {
     this.clock = 0
     this.loading = false
     this.distance = Infinity
+    this._vorschau = null      // { texture, color, bis } solange ein Upload im Eis steht
+  }
+
+  // Was eben eingeworfen wurde, kurz ins Eis (world/rohrpost-netz.js): das
+  // Bild, sonst der Text. Beides zusammen zeigt nur das Bild – anders als
+  // bei einer Sendung ohne Zeile darunter, das Eis steht nur 3,5 s
+  // (Julian, 30.09.). Alles kommt aus dem Browser, nicht vom Server:
+  // sehen kann es nur, wer es gerade eingeworfen hat, und nach dem
+  // Neuladen ist es weg. Gibt die fertige Folie zurueck oder null, wenn
+  // es nichts zu zeigen gibt. Kann der Browser das Bild nicht lesen (HEIC
+  // in Chrome), bleibt der Text.
+  async vorbereiten({ bild = null, text = '' } = {}) {
+    text = text.trim()
+    if (bild) {
+      try {
+        const bitmap = await createImageBitmap(bild)
+        const c = bildFolie(bitmap, '')
+        bitmap.close?.()
+        return { texture: textur(c), color: mittel(c) }
+      } catch { /* dann eben nur der Text */ }
+    }
+    if (!text) return null
+    return { texture: textur(textFolie(text)), color: new THREE.Color(0x6fb8e8) }
+  }
+
+  // Folie zeigen, fuer `sekunden` im Eis und die ersten `klar` davon ganz
+  // aufgetaut – solange die Kamera davor steht. Danach taut es nur noch
+  // nach der Entfernung, wie eine Sendung: wer hinfaehrt, sieht es noch.
+  // Die laufende Sendung steht solange still und kommt danach zurueck.
+  vorschau(folie, sekunden, klar = sekunden) {
+    // Eine zweite Sendung innerhalb der Zeit loest die erste ab.
+    const alt = this._vorschau
+    if (alt) setTimeout(() => alt.texture.dispose(), 2000)
+    this._vorschau = { ...folie, bis: this.clock + sekunden, klarBis: this.clock + klar }
+    this.fall.userData.setMedia?.(folie.texture, ASPECT)
+    this.fall.userData.setGlow?.(folie.color, 1)
+    this.fall.userData.setKlar?.(true)
+  }
+
+  _vorschauEnde() {
+    const v = this._vorschau
+    this._vorschau = null
+    this.fall.userData.setKlar?.(false)
+    const s = this.slides[this.index]
+    if (s?.texture) {
+      this.fall.userData.setMedia?.(s.texture, ASPECT)
+      this.fall.userData.setGlow?.(s.color, 1)
+    } else {
+      this.fall.userData.setMedia?.(null)
+      this.fall.userData.setGlow?.(null, 0)
+    }
+    setTimeout(() => v.texture.dispose(), 2000)
   }
 
   // Fuer die Einladung und die Auswahl.
@@ -202,6 +254,8 @@ export class BroadcastFeed {
 
   update(dt, skier) {
     this.clock += dt
+    if (this._vorschau && this.clock > this._vorschau.klarBis) this.fall.userData.setKlar?.(false)
+    if (this._vorschau && this.clock > this._vorschau.bis) this._vorschauEnde()
     if (!skier) return
     const dx = skier.position.x - this.position.x
     const dz = skier.position.z - this.position.z
@@ -219,7 +273,7 @@ export class BroadcastFeed {
     // Eine Sendung laeuft nach sieben Tagen ab – auch ohne neue Abfrage.
     if (this.message && this.message.expiresAt < Date.now()) this.zeigen(null)
 
-    if (this.slides.length > 1 && d < NEAR) {
+    if (this.slides.length > 1 && d < NEAR && !this._vorschau) {
       this.timer += dt
       if (this.timer > SLIDE) {
         this.timer = 0
@@ -252,6 +306,9 @@ export class BroadcastFeed {
     this.index = 0
     this.timer = 0
     this.fall.userData.setLive?.(!!m)
+    // Waehrend einer Vorschau bleibt das Eis beim Upload; was danach kommt,
+    // setzt _vorschauEnde().
+    if (!m && this._vorschau) return
     if (!m) {
       this.fall.userData.setMedia?.(null)
       this.fall.userData.setGlow?.(null, 0)
@@ -290,6 +347,7 @@ export class BroadcastFeed {
       // Waehrend des Ladens kam womoeglich eine neue Sendung.
       if (!this.slides.includes(s) || this.slides[this.index] !== s) return
     }
+    if (this._vorschau) return
     this.fall.userData.setMedia?.(s.texture, ASPECT)
     this.fall.userData.setGlow?.(s.color, 1)
   }

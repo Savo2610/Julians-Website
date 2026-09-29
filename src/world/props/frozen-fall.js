@@ -402,6 +402,10 @@ export function createFrozenFall() {
   }
 
   group.userData.select = (index) => { focused = index !== null && index !== undefined }
+  // Ganz aufgetaut, ohne dass jemand davor steht – fuer die Vorschau eines
+  // eben hochgeladenen Bildes (stations/broadcast.js).
+  let klar = false
+  group.userData.setKlar = (v) => { klar = v }
   let funkenNoetig = true
   group.userData.press = () => {
     uniforms.uFlash.value = 0.55
@@ -442,8 +446,8 @@ export function createFrozenFall() {
     uniforms.uTime.value = t
     // Herangezoomt immer ganz aufgetaut, sonst so weit, wie der Aufrufer
     // es nach der Entfernung will.
-    const clearTo = focused ? 1 : sicht
-    uniforms.uClear.value = ease(uniforms.uClear.value, clearTo, focused ? 1.6 : 1.2)
+    const clearTo = focused || klar ? 1 : sicht
+    uniforms.uClear.value = ease(uniforms.uClear.value, clearTo, focused || klar ? 1.6 : 1.2)
     uniforms.uHas.value = ease(uniforms.uHas.value, hasTarget, 2.5)
     uniforms.uLive.value = ease(uniforms.uLive.value, liveTarget, 2)
     uniforms.uMix.value = Math.min(1, uniforms.uMix.value + dt / 1.4)

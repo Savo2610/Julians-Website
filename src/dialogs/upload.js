@@ -31,6 +31,20 @@ let grenzen = null;
 let vorbereitet = false;
 let laeuft = false;
 
+// Was in dieser Sitzung des Fensters angekommen ist. Beim Schließen geht es
+// als Ereignis 'rohrpost' ans Tal, das die Kapseln dann verschickt – je
+// Datei (und je Text) eine. Gescheitert zählt, was beim Schließen noch mit
+// Fehler in der Liste steht: ein zweiter, geglückter Versuch löscht ihn.
+let angekommen = 0;
+let textGescheitert = false;
+// Das erste Bild, das durchkam: es steht danach kurz im Eis der Quelle, nur
+// in diesem Browser. Kein SVG – das Tal zeigt nur, was ein Foto ist.
+let bild = null;
+// Ebenso der Text, der durchkam – er steht dann im Eis, allein oder als
+// Zeile unter dem Bild.
+let text = '';
+const istBild = (datei) => /^image\//.test(datei.type) && datei.type !== 'image/svg+xml';
+
 function groesse(zahl) {
   if (zahl >= 1024 ** 3) return (zahl / 1024 ** 3).toFixed(1) + ' GB';
   if (zahl >= 1024 ** 2) return Math.round(zahl / 1024 ** 2) + ' MB';
@@ -259,19 +273,24 @@ async function senden() {
     try {
       await api('/api/note', { text: notiz });
       $('up-notiz').value = '';
+      angekommen++;
+      if (!text) text = notiz;
     } catch (fehler) {
       textFehler = fehler;
     }
+    textGescheitert = !!textFehler;
   }
 
   const gescheitert = [];
   for (const eintrag of dateien) {
     if (!(await dateiSenden(eintrag))) gescheitert.push(eintrag);
+    else if (!bild && istBild(eintrag.datei)) bild = eintrag.datei;
   }
 
   // Was durch ist, verschwindet aus der Liste; was nicht, bleibt zum
   // Nochmal-Versuchen stehen.
   const geschafft = dateien.length - gescheitert.length;
+  angekommen += geschafft;
   dateien = gescheitert;
   $('up-auswahl').value = '';
   listeZeichnen();
@@ -316,6 +335,14 @@ function verdrahten() {
   vorbereitet = true;
 
   schliessbar($('up-dialog'), $('up-zu'));
+  $('up-dialog').addEventListener('close', () => {
+    const gescheitert = dateien.filter((e) => e.fehler).length + (textGescheitert ? 1 : 0);
+    dispatchEvent(new CustomEvent('rohrpost', { detail: { angekommen, gescheitert, bild, text } }));
+    angekommen = 0;
+    textGescheitert = false;
+    bild = null;
+    text = '';
+  });
 
   const auswahl = $('up-auswahl');
   auswahl.addEventListener('change', () => {

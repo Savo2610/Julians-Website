@@ -289,6 +289,7 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
   // --- Weg 3: Werkzeuge ---------------------------------------------------
   const pipe = createUploadPipe()
   place(pipe, STATION_SPOTS.pipe, { rotation: FACING + 0.1, collider: 0.8 })
+  pipe.userData.setBoden((x, z) => world.heightAt(x, z))
   register({
     id: 'upload',
     label: 'Rohrpost',
@@ -297,13 +298,14 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     position: STATION_SPOTS.pipe,
     radius: 5,
     labelHeight: world.heightAt(STATION_SPOTS.pipe.x, STATION_SPOTS.pipe.z) + 3.1,
-    // Beim Ausloesen faehrt eine Kapsel aus dem Rohr – siehe upload-pipe.js –
-    // und darueber geht das Fenster auf, in dem man wirklich etwas abgibt.
+    // Beim Ausloesen klappt die Klappe weit auf, und darueber geht das
+    // Fenster auf, in dem man wirklich etwas abgibt. Verschickt wird erst,
+    // wenn es wieder zugeht – siehe world/rohrpost-netz.js.
     // Die Rohrpost hiess vorher Upload und zeigte nur auf upload.veerka.mp;
     // ein Rohr, in das man etwas hineinwirft, und eine Seite, auf die man
     // geschickt wird, waren zwei Gedanken fuer eine Sache.
     onUse: () => {
-      pipe.userData.launch?.()
+      pipe.userData.oeffnen?.()
       uploadDialog()
     },
   })
@@ -444,5 +446,5 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     document.querySelector('.ausfahrt')?.classList.remove('an')
   })
 
-  return { animated }
+  return { animated, pipe }
 }

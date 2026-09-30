@@ -59,7 +59,7 @@ test('Schanzen sind von der Bahn aus befahrbar', () => {
 })
 
 test('Sammelsachen liegen im Wasser, Ringe in der Luft', () => {
-  assert.ok(BUOYS.length >= 30)
+  assert.ok(BUOYS.length >= 12 && BUOYS.length <= 20)
   for (const b of BUOYS) assert.ok(waterDepth(b.x, b.z) > 0.5, `Boje ${b.id} liegt auf dem Trockenen`)
   for (const r of RINGS) assert.ok(r.y > 2, `Ring ${r.id} haengt zu tief`)
 })

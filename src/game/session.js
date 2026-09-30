@@ -2,12 +2,20 @@ import { TRICK } from '../config.js'
 import { CABLE_LENGTH } from '../world/cable-path.js'
 import { DOCK_S } from '../player/rider-physics.js'
 import { Combo } from './tricks.js'
+import { Slalom } from './slalom.js'
 
 // Der Ablauf einer Session: Titel, Start am Steg, drei Runden, Auswertung.
+// Gewertet werden Tricks, Bojen, Ringe und der Slalom.
 // Hier landen die Ereignisse des Fahrmodells und werden zu Punkten,
 // Meldungen und Effekten. Die Anzeige selbst macht hud.js.
 
 export const LAPS = 3
+// Slalom: jede Fahne mehr als die vorige in derselben Runde (150, 200 …
+// 400), alle sechs dazu 1200. Zusammen knapp 3000 je Runde, so viel wie zwei
+// gute Spruenge; dafuer laesst man auf der Suedgeraden beide Kicker liegen.
+const GATE_POINTS = 100
+const GATE_STEP = 50
+const SLALOM_BONUS = 1200
 const fmt = (n) => Math.round(n).toLocaleString('de-DE')
 
 function loadBest() {
@@ -43,6 +51,7 @@ export class Session {
 
   reset() {
     this.combo = new Combo()
+    this.slalom = new Slalom()
     this.stats = { buoys: 0, rings: 0, crashes: 0, bestTrick: null, bestCombo: 0, topSpeed: 0 }
     this.finishTimer = 0
     this.items.reset()
@@ -90,6 +99,9 @@ export class Session {
 
     if (this.state === 'play') {
       this.checkItems()
+      this.slalom.update(r)
+      for (const e of this.slalom.events) this.slalomEvent(e)
+      this.slalom.events.length = 0
       const banked = this.combo.update(dt)
       if (banked) this.stats.bestCombo = Math.max(this.stats.bestCombo, banked)
       for (const e of this.combo.events) this.comboEvent(e)
@@ -136,12 +148,16 @@ export class Session {
       const s = Math.max(0, next.seconds)
       return {
         text: `Der Bügel kommt <strong>${s.toFixed(1)}</strong>`,
+        // Countdown erst in den letzten drei Sekunden, vorher wartet man nur.
+        // Aus der gerundeten Zahl, sonst stand bei „1.0“ noch die 2.
+        count: s < 3 ? String(Math.max(1, Math.ceil(+s.toFixed(1)))) : '',
         fill: 0, zone: 0.62, ready: r.crouch > 0.5,
       }
     }
     const p = r.dockProgress
     return {
       text: r.crouch > 0.5 ? 'In der Hocke … gleich geht’s los' : 'Seil strafft sich – <strong>jetzt in die Hocke!</strong>',
+      count: p >= 0.62 ? 'JETZT!' : '',
       fill: p, zone: 0.62, ready: r.crouch > 0.5,
     }
   }
@@ -151,13 +167,15 @@ export class Session {
     if (this.state !== 'play') return this.hud.setHint('')
     const touch = this.hud.touch
     if (r.mode === 'dock') {
-      this.hud.setHint(touch ? 'Rechts halten, wenn sich das Seil strafft' : '<kbd class="k-wide">Leertaste</kbd> halten, wenn sich das Seil strafft')
+      this.hud.setHint(touch ? '<b>Sprung</b> halten, wenn sich das Seil strafft' : '<kbd class="k-wide">Leertaste</kbd> halten, wenn sich das Seil strafft')
+    } else if (r.fakie && r.mode === 'ride') {
+      this.hud.setHint(touch ? 'Rückwärts – <b>Sprung</b> und ◀ ▶: ein 180 dreht dich zurück' : 'Rückwärts – <kbd class="k-wide">Leertaste</kbd> und <kbd>A</kbd><kbd>D</kbd>: ein 180 dreht dich zurück')
     } else if (r.progress < 60 && r.mode === 'ride') {
-      this.hud.setHint(touch ? 'Links wischen zum Ausschwingen' : '<kbd>A</kbd><kbd>D</kbd> kanten – nach außen schwingen macht schnell')
+      this.hud.setHint(touch ? '◀ ▶ kanten – nach außen schwingen macht schnell' : '<kbd>A</kbd><kbd>D</kbd> kanten – nach außen schwingen macht schnell')
     } else if (r.progress < 140 && r.mode === 'ride') {
-      this.hud.setHint(touch ? 'Vor dem Kicker rechts halten, an der Kante loslassen' : 'Vor dem Kicker <kbd class="k-wide">Leertaste</kbd> halten, an der Kante loslassen')
+      this.hud.setHint(touch ? 'Vor dem Kicker <b>Sprung</b> halten, an der Kante loslassen' : 'Vor dem Kicker <kbd class="k-wide">Leertaste</kbd> halten, an der Kante loslassen')
     } else if (r.progress < 260 && r.mode === 'ride') {
-      this.hud.setHint(touch ? 'In der Luft: wischen dreht, hoch/runter Salto' : 'In der Luft: <kbd>A</kbd><kbd>D</kbd> drehen · <kbd>W</kbd><kbd>S</kbd> Salto · <kbd class="k-wide">Shift</kbd> Grab')
+      this.hud.setHint(touch ? 'In der Luft: ◀ ▶ drehen · ▲ ▼ Salto · <b>Grab</b>' : 'In der Luft: <kbd>A</kbd><kbd>D</kbd> drehen · <kbd>W</kbd><kbd>S</kbd> Salto · <kbd class="k-wide">Shift</kbd> Grab')
     } else {
       this.hud.setHint('')
     }
@@ -171,7 +189,7 @@ export class Session {
         break
       case 'start':
         if (e.perfect) {
-          this.hud.showTrick('Perfekter Start', '+250', 'perfect')
+          this.hud.showTrick('Katapult-Start', `+250 · jetzt drehen!`, 'perfect')
           this.combo.collect(250, 'Start')
         } else {
           this.hud.showTrick('Los geht’s', '', 'clean')
@@ -198,6 +216,10 @@ export class Session {
       case 'respawn':
         fx.snapCamera()
         break
+      case 'glance':
+        this.hud.showToast('An der Kante abgeglitten', 1)
+        fx.glance?.(e)
+        break
     }
   }
 
@@ -210,6 +232,25 @@ export class Session {
       this.hud.showToast(`Kombo verloren (${fmt(e.points)})`, 1.4)
     } else if (e.type === 'bonus') {
       this.hud.showToast(`Runde geschafft +${fmt(e.points)}`, 1.4)
+    }
+  }
+
+  slalomEvent(e) {
+    if (e.type === 'lap') {
+      this.items.resetGates?.()
+    } else if (e.type === 'gate') {
+      this.items.setGate?.(e.gate.index, true)
+      const pts = GATE_POINTS + GATE_STEP * e.streak
+      this.combo.collect(pts, 'Tor')
+      this.fx.gate?.(e.gate)
+      if (e.all) {
+        this.combo.collect(SLALOM_BONUS, 'Slalom')
+        this.hud.showTrick('Slalom', `alle ${e.of} Tore +${SLALOM_BONUS}`, 'perfect')
+      } else {
+        this.hud.showToast(`Tor ${e.n}/${e.of}  +${pts}`, 1)
+      }
+    } else if (e.type === 'miss') {
+      this.hud.showToast('Tor verpasst', 1.2)
     }
   }
 
@@ -258,6 +299,7 @@ export class Session {
       buoys: this.stats.buoys, buoysTotal: this.items.buoys.length,
       rings: this.stats.rings, ringsTotal: this.items.rings.length,
       topSpeed: this.stats.topSpeed, crashes: this.stats.crashes,
+      gates: this.slalom.total, gatesTotal: this.slalom.gates.length * LAPS, slaloms: this.slalom.runs,
     })
   }
 }

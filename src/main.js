@@ -117,6 +117,16 @@ const fx = {
     }
     if (it.kind === 'buoy') wake.splash(it.x, it.z, 0.5)
   },
+  glance: (e) => {
+    burst(e.x, 0.2, e.z, 24, 3, 2.5, 0.6)
+    chase.addShake(0.25)
+  },
+  gate: (g) => {
+    for (let i = 0; i < 18; i++) {
+      const a = Math.random() * Math.PI * 2
+      sparkle.emit(g.x, 4.2, g.z, Math.cos(a) * 1.6, 1 + Math.random() * 1.5, Math.sin(a) * 1.6, 0.45 + Math.random() * 0.3, 0.9)
+    }
+  },
 }
 
 const session = new Session({ rider, cable, collectibles: items, hud, fx })
@@ -127,7 +137,7 @@ input.onAction = (a) => {
 }
 hud.titleGo.addEventListener('click', () => session.confirm())
 hud.resultsGo.addEventListener('click', () => session.confirm())
-if (TOUCH) new TouchControls(input, canvas, { onTap: () => { if (session.state !== 'play') session.confirm() } })
+if (TOUCH) new TouchControls(input, canvas, { root: document.getElementById('hud'), onTap: () => { if (session.state !== 'play') session.confirm() } })
 
 // --- Gischt -------------------------------------------------------------------
 // Hinter den Ski spritzt es nach aussen, beim Kanten als Faecher. Die

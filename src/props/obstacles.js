@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial, tint, labelTexture } from '../core/geometry.js'
-import { FEATURES, DOCK, BUOYS, RINGS } from '../world/features.js'
+import { FEATURES, DOCK, BUOYS, RINGS, GATES } from '../world/features.js'
 
 // Was im Wasser steht: Kicker, Rail-Box, der Startsteg und die Sammelsachen.
 // Die Form kommt aus features.js – gezeichnet wird genau das, was die
@@ -94,6 +94,35 @@ function sliderGeometry(f) {
   return assemble(parts)
 }
 
+// Rail: kurze weisse Auffahrt wie an der Box, dann ein Stahlrohr auf zwei
+// Stuetzen. Die Oberkante des Rohrs liegt genau auf der Hoehe, auf der die
+// Rechnung den Fahrer fuehrt.
+function railGeometry(f) {
+  const tube = 0.075
+  const rampProfile = (u) => f.profile(Math.min(u, f.ramp))
+  const parts = [
+    { geo: bodyGeometry(rampProfile, f.ramp, f.width, 8), color: 0x2f3640 },
+    { geo: skinGeometry(rampProfile, f.ramp, f.width - 0.06, 8), color: HDPE },
+    { geo: new THREE.BoxGeometry(f.width + 0.05, 0.08, 0.16), color: EDGE, position: [0, f.height - 0.03, f.ramp - 0.08] },
+  ]
+  const len = f.length - f.ramp
+  parts.push({
+    geo: new THREE.CylinderGeometry(tube, tube, len, 10),
+    color: 0xc9d1d9,
+    position: [0, f.height - tube, f.ramp + len / 2],
+    rotation: [Math.PI / 2, 0, 0],
+  })
+  for (const u of [f.ramp + 1.2, f.length - 1.2]) {
+    parts.push({ geo: new THREE.BoxGeometry(0.1, f.height + 0.2, 0.1), color: 0x3a4250, position: [0, (f.height - 0.2) / 2 - 0.1, u] })
+    parts.push({ geo: new THREE.BoxGeometry(1.8, 0.35, 0.9), color: FLOAT, position: [0, -0.05, u] })
+  }
+  // Orange Ringe am Rohr, damit man es von oben ueberhaupt sieht.
+  for (let u = f.ramp + 0.6; u < f.length - 0.3; u += 1.6) {
+    parts.push({ geo: new THREE.CylinderGeometry(tube + 0.012, tube + 0.012, 0.18, 10), color: EDGE, position: [0, f.height - tube, u], rotation: [Math.PI / 2, 0, 0] })
+  }
+  return assemble(parts)
+}
+
 function dockGeometry() {
   const parts = []
   const w = DOCK.width
@@ -120,7 +149,7 @@ function placeLocal(mesh, f) {
 export function createObstacles(scene) {
   const material = vertexColorMaterial({ roughness: 0.55 })
   for (const f of FEATURES) {
-    const geo = f.type === 'kicker' ? kickerGeometry(f) : sliderGeometry(f)
+    const geo = f.type === 'kicker' ? kickerGeometry(f) : f.kind === 'Rail' ? railGeometry(f) : sliderGeometry(f)
     const mesh = new THREE.Mesh(geo, material)
     placeLocal(mesh, f)
     mesh.castShadow = true
@@ -136,22 +165,68 @@ export function createObstacles(scene) {
 
 // --- Sammelsachen ------------------------------------------------------------
 
+const GATE_OPEN = 0xe4613a
+const GATE_DONE = 0x8fc23a
+
 export function createCollectibles(scene) {
   const material = vertexColorMaterial({ roughness: 0.35, metalness: 0.1 })
-  // Boje: gelber Ball mit weissem Band und einem kleinen Wimpel.
-  const buoyGeo = assemble([
-    { geo: new THREE.IcosahedronGeometry(0.42, 1), color: 0xf6b93b, position: [0, 0.18, 0] },
-    { geo: new THREE.TorusGeometry(0.42, 0.06, 4, 12), color: 0xffffff, position: [0, 0.2, 0], rotation: [Math.PI / 2, 0, 0] },
-    { geo: new THREE.CylinderGeometry(0.025, 0.025, 0.9, 4), color: 0x2f3640, position: [0, 0.8, 0] },
-    { geo: new THREE.BoxGeometry(0.02, 0.22, 0.34), color: 0xd9553a, position: [0, 1.1, 0.17] },
+  // Boje zum Sammeln: kleiner Schwimmer, darueber ein leuchtender Stein, der
+  // sich dreht, und ein Kreis auf dem Wasser, der atmet. Vorher war es ein
+  // gelber Ball mit Wimpel, und der sah aus wie jede Boje an einer Anlage –
+  // dass man ihn holen soll, hat niemand gemerkt.
+  const floatGeo = assemble([
+    { geo: new THREE.IcosahedronGeometry(0.3, 1), color: 0xf6f3ec, position: [0, 0.08, 0] },
+    { geo: new THREE.TorusGeometry(0.3, 0.05, 4, 12), color: 0xf2c84b, position: [0, 0.1, 0], rotation: [Math.PI / 2, 0, 0] },
   ])
-  const buoys = BUOYS.map((b, i) => {
-    const mesh = new THREE.Mesh(buoyGeo, material)
-    mesh.position.set(b.x, 0, b.z)
-    mesh.castShadow = true
-    scene.add(mesh)
-    return { ...b, mesh, phase: i * 0.77, taken: false, pop: 0 }
-  })
+  const gemGeo = assemble([
+    { geo: new THREE.OctahedronGeometry(0.42, 0), color: 0xf6c24a, scale: [1, 1.35, 1] },
+  ])
+  const gemMat = vertexColorMaterial({ roughness: 0.25, metalness: 0.2, emissive: 0xe0a020, emissiveIntensity: 0.9 })
+  const haloGeo = new THREE.RingGeometry(0.95, 1.25, 28)
+  haloGeo.rotateX(-Math.PI / 2)
+  const haloMat = new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.6, depthWrite: false, fog: true })
+
+  // Je Teil ein InstancedMesh fuer alle Bojen: drei Zeichenaufrufe statt 87.
+  const instanced = (geo, mat, shadow) => {
+    const m = new THREE.InstancedMesh(geo, mat, BUOYS.length)
+    m.castShadow = shadow
+    m.frustumCulled = false
+    scene.add(m)
+    return m
+  }
+  const floats = instanced(floatGeo, material, true)
+  const gems = instanced(gemGeo, gemMat, true)
+  const halos = instanced(haloGeo, haloMat, false)
+  // Das Wasser ist selbst durchsichtig und kommt mit renderOrder 1; der
+  // Kreis muss danach, sonst liegt er unter der Oberflaeche.
+  halos.renderOrder = 2
+  const buoys = BUOYS.map((b, i) => ({ ...b, phase: i * 0.77, taken: false, pop: 0, scale: 1, lift: 0, visible: true }))
+  const _m = new THREE.Matrix4()
+  const _q = new THREE.Quaternion()
+  const _e = new THREE.Euler()
+  const _p = new THREE.Vector3()
+  const _s = new THREE.Vector3()
+  const setPart = (mesh, i, x, y, z, rotY, rotZ, scale) => {
+    _p.set(x, y, z)
+    _q.setFromEuler(_e.set(0, rotY, rotZ))
+    _s.setScalar(scale)
+    mesh.setMatrixAt(i, _m.compose(_p, _q, _s))
+  }
+  function drawBuoys(elapsed) {
+    buoys.forEach((b, i) => {
+      const sc = b.visible ? b.scale : 0
+      const bob = b.taken ? b.lift : Math.sin(elapsed * 2 + b.phase) * 0.07
+      const tilt = b.taken ? 0 : Math.sin(elapsed * 1.6 + b.phase) * 0.1
+      const pulse = 0.5 + 0.5 * Math.sin(elapsed * 3.2 + b.phase)
+      setPart(floats, i, b.x, bob, b.z, b.phase, tilt, sc)
+      setPart(gems, i, b.x, bob + 1.1 * sc + Math.sin(elapsed * 3 + b.phase) * 0.12, b.z, elapsed * 2.2 + b.phase, 0, sc)
+      setPart(halos, i, b.x, 0.04, b.z, 0, 0, b.taken ? 0 : 0.85 + pulse * 0.3)
+    })
+    floats.instanceMatrix.needsUpdate = true
+    gems.instanceMatrix.needsUpdate = true
+    halos.instanceMatrix.needsUpdate = true
+  }
+  drawBuoys(0)
 
   const ringGeo = assemble([
     { geo: new THREE.TorusGeometry(1, 0.1, 6, 28), color: 0xf6c24a },
@@ -168,34 +243,79 @@ export function createCollectibles(scene) {
     return { ...r, mesh, phase: i, taken: false, pop: 0 }
   })
 
-  return {
+  // Slalomfahnen: rot-weisser Schwimmer, hoher Stab, ein Wimpel, der von
+  // der Bahn weg zeigt – dorthin, wo man vorbei muss. Geschafft wird er gruen.
+  const poleGeo = assemble([
+    { geo: new THREE.CylinderGeometry(0.34, 0.4, 0.35, 10), color: 0xf6f3ec, position: [0, 0.05, 0] },
+    { geo: new THREE.CylinderGeometry(0.36, 0.36, 0.12, 10), color: 0xd9553a, position: [0, 0.12, 0] },
+    { geo: new THREE.CylinderGeometry(0.06, 0.06, 4.4, 6), color: 0xf6f3ec, position: [0, 2.4, 0] },
+    { geo: new THREE.CylinderGeometry(0.065, 0.065, 0.4, 6), color: 0xd9553a, position: [0, 3.1, 0] },
+    { geo: new THREE.CylinderGeometry(0.065, 0.065, 0.4, 6), color: 0xd9553a, position: [0, 1.9, 0] },
+  ])
+  const clothShape = new THREE.Shape()
+  clothShape.moveTo(0, 0)
+  clothShape.lineTo(2, -0.55)
+  clothShape.lineTo(0, -1.1)
+  clothShape.closePath()
+  const clothGeo = new THREE.ShapeGeometry(clothShape)
+  const gates = GATES.map((g) => {
+    const mesh = new THREE.Group()
+    mesh.position.set(g.x, 0, g.z)
+    const pole = new THREE.Mesh(poleGeo, material)
+    pole.castShadow = true
+    const clothMat = new THREE.MeshStandardMaterial({ color: GATE_OPEN, roughness: 0.7, side: THREE.DoubleSide, flatShading: true })
+    const cloth = new THREE.Mesh(clothGeo, clothMat)
+    cloth.position.y = 4.55
+    cloth.castShadow = true
+    // Lokales +x soll von der Bahn weg zeigen: aussen ist (-dz, dx).
+    const qx = -g.dz * g.side
+    const qz = g.dx * g.side
+    const flag = new THREE.Group()
+    flag.rotation.y = Math.atan2(-qz, qx)
+    flag.add(cloth)
+    mesh.add(pole, flag)
+    scene.add(mesh)
+    return { ...g, mesh, cloth, flag, done: false }
+  })
+
+  const api = {
     buoys,
     rings,
+    gates,
     all: [...buoys, ...rings],
+    buoyMeshes: [floats, gems, halos],
+    setGate(i, done) {
+      const g = gates[i]
+      if (!g || g.done === done) return
+      g.done = done
+      g.cloth.material.color.setHex(done ? GATE_DONE : GATE_OPEN)
+    },
+    resetGates() {
+      for (const g of gates) api.setGate(g.index, false)
+    },
     reset() {
-      for (const it of [...buoys, ...rings]) {
-        it.taken = false
-        it.pop = 0
-        it.mesh.visible = true
-        it.mesh.scale.setScalar(it.kind === 'ring' ? it.radius : 1)
+      for (const b of buoys) Object.assign(b, { taken: false, pop: 0, scale: 1, lift: 0, visible: true })
+      for (const r of rings) {
+        r.taken = false
+        r.pop = 0
+        r.mesh.visible = true
+        r.mesh.scale.setScalar(r.radius)
       }
+      api.resetGates()
+      drawBuoys(0)
     },
     update(elapsed, dt) {
       for (const b of buoys) {
-        if (b.taken) {
-          if (b.pop > 0) {
-            b.pop -= dt
-            const t = 1 - b.pop / 0.35
-            b.mesh.scale.setScalar(1 + t * 0.8)
-            b.mesh.position.y = t * 1.2
-            if (b.pop <= 0) b.mesh.visible = false
-          }
-          continue
+        if (b.taken && b.pop > 0) {
+          b.pop -= dt
+          const t = 1 - b.pop / 0.35
+          b.scale = 1 + t * 0.8
+          b.lift = t * 1.2
+          if (b.pop <= 0) b.visible = false
         }
-        b.mesh.position.y = Math.sin(elapsed * 2 + b.phase) * 0.07
-        b.mesh.rotation.y = elapsed * 0.6 + b.phase
-        b.mesh.rotation.z = Math.sin(elapsed * 1.6 + b.phase) * 0.12
       }
+      drawBuoys(elapsed)
+      haloMat.opacity = 0.4 + 0.2 * Math.sin(elapsed * 3.2)
       for (const r of rings) {
         if (r.taken) {
           if (r.pop > 0) {
@@ -207,8 +327,13 @@ export function createCollectibles(scene) {
         }
         r.mesh.position.y = r.y + Math.sin(elapsed * 1.3 + r.phase) * 0.12
       }
+      for (const g of gates) {
+        g.flag.children[0].rotation.y = Math.sin(elapsed * 4 + g.index) * 0.18
+        g.mesh.rotation.z = Math.sin(elapsed * 1.4 + g.index) * 0.03
+      }
     },
   }
+  return api
 }
 
 // Schild mit Aufschrift, fuer Station und Insel.

@@ -8,7 +8,8 @@ export const WORLD = {
 
 // Der See ist eine Superellipse: fast ein abgerundetes Rechteck, damit die
 // Kabelbahn ueberall gleich weit vom Ufer laeuft. Bei einer echten Ellipse
-// kamen die Ecken der Bahn dem Ufer auf 9 m nahe, mit n = 3.2 sind es 22.
+// kamen die Ecken der Bahn dem Ufer auf 9 m nahe; mit n = 3.8 und den
+// Buchten bleiben ueberall mindestens 16 m (der Test prueft es).
 export const LAKE = {
   x: 0,
   z: 0,
@@ -18,7 +19,7 @@ export const LAKE = {
   depth: 2.6,         // Tiefe in der Mitte des Beckens
 }
 
-// Die Insel liegt mittig. Ihr Ufer bleibt mindestens 26 m von der Bahn weg:
+// Die Insel liegt mittig. Ihr Ufer bleibt mindestens 24 m von der Bahn weg:
 // so weit, wie der Fahrer am 17-m-Seil innen abkuerzen kann, plus Luft.
 export const ISLAND = {
   x: 4,
@@ -30,14 +31,17 @@ export const ISLAND = {
 }
 
 // Die Kabelbahn: ein abgerundetes Rechteck um die Insel. Die Masten stehen
-// aussen an den Ecken, der Umlaufsinn ist gegen den Uhrzeiger (von oben),
-// wie an den meisten Anlagen.
+// aussen an den Ecken, der Umlaufsinn ist gegen den Uhrzeiger (von oben,
+// Norden oben), wie an den meisten Anlagen.
 export const CABLE = {
   halfX: 66,
   halfZ: 50,
   cornerRadius: 15,
   height: 9,          // Hoehe des Seils ueber dem Wasser
-  speed: 12.5,        // m/s, rund 45 km/h
+  // m/s, 54 km/h (vorher 45). Ausgeschwungen kommt man damit auf gut 85
+  // km/h. Die Abstaende der Kicker reichen weiter zum Aufladen: 0,45 s
+  // sind bei diesem Tempo keine 7 m.
+  speed: 15,
   carriers: 5,        // Mitnehmer auf dem Seil, einer davon zieht den Fahrer
   ropeLength: 17,     // waagerechte Seillaenge vom Mitnehmer bis zur Hantel
 }
@@ -64,39 +68,62 @@ export const RIDER = {
   slackDrag: 0.5,     // zusaetzlich am schlaffen Seil
   brakeDrag: 1.8,     // S: zuruecklehnen
   pullAccel: 3.2,     // W: an der Hantel ziehen
-  maxSpeed: 21,
-  gravity: 21,        // etwas mehr als echt: Spruenge sollen knackig sein
-  popBase: 3.2,       // Absprung auf dem Wasser
-  popCharge: 3.6,     // dazu, wenn voll aufgeladen
+  maxSpeed: 24,
+  // Weniger als echt und weniger als vorher (21): aufgeladen fliegt man vom
+  // Kicker jetzt gut 1,8 s statt 1,1 s und behaelt bei Cork und Doppelsalto
+  // den Ueberblick. Damit die Spruenge dabei nicht in den Himmel gehen, ist
+  // der Absprung etwas schwaecher; der hoechste Punkt liegt bei gut 6 m.
+  gravity: 13,
+  popBase: 2.6,       // Absprung auf dem Wasser
+  popCharge: 3,       // dazu, wenn voll aufgeladen
   chargeTime: 0.45,   // s bis zur vollen Ladung
   stepUpCrash: 0.35,  // hoeher darf eine Kante nicht sein, die man seitlich trifft
+  // Schraeg gegen eine Rampe: bis zu diesem Winkel gegen ihre Laengsrichtung
+  // gleitet man an der Seite ab, statt zu stuerzen. Auf Box und Rail springt
+  // man bis zu diesem Winkel von der Seite auf.
+  glanceAngle: 0.7,   // rad, 40 Grad
+  mountAngle: 0.87,   // rad, 50 Grad
+  // Rueckwaerts (nach einem 180) geht alles etwas zaeher: weniger Kante,
+  // langsamer lenken, kein Ziehen an der Hantel.
+  fakieEdge: 0.7,
+  fakieSteer: 0.7,
+  // Auf Box und Rail: die Kante haelt den Fahrer in der Spur, mit A/D dreht
+  // er sich darauf (langsamer als in der Luft). Ohne Taste rastet er in der
+  // naechsten Viertelstellung ein: laengs, quer oder rueckwaerts.
+  slideCenter: 5,
+  slideDrag: 0.08,
+  slideSpinAccel: 26,
+  slideSpinMax: 8,    // rad/s: ein 360 braucht knapp 1 s, die Box ist 0,8 s lang
 }
 
 export const TRICK = {
-  spinAccel: 34,
-  spinMax: 10.5,      // rad/s: ein 360 braucht so gut 0,7 s Luft
-  spinDecay: 9,      // ohne Taste steht die Drehung nach gut 0,1 s
-  flipAccel: 26,
-  flipMax: 8.2,
+  spinAccel: 28,
+  spinMax: 8.6,       // rad/s: ein 360 braucht so gut 0,85 s Luft
+  spinDecay: 9,       // ohne Taste steht die Drehung nach gut 0,1 s
+  flipAccel: 22,
+  flipMax: 7,
   flipDecay: 8,
-  // Landefenster (rad Abweichung von einer vollen Drehung).
-  perfect: 0.22,
-  clean: 0.5,
-  sketchy: 0.95,
-  // Innerhalb dieses Fensters hilft das Spiel beim Aufsetzen nach. Ohne
-  // Hilfe landete man einen 360 nur bei jedem dritten Versuch sauber.
-  assist: 0.7,
+  // Landefenster in rad Abweichung. Beim Drehen zaehlt die naechste halbe
+  // Umdrehung (ein 180 landet rueckwaerts), beim Salto die naechste ganze.
+  // Gestuerzt wird erst jenseits von knapp 70 Grad: wirklich quer oder
+  // wirklich schraeg.
+  spinLand: { perfect: 0.3, clean: 0.6, sketchy: 1.2 },
+  flipLand: { perfect: 0.3, clean: 0.65, sketchy: 1.2 },
+  // Ohne Taste dreht das Spiel den Fahrer in der Luft auf die naechste
+  // Landestellung zurueck: sacht im Steigen, entschieden kurz vor dem Wasser.
+  assistRise: 3.5,
+  assistLand: 9,
   comboWindow: 3.5,   // s nach der Landung, in denen der naechste Trick zaehlt
 }
 
 // Die Kamera des Skitals: fest von schraeg oben, dreht sich nie. Nur Abstand
-// und Bildwinkel atmen ein wenig mit dem Tempo, damit man die 45 km/h spuert.
+// und Bildwinkel atmen ein wenig mit dem Tempo, damit man die 54 km/h spuert.
 export const CAMERA = {
   azimuth: Math.PI * 0.25,
   elevation: 0.63,
   distance: 34,
   fov: 38,
-  fovSpeed: 5,        // zusaetzliche Grad bei Hoechsttempo
+  fovSpeed: 7,        // zusaetzliche Grad bei Hoechsttempo
   distSpeed: 4,       // zusaetzlicher Abstand bei Hoechsttempo
   lookHeight: 0.8,
   lead: 7,

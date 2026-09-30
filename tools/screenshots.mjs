@@ -116,9 +116,24 @@ await shot('07-box')
 
 // Backflip ueber den Kicker auf der Ostgeraden (k4). Die Kante liegt bei
 // Bogenlaenge 392, der Steg bei 15 – im Fortschritt des Fahrers also 377.
-await until((r) => r.progress > 366)
-await K(['jump'])
-await until((r) => r.progress > 376.4)
+// k4 liegt 5,5 m innen neben der Rail: vorher hinueberlenken, auf die Mitte
+// des Kickers, wie ein Fahrer, der ihn anpeilt.
+const aimUntil = (progress, jump = false) => page.evaluate(({ progress, jump }) => {
+  const k = window.__kabel
+  const f = k.FEATURES.find((x) => x.id === 'k4')
+  const r = k.rider
+  for (let i = 0; i < 4000 && r.progress <= progress; i++) {
+    const v = (r.x - f.x) * -f.dz + (r.z - f.z) * f.dx
+    const vv = r.vx * -f.dz + r.vz * f.dx
+    k.input.touch.steer = r.airborne || r.feature ? 0 : Math.max(-1, Math.min(1, -v * 0.4 - vv * 0.12))
+    k.keys(jump ? ['jump'] : [])
+    k.step(1, 1 / 60, false)
+  }
+  k.input.touch.steer = 0
+}, { progress, jump })
+await until((r) => r.progress > 320)
+await aimUntil(366)
+await aimUntil(376.4, true)
 await page.evaluate(() => window.__kabel.release('jump'))
 await K(['brake'])
 await step(2)

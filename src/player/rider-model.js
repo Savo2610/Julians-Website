@@ -196,15 +196,27 @@ const _v = new THREE.Vector3()
 // Setzt Lage und Haltung nach dem Fahrmodell.
 export function poseRider(model, rider, dt, elapsed) {
   const p = model.userData.parts
-  const st = model.userData.state || (model.userData.state = { lean: 0, back: 0, crouch: 0, grab: 0, sink: 0, bob: 0 })
+  const st = model.userData.state || (model.userData.state = { lean: 0, back: 0, crouch: 0, grab: 0, sink: 0, bob: 0, fakie: 0, slow: 0 })
 
   model.position.set(rider.x, rider.y, rider.z)
   model.rotation.y = rider.heading
-  p.spin.rotation.y = rider.spin
+  // Rueckwaerts steht die Figur umgedreht auf derselben Fahrtrichtung.
+  p.spin.rotation.y = rider.spin + (rider.fakie ? Math.PI : 0)
   p.flip.rotation.x = rider.flip
 
-  // Kurvenlage aus dem Kantenwinkel und dem Tempo.
-  const lean = rider.airborne ? 0 : THREE.MathUtils.clamp(-rider.edge * (rider.speed / 14), -0.6, 0.6)
+  // Rueckwaerts haelt der Fahrer die Hantel hinter dem Ruecken, sonst liefe
+  // das Seil durch ihn hindurch. In der Luft bleibt sie, wo sie war.
+  if (!rider.airborne) st.fakie += ((rider.fakie ? 1 : 0) - st.fakie) * damp(9, dt)
+  const fk = st.fakie
+  p.handle.position.set(0, 0.32 - fk * 0.14, 0.6 - fk * 1.12)
+  p.ropePoint.position.set(0, 0.32 - fk * 0.14, 0.64 - fk * 1.2)
+  p.arms.left.rotation.y = fk * Math.PI
+  p.arms.right.rotation.y = fk * Math.PI
+
+  // Kurvenlage aus dem Kantenwinkel und dem Tempo; rueckwaerts spiegelt
+  // sich die Seite, weil die Figur umgedreht steht.
+  const side = rider.fakie ? -1 : 1
+  const lean = rider.airborne ? 0 : THREE.MathUtils.clamp(-rider.edge * (rider.speed / 14), -0.6, 0.6) * side
   st.lean += (lean - st.lean) * damp(8, dt)
   // Am straffen Seil nach hinten lehnen.
   const back = rider.mode === 'dock' ? 0.05 : rider.airborne ? 0.1 : 0.2 + rider.taut * 0.25
@@ -218,14 +230,24 @@ export function poseRider(model, rider, dt, elapsed) {
   const c = Math.max(st.crouch * 0.8, st.grab)
   p.legs.scale.y = 1 - c * 0.32
   p.torso.position.y = 0.86 - c * 0.28
-  p.torso.rotation.x = -st.back + c * 0.45
+  // Gegen den Zug lehnen: rueckwaerts kommt er von hinten, also nach vorn.
+  p.torso.rotation.x = -st.back * (1 - 2 * fk) + c * 0.45
   // Grab: der rechte Arm greift an den Ski.
   p.arms.right.rotation.x = st.grab * 1.3
   p.arms.right.rotation.z = -st.grab * 0.2
 
+  // Wer Tempo verliert, gleitet nicht mehr: die Ski sinken ein, die Spitzen
+  // kommen hoch, der Fahrer lehnt sich weiter zurueck. Voll getragen ab gut
+  // 40 km/h (12 m/s), bei 18 km/h steht er bis zu den Knoecheln im Wasser.
+  const onWater = rider.mode === 'ride' && !rider.airborne && rider.y < 0.05
+  const slow = onWater ? 1 - THREE.MathUtils.smoothstep(rider.speed, 5, 12) : 0
+  st.slow += (slow - st.slow) * damp(3, dt)
+  p.skis.rotation.x = -st.slow * 0.22
+  p.torso.rotation.x -= st.slow * 0.18 * (1 - 2 * fk)
+
   // Wackeln auf dem Wasser, nur ein Hauch.
   const bob = rider.airborne ? 0 : Math.sin(elapsed * 9.3) * 0.012 * Math.min(1, rider.speed / 10)
-  p.body.position.y = -PIVOT + bob
+  p.body.position.y = -PIVOT + bob - st.slow * 0.3
 
   // Sturz: der Fahrer kippt nach vorn und liegt im Wasser.
   if (st.sink > 0.01) {

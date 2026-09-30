@@ -26,6 +26,10 @@ Das Wichtigste in Kürze:
 - Die Bahn braucht Wasser um sich: mindestens 16 m zum Ufer, 24 m zur Insel
   (der Test `Bahn hat Abstand zu Ufer und Insel` prüft es). Wer See, Insel
   oder Kabel verschiebt, muss ihn grün halten.
+- Ringe und Slalomfahnen hängen am Fahrmodell: die Ringe sitzen am
+  gemessenen Scheitel eines geladenen Sprungs, die Fahnen so, dass der
+  Testfahrer den Slalom schafft (`Slalom: mit grossen Boegen …`). Wer
+  Seiltempo, Schwerkraft oder Absprung ändert, misst beides nach.
 - Alle Stellschrauben stehen in `src/config.js`. Kommentare und Commits auf
   **Deutsch**, und sie erklären das *Warum*, am besten mit einer gemessenen
   Zahl.

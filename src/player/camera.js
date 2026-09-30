@@ -7,8 +7,8 @@ const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
 // dreht sich nie. So bleiben die Himmelsrichtungen stehen, und der See liest
 // sich wie eine Karte, auf der man faehrt.
 //
-// Neu ist nur, dass sie mit dem Tempo atmet: bei 75 km/h geht sie vier Meter
-// zurueck und oeffnet den Bildwinkel um fuenf Grad. Das ist kein Effekt,
+// Neu ist nur, dass sie mit dem Tempo atmet: bei 86 km/h geht sie vier Meter
+// zurueck und oeffnet den Bildwinkel um sieben Grad. Das ist kein Effekt,
 // den man bemerkt, aber ohne ihn fuehlten sich 20 m/s an wie 12. Am Steg
 // kommt sie naeher heran, damit man den Start sieht.
 export class TopCamera {
@@ -41,7 +41,9 @@ export class TopCamera {
     this._focus += (focus - this._focus) * damp(focus > this._focus ? 2.4 : 1.6, dt)
     const speed = rider.mode === 'crash' ? 0 : rider.speed
     this._speed += (speed - this._speed) * damp(1.8, dt)
-    const k = THREE.MathUtils.clamp((this._speed - 11) / (RIDER.maxSpeed - 11), 0, 1)
+    // Ab etwas ueber Seiltempo (15 m/s): wer nur haengt, sieht das ruhige
+    // Bild, wer ausschwingt, das weite.
+    const k = THREE.MathUtils.clamp((this._speed - 14) / (RIDER.maxSpeed - 14), 0, 1)
     const f = this._focus * this._focus * (3 - 2 * this._focus)
 
     let fov = CAMERA.fov + CAMERA.fovSpeed * k
@@ -67,7 +69,7 @@ export class TopCamera {
     // huepft das ganze Bild bei jedem Sprung mit.
     const vx = rider.vx || 0
     const vz = rider.vz || 0
-    const lead = CAMERA.lead * THREE.MathUtils.clamp(speed / 13, 0, 1.4) * (1 - f)
+    const lead = CAMERA.lead * THREE.MathUtils.clamp(speed / 15, 0, 1.4) * (1 - f)
     const sp = Math.hypot(vx, vz) || 1
     this._desired.set(
       rider.x + (vx / sp) * lead,

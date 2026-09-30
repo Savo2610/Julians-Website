@@ -1,8 +1,9 @@
 import { CABLE, RIDER, TRICK } from '../config.js'
-import { surfaceAt, slopeAt, DOCK } from '../world/features.js'
+import { surfaceAt, slopeAt, localUV, DOCK } from '../world/features.js'
 import { waterDepth } from '../world/heightfield.js'
 import { nearestS, wrap, CABLE_LENGTH, cableAt } from '../world/cable-path.js'
-import { landingQuality, scoreJump, rotationError } from '../game/tricks.js'
+import { landingQuality, scoreJump, halfTurnError } from '../game/tricks.js'
+import { makeRng } from '../core/rng.js'
 
 // Das Fahrmodell. Keine Physik-Engine: ein Punkt mit Geschwindigkeit, ein
 // Seil als steife Feder zum Mitnehmer und Wasser, das quer zu den Ski hart
@@ -13,6 +14,10 @@ import { landingQuality, scoreJump, rotationError } from '../game/tricks.js'
 // Richtungskonvention wie im Skital: heading h, vorwaerts = (sin h, cos h),
 // rechts aus Sicht des Fahrers = (-cos h, sin h). Lenken nach rechts
 // verkleinert h.
+//
+// heading ist immer die Fahrtrichtung der Ski. Wer nach einem 180
+// rueckwaerts faehrt, hat fakie = true: die Rechnung bleibt dieselbe, nur
+// die Figur steht umgedreht darauf, und das Lenken ist etwas zaeher.
 //
 // Reine Rechnung ohne three.js – der Test faehrt damit Runden im Terminal.
 
@@ -40,6 +45,9 @@ export class RiderPhysics {
     this.events = []
     this._surf = {}
     this._car = {}
+    // Fester Samen: wann der Buegel kommt, schwankt, aber jede Session in
+    // derselben Folge; die Tests bleiben so wiederholbar.
+    this._rng = makeRng(26)
     this.toDock()
   }
 
@@ -70,12 +78,18 @@ export class RiderPhysics {
     this.dockTime = 0
     this.feature = null
     this.slide = 0
+    this.slideQuer = 0
+    this.slideKind = null
+    this.fakie = false
     this.groundVy = 0
     this.lastRelease = -1
+    this._glanceAt = -1
     this.time = 0
-    // Der naechste Mitnehmer soll in gut drei Sekunden kommen: lang genug,
-    // um die Anzeige zu lesen, kurz genug, um nicht zu warten.
-    this.cable.arrangeArrival(0, DOCK_S, 3.2)
+    // Der naechste Mitnehmer kommt in 2,6 bis 4,4 Sekunden: lang genug, um
+    // die Anzeige zu lesen, kurz genug, um nicht zu warten. Immer genau 3,2 s
+    // hatte man nach zwei Starts im Gefuehl, dann war der Start kein Moment
+    // mehr, sondern Routine.
+    this.cable.arrangeArrival(0, DOCK_S, 2.6 + this._rng() * 1.8)
     this.tow = 0
   }
 
@@ -90,6 +104,11 @@ export class RiderPhysics {
 
   get speed() {
     return Math.hypot(this.vx, this.vz)
+  }
+
+  // Bogenlaenge auf der Bahn, an der der Fahrer gerade ist.
+  get s() {
+    return this._sHint
   }
 
   // Die Mitnehmer-Position fuer den gezogenen Fahrer.
@@ -151,9 +170,11 @@ export class RiderPhysics {
     const boost = perfect ? CABLE.speed + 3 : CABLE.speed * 0.8
     this.vx = n.x * boost
     this.vz = n.z * boost
-    this.vy = 1.6
+    // Katapult: wer perfekt startet, fliegt gut 0,8 s und darf schon drehen,
+    // ein 180 geht sicher. Sonst ein Hopser, in dem man noch nicht lenkt.
+    this.vy = perfect ? 4.2 : 1.6
     this.airborne = true
-    this.air = { time: 0, spin: 0, flip: 0, grab: 0, height: this.y, slide: 0, feature: null, fromDock: true }
+    this.air = { time: 0, spin: 0, flip: 0, grab: 0, height: this.y, slide: 0, feature: null, fromDock: !perfect }
     this.events.push({ type: 'start', perfect })
     this._sHint = DOCK_S
   }
@@ -217,6 +238,9 @@ export class RiderPhysics {
     this.vz = c2.vz
     this.vy = 0
     this.heading = Math.atan2(c2.dx, c2.dz)
+    this.fakie = false
+    this.feature = null
+    this.slide = this.slideQuer = 0
     this.mode = 'ride'
     this.airborne = false
     this._sHint = nearestS(this.x, this.z)
@@ -277,6 +301,7 @@ export class RiderPhysics {
     }
 
     if (this.airborne) this.updateAir(dt, input, ax, az)
+    else if (this.feature?.type === 'slider') this.updateSlide(dt, input, ax, az)
     else this.updateWater(dt, input, ax, az, ropeDir)
     const sp = this.speed
     if (sp > RIDER.maxSpeed + 1) {
@@ -301,28 +326,35 @@ export class RiderPhysics {
     const base = velDir + angleDiff(ropeDir, velDir) * this.taut
     const steer = input.steer
     const brake = input.brake ? 1 : 0
+    const fk = this.fakie
+    const edgeMax = RIDER.edgeMax * (fk ? RIDER.fakieEdge : 1)
+    const steerK = fk ? RIDER.fakieSteer : 1
     // Weiter als gut 60 Grad neben den Mitnehmer kommt man nicht: dort
     // flachen die Ski von selbst ab. Ohne diese Grenze lief man mit voller
     // Kante neben den Mitnehmer, stand dort fast (0,6 m/s) und wurde dann mit
     // einem Ruck auf 22 m/s gerissen.
     let scale = this.taut > 0.2 ? 1 : 0.6
     if (steer * this.ropeAngle > 0) scale *= 1 - 0.9 * smooth(0.7, 1.1, Math.abs(this.ropeAngle))
-    const target = base - steer * RIDER.edgeMax * scale
+    const target = base - steer * edgeMax * scale
     // Die Ski drehen hoechstens so schnell, wie man die Kanten wechselt, und
     // nie weiter als gut 60 Grad gegen die Fahrtrichtung. Beim Wechsel von
     // voller Kante links auf rechts sprang die Zielrichtung um 120 Grad; die
     // Ski standen danach fast quer, und das Tempo fiel fuer zwei Bilder auf 1.
-    let dh = angleDiff(target, this.heading) * damp(RIDER.steerLerp, dt)
-    const maxTurn = RIDER.turnRate * dt
+    let dh = angleDiff(target, this.heading) * damp(RIDER.steerLerp * steerK, dt)
+    const maxTurn = RIDER.turnRate * steerK * dt
     dh = Math.max(-maxTurn, Math.min(maxTurn, dh))
     this.heading += dh
     if (speed > 3) {
       const rel = angleDiff(this.heading, velDir)
-      const lim = RIDER.edgeMax
+      const lim = edgeMax
       if (rel > lim) this.heading = velDir + lim
       else if (rel < -lim) this.heading = velDir - lim
     }
     this.edge += (angleDiff(this.heading, velDir) - this.edge) * damp(8, dt)
+    // Was von der Landung an Drehung uebrig ist, richtet sich auf dem Wasser
+    // in einer Zehntelsekunde gerade.
+    this.spin *= Math.exp(-10 * dt)
+    this.flip *= Math.exp(-10 * dt)
 
     const fx = Math.sin(this.heading)
     const fz = Math.cos(this.heading)
@@ -332,7 +364,7 @@ export class RiderPhysics {
     // Beschleunigung aus dem Seil und dem Ziehen an der Hantel.
     this.vx += ax * dt
     this.vz += az * dt
-    if (input.throttle && this.taut > 0.5) {
+    if (input.throttle && this.taut > 0.5 && !fk) {
       this.vx += fx * RIDER.pullAccel * dt
       this.vz += fz * RIDER.pullAccel * dt
     }
@@ -366,11 +398,28 @@ export class RiderPhysics {
     const nz = this.z + this.vz * dt
     const surf = surfaceAt(nx, nz, this._surf)
 
-    // Seitlich gegen eine Kante: Sturz.
+    // Seitlich gegen eine Kante. Nur wer steil darauf zu faehrt, stuerzt:
+    // schraeg auf Box oder Rail springt man hinauf, an einem Kicker gleitet
+    // man ab.
     if (surf.h - this.y > RIDER.stepUpCrash) {
+      const f = surf.feature
+      const along = speed > 1 ? (this.vx * f.dx + this.vz * f.dz) / speed : 0
+      if (f.type === 'slider' && along > Math.cos(RIDER.mountAngle)) {
+        this.x = nx
+        this.z = nz
+        this.y = surf.h
+        this.feature = f
+        this.groundVy = 0
+        this.onSlider(f)
+        return
+      }
+      if (f !== DOCK && Math.abs(along) > Math.cos(RIDER.glanceAngle)) {
+        this.glance(f, nx, nz)
+        return
+      }
       this.x = nx
       this.z = nz
-      this.crash(surf.feature === DOCK ? 'Gegen den Steg' : 'Gegen die Kante')
+      this.crash(f === DOCK ? 'Gegen den Steg' : 'Gegen die Kante')
       return
     }
 
@@ -421,7 +470,10 @@ export class RiderPhysics {
     this.y = 0
 
     if (released && speed > 4) {
-      this.launch(RIDER.popBase + RIDER.popCharge * this.charge, null)
+      // Aus dem flachen Wasser kommt man nur mit Tempo richtig hoch: ab gut
+      // 60 km/h reicht es sicher fuer einen 180, im Stand kaum fuer einen Hopser.
+      const k = 0.6 + 0.4 * smooth(10, 17, speed)
+      this.launch((RIDER.popBase + RIDER.popCharge * this.charge) * k, null)
       return
     }
     if (!input.jump) this.charge = 0
@@ -430,15 +482,106 @@ export class RiderPhysics {
     if (waterDepth(this.x, this.z) < 0.18) this.crash('Aufgelaufen')
   }
 
+  // An der Seite eines Kickers entlang: zurueck neben die Kante, der Schwung
+  // zur Rampe hin geht verloren, etwas Tempo auch.
+  glance(f, nx, nz) {
+    const { v } = localUV(f, nx, nz)
+    const side = Math.sign(v) || 1
+    const push = f.width / 2 + 0.05 - Math.abs(v)
+    const qx = -f.dz * side
+    const qz = f.dx * side
+    this.x = nx + qx * push
+    this.z = nz + qz * push
+    const vn = this.vx * qx + this.vz * qz
+    if (vn < 0) {
+      this.vx -= qx * vn
+      this.vz -= qz * vn
+    }
+    this.vx *= 0.94
+    this.vz *= 0.94
+    this.y = 0
+    this.feature = null
+    this.groundVy = 0
+    // Wer an der Seite entlangschrammt, streift sie viele Schritte lang; eine
+    // Meldung je halbe Sekunde reicht.
+    if (this.time - this._glanceAt > 0.5) {
+      this._glanceAt = this.time
+      this.events.push({ type: 'glance', x: this.x, z: this.z })
+    }
+  }
+
+  // --- Box und Rail ------------------------------------------------------------
+  // Oben haelt die Kante den Fahrer in der Spur: Querschwung verschwindet,
+  // und er wird sacht zur Mitte gezogen. Lenken dreht nur die Ski, bis gut
+  // 70 Grad quer; herunter kommt man am Ende oder mit einem Sprung.
+  updateSlide(dt, input, ax, az) {
+    const f = this.feature
+    let along = this.vx * f.dx + this.vz * f.dz + (ax * f.dx + az * f.dz) * dt
+    let lat = this.vx * -f.dz + this.vz * f.dx
+    const { v } = localUV(f, this.x, this.z)
+    lat += (-v * RIDER.slideCenter - lat) * damp(12, dt)
+    along *= Math.exp(-(RIDER.slideDrag + RIDER.dragQuad * Math.abs(along)) * dt)
+    this.vx = f.dx * along - f.dz * lat
+    this.vz = f.dz * along + f.dx * lat
+    const speed = this.speed
+
+    // Die Fahrtrichtung liegt auf der Box fest; gedreht wird die Stellung
+    // (spin), genau wie in der Luft. Die Drehung zaehlt beim Absprung mit:
+    // wer auf der Rail einen 360 dreht und gerade abspringt, hat einen 360.
+    const dir = Math.atan2(f.dx, f.dz)
+    this.heading += angleDiff(dir, this.heading) * damp(10, dt)
+    this.edge += (0 - this.edge) * damp(8, dt)
+    this.flip *= Math.exp(-10 * dt)
+    if (input.steer) {
+      this.spinVel = Math.max(-RIDER.slideSpinMax, Math.min(RIDER.slideSpinMax, this.spinVel - input.steer * RIDER.slideSpinAccel * dt))
+    } else {
+      this.spinVel *= Math.exp(-TRICK.spinDecay * dt)
+      const q = Math.PI / 2
+      const t = Math.round(this.spin / q) * q
+      this.spin += (t - this.spin) * damp(6, dt)
+    }
+    this.spin += this.spinVel * dt
+
+    if (input.jump) this.charge = Math.min(1, this.charge + dt / RIDER.chargeTime)
+    this.crouch += ((input.jump ? 1 : 0) - this.crouch) * damp(12, dt)
+    const released = input.jumpReleased
+    if (released) this.lastRelease = this.time
+
+    const nx = this.x + this.vx * dt
+    const nz = this.z + this.vz * dt
+    const surf = surfaceAt(nx, nz, this._surf)
+    this.x = nx
+    this.z = nz
+    if (surf.feature === f) {
+      this.groundVy = (surf.h - this.y) / dt
+      this.y = surf.h
+      if (surf.h >= f.height - 0.01) {
+        this.slide += speed * dt
+        this.slideKind = f.kind
+        if (halfTurnError(this.spin) > 0.6) this.slideQuer += speed * dt
+      }
+      if (released && speed > 4) this.launch(Math.max(0, this.groundVy) + RIDER.popBase * 0.7 + RIDER.popCharge * this.charge, f)
+      return
+    }
+    // Hinten herunter: kurzer Flug wie von einer Kante.
+    const recent = this.time - this.lastRelease < 0.18
+    const vy = Math.max(0, this.groundVy) + (input.jump ? RIDER.popCharge * this.charge * 0.8 : 0) + (recent ? RIDER.popBase : 0)
+    this.launch(vy, f, this.y)
+    this.air.lateP = recent ? 0 : 0.12
+  }
+
   launch(vy, feature, fromY = this.y) {
     this.airborne = true
     this.vy = vy
     this.y = fromY
     this.air = {
       time: 0, spin: 0, flip: 0, grab: 0, height: fromY, slide: this.slide,
+      slideQuer: this.slideQuer, slideKind: this.slideKind, fakie: this.fakie,
       feature: feature ? feature.name : null,
     }
     this.slide = 0
+    this.slideQuer = 0
+    this.slideKind = null
     this.charge = 0
     this.feature = null
     this.events.push({ type: 'launch', vy, feature: feature?.name || null })
@@ -461,6 +604,10 @@ export class RiderPhysics {
     this.vz *= k
     this.vy -= RIDER.gravity * dt
     this.crouch += ((input.grab ? 1 : 0.3) - this.crouch) * damp(10, dt)
+    // Die Ski stellen sich in der Luft in die Flugrichtung: wer mit voller
+    // Kante oder quer von der Box abspringt, landet trotzdem in der Spur.
+    const sp = Math.hypot(this.vx, this.vz)
+    if (sp > 3) this.heading += angleDiff(Math.atan2(this.vx, this.vz), this.heading) * damp(3, dt)
 
     // Drehen: A/D um die Hochachse, W/S ueberschlagen. Der Hopser vom Steg
     // zaehlt nicht: dort lenkt man noch, und ein halber Dreher waere Sturz.
@@ -487,23 +634,32 @@ export class RiderPhysics {
     const surf = surfaceAt(nx, nz, this._surf)
 
     // Landehilfe: ohne Eingabe dreht der Fahrer von selbst auf die naechste
-    // volle Umdrehung, wenn sie nah genug ist – sacht auf dem Weg nach oben,
-    // entschieden kurz vor dem Aufsetzen. Nur kurz vor dem Wasser zu helfen
-    // reichte nicht: wer bei 320 Grad losliess, drehte mit Restschwung auf 420
-    // weiter und lag dann quer.
+    // Landestellung – beim Drehen die naechste halbe Umdrehung, beim Salto
+    // die naechste ganze. Sacht auf dem Weg nach oben, entschieden kurz vor
+    // dem Aufsetzen. Nur kurz vor dem Wasser zu helfen reichte nicht: wer bei
+    // 320 Grad losliess, drehte mit Restschwung auf 420 weiter und lag quer.
     const above = ny - surf.h
-    const snap = this.vy < 0 && above < 1.6 ? 9 : 3.5
-    if (!steer && rotationError(this.spin) < TRICK.assist) {
-      const t = Math.round(this.spin / TAU) * TAU
+    const snap = this.vy < 0 && above < 2.2 ? TRICK.assistLand : TRICK.assistRise
+    if (!steer) {
+      const t = Math.round(this.spin / Math.PI) * Math.PI
       this.spin += (t - this.spin) * damp(snap, dt)
       this.spinVel *= Math.exp(-8 * dt)
     }
-    if (!flipIn && rotationError(this.flip) < TRICK.assist) {
+    if (!flipIn) {
       const t = Math.round(this.flip / TAU) * TAU
       this.flip += (t - this.flip) * damp(snap, dt)
       this.flipVel *= Math.exp(-8 * dt)
     }
 
+    // Etwas zu tief auf Box oder Rail: hinaufgezogen statt gestuerzt. Wer
+    // von der Seite aufspringt, kommt selten ganz ueber die Kante.
+    if (surf.feature?.type === 'slider' && this.vy <= 0 && surf.h - ny > 0 && surf.h - ny < 0.7) {
+      this.x = nx
+      this.z = nz
+      this.y = surf.h
+      this.land(surf)
+      return
+    }
     // Flach gegen die Seite eines Hindernisses.
     if (surf.h - ny > 0.45 && surf.h - this.y > 0.45) {
       this.x = nx
@@ -520,20 +676,32 @@ export class RiderPhysics {
     if (ny <= surf.h && this.vy <= 0) this.land(surf)
   }
 
+  // Wer schraeg auf Box oder Rail kommt, behaelt die Schraege als Stellung:
+  // die Fahrtrichtung legt die Box fest, der Rest wandert in spin.
+  onSlider(f) {
+    const dir = Math.atan2(f.dx, f.dz)
+    this.spin += angleDiff(this.heading, dir)
+    this.heading = dir
+  }
+
   land(surf) {
     const air = this.air
+    const slider = surf.feature?.type === 'slider'
+    if (slider) this.onSlider(surf.feature)
     if (air) {
-      air.spin = this.spin
+      // Auf der Box zaehlt eine Viertelstellung nicht als Drehung: wer mit
+      // 90 Grad aufsetzt, slidet quer und hat noch keinen 180 gedreht.
+      air.spin = slider ? Math.sign(this.spin) * Math.PI * Math.floor(Math.abs(this.spin) / Math.PI + 0.25) : this.spin
       air.flip = this.flip
     }
-    const quality = landingQuality(this.spin, this.flip)
+    const quality = landingQuality(this.spin, this.flip, { slider })
     const impact = -this.vy
     this.y = surf.h
     this.vy = 0
     this.airborne = false
     this.feature = surf.feature
     if (quality.key === 'crash') {
-      this.crash(rotationError(this.flip) > rotationError(this.spin) ? 'Kopfueber gelandet' : 'Quer gelandet')
+      this.crash(quality.cause === 'flip' ? 'Kopfueber gelandet' : 'Quer gelandet')
       return
     }
     const result = air ? scoreJump(air) : null
@@ -541,7 +709,14 @@ export class RiderPhysics {
       this.vx *= 0.78
       this.vz *= 0.78
     }
-    this.events.push({ type: 'land', result, quality, impact, air })
+    if (quality.fakie) this.fakie = !this.fakie
+    this.events.push({ type: 'land', result, quality, impact, air, fakie: this.fakie })
+    // Den Rest der Drehung behalten, er richtet sich auf dem Wasser gerade;
+    // auf null gesetzt sprang die Figur bei jeder Landung.
+    const restSpin = this.spin - Math.round(this.spin / Math.PI) * Math.PI
+    const restFlip = this.flip - Math.round(this.flip / TAU) * TAU
     this.resetAir()
+    this.spin = restSpin
+    this.flip = restFlip
   }
 }

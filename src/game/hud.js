@@ -40,6 +40,8 @@ export class Hud {
     this.toast = el('div', 'frost toast', root)
     this._toastTimer = 0
 
+    this.dockCount = el('div', 'frost dock-count', root)
+    this._count = ''
     this.dock = el('div', 'frost dock-hud', root,
       '<div class="dock-text"></div><div class="dock-meter"><i class="dock-zone"></i><b></b></div>')
     this.dockText = this.dock.querySelector('.dock-text')
@@ -51,10 +53,10 @@ export class Hud {
 
     const keys = touch
       ? `<div class="keys">
-          <span>Links wischen</span><em>kanten, in der Luft drehen</em>
-          <span>Rechts halten</span><em>einfedern, loslassen springt</em>
-          <span>Rechts hoch / runter</span><em>Salto vor / zurück</em>
-          <span>Zweiter Finger</span><em>Grab</em>
+          <span>◀ ▶</span><em>kanten und ausschwingen, auf der Box und in der Luft drehen</em>
+          <span>▲ ▼</span><em>ziehen / bremsen, in der Luft Salto vor / zurück</em>
+          <span>Sprung</span><em>halten federt ein, loslassen springt</em>
+          <span>Grab</span><em>in der Luft an die Ski greifen</em>
         </div>`
       : `<div class="keys">
           <span><kbd>A</kbd><kbd>D</kbd></span><em>kanten und ausschwingen, in der Luft drehen</em>
@@ -66,7 +68,7 @@ export class Hud {
     this.title = el('div', 'glass panel title-panel', root, `
       <div class="panel-kicker">Wasserski am Kabel</div>
       <h1>Kabelsee</h1>
-      <p class="lead">Drei Runden um die Insel. Schwing nach außen, dann bist du schneller als das Seil. Spring über die Kicker, hol die Bojen, und halte die Kombo am Leben.</p>
+      <p class="lead">Drei Runden um die Insel. Schwing nach außen, dann bist du schneller als das Seil. Spring über die Kicker oder slide die Rail, fahr den Slalom um die Fahnen, hol die leuchtenden Bojen, und halte die Kombo am Leben.</p>
       ${keys}
       <div class="best"></div>
       <button class="go" type="button">${touch ? '' : '<kbd class="k-wide">Enter</kbd> '}Auf den Steg</button>
@@ -105,6 +107,7 @@ export class Hud {
       <dt>Größte Kombo</dt><dd>${r.bestCombo ? fmt(r.bestCombo) : '–'}</dd>
       <dt>Bojen</dt><dd>${r.buoys} von ${r.buoysTotal}</dd>
       <dt>Ringe</dt><dd>${r.rings} von ${r.ringsTotal}</dd>
+      <dt>Slalom-Tore</dt><dd>${r.gates} von ${r.gatesTotal}${r.slaloms ? ` <small>${r.slaloms}× ganz</small>` : ''}</dd>
       <dt>Spitze</dt><dd>${Math.round(r.topSpeed * 3.6)} km/h</dd>
       <dt>Stürze</dt><dd>${r.crashes}</dd>`
     this.setMode('results')
@@ -154,6 +157,17 @@ export class Hud {
     // Start am Steg.
     const d = s.dock
     this.dock.classList.toggle('visible', !!d)
+    // Grosse Zahl in der Mitte: 3 · 2 · 1, dann JETZT. Jeder Wechsel pocht
+    // einmal, damit man den Takt im Augenwinkel mitbekommt.
+    const count = d?.count || ''
+    if (count !== this._count) {
+      this._count = count
+      this.dockCount.textContent = count
+      this.dockCount.classList.remove('beat')
+      void this.dockCount.offsetWidth
+      if (count) this.dockCount.classList.add('beat')
+      this.dockCount.dataset.now = count === 'JETZT!' ? '1' : ''
+    }
     if (d) {
       this.dockText.innerHTML = d.text
       this.dockFill.style.transform = `scaleX(${d.fill.toFixed(3)})`

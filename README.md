@@ -1,0 +1,167 @@
+# Kabelsee
+
+Wasserski am Kabel rund um eine kleine Insel. Ein 3D-Spiel für den Browser,
+gebaut mit three.js, ganz ohne Server und ohne geladene Modelle oder Bilder:
+jede Tanne, jeder Mast und jede Boje entsteht im Code.
+
+Kamera, Licht, Farben und Oberfläche kommen aus dem Skital von
+[veerka.mp](https://veerka.mp) (Repo `Julians-Website`). Dort liegt Schnee,
+hier liegt ein Sommersee; die feste Kamera von schräg oben, die warme
+tiefstehende Sonne, das Glas und der Frosttext sind dieselben.
+
+![Kabelsee von oben](docs/10-ueberblick.jpg)
+
+| | |
+|---|---|
+| ![Start am Steg](docs/02-steg.jpg) | ![360 über den Kicker](docs/04-sprung.jpg) |
+| ![Backflip durch den Ring](docs/08-backflip.jpg) | ![Box-Slide auf der Westgeraden](docs/07-box.jpg) |
+| ![Station mit Kiosk und Steg](docs/11-station.jpg) | ![Die Insel](docs/12-insel.jpg) |
+
+Ein kurzes Video liegt unter [docs/kabelsee.webm](docs/kabelsee.webm).
+
+## Spielen
+
+```bash
+npm install
+npm run dev          # http://localhost:5173
+```
+
+Oder fertig gebaut: `npm run build` legt alles in `dist/`, das sich von jedem
+statischen Webspace ausliefern lässt (auch aus einem Unterordner, etwa GitHub
+Pages).
+
+| Taste | auf dem Wasser | in der Luft |
+|---|---|---|
+| `A` `D` / Pfeile | Kanten: nach außen schwingen, zurück in die Linie | drehen (360, 720 …) |
+| `W` | an der Hantel ziehen | Salto vorwärts |
+| `S` | zurücklehnen, bremsen | Salto rückwärts |
+| `Leertaste` | halten federt ein, loslassen springt | |
+| `Shift` | | Grab |
+| `Enter` | Session starten | |
+| `R` | zurück an den Steg | |
+| Mausrad | Kamera näher oder weiter | |
+
+Am Handy: links wischen lenkt, rechts halten federt ein, loslassen springt;
+rechts nach oben oder unten ziehen ist in der Luft ein Salto, ein zweiter
+Finger rechts der Grab.
+
+## So läuft eine Session
+
+**Start am Steg.** Der Fahrer steht vorn auf dem Startsteg, über ihm läuft
+das Kabel. Ein Mitnehmer kommt, das Seil hängt erst durch und strafft sich
+dann. Wer in dem Moment in der Hocke ist (Leertaste halten), wird sauber vom
+Steg gezogen. Wer die Hocke erst in der letzten knappen halben Sekunde
+einnimmt (der grüne Teil im Balken), bekommt den **perfekten Start** mit
+Schwung und 250 Punkten. Wer steht, wird ins Wasser gerissen und probiert es
+mit dem nächsten Bügel noch einmal.
+
+**Fahren.** Das Seil zieht mit 45 km/h um die Insel. Ohne Lenken hängt man
+genau hinter dem Mitnehmer. Mit `A`/`D` stellt man die Ski schräg und
+schwingt nach außen: das Seil zieht dann schräg, das Wasser lässt nur die
+Längsrichtung der Ski durch, und man wird schneller als das Seil, bis etwa
+75 km/h. Wer zu weit ausschwingt, merkt, wie die Ski von selbst flacher
+werden. Ins Flache am Ufer oder seitlich gegen eine Rampe fahren heißt Sturz.
+
+**Kicker und Box.** Vier Kicker in drei Größen und eine Rail-Box stehen auf
+den Geraden. Zwei liegen genau auf der Linie, zwei seitlich versetzt; die muss
+man anfahren. Vor der Kante `Leertaste` halten und an der Kante loslassen
+gibt den höchsten Absprung (kurz danach loslassen zählt auch noch). In der
+Luft drehen `A`/`D`, `W`/`S` schlagen einen Salto, `Shift` greift an die Ski.
+Kurz vor der Landung dreht der Fahrer von selbst auf die nächste volle
+Umdrehung, wenn sie nah genug ist. Gewertet wird die Landung: **Perfekt**
+(×1,5), **Sauber**, **Wackelig** (×0,55, kostet Tempo) oder Sturz.
+
+**Punkte wie in Steep.** Jede Figur zählt für sich, aber die großen Zahlen
+macht die **Kombo**: wer innerhalb von 3,5 Sekunden nach einer Landung den
+nächsten Trick steht oder eine Boje holt, hält die Kette am Leben, und jede
+neue Figur hebt den Faktor bis ×5. Läuft die Zeit ab, wird die Kette
+ausgezahlt; ein Sturz löscht sie. Dazu:
+
+- 32 **Bojen** (50 Punkte), in Bögen nach außen und innen gelegt: man holt
+  sie nur, wenn man ausschwingt, und genau das macht schnell.
+- 4 **Ringe** (250 Punkte) über den Kickern, dort wo man mit gutem Absprung
+  den höchsten Punkt hat.
+- 300 Punkte für jede Runde.
+
+Trickwerte: 360 = 300, 720 = 800, 1080 = 1500; Backflip = 550, Frontflip =
+550, Doppelsalto = 1500; Grab 150 plus Haltezeit; Big Air ab 1,25 s Flug; Box
+45 je Meter. Namen setzen sich zusammen, etwa „Backflip 360 Method“.
+
+Nach drei Runden lässt der Fahrer das Seil los, und die Auswertung zeigt
+Punkte, besten Trick, größte Kombo, Bojen, Ringe, Spitzentempo und Stürze.
+Der Rekord bleibt im Browser (`localStorage`).
+
+## Technik
+
+- **three.js 0.186** und **Vite 8**, JavaScript-Module ohne Framework. Alles
+  läuft im Browser; es gibt keinen Server, keine Assets außer einem Favicon.
+- **Eine Höhenfunktion** (`src/world/heightfield.js`) beschreibt See, Insel,
+  Ufer und Hügel. Aus ihr entstehen das Gelände-Mesh, die Tiefenkarte des
+  Wassers und die Ufer-Kollision.
+- **Das Fahrmodell** (`src/player/rider-physics.js`) ist eine eigene kleine
+  Rechnung ohne Physik-Engine: ein Punkt mit Geschwindigkeit, das Seil als
+  steife Feder zum Mitnehmer, Wasser, das quer zu den Ski hart und längs
+  kaum bremst. Es läuft in festen Schritten von 1/120 s und ohne three.js,
+  damit die Tests damit ganze Runden im Terminal fahren können.
+- **Was man befährt, ist Rechnung; was man sieht, folgt ihr**
+  (`src/world/features.js`): Kicker und Box sind Profile, aus denen sowohl
+  der Absprung als auch die Geometrie gebaut wird.
+- **Wasser** (`src/world/water.js`): eigener Shader mit Farbe aus der Tiefe,
+  zwei ziehenden Rauschlagen für die Kräuselung, Himmel im Streiflicht,
+  Sonnenglitzer, Uferschaum, dem Schatten des Fahrers und dem **Kielwasser**
+  aus `src/world/wake.js`. Das Kielwasser wird jedes Bild aus einer Liste von
+  Wegpunkten neu gemalt, darum laufen die beiden Wellen mit dem Alter
+  auseinander wie hinter einem Boot.
+- **Kamera** (`src/player/camera.js`) wie im Skital: fest von schräg oben
+  (Azimut 45°, 36° über dem Horizont, 38° Bildwinkel), sie dreht sich nie.
+  Neu ist nur, dass sie mit dem Tempo atmet (bis zu 4 m weiter weg und 5°
+  mehr Bildwinkel), und dass sie am Steg näher herangeht.
+- Rechnung je Bild um 0,2 bis 0,5 ms; Pixelbudget wie im Skital (Handy
+  höchstens 1,5-fach, Desktop höchstens 4,2 Mio. Pixel).
+
+Zum Prüfen im Browser gibt es `window.__kabel`: `step(frames, dt)` rechnet
+die Welt weiter (auch ohne laufende Schleife), `keys(['jump'])` drückt
+Tasten, `overview()` zeichnet den ganzen See von oben.
+
+## Entwickeln
+
+```bash
+npm install
+npm run dev          # Entwicklungsserver
+npm test             # node --test: Bahn, Ufer, Start, Runde, Sprung, Kombo
+npm run build        # dist/
+npm run shots        # Bilder nach docs/ (nach dem Build)
+npm run video        # docs/kabelsee.webm (braucht ffmpeg mit VP8)
+```
+
+`npm run shots` und `npm run video` starten `vite preview`, öffnen den Build
+in Chromium (Playwright) und spulen die Welt mit `__kabel.step()` in feste
+Momente vor. Darum sehen die Bilder bei jedem Lauf gleich aus.
+
+## Aufbau
+
+```
+src/
+  config.js       alle Stellschrauben: See, Insel, Kabel, Fahrer, Tricks, Kamera, Farben
+  core/           Geometrie-Helfer, Zufall, Rauschen, Tastatur, Touch
+  world/          Höhenfeld, Gelände, Wasser, Kielwasser, Himmel, Kabelbahn,
+                  Hindernisse und Sammelsachen, Aufbau der Gegend (populate.js)
+  props/          Bäume, Masten und Mitnehmer, Seil, Kicker und Box,
+                  Station, Pavillon, Zelte, Bulli, Boote, Schilf, Enten …
+  player/         Fahrmodell, Figur, Kamera, Gischt
+  game/           Mitnehmer, Tricks und Kombo, Ablauf der Session, Anzeige
+tests/            node --test
+tools/            screenshots.mjs, video.mjs
+docs/             Bilder und Video
+```
+
+## Die Gegend
+
+Im Norden die Anlage mit Kiosk, Dachterrasse, Sonnenschirmen, Board-Ständer
+und dem Startsteg auf einer Landzunge; die Station zeigt mit der Schauseite
+zur Kamera, wie alles im Skital. Im Osten eine Zeltwiese mit Bulli und
+Lagerfeuer, im Süden der Badestrand mit Rettungsturm, im Westen ein
+Bootshaus. Auf der Insel ein Pavillon auf der Kuppe, ein Lagerfeuer am Strand,
+ein Ruderboot und ein Wäldchen aus Kiefern, Birken und ersten gelben
+Laubbäumen. Ringsum Wald, der nach außen dichter wird, Schilf im Flachwasser
+und drei Entenfamilien.

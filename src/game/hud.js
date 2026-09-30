@@ -69,7 +69,7 @@ export class Hud {
       <p class="lead">Drei Runden um die Insel. Schwing nach außen, dann bist du schneller als das Seil. Spring über die Kicker, hol die Bojen, und halte die Kombo am Leben.</p>
       ${keys}
       <div class="best"></div>
-      <button class="go" type="button">${touch ? 'Antippen' : '<kbd class="k-wide">Enter</kbd>'} Auf den Steg</button>
+      <button class="go" type="button">${touch ? '' : '<kbd class="k-wide">Enter</kbd> '}Auf den Steg</button>
     `)
     this.titleBest = this.title.querySelector('.best')
     this.titleGo = this.title.querySelector('.go')
@@ -79,7 +79,7 @@ export class Hud {
       <h2 class="r-score">0</h2>
       <div class="r-record"></div>
       <dl class="r-list"></dl>
-      <button class="go" type="button">${touch ? 'Antippen' : '<kbd class="k-wide">Enter</kbd>'} Noch eine Session</button>
+      <button class="go" type="button">${touch ? '' : '<kbd class="k-wide">Enter</kbd> '}Noch eine Session</button>
     `)
     this.rScore = this.results.querySelector('.r-score')
     this.rRecord = this.results.querySelector('.r-record')

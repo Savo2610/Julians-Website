@@ -16,7 +16,6 @@ const KEY_MAP = {
   ShiftLeft: 'grab', ShiftRight: 'grab', KeyJ: 'grab',
   Enter: 'confirm', NumpadEnter: 'confirm',
   KeyR: 'reset',
-  Escape: 'pause', KeyP: 'pause',
 }
 
 export class Input {

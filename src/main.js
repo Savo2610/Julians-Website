@@ -20,6 +20,7 @@ import { Spray } from './player/spray.js'
 import { Hud } from './game/hud.js'
 import { Session } from './game/session.js'
 import { vertexColorMaterial } from './core/geometry.js'
+import { FEATURES } from './world/features.js'
 
 const canvas = document.getElementById('scene')
 const TOUCH = isTouch()
@@ -44,7 +45,7 @@ function applyPixelRatio() {
 applyPixelRatio()
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.shadowMap.type = THREE.PCFShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1.05
 renderer.setClearColor(COLORS.fog)
@@ -162,7 +163,8 @@ function emitSpray(dt) {
 }
 
 // --- Schleife ---------------------------------------------------------------
-const clock = new THREE.Clock()
+// Bildzeit aus performance.now(); THREE.Clock gilt als veraltet.
+let last = performance.now()
 let elapsed = 0
 const hand = new THREE.Vector3()
 const STEP = 1 / 120
@@ -222,11 +224,14 @@ function advance(dt) {
 }
 
 function draw() {
+  wake.paint()
   renderer.render(scene, camera)
 }
 
-function tick() {
-  advance(Math.min(clock.getDelta(), 1 / 20))
+function tick(now = performance.now()) {
+  const dt = Math.max(0, (now - last) / 1000)
+  last = now
+  advance(Math.min(dt, 1 / 20))
   draw()
   requestAnimationFrame(tick)
 }
@@ -241,7 +246,7 @@ window.addEventListener('resize', () => {
 // Zugriff aus der Konsole und fuer die Bilder im README: die Welt ohne
 // laufende Schleife vorspulen und Tasten druecken.
 window.__kabel = {
-  THREE, scene, camera, renderer, rider, cable, session, input, chase, items, wake, hud,
+  THREE, scene, camera, renderer, rider, cable, session, input, chase, items, wake, hud, FEATURES,
   step(frames = 1, dt = 1 / 60, render = true) {
     for (let i = 0; i < frames; i++) advance(dt)
     if (render) draw()
@@ -287,6 +292,6 @@ renderer.compile(scene, camera)
 chase.update(0, rider, { focus: 1, showcase: TITLE_VIEW })
 requestAnimationFrame(() => {
   document.getElementById('loader')?.classList.add('gone')
-  clock.getDelta()
-  tick()
+  last = performance.now()
+  tick(last)
 })

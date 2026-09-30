@@ -17,7 +17,9 @@ export class Wake {
   constructor() {
     this.canvas = document.createElement('canvas')
     this.canvas.width = this.canvas.height = RES
-    this.ctx = this.canvas.getContext('2d')
+    // Auf der CPU malen: 90 Striche sind dort schneller als der Umweg ueber
+    // die Grafikkarte, und beim Vorspulen stauen sich keine Auftraege.
+    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true })
     this.texture = new THREE.CanvasTexture(this.canvas)
     this.texture.colorSpace = THREE.NoColorSpace
     this.texture.minFilter = THREE.LinearFilter
@@ -52,7 +54,13 @@ export class Wake {
     for (const r of this.rings) r.age += dt
     while (this.points.length && this.points[0].age > LIFE) this.points.shift()
     this.rings = this.rings.filter((r) => r.age < 2.2)
+    this.dirty = true
+  }
 
+  // Erst vor dem Zeichnen malen, einmal je Bild.
+  paint() {
+    if (!this.dirty) return
+    this.dirty = false
     const ctx = this.ctx
     const k = RES / WAKE_BOX.size
     ctx.globalCompositeOperation = 'source-over'
@@ -91,18 +99,20 @@ export class Wake {
       }
     }
 
+    // Aufschlag: ein duenner Ring, der auslaeuft, und kurz ein Schaumfleck
+    // in der Mitte. Doppelt so gross sah es aus wie ein Teich aus Schaum.
     for (const r of this.rings) {
       const [x, z] = this.toPx(r.x, r.z)
       const life = 1 - r.age / 2.2
-      ctx.strokeStyle = `rgba(200,255,0,${(life * 0.8).toFixed(3)})`
-      ctx.lineWidth = (0.6 + r.age * 0.5) * k
+      ctx.strokeStyle = `rgba(160,255,0,${(life * 0.65).toFixed(3)})`
+      ctx.lineWidth = (0.35 + r.age * 0.25) * k
       ctx.beginPath()
-      ctx.arc(x, z, (0.8 + r.age * 3.2) * r.size * k, 0, Math.PI * 2)
+      ctx.arc(x, z, (0.6 + r.age * 2.2) * r.size * k, 0, Math.PI * 2)
       ctx.stroke()
-      if (r.age < 0.6) {
-        ctx.fillStyle = `rgba(255,0,0,${((1 - r.age / 0.6) * 0.8).toFixed(3)})`
+      if (r.age < 0.45) {
+        ctx.fillStyle = `rgba(255,0,0,${((1 - r.age / 0.45) * 0.55).toFixed(3)})`
         ctx.beginPath()
-        ctx.arc(x, z, (1.2 + r.age * 2) * r.size * k, 0, Math.PI * 2)
+        ctx.arc(x, z, (0.7 + r.age * 1.4) * r.size * k, 0, Math.PI * 2)
         ctx.fill()
       }
     }

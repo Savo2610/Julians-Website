@@ -1227,6 +1227,7 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+6e5c38b  Ferne Bergkette: zwei Grate, die sich im Himmel aufloesen (Merge)
 e298036  Rohrpost verschickt: Kapseln, Maulwurf zum Funkmast, Vorschau im Eis (Merge)
 6c5cb7d  Stationen mit Auftritt: Stechuhr, Depot und Loeschzug zoomen heran (Merge)
 225c7c1  Oberflaeche ohne Pillen: Frost, Leuchtfeld, Register, Stempelheft (Merge)

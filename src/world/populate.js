@@ -169,7 +169,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // den alten Koordinaten frei und waechst in den tatsaechlichen Vorplatz.
   const stations = populateStations(world, registry, stationOptions)
 
-  createBackdrop(world.scene, { fogColor: world.scene.fog.color })
+  createBackdrop(world.scene, sky)
 
   // Lifttrasse als Waldschneise freihalten – ein Schlepplift laeuft nie durch
   // den Bestand. Muss vor der Bepflanzung feststehen.

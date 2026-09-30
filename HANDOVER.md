@@ -307,6 +307,16 @@ und Höhenfeld. **Weiße Spuren auf Eis und Holz** kamen vom Spurstempel, dessen
 Rand durch den nur 1,2 cm höheren Belag ragte — `surfaces.js` sperrt jetzt
 Spur, Staub und Verformung dort (drei Regressionstests in `tests/`).
 
+**Ferne Bergkette** (`props/backdrop.js`, Idee aus dem Archiv, *Snow
+Portfolio*): zwei durchgehende Grate um 272 und 372 m aus Ridged Noise,
+Flächen mit eingebackenem Licht, unbeleuchtet. Der Dunst ist **die
+Himmelsfarbe hinter jedem Punkt** (`skyColorGlsl` aus `sky.js`, Blickstrahl
+mit der Kuppel geschnitten), nicht der Szenennebel: `FogExp2` 0.0052
+verschluckt bei 255 m schon 83 %, und Nebel (kühl) und Horizont (warm)
+passen nicht zusammen – die alten 43 Kegel standen deshalb grau vor Pfirsich.
+Hinter dem Bergarm am höchsten, ringsum halb so hoch. Zu sehen **nur im
+Rundflug**: die feste Kamera zeigt am oberen Bildrand noch 17° nach unten.
+
 ### Die Nordabfahrt (Rückseite)
 
 Die jüngste und größte Erweiterung. Vom Gipfel führt eine zweite Piste nach

@@ -1,8 +1,8 @@
 # Julian Veerkamp · [veerka.mp](https://veerka.mp)
 
 Persönliche Website als 3D-Skigebiet im Browser. Die Links sind Stationen
-im Tal; man fährt hin und öffnet sie dort. Mit `M` stehen alle Links auch
-als Liste zur Verfügung.
+im Tal, die man erkunden kann. Mit `M` stehen alle Links auch
+als Liste zur Verfügung, wenn man keine Lust hat zu spielen.
 
 ![Startplatz mit Wegweiser](docs/tal.jpg)
 

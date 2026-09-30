@@ -13,11 +13,14 @@
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
     "shots": "node tools/screenshots.mjs",
-    "video": "node tools/video.mjs"
+    "video": "node tools/video.mjs",
+    "deploy": "wrangler deploy",
+    "preview:worker": "npm run build && wrangler dev"
   },
   "devDependencies": {
     "playwright": "^1.56.1",
-    "vite": "^8.3.1"
+    "vite": "^8.3.1",
+    "wrangler": "^4.144.0"
   },
   "dependencies": {
     "three": "^0.186.1"

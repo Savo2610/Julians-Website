@@ -26,9 +26,9 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-Oder fertig gebaut: `npm run build` legt alles in `dist/`, das sich von jedem
-statischen Webspace ausliefern lässt (auch aus einem Unterordner, etwa GitHub
-Pages).
+Online unter **[kabelsee.veerka.mp](https://kabelsee.veerka.mp)**. Oder fertig
+gebaut: `npm run build` legt alles in `dist/`, das sich von jedem statischen
+Webspace ausliefern lässt (auch aus einem Unterordner).
 
 | Taste | auf dem Wasser | in der Luft |
 |---|---|---|
@@ -137,6 +137,19 @@ npm run video        # docs/kabelsee.webm (braucht ffmpeg mit VP8)
 `npm run shots` und `npm run video` starten `vite preview`, öffnen den Build
 in Chromium (Playwright) und spulen die Welt mit `__kabel.step()` in feste
 Momente vor. Darum sehen die Bilder bei jedem Lauf gleich aus.
+
+## Veröffentlichen
+
+Die Seite läuft als Cloudflare Worker `kabelsee`, nur mit statischen Dateien
+(kein Worker-Code), unter der Custom Domain `kabelsee.veerka.mp`, genau wie
+zeit.veerka.mp. Alles steht in `wrangler.jsonc`: `wrangler deploy` baut
+vorher selbst mit vite und lädt `dist/` hoch; die Custom Domain legt den
+DNS-Eintrag selbst an. `public/_headers` lässt die Dateien unter `/assets/`
+ein Jahr im Cache, `index.html` wird immer neu gefragt.
+
+Jeder Push auf `main` wird über Cloudflare Workers Builds gebaut und
+veröffentlicht. Von Hand: `npm run deploy` (braucht `wrangler login` oder
+`CLOUDFLARE_API_TOKEN`).
 
 ## Aufbau
 

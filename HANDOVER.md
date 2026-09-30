@@ -791,7 +791,9 @@ bis 0,22 rad Schräglage, Bildwinkel 62°. Die abgestürzte Drohne ist
 während des Flugs unsichtbar (sie ist ja in der Luft). Schatten, Himmel
 und Schneefall folgen dem Blick der Drohne statt dem Fahrer. Esc/Enter/M/R
 oder Tippen beenden; hinterher `chase.snap()`. Die Aussicht-Regel im
-Pistenpass zählt den Flug nicht mit.
+Pistenpass zählt den Flug nicht mit. Der Rundflug ist der einzige Ort, an
+dem man den Horizont und damit die **ferne Bergkette** sieht (Abschnitt 4);
+Horizont im Bild bei 2–6 s, 14 s, 20–22 s, 38–42 s und in der Landung.
 
 Kosten: im Flug bis 561 Draw Calls und 912 k Dreiecke (man sieht mehr vom
 Tal als von oben), 0,005 ms je Update.
@@ -1093,7 +1095,14 @@ Weitere Fallen aus der Praxis:
   `window.requestAnimationFrame = () => 0` setzen. Umgekehrt hängt
   `await new Promise(r => rafOrig(r))` im verborgenen Fenster ewig.
 - Screenshots, die im selben `browser_batch` hinter einem JS-Aufruf stehen,
-  zeigen das **vorige** Bild. JS und Screenshot immer getrennt aufrufen.
+  zeigen das **vorige** Bild. JS und Screenshot immer getrennt aufrufen –
+  und auch dann kam bei gestopptem rAF etwa jedes dritte Bild noch einmal
+  veraltet. Im Zweifel ein zweites Mal auslösen.
+- Einen festen Moment im Rundflug anfahren (für Vorher-nachher-Bilder):
+  Flug einmal mit der echten Drohne starten
+  (`S.flight.start(S.stations.stations.find(s => s.label === 'Abgestürzte Drohne').object)`),
+  gut eine Sekunde warten, dann `f._t = t - 1/60; f._roll = 0; f._kurs = null;
+  S.step(1)`. Rollwinkel und Kurs hängen sonst am vorigen Bild.
 - Die Lenkung im Autopiloten: `forward = (sin h, cos h)`, positiver
   Winkelfehler heißt Heading **erhöhen**, und das ist **links**. Zweimal
   falsch herum gebaut.

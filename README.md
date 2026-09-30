@@ -130,6 +130,8 @@ npm install
 npm run dev          # Entwicklungsserver
 npm test             # node --test: Bahn, Ufer, Start, Runde, Sprung, Kombo
 npm run build        # dist/
+npm run preview:worker  # Build und lokal über wrangler, wie in Produktion
+npm run deploy       # von Hand veröffentlichen (sonst per Push auf main)
 npm run shots        # Bilder nach docs/ (nach dem Build)
 npm run video        # docs/kabelsee.webm (braucht ffmpeg mit VP8)
 ```
@@ -167,6 +169,9 @@ tests/            node --test
 tools/            screenshots.mjs, video.mjs
 docs/             Bilder und Video
 ```
+
+Regeln für die Arbeit am Code (auch für Coding-Agenten) stehen in
+[CLAUDE.md](CLAUDE.md).
 
 ## Die Gegend
 

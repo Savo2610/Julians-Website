@@ -2,10 +2,14 @@ import { CAMERA } from '../config.js'
 
 // Was an einer Station passiert, wenn man Enter drueckt (oder tippt).
 //
-// Eine Station mit einem Ziel oeffnet es sofort. Eine mit mehreren – die
-// Skikasse, die Werkstatt – zoomt heran: der Fahrer bleibt stehen, die Kamera
-// faehrt auf das Objekt zu, unten klappt die Auswahl auf, und die Pfeiltasten
-// wechseln zwischen den Zielen. Das Objekt zeigt mit, welches gewaehlt ist.
+// Eine Station mit Auswahl zoomt heran: der Fahrer bleibt stehen, die
+// Kamera faehrt auf das Objekt zu, unten klappt die Auswahl auf, und die
+// Pfeiltasten wechseln zwischen den Zielen. Das Objekt zeigt mit, welches
+// gewaehlt ist, und fuehrt beim Heranzoomen etwas vor. Das gilt auch fuer
+// Stationen mit nur einem Ziel (Stechuhr, Depot, Loeschzug): wer im Tal
+// lernt, dass man heranfaehrt und etwas ausloest, soll nicht ploetzlich
+// auf einer anderen Seite stehen. Sofort geht nur auf, was ein Fenster ist
+// (Rohrpost, Abkuerzung).
 //
 // Alles hier laeuft *im* Tasten- oder Klickereignis und nicht im naechsten
 // Bild. Das ist der Grund, warum Safari die Links jetzt oeffnet: dort zaehlt

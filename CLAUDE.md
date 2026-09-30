@@ -39,8 +39,10 @@ Das Wichtigste in Kürze:
   Hinweise unten (für Nicht-Spieler gewünscht) und die Abzeichen-Meldung oben
   links. Hinweise gehen von selbst. Was nur kurz über dem Tal steht, ist
   **Frosttext** ohne Behälter (`.frost`), keine Pille; Glas nur für das,
-  was man bedient. Ohne WebGL oder JavaScript steht statt
-  des Tals eine Linkliste aus denselben Kacheln (`menu/kacheln.js`).
+  was man bedient. Stationen zoomen heran und führen etwas vor, bevor sie
+  eine Seite öffnen – auch mit nur einem Ziel. Ohne WebGL oder JavaScript
+  steht statt des Tals eine Linkliste aus denselben Kacheln
+  (`menu/kacheln.js`).
 - Pistenpass: stiller Erkundungsstand, Slalom-Medaillen, acht schwere
   Abzeichen. **Nie** etwas fürs Hochladen, Wallet, Kurzlink oder Bezahlen.
   Lieber wenige, schwierige als für alles eins (erste Fassung zu viel).

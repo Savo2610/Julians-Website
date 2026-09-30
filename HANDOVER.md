@@ -120,6 +120,8 @@ src/
     wayfinding.js    Panoramatafel (PANORAMA) und Wegweiser
     trail-glints.js  Leuchtschleier auf den vier Wegen
     valley-map.js    Talkarte, aus der Welt gemalt
+    rohrpost-netz.js Versand der Rohrpost: Kapseln, Maulwurf zum Funkmast,
+                     Vorschau im Eis (siehe 4a)
     attractions/     Was den Fahrer übernimmt oder misst: drag-lift.js,
                      magic-carpet.js, rail-ride.js, race.js (Zeitnahme,
                      Slalom), speed-check.js, light-run.js, north-run.js
@@ -140,10 +142,12 @@ src/
     stations.js      Wo was steht und was es tut
     registry.js      Nähe prüfen, auslösen
     interaction.js   Enter/Tippen: öffnen oder heranzoomen und wählen
-    ui.js            Glas-Einladung und Glas-Auswahl
+    antippen.js      Die Station selbst antippen (Kugel um die Station)
+    ui.js            Einladung (Frosttext) und Auswahl (Glas, Leuchtfeld)
     marker.js        Ring im Schnee vor jeder Station
     ticket.js        Rundflug-Ticket (Skikasse → Drohne)
-    broadcast.js     Laufende Sendung holen und ins Eis der Quelle legen
+    broadcast.js     Laufende Sendung holen und ins Eis der Quelle legen;
+                     auch die Vorschau eines eben eingeworfenen Bildes
   menu/              Die einzigen Menüs (CLAUDE.md)
     map-menu.js      Übersicht (M): Links, Talkarte, Pistenpass, Bestenliste
     kacheln.js       Die Link-Kacheln – reine Daten, auch für die Linkliste
@@ -583,9 +587,14 @@ ab (das Element wird zur Backdrop Root). Deshalb atmet der Start-Hinweis
 über die Schriftfarbe, und eine tote Station dimmt nur ihren Text. Beim
 Ein- und Ausblenden fehlt der Hauch darum kurz – bisher unauffällig.
 
-- Station mit **einem Ziel**: Enter öffnet es sofort.
-- Station mit **Auswahl** (Skikasse: PayPal/Solana, Werkstatt:
-  LinkedIn/GitHub, Kontakt: Signal/Instagram): Enter **zoomt heran**. Der Fahrer bleibt stehen
+- Station, die ein **Fenster** öffnet (Rohrpost, Abkürzung): Enter öffnet
+  es sofort, die Rohrpost klappt dabei ihre Klappe auf.
+- Jede andere Station hat eine **Auswahl** – auch die mit nur einem Ziel
+  (Stechuhr, Depot, Löschzug, Quelle; `.station-sheet.einzeln`, siehe
+  unten), damit man überall erst heranfährt und etwas passiert, statt
+  plötzlich auf einer anderen Seite zu stehen. Mehrere Ziele haben
+  Skikasse (PayPal/Solana/Rundflug), Werkstatt (LinkedIn/GitHub), Kontakt
+  (Signal/Instagram) und Drohne. Enter **zoomt heran**. Der Fahrer bleibt stehen
   (`input.locked`), unten klappt die Auswahl auf, die Ziele nebeneinander,
   ←/→ (auch A/D) wechseln, Enter öffnet, Esc/Backspace/W/S führen hinaus. Die Ziffern `1`/`2`
   gehen weiterhin direkt. Das 3D-Objekt zeigt die Wahl mit: das gewählte
@@ -1222,8 +1231,13 @@ Abschnitt 1, Nordabfahrt).
   Safari ansehen: `backdrop-filter` zusammen mit `mask-image` am Hauch.
   Zurücknehmen lässt sich alles mit einem `git revert -m 1` auf den
   Zusammenführungs-Commit.
-- Handymodus bisher nur in der Emulation geprüft, nicht auf einem echten
-  iPhone — Safari-Eigenheiten (Adressleiste, `100vh`) dort ansehen.
+- Handymodus größtenteils nur in der Emulation geprüft. Auf dem echten
+  Handy bestätigt (30.09.): Heranzoomen und die Ausfahrt des Löschzugs
+  samt Blende. Sonst Safari-Eigenheiten (Adressleiste, `100vh`) dort
+  ansehen.
+- **Rohrpost** (seit 30.09. in `main`) ist nur in Chrome und mit dem
+  lokalen Uploader geprüft. Auf dem iPhone ansehen: Vorschau eines Fotos
+  (Safari liest HEIC, Chrome nicht – dort bleibt nur der Text).
 - Die Nordabfahrt liegt seit `b3fcf57` in `main`. Zusammengeführt wurde mit
   `--no-ff`, damit sie an einem einzigen Commit hängt: `git revert -m 1 b3fcf57`
   nimmt sie komplett wieder ab. Der Zweig `rueckseite` ist gelöscht (er war

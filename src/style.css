@@ -1,0 +1,408 @@
+:root {
+  --ink: #1b2a3a;
+  --ink-soft: #4a5f75;
+  --orange: #e4613a;
+  --teal: #2a8f9c;
+  --gold: #e0a52e;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #cfe2f2;
+  font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#ohne-3d {
+  position: fixed;
+  inset: 0;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(#dceaf7, #f3e9dd);
+  text-align: center;
+}
+
+/* --- Ladeblende (wie im Skital) --------------------------------------------- */
+#loader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(#dceaf7, #f3e9dd);
+  z-index: 30;
+  transition: opacity 0.7s ease;
+}
+#loader.gone { opacity: 0; pointer-events: none; }
+.loader-mark {
+  font-size: 44px;
+  text-align: center;
+  margin-bottom: 18px;
+  color: var(--teal);
+  animation: drift 3.4s ease-in-out infinite;
+}
+@keyframes drift {
+  0%, 100% { transform: translateY(-4px) rotate(-6deg); }
+  50% { transform: translateY(4px) rotate(6deg); }
+}
+.loader-bar { width: 180px; height: 4px; border-radius: 4px; background: rgba(34, 48, 63, 0.15); overflow: hidden; }
+.loader-bar span {
+  display: block; height: 100%; width: 30%; border-radius: 4px; background: var(--ink);
+  animation: slide 1.2s ease-in-out infinite;
+}
+@keyframes slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(360%); } }
+
+/* --- Glas ------------------------------------------------------------------
+   Aus dem Skital uebernommen: hell getoent, stark verwischt, oben eine
+   Lichtkante. Nur fuer das, was man bedient. */
+.glass {
+  position: relative;
+  color: #13212f;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.66), rgba(233, 243, 252, 0.38) 55%, rgba(214, 231, 248, 0.46));
+  -webkit-backdrop-filter: blur(16px) saturate(1.9) brightness(1.04);
+  backdrop-filter: blur(16px) saturate(1.9) brightness(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px rgba(120, 160, 200, 0.18),
+    0 12px 32px -8px rgba(28, 58, 96, 0.32),
+    0 2px 6px rgba(28, 58, 96, 0.12);
+}
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 70% at 18% -10%, rgba(255, 255, 255, 0.75), transparent 55%),
+    linear-gradient(180deg, transparent 60%, rgba(255, 255, 255, 0.22));
+  mix-blend-mode: soft-light;
+}
+
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  margin: 0 1px;
+  border-radius: 7px;
+  font: 700 11px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  color: #1c2c3d;
+  background: linear-gradient(#ffffff, #eef4fa);
+  border: 1px solid rgba(40, 70, 105, 0.22);
+  box-shadow: 0 1.5px 0 rgba(40, 70, 105, 0.22), inset 0 1px 0 #fff;
+}
+kbd.k-wide { padding: 0 9px; }
+
+/* --- Frost -----------------------------------------------------------------
+   Was nur kurz ueber dem See steht, hat keinen Behaelter: Schrift mit hellem
+   Hof und ein Hauch dahinter, der ohne Kante auslaeuft. */
+.frost {
+  --halo: 0 0 5px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.85), 0 0 26px rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+  text-shadow: var(--halo);
+  isolation: isolate;
+}
+.frost::before {
+  content: '';
+  position: absolute;
+  inset: -16px -30px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  -webkit-backdrop-filter: blur(10px) brightness(1.08) saturate(1.15);
+  backdrop-filter: blur(10px) brightness(1.08) saturate(1.15);
+  -webkit-mask-image: radial-gradient(closest-side, #000 50%, transparent);
+  mask-image: radial-gradient(closest-side, #000 50%, transparent);
+}
+.frost kbd {
+  color: var(--ink);
+  text-shadow: none;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid rgba(27, 42, 58, 0.5);
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+}
+.frost-art {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* --- Anzeige ---------------------------------------------------------------- */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+
+.hud-score, .hud-combo, .hud-stats {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#hud[data-mode="play"] .hud-score,
+#hud[data-mode="play"] .hud-stats { opacity: 1; }
+
+.hud-score {
+  top: max(22px, env(safe-area-inset-top));
+  left: max(26px, env(safe-area-inset-left));
+}
+.hud-score strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-combo {
+  top: calc(max(22px, env(safe-area-inset-top)) + 58px);
+  left: max(26px, env(safe-area-inset-left));
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+#hud[data-mode="play"] .hud-combo.visible { opacity: 1; }
+.combo-pts { font-size: 20px; color: #1d6f7c; }
+.combo-x { font-size: 22px; color: var(--orange); }
+.combo-bar {
+  position: absolute;
+  left: 0;
+  bottom: -7px;
+  width: 120px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(27, 42, 58, 0.15);
+  overflow: hidden;
+}
+.combo-bar b {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+  transform-origin: left;
+}
+
+.hud-stats {
+  top: max(22px, env(safe-area-inset-top));
+  right: max(26px, env(safe-area-inset-right));
+  display: flex;
+  gap: 26px;
+  text-align: right;
+}
+.hud-stats strong { display: block; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.trick-hud {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translate(-50%, 10px);
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.trick-hud.visible { opacity: 1; transform: translate(-50%, 0); }
+.trick-hud strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.trick-hud small {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.trick-hud[data-q="perfect"] small { color: #1d8a5a; }
+.trick-hud[data-q="sketchy"] small { color: #b8782a; }
+.trick-hud[data-q="crash"] strong { color: #b23f24; }
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: calc(22% + 78px);
+  transform: translateX(-50%);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.toast.visible { opacity: 1; }
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(26px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.hint.visible { opacity: 0.92; }
+
+/* Start am Steg: ein Balken, der sich mit dem Seil fuellt. Die gruene Zone
+   ist der Moment, in dem man in die Hocke gehen soll. */
+.dock-hud {
+  position: absolute;
+  left: 50%;
+  top: 64%;
+  transform: translateX(-50%);
+  width: 300px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.dock-hud.visible { opacity: 1; }
+.dock-text { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+.dock-text strong { color: var(--orange); font-variant-numeric: tabular-nums; }
+.dock-meter {
+  position: relative;
+  height: 8px;
+  border-radius: 5px;
+  background: rgba(27, 42, 58, 0.16);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+}
+.dock-meter b {
+  position: absolute;
+  inset: 0;
+  background: #1b2a3a;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.dock-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--zone, 62%);
+  right: 0;
+  background: #3fb27f;
+  opacity: 0.7;
+}
+.dock-hud[data-ready="1"] .dock-meter b { background: var(--orange); }
+
+.fade {
+  position: absolute;
+  inset: 0;
+  background: #e6f1f8;
+  opacity: 0;
+}
+
+/* --- Titel und Auswertung ------------------------------------------------ */
+.panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 26px 28px 22px;
+  border-radius: 24px;
+  transform: translate(-50%, calc(-50% + 20px)) scale(0.97);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 1.2, 0.3, 1);
+}
+#hud[data-mode="title"] .title-panel,
+#hud[data-mode="results"] .results-panel {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+.panel-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #1d6f7c;
+}
+.panel h1 {
+  margin: 4px 0 8px;
+  font-size: 44px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.panel .lead { margin: 0 0 18px; font-size: 15px; line-height: 1.45; color: #2c3e52; }
+.keys {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 13.5px;
+}
+.keys > span { white-space: nowrap; font-weight: 700; }
+.keys em { font-style: normal; color: #34475b; }
+.best { min-height: 18px; margin-bottom: 14px; font-size: 13px; color: var(--ink-soft); }
+.best strong { color: var(--ink); }
+.go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 14px;
+  font: 800 16px/1 ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+  color: #fff;
+  background: linear-gradient(#ec7a52, #d9553a);
+  box-shadow: 0 6px 16px -6px rgba(180, 69, 38, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+.go kbd { color: #b44526; }
+.go:hover { filter: brightness(1.05); }
+
+.results-panel .r-score {
+  margin: 6px 0 2px;
+  font-size: 52px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.r-record { min-height: 20px; margin-bottom: 14px; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.r-record.new { color: #1d8a5a; letter-spacing: 0.08em; text-transform: uppercase; }
+.r-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 0 0 18px;
+  font-size: 14px;
+}
+.r-list dt { font-weight: 700; color: var(--ink-soft); }
+.r-list dd { margin: 0; font-weight: 800; text-align: right; }
+.r-list small { font-weight: 700; color: var(--ink-soft); margin-left: 6px; }
+
+@media (max-width: 640px) {
+  .hud-stats { gap: 16px; }
+  .hud-score strong { font-size: 24px; }
+  .trick-hud strong { font-size: 22px; }
+  .hint { font-size: 12px; }
+  .panel h1 { font-size: 36px; }
+}

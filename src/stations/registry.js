@@ -76,8 +76,8 @@ export class StationRegistry {
     }
 
     if (typeof s.onUse === 'function') {
-      s.onUse(s)
-      return s
+      // false: nichts passiert (Badesteg ohne Ticket), wie bei den Zielen.
+      return s.onUse(s) === false ? null : s
     }
     if (s.url) {
       window.open(s.url, '_blank', 'noopener,noreferrer')

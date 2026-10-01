@@ -12,7 +12,7 @@ als Liste zur Verfügung.
 |---|---|
 | Werkstatt | LinkedIn, GitHub |
 | Kontaktposten | Signal, Instagram |
-| Skikasse | PayPal, Solana, Ticket für den Drohnen-Rundflug |
+| Skikasse | PayPal, Solana, Tickets für Drohnen-Rundflug und Kabelsee |
 | Rohrpost | Upload (upload.veerka.mp) |
 | Abkürzung | Kurzlink (s.veerka.mp) |
 | Stechuhr | Arbeitszeitrechner (zeit.veerka.mp) |
@@ -20,7 +20,7 @@ als Liste zur Verfügung.
 | Drohne | Uniprojekt, Rundflug (nicht auf der Karte) |
 | Löschzug | Lernwerkstatt der Jugendfeuerwehr (nicht auf der Karte) |
 | Gefrorene Quelle | aktuelle Sendung von broadcast.veerka.mp (nicht auf der Karte) |
-| Badesteg am Eissee | Countdown, dann verwandelt sich das Tal in den Kabelsee |
+| Badesteg am Eissee | mit Ticket: Countdown, dann verwandelt sich das Tal in den Kabelsee |
 
 Außerdem: Schlepplift, Nordabfahrt, Funpark, Slalom mit Bestenliste,
 Speedcheck, Kinderland mit Zauberteppich, Hütte mit Terrasse.

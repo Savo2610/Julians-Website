@@ -82,12 +82,13 @@ function lakeGround(x, z, height) {
 export const BADESTEG = {
   von: { x: -41.19, z: 25.03 },   // Landende auf der Boeschung
   bis: { x: -42.35, z: 31.73 },   // Spitze, 6,8 m weiter ueber dem Eis
-  halb: 1.1,
-  // Verwehung an den Seiten und vorn. Mit 0,6 m warf der Saum den Fahrer
-  // 3,5 m hoch: das Fahrmodell nimmt die Steigrate des Bodens mit ueber die
-  // Kante (skier.js, ab 3,2 m/s). Auf 2 m sind es bei Grundtempo 13 m/s
-  // knapp 2,9 m/s – man rollt hinauf, statt abzuheben.
-  saum: 2.0,
+  // Ebener Streifen und Saum liegen ganz unter den Bohlen (2,2 m breit):
+  // man sieht Holz ueber Eis, keine Rampe. Eine 2 m breite Verwehung fing
+  // den Sprung ab, nahm dem Steg aber die Kante (Ansage 01.10.). Dass die
+  // Stufe keine Schanze ist, regelt stattdessen kantenSprung().
+  breite: 1.1,   // halbe Breite der Bohlen
+  halb: 0.8,     // halbe Breite des ebenen Streifens darunter
+  saum: 0.3,
   hoehe: LAKE.level + 0.45,
 }
 const STEG_DX = BADESTEG.bis.x - BADESTEG.von.x
@@ -103,21 +104,32 @@ export function badestegLage(x, z) {
   return { laengs: rx * r.x + rz * r.z, quer: Math.abs(-rx * r.z + rz * r.x) }
 }
 
-// Zieht das Gelaende auf die Hoehe des Stegs. Quer und vorn mit einer
-// Verwehung (saum), laengs am Landende ueber einen Meter in die Boeschung.
-// Vorn war die Kante erst hart; vom Eis aus kam man dort nicht hinauf, und
-// eine Stufe von 45 cm in einem Bild ist fuer das Fahrmodell eine Schanze
-// mit 27 m/s Steigrate.
+// Zieht das Gelaende auf die Hoehe des Stegs. Quer und vorn mit dem kurzen
+// Saum unter den Bohlen, laengs am Landende ueber einen Meter in die
+// Boeschung.
 function badesteg(x, z, h) {
   const { laengs, quer } = badestegLage(x, z)
   const L = BADESTEG_LAENGE
-  if (laengs <= -1 || laengs >= L + BADESTEG.saum || quer >= BADESTEG.halb + BADESTEG.saum) return h
+  if (laengs <= -1 || laengs >= L || quer >= BADESTEG.halb + BADESTEG.saum) return h
   const wq = quer <= BADESTEG.halb ? 1 : 1 - smooth((quer - BADESTEG.halb) / BADESTEG.saum)
-  const wl = laengs < 0 ? 1 - smooth(-laengs) : laengs > L ? 1 - smooth((laengs - L) / BADESTEG.saum) : 1
+  const vorn = L - BADESTEG.saum
+  const wl = laengs < 0 ? 1 - smooth(-laengs) : laengs > vorn ? 1 - smooth((laengs - vorn) / BADESTEG.saum) : 1
   const w = wq * wl
   // Nur anheben: auf der Boeschung liegt das Gelaende schon hoeher als der
   // Steg, dort traegt es ihn.
   return h < BADESTEG.hoehe ? h + (BADESTEG.hoehe - h) * w : h
+}
+
+// Wie schnell der Boden hier einen Fahrer hoechstens in die Luft werfen
+// darf (m/s). Das Fahrmodell nimmt die Steigrate des Bodens mit ueber jede
+// Kante (skier.js) – an einer Schanze ist das gewollt, an einer Stufe nicht:
+// vom Eis auf den Badesteg sind es 45 cm auf 30 cm, also bis 24 m/s, und man
+// flog 5 m hoch. Mit 4 m/s huepft man gut 40 cm, wie man eben auf einen Steg
+// huepft. Ueberall sonst keine Grenze.
+export function kantenSprung(x, z) {
+  if (Math.abs(x - BADESTEG.von.x) > 12 || Math.abs(z - BADESTEG.von.z) > 12) return Infinity
+  const { laengs, quer } = badestegLage(x, z)
+  return quer < BADESTEG.breite + 1 && laengs > -1 && laengs < BADESTEG_LAENGE + 1 ? 4 : Infinity
 }
 
 // Der Startplatz ist ein echtes Plateau: flach genug zum Abstecken, leicht

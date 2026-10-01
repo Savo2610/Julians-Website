@@ -171,7 +171,7 @@ export const RINGS = FEATURES.filter((f) => f.type === 'kicker').map((f, i) => {
   const lipX = f.x + f.dx * f.length
   const lipZ = f.z + f.dz * f.length
   return {
-    id: `r${i}`, kind: 'ring', points: 250,
+    id: `r${i}`, kind: 'ring',
     x: lipX + f.dx * ahead, z: lipZ + f.dz * ahead, y,
     dx: f.dx, dz: f.dz, radius: 1.7,
   }

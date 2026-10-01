@@ -275,7 +275,7 @@ export function createCollectibles(scene) {
     flag.add(cloth)
     mesh.add(pole, flag)
     scene.add(mesh)
-    return { ...g, mesh, cloth, flag, done: false }
+    return { ...g, mesh, cloth, flag, done: false, sinkt: 0 }
   })
 
   const api = {
@@ -293,6 +293,11 @@ export function createCollectibles(scene) {
     resetGates() {
       for (const g of gates) api.setGate(g.index, false)
     },
+    // Slalom geschafft (einmal je Session): die Fahnen versinken in gut einer
+    // Sekunde, eine nach der anderen.
+    versenkeTore() {
+      gates.forEach((g, i) => { g.sinkt = 1.2 + i * 0.15 })
+    },
     reset() {
       for (const b of buoys) Object.assign(b, { taken: false, pop: 0, scale: 1, lift: 0, visible: true })
       for (const r of rings) {
@@ -302,6 +307,11 @@ export function createCollectibles(scene) {
         r.mesh.scale.setScalar(r.radius)
       }
       api.resetGates()
+      for (const g of gates) {
+        g.sinkt = 0
+        g.mesh.visible = true
+        g.mesh.position.y = 0
+      }
       drawBuoys(0)
     },
     update(elapsed, dt) {
@@ -330,6 +340,12 @@ export function createCollectibles(scene) {
       for (const g of gates) {
         g.flag.children[0].rotation.y = Math.sin(elapsed * 4 + g.index) * 0.18
         g.mesh.rotation.z = Math.sin(elapsed * 1.4 + g.index) * 0.03
+        if (g.sinkt > 0) {
+          g.sinkt = Math.max(0, g.sinkt - dt)
+          const t = Math.min(1, g.sinkt / 1.2)
+          g.mesh.position.y = -5.5 * (1 - t * t)
+          if (g.sinkt === 0) g.mesh.visible = false
+        }
       }
     },
   }

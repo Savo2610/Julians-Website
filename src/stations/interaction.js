@@ -66,6 +66,7 @@ export class StationInteraction {
         case 'pick1': this._open(0); return true
         case 'pick2': this._open(1); return true
         case 'pick3': if (n > 2) this._open(2); return true
+        case 'pick4': if (n > 3) this._open(3); return true
         case 'back': this.leave(); return true
         // W und S fuehren aus der Auswahl hinaus – und W faehrt gleich los,
         // deshalb wird es nicht verbraucht.
@@ -83,10 +84,8 @@ export class StationInteraction {
     if (action === 'use') {
       if (s.map && this.map) this.map.show('karte')
       else if (s.choices?.length) this.enter(s)
-      else {
-        this.registry.trigger()
-        this.ui.flash()
-      }
+      else if (this.registry.trigger()) this.ui.flash()
+      else this.ui.nope()
       return true
     }
     if ((action === 'pick1' || action === 'pick2') && s.choices) {

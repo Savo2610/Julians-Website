@@ -10,12 +10,23 @@ import { Slalom } from './slalom.js'
 // Meldungen und Effekten. Die Anzeige selbst macht hud.js.
 
 export const LAPS = 3
-// Slalom: jede Fahne mehr als die vorige in derselben Runde (150, 200 …
-// 400), alle sechs dazu 1200. Zusammen knapp 3000 je Runde, so viel wie zwei
-// gute Spruenge; dafuer laesst man auf der Suedgeraden beide Kicker liegen.
-const GATE_POINTS = 100
-const GATE_STEP = 50
-const SLALOM_BONUS = 1200
+// Punkte fuer das, was auf dem See liegt (Ansage 01.10.: mit Kombos kommt
+// man leicht auf 40 000, ein Cork 360 bringt schon 1700 – Sammeln muss sich
+// dagegen lohnen).
+//
+// Slalom: jede Fahne mehr als die vorige derselben Runde (300, 450 … 1050,
+// zusammen 4050). Wer in einer Runde alle sechs schafft, bekommt 8000 – nur
+// einmal je Session; danach versinken die Fahnen, und die Geraden gehoeren
+// wieder den Kickern. Vorher 150 … 400 und 1200 in jeder Runde.
+const GATE_POINTS = 150
+const GATE_STEP = 150
+const SLALOM_BONUS = 8000
+// Ringe verdoppeln sich: der erste 1000, dann 2000, 4000, 8000. Alle vier in
+// drei Runden zu holen ist schwer. Sie gehen wie alles Gesammelte in die
+// Kombo und zaehlen dort mit ihrem Faktor. Vorher 250 je Ring.
+const RING_BASIS = 1000
+// Alle 17 Bojen: 6000 obendrauf, wie der Slalom fest aufs Konto.
+const BOJEN_BONUS = 6000
 const fmt = (n) => Math.round(n).toLocaleString('de-DE')
 
 function loadBest() {
@@ -59,6 +70,13 @@ export class Session {
     this.combo = new Combo()
     this.slalom = new Slalom()
     this.stats = { buoys: 0, rings: 0, crashes: 0, bestTrick: null, bestCombo: 0, topSpeed: 0 }
+    this.slalomFertig = false
+    // Hinweise: Fahrzeit, letzte Benutzung je Taste, laufende Erinnerung.
+    this.fahrzeit = 0
+    this.zuletzt = { lenken: 0, springen: 0, salto: 0, grab: 0 }
+    this._erinnerung = null
+    this._ruhe = 0
+    this._nachSturz = false
     this.finishTimer = 0
     this.items.reset()
     this.rider.toDock(ankunft)
@@ -110,10 +128,13 @@ export class Session {
 
     for (const e of r.events) this.handle(e)
     r.events.length = 0
+    // Haengt der Buegel, ist der Start aus dem Tal vorbei; ein verpatzter
+    // Start zaehlt dann wieder wie gewohnt herunter.
+    if (r.hooked) this.ohneZaehlen = false
 
     if (this.state === 'play') {
       this.checkItems()
-      this.slalom.update(r)
+      if (!this.slalomFertig) this.slalom.update(r)
       for (const e of this.slalom.events) this.slalomEvent(e)
       this.slalom.events.length = 0
       const banked = this.combo.update(dt)
@@ -151,7 +172,7 @@ export class Session {
       speed: r.mode === 'crash' ? 0 : r.speed,
       dock: this.state === 'play' ? this.dockState() : null,
     })
-    this.updateHint()
+    this.updateHint(dt)
   }
 
   dockState() {
@@ -171,7 +192,6 @@ export class Session {
         fill: 0, zone: 0.62, ready: r.crouch > 0.5,
       }
     }
-    this.ohneZaehlen = false
     const p = r.dockProgress
     return {
       text: r.crouch > 0.5 ? 'In der Hocke … gleich geht’s los' : 'Seil strafft sich – <strong>jetzt in die Hocke!</strong>',
@@ -180,23 +200,72 @@ export class Session {
     }
   }
 
-  updateHint() {
+  // Was der Fahrer zuletzt benutzt hat, in Fahrzeit. Aus see.js, je Bild mit
+  // der Eingabe, die auch das Fahrmodell bekommt.
+  merke(inp) {
+    const r = this.rider
+    if (this.state !== 'play' || r.mode !== 'ride') return
+    const t = this.fahrzeit
+    if (Math.abs(inp.steer) > 0.3) this.zuletzt.lenken = t
+    if (inp.jump) this.zuletzt.springen = t
+    if (r.airborne && (inp.throttle || inp.brake)) this.zuletzt.salto = t
+    if (r.airborne && inp.grab) this.zuletzt.grab = t
+  }
+
+  // Unten ein Hinweis, nie mehr als einer. In der ersten Runde der Reihe nach
+  // (lenken, springen, in der Luft), danach nur noch, wenn er etwas sagt:
+  // nach einem Sturz einmal R (Ansage 01.10.), und wer eine Taste 30 s
+  // nicht benutzt hat, bekommt ihre Erinnerung fuer 5 s – hoechstens alle
+  // 10 s eine, damit unten nicht dauernd etwas steht.
+  updateHint(dt = 0) {
     const r = this.rider
     if (this.state !== 'play') return this.hud.setHint('')
     const touch = this.hud.touch
-    if (r.mode === 'dock') {
-      this.hud.setHint(touch ? '<b>Sprung</b> halten, wenn sich das Seil strafft' : '<kbd class="k-wide">Leertaste</kbd> halten, wenn sich das Seil strafft')
-    } else if (r.fakie && r.mode === 'ride') {
-      this.hud.setHint(touch ? 'Rückwärts – <b>Sprung</b> und ◀ ▶: ein 180 dreht dich zurück' : 'Rückwärts – <kbd class="k-wide">Leertaste</kbd> und <kbd>A</kbd><kbd>D</kbd>: ein 180 dreht dich zurück')
-    } else if (r.progress < 60 && r.mode === 'ride') {
-      this.hud.setHint(touch ? '◀ ▶ kanten – nach außen schwingen macht schnell' : '<kbd>A</kbd><kbd>D</kbd> kanten – nach außen schwingen macht schnell')
-    } else if (r.progress < 140 && r.mode === 'ride') {
-      this.hud.setHint(touch ? 'Vor dem Kicker <b>Sprung</b> halten, an der Kante loslassen' : 'Vor dem Kicker <kbd class="k-wide">Leertaste</kbd> halten, an der Kante loslassen')
-    } else if (r.progress < 260 && r.mode === 'ride') {
-      this.hud.setHint(touch ? 'In der Luft: ◀ ▶ drehen · ▲ ▼ Salto · <b>Grab</b>' : 'In der Luft: <kbd>A</kbd><kbd>D</kbd> drehen · <kbd>W</kbd><kbd>S</kbd> Salto · <kbd class="k-wide">Shift</kbd> Grab')
-    } else {
-      this.hud.setHint('')
+    const k = (taste, breit = false) => `<kbd${breit ? ' class="k-wide"' : ''}>${taste}</kbd>`
+    const TEXT = {
+      lenken: touch ? '◀ ▶ kanten – nach außen schwingen macht schnell' : `${k('A')}${k('D')} kanten – nach außen schwingen macht schnell`,
+      springen: touch ? 'Vor dem Kicker <b>Sprung</b> halten, an der Kante loslassen' : `Vor dem Kicker ${k('Leertaste', true)} halten, an der Kante loslassen`,
+      salto: touch ? 'In der Luft: ▲ ▼ Salto vor und zurück' : `In der Luft: ${k('W')}${k('S')} Salto vor und zurück`,
+      grab: touch ? 'In der Luft: <b>Grab</b> an die Ski greifen' : `In der Luft: ${k('Shift', true)} an die Ski greifen`,
+      neu: `${k('R')} zurück an den Steg – neue Session`,
     }
+    if (r.mode === 'ride') this.fahrzeit += dt
+    this._ruhe = Math.max(0, this._ruhe - dt)
+    if (this._erinnerung) {
+      this._erinnerung.bis -= dt
+      if (this._erinnerung.bis <= 0) {
+        this._erinnerung = null
+        this._ruhe = 10
+      }
+    }
+
+    if (r.mode === 'dock') {
+      return this.hud.setHint(touch ? '<b>Sprung</b> halten, wenn sich das Seil strafft' : `${k('Leertaste', true)} halten, wenn sich das Seil strafft`)
+    }
+    if (r.mode !== 'ride') return this.hud.setHint('')
+    if (r.fakie) {
+      return this.hud.setHint(touch ? 'Rückwärts – <b>Sprung</b> und ◀ ▶: ein 180 dreht dich zurück' : `Rückwärts – ${k('Leertaste', true)} und ${k('A')}${k('D')}: ein 180 dreht dich zurück`)
+    }
+    // Nach einem Sturz gleich, auch mitten in der ersten Runde.
+    if (this._nachSturz && !this._erinnerung) {
+      if (!touch) this._erinnerung = { text: TEXT.neu, bis: 5 }
+      this._nachSturz = false
+    }
+    if (this._erinnerung) return this.hud.setHint(this._erinnerung.text)
+
+    // Erste Runde: die Grundlagen der Reihe nach.
+    if (r.progress < 60) return this.hud.setHint(TEXT.lenken)
+    if (r.progress < 140) return this.hud.setHint(TEXT.springen)
+    if (r.progress < 260) return this.hud.setHint(touch ? 'In der Luft: ◀ ▶ drehen · ▲ ▼ Salto · <b>Grab</b>' : `In der Luft: ${k('A')}${k('D')} drehen · ${k('W')}${k('S')} Salto · ${k('Shift', true)} Grab`)
+
+    const alt = this._ruhe <= 0 && Object.entries(this.zuletzt).find(([, t]) => this.fahrzeit - t > 30)
+    if (alt) {
+      this._erinnerung = { text: TEXT[alt[0]], bis: 5 }
+      // Erinnert ist erinnert: dieselbe Taste fruehestens in 30 s wieder,
+      // auch wenn sie bis dahin nicht benutzt wurde.
+      this.zuletzt[alt[0]] = this.fahrzeit
+    }
+    this.hud.setHint(this._erinnerung?.text ?? '')
   }
 
   handle(e) {
@@ -233,6 +302,8 @@ export class Session {
         break
       case 'respawn':
         fx.snapCamera()
+        // Es geht weiter – jetzt ist der Moment fuer „R: neue Session“.
+        if (this.state === 'play') this._nachSturz = true
         break
       case 'glance':
         this.hud.showToast('An der Kante abgeglitten', 1)
@@ -248,7 +319,8 @@ export class Session {
       this.hud.showToast(`Kombo ×${e.multiplier}  +${fmt(e.points)}`, 1.6)
     } else if (e.type === 'lost') {
       this.hud.showToast(`Kombo verloren (${fmt(e.points)})`, 1.4)
-    } else if (e.type === 'bonus') {
+    } else if (e.type === 'bonus' && e.label === 'Runde') {
+      // Slalom und Bojen melden sich selbst, gross in der Mitte.
       this.hud.showToast(`Runde geschafft +${fmt(e.points)}`, 1.4)
     }
   }
@@ -262,8 +334,10 @@ export class Session {
       this.combo.collect(pts, 'Tor')
       this.fx.gate?.(e.gate)
       if (e.all) {
-        this.combo.collect(SLALOM_BONUS, 'Slalom')
-        this.hud.showTrick('Slalom', `alle ${e.of} Tore +${SLALOM_BONUS}`, 'perfect')
+        this.slalomFertig = true
+        this.combo.bonus(SLALOM_BONUS, 'Slalom')
+        this.hud.showTrick('Slalom', `alle ${e.of} Tore +${fmt(SLALOM_BONUS)}`, 'perfect')
+        this.items.versenkeTore?.()
       } else {
         this.hud.showToast(`Tor ${e.n}/${e.of}  +${pts}`, 1)
       }
@@ -283,6 +357,10 @@ export class Session {
         this.stats.buoys += 1
         this.combo.collect(b.points, 'Boje')
         this.fx.collect(b)
+        if (this.stats.buoys === this.items.buoys.length) {
+          this.combo.bonus(BOJEN_BONUS, 'Bojen')
+          this.hud.showTrick('Alle Bojen', `+${fmt(BOJEN_BONUS)}`, 'perfect')
+        }
       }
     }
     for (const g of this.items.rings) {
@@ -291,9 +369,10 @@ export class Session {
       if (d < g.radius + 0.4) {
         g.taken = true
         g.pop = 0.4
+        const pts = RING_BASIS * 2 ** this.stats.rings
         this.stats.rings += 1
-        this.combo.collect(g.points, 'Ring')
-        this.hud.showToast(`Ring +${g.points}`, 1)
+        this.combo.collect(pts, 'Ring')
+        this.hud.showToast(`Ring ${this.stats.rings}/${this.items.rings.length}  +${fmt(pts)}`, 1.2)
         this.fx.collect(g)
       }
     }

@@ -955,7 +955,7 @@ html.touch .pass-meldung { top: max(16px, env(safe-area-inset-top)); left: 18px;
   border-radius: 5px;
 }
 
-.sheet-option.nope { animation: optNope 0.4s ease; }
+.sheet-option.nope, .station-prompt.nope .prompt-title { animation: optNope 0.4s ease; }
 @keyframes optNope {
   20% { translate: -6px 0; }
   45% { translate: 5px 0; }

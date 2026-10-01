@@ -8,6 +8,7 @@ import { CABLE, TRICK } from '../src/kabelsee/config.js'
 import { ride, dockStart, steerTo } from './kabelsee-helfer.js'
 import { CableSystem } from '../src/kabelsee/game/cable-system.js'
 import { RiderPhysics, DOCK_S } from '../src/kabelsee/player/rider-physics.js'
+import { Session } from '../src/kabelsee/game/session.js'
 
 const TAU = Math.PI * 2
 
@@ -257,4 +258,89 @@ test('Aus dem Tal: der Buegel kommt nach der vorgegebenen Zeit, sonst nach 2,6 b
     const s = cable.nextArriving(DOCK_S).seconds
     assert.ok(s >= 2.55 && s <= 4.45, `Ankunft ${s.toFixed(2)} s`)
   }
+})
+
+// Ein Session-Geruest ohne three.js: Anzeige und Effekte schreiben nur mit.
+function session() {
+  const hud = new Proxy({ touch: false }, { get: (t, k) => (k in t ? t[k] : () => {}) })
+  const fx = new Proxy({}, { get: () => () => {} })
+  const items = {
+    buoys: [{ x: 10, z: 0, points: 50 }, { x: 20, z: 0, points: 50 }],
+    rings: [0, 1, 2, 3].map((i) => ({ x: i * 10, z: 5, y: 1, radius: 1.5 })),
+    gates: [],
+    gesunken: 0,
+    reset() {
+      for (const b of this.buoys) b.taken = false
+      for (const r of this.rings) r.taken = false
+    },
+    versenkeTore() { this.gesunken += 1 },
+    setGate() {},
+    resetGates() {},
+  }
+  const cable = new CableSystem()
+  const rider = new RiderPhysics(cable)
+  const s = new Session({ rider, cable, collectibles: items, hud, fx, eingebettet: true })
+  s.starten()
+  return { s, rider, items }
+}
+
+test('Wertung: Ringe verdoppeln sich, 1000 bis 8000', () => {
+  const { s, rider, items } = session()
+  rider.mode = 'ride'
+  const geholt = []
+  for (const g of items.rings) {
+    Object.assign(rider, { x: g.x, z: g.z, y: g.y - 0.9 })
+    const vorher = s.combo.points
+    s.checkItems()
+    geholt.push(s.combo.points - vorher)
+  }
+  assert.deepEqual(geholt, [1000, 2000, 4000, 8000])
+})
+
+test('Wertung: alle Bojen geben 6000, erst mit der letzten', () => {
+  const { s, rider, items } = session()
+  rider.mode = 'ride'
+  Object.assign(rider, { x: items.buoys[0].x, z: 0, y: 0 })
+  s.checkItems()
+  assert.equal(s.combo.score, 0)
+  Object.assign(rider, { x: items.buoys[1].x, z: 0, y: 0 })
+  s.checkItems()
+  assert.equal(s.combo.score, 6000)
+})
+
+test('Wertung: Slalom 300 bis 1050 je Fahne, 8000 nur einmal, dann versinken die Fahnen', () => {
+  const { s, items } = session()
+  const tore = []
+  for (let i = 1; i <= 6; i++) {
+    const vorher = s.combo.points
+    s.slalomEvent({ type: 'gate', gate: { index: i - 1 }, n: i, of: 6, all: i === 6, streak: i })
+    tore.push(s.combo.points - vorher)
+  }
+  assert.deepEqual(tore, [300, 450, 600, 750, 900, 1050])
+  assert.equal(s.combo.score, 8000)
+  assert.equal(s.slalomFertig, true)
+  assert.equal(items.gesunken, 1)
+  // Neue Session: der Slalom steht wieder.
+  s.starten()
+  assert.equal(s.slalomFertig, false)
+})
+
+test('Hinweise: nach einem Sturz R, nach 30 s ohne Grab die Erinnerung', () => {
+  const { s, rider } = session()
+  const hinweise = []
+  s.hud.setHint = (t) => hinweise.push(t)
+  Object.assign(rider, { mode: 'ride', progress: 400, fakie: false })
+  s.handle({ type: 'respawn' })
+  s.updateHint(1 / 60)
+  assert.match(hinweise.at(-1), /R<\/kbd> zurück an den Steg/)
+  // Fuenf Sekunden spaeter ist er weg, dann zehn Sekunden Ruhe.
+  for (let i = 0; i < 6 * 60; i++) s.updateHint(1 / 60)
+  assert.equal(hinweise.at(-1), '')
+  // Gelenkt, gesprungen und gesaltot wird laufend, gegriffen nie.
+  for (let i = 0; i < 40 * 60; i++) {
+    Object.assign(s.zuletzt, { lenken: s.fahrzeit, springen: s.fahrzeit, salto: s.fahrzeit })
+    s.updateHint(1 / 60)
+  }
+  assert.ok(hinweise.some((t) => /Shift<\/kbd> an die Ski greifen/.test(t)))
+  assert.ok(!hinweise.some((t) => /Salto vor und zurück/.test(t)))
 })

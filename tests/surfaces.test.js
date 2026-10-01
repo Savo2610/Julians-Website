@@ -14,7 +14,7 @@ test('Eis, Holz und Schnee teilen eindeutige Oberflaechengrenzen', () => {
     assert.equal(isSnowSurface(LAKE.x + Math.cos(a) * (r - 0.1), LAKE.z + Math.sin(a) * (r - 0.1)), false)
     const ux = LAKE.x + Math.cos(a) * (r + 1), uz = LAKE.z + Math.sin(a) * (r + 1)
     // Am Badesteg liegt hinter dem Ufer Holz, siehe unten.
-    if (badestegLage(ux, uz).quer < BADESTEG.halb + 1) continue
+    if (badestegLage(ux, uz).quer < BADESTEG.breite + 1) continue
     assert.equal(isSnowSurface(ux, uz), true)
   }
   // Der Badesteg: Holz von der Boeschung bis zur Spitze, auf der ganzen
@@ -26,32 +26,21 @@ test('Eis, Holz und Schnee teilen eindeutige Oberflaechengrenzen', () => {
       const x = BADESTEG.von.x + (BADESTEG.bis.x - BADESTEG.von.x) * u / BADESTEG_LAENGE + r.x / n * q
       const z = BADESTEG.von.z + (BADESTEG.bis.z - BADESTEG.von.z) * u / BADESTEG_LAENGE + r.z / n * q
       assert.equal(isSnowSurface(x, z), false)
-      if (u > 1.2) assert.ok(Math.abs(terrainHeight(x, z) - BADESTEG.hoehe) < 0.001, `Steg bei ${u.toFixed(1)} m`)
+      if (u > 1.2 && u < BADESTEG_LAENGE - BADESTEG.saum) assert.ok(Math.abs(terrainHeight(x, z) - BADESTEG.hoehe) < 0.001, `Steg bei ${u.toFixed(1)} m`)
     }
   }
   assert.equal(isSnowSurface(BADESTEG.von.x + 4, BADESTEG.von.z - 2), true)
 
-  // Vom Eis auf den Steg: nirgends steiler als 0,4. Mit dem Saum von 0,6 m
-  // waren es 1,1, und das Fahrmodell warf Fahrer von der Seite 3,5 m hoch.
+  // Neben dem Steg liegt Eis, keine Verwehung: einen halben Meter neben den
+  // Bohlen ist das Gelaende schon wieder auf Seehoehe.
   const r = { x: (BADESTEG.bis.x - BADESTEG.von.x) / BADESTEG_LAENGE, z: (BADESTEG.bis.z - BADESTEG.von.z) / BADESTEG_LAENGE }
-  const steilste = (x0, z0, dx, dz) => {
-    let max = 0
-    for (let t = 0; t < 4; t += 0.05) {
-      const a = terrainHeight(x0 + dx * t, z0 + dz * t)
-      const b = terrainHeight(x0 + dx * (t + 0.05), z0 + dz * (t + 0.05))
-      max = Math.max(max, Math.abs(b - a) / 0.05)
-    }
-    return max
-  }
   for (const u of [3, 4.5, 6]) {
-    const mx = BADESTEG.von.x + r.x * u, mz = BADESTEG.von.z + r.z * u
     for (const s of [-1, 1]) {
-      const qx = r.z * s, qz = -r.x * s
-      assert.ok(steilste(mx + qx * 0.5, mz + qz * 0.5, qx, qz) < 0.4, `Seite ${s} bei ${u} m`)
+      const q = 1.1 + 0.5
+      assert.ok(Math.abs(terrainHeight(BADESTEG.von.x + r.x * u + r.z * s * q, BADESTEG.von.z + r.z * u - r.x * s * q) - LAKE.level) < 0.001)
     }
   }
-  const sx = BADESTEG.von.x + r.x * (BADESTEG_LAENGE - 0.5), sz = BADESTEG.von.z + r.z * (BADESTEG_LAENGE - 0.5)
-  assert.ok(steilste(sx, sz, r.x, r.z) < 0.4, 'vorn')
+  assert.ok(Math.abs(terrainHeight(BADESTEG.bis.x + r.x * 0.5, BADESTEG.bis.z + r.z * 0.5) - LAKE.level) < 0.001)
   for (const [u, v] of [[0, 2], [-6, 5], [1, 6]]) {
     const p = terraceWorld(u, v)
     assert.ok(terraceDistance(p.x, p.z) < 0)

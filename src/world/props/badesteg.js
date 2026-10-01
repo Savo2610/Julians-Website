@@ -27,7 +27,7 @@ const DECK = BADESTEG.hoehe + 0.02
 
 export function createBadesteg(world) {
   const len = BADESTEG_LAENGE
-  const halb = BADESTEG.halb
+  const halb = BADESTEG.breite
   const yaw = Math.atan2(BADESTEG_RICHTUNG.x, BADESTEG_RICHTUNG.z)
   const parts = []
 

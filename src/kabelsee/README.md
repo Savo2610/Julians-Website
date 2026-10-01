@@ -99,8 +99,10 @@ innen und außen, je 10 m neben der Linie und 26 m auseinander. Der Wimpel
 zeigt, auf welcher Seite man vorbei muss: außen um die Fahne herum, so weit
 hinaus, dass das Seil straff ist. Auf der Südgeraden führt der Slalom innen
 am einen und außen am anderen Kicker vorbei, statt darüber. Jede Fahne gibt
-mehr als die vorige derselben Runde (150, 200 … 400), alle sechs dazu 1200.
-Anders als die Bojen zählen die Fahnen in jeder Runde neu.
+mehr als die vorige derselben Runde (300, 450 … 1050). Wer in einer Runde
+alle sechs schafft, bekommt **8000** – einmal je Session; danach versinken
+die Fahnen im See, und die Geraden gehören wieder den Kickern. Bis dahin
+zählen die Fahnen in jeder Runde neu.
 
 **Punkte wie in Steep.** Jede Figur zählt für sich, aber die großen Zahlen
 macht die **Kombo**: wer innerhalb von 3,5 Sekunden nach einer Landung den
@@ -111,9 +113,20 @@ wird die Kette ausgezahlt; ein Sturz löscht sie. Dazu:
 - 17 **Bojen** (50 Punkte), zu erkennen am leuchtenden Stein über dem
   Schwimmer und dem Kreis auf dem Wasser. Sie liegen in Bögen nach außen und
   innen: man holt sie nur, wenn man ausschwingt, und genau das macht schnell.
-- 4 **Ringe** (250 Punkte) über den Kickern, dort wo man mit voll geladenem
-  Absprung den höchsten Punkt hat.
+  Wer alle 17 holt, bekommt **6000** dazu.
+- 4 **Ringe** über den Kickern, dort wo man mit voll geladenem Absprung den
+  höchsten Punkt hat. Sie verdoppeln sich: der erste 1000, dann 2000, 4000,
+  8000 – und gehen wie alles Gesammelte in die Kombo, mit ihrem Faktor.
 - 300 Punkte für jede Runde.
+
+Slalom- und Bojenbonus gehen fest aufs Konto, ein Sturz kostet sie nicht.
+
+**Hinweise.** Unten steht immer höchstens einer. In der ersten Runde erklären
+sie der Reihe nach Lenken, Springen und die Luft. Danach melden sie sich nur
+noch, wenn sie etwas sagen: nach einem Sturz einmal `R` für eine neue
+Session, und wer Lenken, Springen, Salto oder Grab 30 Sekunden nicht benutzt
+hat, wird fünf Sekunden lang daran erinnert (höchstens alle zehn Sekunden
+eine Erinnerung).
 
 Trickwerte: 180 = 150, 360 = 300, 540 = 550, 720 = 800, 1080 = 1500;
 Backflip = 550, Frontflip = 550, Doppelsalto = 1500. Salto mit Drehung ist

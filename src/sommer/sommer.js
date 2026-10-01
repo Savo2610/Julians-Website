@@ -2,6 +2,7 @@ import './sommer.css'
 import { zeitscheiben } from '../core/zeitscheiben.js'
 import { BADESTEG } from '../world/heightfield.js'
 import { KabelseeListe } from './bestenliste.js'
+import { seeTicket } from '../stations/ticket.js'
 
 // Vom Badesteg in den Sommer und zurueck.
 //
@@ -55,10 +56,12 @@ export class Sommer {
 
     // Die Station sitzt vorn auf dem Steg, ohne Ring im Schnee: dort liegt
     // Holz. Kein Heranzoomen mit Auswahl – der Countdown ist die Vorfuehrung.
+    // Wie die Drohne braucht sie ein Ticket von der Skikasse; ohne schuettelt
+    // sich die Einladung (onUse gibt false zurueck).
     registry.add({
       id: 'kabelsee',
       label: 'Kabelsee',
-      hint: 'In den Sommer',
+      hint: this._hinweis(),
       color: '#2a8f9c',
       position: { x: steg.stand.x, z: steg.stand.z },
       radius: 2.6,
@@ -66,6 +69,11 @@ export class Sommer {
       labelHeight: BADESTEG.hoehe + 2.4,
       onUse: () => this.starten(),
     })
+    this.station = registry.stations.find((s) => s.id === 'kabelsee')
+  }
+
+  _hinweis() {
+    return seeTicket.vorhanden ? 'In den Sommer' : 'Ticket an der Skikasse lösen'
   }
 
   get aktiv() {
@@ -119,8 +127,10 @@ export class Sommer {
     return this._bau
   }
 
+  // false: kein Ticket, nichts passiert.
   starten() {
-    if (this.zustand !== 'winter') return
+    if (this.zustand !== 'winter') return true
+    if (!seeTicket.einloesen()) return false
     this.zustand = 'countdown'
     this._t = 0
     this._von = { x: this.skier.position.x, z: this.skier.position.z, heading: this.skier.heading }
@@ -133,10 +143,13 @@ export class Sommer {
       this._modul = this._bau = null
       this.abbrechen()
     })
+    return true
   }
 
+  // Esc im Countdown: zurueck, und das Ticket gilt weiter.
   abbrechen() {
     if (this.zustand !== 'countdown') return
+    seeTicket.loesen()
     this.zustand = 'winter'
     this.input.locked = false
     this.chase.fokus(null)
@@ -171,6 +184,9 @@ export class Sommer {
   update(dt) {
     this._zeit += dt
     if (this.zustand === 'winter') {
+      // Das Ticket kann sich aendern, waehrend man vor dem Steg steht (am
+      // Handy die Uebersicht, im Tal eine zweite Seite).
+      this.station.hint = this._hinweis()
       const s = this.steg.stand
       // Ein Fehler hier zeigt sich erst, wenn jemand Enter drueckt (_bauen).
       if (!this._modul && Math.hypot(this.skier.position.x - s.x, this.skier.position.z - s.z) < 30) this.vorladen().catch(() => {})

@@ -18,8 +18,8 @@ test('Kabelsee: Punkte ganzzahlig, positiv und moeglich', () => {
   assert.match(sessionPruefen({ punkte: -5 }, 95000), /fehlen/)
   assert.match(sessionPruefen({ punkte: 12.5 }, 95000), /fehlen/)
   assert.match(sessionPruefen({ punkte: '9000' }, 95000), /fehlen/)
-  // 2 500 je Sekunde: in 95 s hoechstens 237 500.
-  assert.equal(sessionPruefen({ punkte: 230000 }, 95000), null)
-  assert.match(sessionPruefen({ punkte: 240000 }, 95000), /gehen nicht/)
-  assert.match(sessionPruefen({ punkte: 260000 }, 600000), /gehen nicht/)
+  // 8 000 je Sekunde: in 95 s hoechstens 760 000.
+  assert.equal(sessionPruefen({ punkte: 750000 }, 95000), null)
+  assert.match(sessionPruefen({ punkte: 770000 }, 95000), /gehen nicht/)
+  assert.match(sessionPruefen({ punkte: 1000001 }, 600000), /gehen nicht/)
 })

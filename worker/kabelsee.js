@@ -7,9 +7,11 @@
 //    dritten Runde eine Zielmarke. Dazwischen muessen mindestens 80 s
 //    liegen: drei Runden sind 3 × 438 m Seil bei 15 m/s, also 88 s, und
 //    vorbeiziehen kann man am Mitnehmer hoechstens um die 17 m Seil.
-// 2. Die Punkte muessen moeglich sein: hoechstens 250 000 und hoechstens
-//    2 500 je Sekunde der Session. Der Rekord beim Bau lag bei 7 690; die
-//    Grenzen lassen Kombos mit ×5 und Doppelsalti reichlich Luft.
+// 2. Die Punkte muessen moeglich sein: hoechstens 1 000 000 und hoechstens
+//    8 000 je Sekunde der Session. Seit 01.10. zaehlen Ringe 1000 bis 8000
+//    (in einer ×5-Kombo bis 40 000), der Slalom einmal 8000, alle Bojen
+//    6000; Julian kam mit Kombos schon vorher auf 40 000. Die Grenzen
+//    lassen dem reichlich Luft und fangen nur Unsinn.
 // 3. Jede Startmarke zaehlt einmal, jede Adresse hoechstens 40 Eintraege am
 //    Tag, Namen wie beim Slalom (marken.js).
 // Die Marken tragen k: 'kabelsee', damit keine Slalom-Marke hier gilt.
@@ -19,8 +21,8 @@ import { signieren, pruefen, nameGlaetten, adresse } from './marken.js'
 
 const MIN_DAUER = 80
 const MAX_DAUER = 20 * 60
-const MAX_PUNKTE = 250000
-const PUNKTE_JE_S = 2500
+const MAX_PUNKTE = 1000000
+const PUNKTE_JE_S = 8000
 const MARKE_GILT = 15 * 60 * 1000
 const PRO_TAG = 40
 const TAGE = 30

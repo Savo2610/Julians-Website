@@ -9,7 +9,7 @@ export function isSnowSurface(x, z, margin = 0) {
   // Der Badesteg ragt mit dem Landende ueber die Uferlinie hinaus.
   if (Math.abs(x - BADESTEG.von.x) < 12 && Math.abs(z - BADESTEG.von.z) < 12) {
     const { laengs, quer } = badestegLage(x, z)
-    if (quer <= BADESTEG.halb + margin && laengs >= -0.3 - margin && laengs <= BADESTEG_LAENGE + margin) return false
+    if (quer <= BADESTEG.breite + margin && laengs >= -0.3 - margin && laengs <= BADESTEG_LAENGE + margin) return false
   }
   if (Math.abs(x - APRES.house.x) < 23 + margin && Math.abs(z - APRES.house.z) < 23 + margin && terraceDistance(x, z) <= margin) return false
   return true

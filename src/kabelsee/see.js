@@ -198,6 +198,7 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
       first = false
       left -= h
     }
+    session.merke(inp)
     session.update(dt)
 
     poseRider(model, rider, dt, elapsed)
@@ -248,7 +249,7 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
     // Im Tal: Tasten an, Anzeige sichtbar, Session sofort am Steg. Der
     // Buegel kommt nach `ankunft` Sekunden – der Countdown lief schon am
     // Badesteg, hier soll man nicht noch einmal warten.
-    betreten({ ankunft = 1.4 } = {}) {
+    betreten({ ankunft }) {
       input.aktiv = true
       input.keys.clear()
       root.hidden = false

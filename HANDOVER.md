@@ -800,7 +800,8 @@ Größe 0,16 ergab aus 33 m zwei Pixel – jetzt normal gemischt, 0,45–0,75.
 
 ## 4a‴. Drohnen-Rundflug und Ticket
 
-An der **Skikasse** gibt es als dritte Wahl ein **Rundflug-Ticket**
+An der **Skikasse** gibt es als dritte Wahl ein **Rundflug-Ticket** (als
+vierte eins für den Kabelsee, 4a⁶)
 (`stations/ticket.js`, `localStorage` `skiportfolio.rundflug`, `3` wählt
 direkt). Umsonst und immer nur eins – ein Stapel wäre eine Währung. An der
 **Drohne** (jetzt eine Station mit Auswahl: Uniprojekt / Rundflug) wird es
@@ -991,20 +992,30 @@ Schwerkraft oder Absprung ändert, misst beides nach.
 sommer → zurueck → winter):
 
 - Der **Badesteg** steckt im Höhenfeld (`BADESTEG` in `heightfield.js`):
-  6,8 m lang, 2,2 m breit, 45 cm über dem Eis – so hoch steht die Böschung
-  1,2 m hinter der Uferlinie, dort setzt er an. An den Seiten und vorn
-  liegt eine 2 m breite Schneeverwehung: mit 0,6 m Saum warf er Fahrer,
-  die vom Eis kamen, 3,5 m hoch (das Fahrmodell nimmt die Steigrate des
-  Bodens über die Kante mit, ab 3,2 m/s hebt man ab; auf 2 m sind es bei
-  13 m/s knapp 2,9). Vorn war die Kante erst hart – vom Eis aus eine Wand,
-  von oben eine Schanze. Gemessen nach dem Umbau: 0 m Flughöhe von allen
-  Seiten, auch mit W. Holz, Pfähle, Leiter und Rettungsring mit Wasserski-Hantel
+  6,8 m lang, 2,2 m breit (`breite`), 45 cm über dem Eis – so hoch steht
+  die Böschung 1,2 m hinter der Uferlinie, dort setzt er an. Der ebene
+  Streifen (`halb` 0,8) und sein Saum (0,3 m) liegen ganz unter den Bohlen:
+  man sieht Holz über Eis. **Eine Stufe ist keine Schanze**: das Fahrmodell
+  nimmt die Steigrate des Bodens über jede Kante mit, und 45 cm auf 30 cm
+  warfen Fahrer vom Eis aus 3,5 bis 5 m hoch. `kantenSprung(x, z)` in
+  `heightfield.js` deckelt den Absprung am Steg auf 4 m/s, `skier.js`
+  fragt es beim Abheben; gemessen 0,5–0,8 m Hüpfer von jeder Seite, auch
+  mit 16 m/s. Überall sonst gibt es keine Grenze. Eine 2 m breite
+  Schneeverwehung ringsum fing den Sprung auch ab, nahm dem Steg aber die
+  Kante (Ansage 01.10.). Holz, Pfähle, Leiter und Rettungsring mit Wasserski-Hantel
   liegen nur darauf (`props/badesteg.js`). Er zeigt nach Süden, zehn Grad
   nach Westen: im Bild nach links unten wie der Startsteg am Kabelsee.
   Genau radial zur Seemitte lag er im Bild waagerecht. `surfaces.js` hält
   Spur und Staub vom Holz fern (Test in `surfaces.test.js`).
 - **Station** `kabelsee` vorn auf dem Steg, Radius 2,6 m, ohne Ring im
   Schnee. Keine Auswahl: der Countdown ist die Vorführung.
+- **Ticket**: wie der Rundflug braucht der Steg ein Ticket von der
+  Skikasse (vierte Wahl dort, Taste `4`, `seeTicket` in
+  `stations/ticket.js`, `localStorage` `skiportfolio.kabelsee`). Es wird
+  beim Start des Countdowns entwertet und gilt für einen Besuch, gleich wie
+  viele Sessions; Esc im Countdown gibt es zurück. Ohne Ticket schüttelt
+  sich die Einladung (`onUse` gibt `false`, `ui.nope()` ohne Index), und
+  sie sagt „Ticket an der Skikasse lösen“ (Wunsch 01.10.).
 - **Countdown**: Fahrer gleitet in 0,7 s an die Spitze, Kamera auf **26 m**
   heran – so weit steht die Kamera des Kabelsees am Startsteg, mit
   gleichem Winkel und gleicher Brennweite; im Moment der Verwandlung sind
@@ -1044,14 +1055,31 @@ sommer → zurueck → winter):
 mit `k: 'kabelsee'`, damit keine Slalom-Marke gilt). Startmarke beim Start
 am Steg, Zielmarke nach Runde drei; dazwischen mindestens **80 s** (drei
 Runden = 3 × 438 m bei 15 m/s = 88 s), höchstens 20 min, höchstens
-250 000 Punkte und **2 500 je Sekunde** (Rekord beim Bau: 7 690). Angebot nur
+1 000 000 Punkte und **8 000 je Sekunde** (mit den neuen Ringen bis
+40 000 je Ring in einer ×5-Kombo). Angebot nur
 bei neuem eigenen Rekord in diesem Browser (`kabelsee.best`, derselbe
 Schlüssel wie auf der eigenen Seite). Der Name ist derselbe wie am Slalom.
 Reiter **Bestenliste** der Übersicht: Slalom, darunter Kabelsee mit „Zum
 Badesteg“. Die eigene Seite /kabelsee/ hat keine Bestenliste.
 
-Zum Prüfen: `__ski.sommer.starten()` vor dem Steg (oder
-`__ski.goto('kabelsee', 0, 0)`), dann `__ski.step(…)`; der See liegt danach
+**Wertung am See** (Ansage 01.10.: mit Kombos kommt man leicht auf
+40 000, ein Cork 360 bringt 1700 – Sammeln soll sich dagegen lohnen):
+Ringe verdoppeln sich, 1000 → 2000 → 4000 → 8000, und gehen wie alles
+Gesammelte in die Kombo. Slalom 300 … 1050 je Fahne; alle sechs in einer
+Runde **8000**, einmal je Session, dann versinken die Fahnen. Alle 17
+Bojen **6000**. Beide Boni gehen fest aufs Konto (`combo.bonus`), ein Sturz
+kostet sie nicht. Tests in `kabelsee-spiel.test.js`.
+
+**Hinweise am See** (`Session.updateHint`): höchstens einer. Erste Runde
+der Reihe nach (lenken, springen, Luft), danach nach einem Sturz einmal
+`R` für eine neue Session (am Handy nicht, dort gibt es kein R), und wer
+Lenken, Springen, Salto oder Grab 30 s nicht benutzt hat, sieht dessen
+Hinweis 5 s lang, höchstens alle 10 s einer. Die Eingabe kommt je Bild über
+`session.merke(inp)`.
+
+Zum Prüfen: `__ski.sommer.starten()` vor dem Steg (vorher ein Ticket:
+an der Skikasse `4`), oder `__ski.goto('kabelsee', 0, 0)`, dann
+`__ski.step(…)`; der See liegt danach
 unter `__ski.sommer.see` (`rider`, `session`, `step` gibt es dort als
 `advance`). Für Bilder im verdeckten Fenster `requestAnimationFrame` leer
 setzen, sonst läuft die Schleife zwischen den Aufnahmen weiter.
@@ -1112,7 +1140,8 @@ ganze Seite so aus wie veerka.mp.
 **Arbeitsweise** (Ansage 26.09., für veerka.mp bestätigt 27.09.: jede
 fertige Runde sofort live, ohne Rückfrage): Tests und Build, deutsch
 committen, Commit-Nummer hier im Verlauf nachtragen, `git push` auf `main`.
-Danach prüfen, dass veerka.mp dieselbe `assets/index-*.js` ausliefert wie
+Danach prüfen, dass veerka.mp dieselbe `assets/tal-*.js` (seit dem Kabelsee
+zwei Einstiege: `tal`, `kabelsee`) ausliefert wie
 `dist/` – Workers Builds braucht dafür etwa 40 Sekunden. Schlägt der Build
 fehl, bleibt der alte Stand online; den Fehler zeigt der Check
 „Workers Builds: website“ am Commit auf GitHub.

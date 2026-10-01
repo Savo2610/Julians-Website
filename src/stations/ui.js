@@ -41,6 +41,8 @@ const GLYPHS = {
   uhr: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.4 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   liste: '<svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 3.5h6v2.6H9z" fill="currentColor"/><path d="m8 11 1.4 1.4L12 10M8 16l1.4 1.4L12 15M14 11.4h2.5M14 16.4h2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   blaulicht: '<svg viewBox="0 0 24 24"><path d="M7.5 19v-5a4.5 4.5 0 0 1 9 0v5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 19.5h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 2.8v2.6M4.6 6l1.8 1.8M19.4 6l-1.8 1.8M2.8 12.6h2.4M18.8 12.6h2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  // Wasserski: zwei Wellen und ein Seil, das von oben kommt.
+  welle: '<svg viewBox="0 0 24 24"><path d="M3 15.5c1.5 0 1.5-1.4 3-1.4s1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4M3 19.5c1.5 0 1.5-1.4 3-1.4s1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M19.5 3.5 10 11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 10.2l3.6 3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
   solana: '<svg viewBox="0 0 24 24"><path d="M6.5 6h13l-2 2.6h-13zM4.5 10.7h13l2 2.6h-13zM6.5 15.4h13l-2 2.6h-13z" fill="currentColor"/></svg>',
 }
 
@@ -174,9 +176,10 @@ export class StationUI {
     })
   }
 
-  // Abgelehnt: kurz schuetteln statt aufleuchten.
-  nope(index) {
-    const el = this.optionsEl.children[index]
+  // Abgelehnt: kurz schuetteln statt aufleuchten. Ohne Index die Einladung
+  // selbst (Badesteg ohne Ticket).
+  nope(index = null) {
+    const el = index === null ? this.el : this.optionsEl.children[index]
     if (!el) return
     el.classList.remove('nope')
     void el.offsetWidth

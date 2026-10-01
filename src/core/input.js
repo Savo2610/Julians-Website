@@ -27,6 +27,7 @@ const KEY_MAP = {
   Digit1: 'pick1', Numpad1: 'pick1',
   Digit2: 'pick2', Numpad2: 'pick2',
   Digit3: 'pick3', Numpad3: 'pick3',
+  Digit4: 'pick4', Numpad4: 'pick4',
 }
 
 export class Input {

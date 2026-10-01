@@ -31,6 +31,8 @@ Das Wichtigste in Kürze:
   Steg und Bahnen stecken im Höhenfeld, das Holz liegt nur darauf.
 - `terrainHeight(x, z)` in `src/world/heightfield.js` ist die **einzige**
   Höhenquelle für Mesh und Kollision und darf sich nie selbst aufrufen.
+  Eine Stufe ist keine Schanze: wo eine Kante nicht abwerfen soll (Badesteg),
+  deckelt `kantenSprung()` den Absprung.
 - Kommentare und Commits auf **Deutsch**, und sie erklären das *Warum*, meist
   mit einer gemessenen Zahl.
 - Klein und dicht — ein Spielzeugtal. Im Zweifel schrumpfen.

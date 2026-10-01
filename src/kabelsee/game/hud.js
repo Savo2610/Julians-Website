@@ -121,7 +121,7 @@ export class Hud {
       <dt>Größte Kombo</dt><dd>${r.bestCombo ? fmt(r.bestCombo) : '–'}</dd>
       <dt>Bojen</dt><dd>${r.buoys} von ${r.buoysTotal}</dd>
       <dt>Ringe</dt><dd>${r.rings} von ${r.ringsTotal}</dd>
-      <dt>Slalom-Tore</dt><dd>${r.gates} von ${r.gatesTotal}${r.slaloms ? ` <small>${r.slaloms}× ganz</small>` : ''}</dd>
+      <dt>Slalom</dt><dd>${r.slaloms ? 'alle Tore in einer Runde ✓' : `${r.gates} ${r.gates === 1 ? 'Tor' : 'Tore'}`}</dd>
       <dt>Spitze</dt><dd>${Math.round(r.topSpeed * 3.6)} km/h</dd>
       <dt>Stürze</dt><dd>${r.crashes}</dd>`
     this.setMode('results')

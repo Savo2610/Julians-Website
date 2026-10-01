@@ -292,7 +292,13 @@ document.body.appendChild(trickHud)
 let trickTimer = 0
 
 // --- Loop --------------------------------------------------------------------
-const clock = new THREE.Clock()
+// Timer statt Clock (in r185 veraltet). update() ohne Zeitstempel misst wie
+// Clock mit performance.now(): der rAF-Zeitstempel liegt vor dem Bildbeginn
+// und koennte nach reset() ein negatives dt geben. Bewusst ohne connect():
+// das setzt dt auf 0, solange document.hidden gilt – in eingebetteten
+// Ansichten laeuft rAF aber auch dann (gemessen 217 Bilder in 1,5 s), und das
+// Tal stuende still. Den Sprung nach dem Tabwechsel deckelt 1/24 s ohnehin.
+const timer = new THREE.Timer()
 let elapsed = 0
 
 function advance(dt) {
@@ -387,7 +393,7 @@ function draw() {
 }
 
 function tick() {
-  advance(Math.min(clock.getDelta(), 1 / 24))
+  advance(Math.min(timer.update().getDelta(), 1 / 24))
   draw()
   requestAnimationFrame(tick)
 }
@@ -435,6 +441,6 @@ for (const [von, nach] of [
 renderer.compile(scene, camera)
 requestAnimationFrame(() => {
   document.getElementById('loader')?.classList.add('gone')
-  clock.getDelta()
+  timer.reset()
   tick()
 })

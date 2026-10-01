@@ -32,7 +32,7 @@ export class Hud {
     this.sBuoy = this.stats.querySelector('.s-buoy')
     this.sSpeed = this.stats.querySelector('.s-speed')
 
-    this.trick = el('div', 'frost trick-hud', root, '<strong></strong><small></small>')
+    this.trick = el('div', 'frost see-trick', root, '<strong></strong><small></small>')
     this.trickName = this.trick.querySelector('strong')
     this.trickSub = this.trick.querySelector('small')
     this._trickTimer = 0

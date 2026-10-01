@@ -163,7 +163,7 @@ src/
   dialogs/           Solana, Briefkasten, Kurzlink – siehe Abschnitt 7
   sommer/            Vom Badesteg in den Sommer (4a⁶)
     sommer.js        Countdown, Nachladen, Verwandlung hin und zurück
-    verwandlung.js   Beide Welten mischen: Tauwelle, Abtauchen
+    verwandlung.js   Beide Welten mischen: Abtauchen
     bestenliste.js   Bestenliste des Kabelsees: Marken, Fenster
   kabelsee/          Der Kabelsee (eigene README.md darin)
     see.js           Der See als Baustein, ohne eigenen Renderer
@@ -971,8 +971,13 @@ Codebasis, kein Nebeneinander (Ansage):
   `src/basis.css` (Glas, Frost, Tasten).
 - Getrennt mit Absicht: Eingabe und Touch (`kabelsee/core/`). Am See
   gibt es Wippen statt Daumenstick, und die Tasten bedeuten anderes.
-- Die Anzeige des Sees hängt unter `.kabelsee-hud` – beide Spiele haben
-  `.trick-hud`, `.hint`, `.fade`.
+- Die Anzeige des Sees hängt unter `.kabelsee-hud`. Das allein reicht
+  nicht: Regeln des Tals greifen weiter, wo die des Sees nichts sagen. Die
+  Trickmeldung hieß in beiden `.trick-hud`, bekam aus dem Tal `bottom:
+  96px` zu ihrem `top: 22%`, war 596 px hoch, und ihr Frosthauch lag bei
+  jeder Meldung weichgezeichnet über der Bildmitte. Jetzt `.see-trick`.
+  Andere Namen kollidieren nicht (geprüft gegen style.css, basis.css,
+  dialogs.css).
 
 **Die Regeln des Sees** (aus seinem alten CLAUDE.md) gelten weiter: feste
 Kamera (Azimut 45°, 36°), `kabelsee/world/heightfield.js` ist dort die
@@ -987,8 +992,13 @@ sommer → zurueck → winter):
 
 - Der **Badesteg** steckt im Höhenfeld (`BADESTEG` in `heightfield.js`):
   6,8 m lang, 2,2 m breit, 45 cm über dem Eis – so hoch steht die Böschung
-  1,2 m hinter der Uferlinie, dort setzt er an. Man befährt ihn und hüpft
-  vorn aufs Eis. Holz, Pfähle, Leiter und Rettungsring mit Wasserski-Hantel
+  1,2 m hinter der Uferlinie, dort setzt er an. An den Seiten und vorn
+  liegt eine 2 m breite Schneeverwehung: mit 0,6 m Saum warf er Fahrer,
+  die vom Eis kamen, 3,5 m hoch (das Fahrmodell nimmt die Steigrate des
+  Bodens über die Kante mit, ab 3,2 m/s hebt man ab; auf 2 m sind es bei
+  13 m/s knapp 2,9). Vorn war die Kante erst hart – vom Eis aus eine Wand,
+  von oben eine Schanze. Gemessen nach dem Umbau: 0 m Flughöhe von allen
+  Seiten, auch mit W. Holz, Pfähle, Leiter und Rettungsring mit Wasserski-Hantel
   liegen nur darauf (`props/badesteg.js`). Er zeigt nach Süden, zehn Grad
   nach Westen: im Bild nach links unten wie der Startsteg am Kabelsee.
   Genau radial zur Seemitte lag er im Bild waagerecht. `surfaces.js` hält
@@ -1011,16 +1021,15 @@ sommer → zurueck → winter):
 - **Ein Renderer**: der See zeichnet im Kontext des Tals, kein iframe, kein
   zweiter WebGL-Kontext. Schatten PCF wie im Tal (PCFSoft meldet r185
   ohnehin als veraltet).
-- **Verwandlung** (`src/sommer/verwandlung.js`), 1,8 s: beide Welten in je
-  eine Fläche (HalfFloat, 4× MSAA, linear), ein Bild mischt und macht am
-  Ende ACES und sRGB – so sehen beide aus wie sonst. Zwei Arten zum
-  Vergleichen, Julian konnte sich nicht vorstellen, welche besser wirkt:
-  **Tauwelle** (Standard): vom Fahrer aus läuft ein ausgefranster Tauring
-  über das Bild, am Rand Brechung, kühler Schein, Glitzer.
-  **Abtauchen** (`?verwandlung=tauchen`): Kamera stürzt aufs Eis, heller
-  Blitz mit Ring, Sommer taucht aus der Nähe auf. Zurück läuft dieselbe
-  Verwandlung rückwärts, Mitte ist dann der Fahrer im Sommerbild.
-  Die Anzeige des Sees blendet erst ab 60 % ein.
+- **Verwandlung** (`src/sommer/verwandlung.js`), 1,6 s, **Abtauchen**:
+  die Kamera stürzt aufs Eis zu (bis 3,2× vergrößert), heller Blitz mit
+  Ring, und der Sommer taucht aus der Nähe auf. Beide Welten zeichnen in
+  je eine Fläche (HalfFloat, 4× MSAA, linear), ein Bild mischt und macht am
+  Ende ACES und sRGB – so sehen beide aus wie sonst. Zurück läuft dieselbe
+  Verwandlung rückwärts, Mitte ist dann der Fahrer im Sommerbild. Die
+  Anzeige des Sees blendet erst ab 60 % ein. Zur Wahl stand auch eine
+  **Tauwelle** (Ring vom Fahrer aus, außen Winter, innen Sommer); Julian
+  nahm das Abtauchen (01.10.). Die Tauwelle steckt noch in `39a4402`.
 - **Bügel**: 2,8 s nach Beginn der Verwandlung, ohne zweiten Countdown
   („Gleich kommt der Bügel“). Mit 1,6 s kam er noch in der Verwandlung,
   und man wurde vom Steg gerissen, bevor man den See sah. Wer den Start
@@ -1371,10 +1380,9 @@ Abschnitt 1, Nordabfahrt).
   Breites oder Langes setzt, misst das Gelände an dessen Enden und gibt es dem
   Bauteil mit — so wie `fuss` beim Tor und `neigung` beim Steg.
 - **Kabelsee (Branch `kabelsee`) vor dem Zusammenführen:**
-  1. Julian probiert lokal (`npm run dev`, für die Bestenliste zusätzlich
-     `npm run dev:api` nach `npx wrangler d1 migrations apply
-     skiportfolio-slalom --local`) und entscheidet **Tauwelle oder
-     Abtauchen** (`?verwandlung=tauchen`). Die andere fliegt dann raus.
+  1. Verwandlung entschieden (Abtauchen, 01.10.). Lokal ausprobieren:
+     `npm run dev`, für die Bestenliste zusätzlich `npm run dev:api` nach
+     `npx wrangler d1 migrations apply skiportfolio-slalom --local`.
   2. **Vor** dem Push auf `main` die Tabelle in der echten D1 anlegen:
      `npx wrangler d1 migrations apply skiportfolio-slalom --remote`. Ohne
      sie antwortet `/api/kabelsee/*` mit 500, das Spiel zeigt dann einfach

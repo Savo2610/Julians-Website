@@ -83,7 +83,11 @@ export const BADESTEG = {
   von: { x: -41.19, z: 25.03 },   // Landende auf der Boeschung
   bis: { x: -42.35, z: 31.73 },   // Spitze, 6,8 m weiter ueber dem Eis
   halb: 1.1,
-  saum: 0.6,
+  // Verwehung an den Seiten und vorn. Mit 0,6 m warf der Saum den Fahrer
+  // 3,5 m hoch: das Fahrmodell nimmt die Steigrate des Bodens mit ueber die
+  // Kante (skier.js, ab 3,2 m/s). Auf 2 m sind es bei Grundtempo 13 m/s
+  // knapp 2,9 m/s – man rollt hinauf, statt abzuheben.
+  saum: 2.0,
   hoehe: LAKE.level + 0.45,
 }
 const STEG_DX = BADESTEG.bis.x - BADESTEG.von.x
@@ -99,14 +103,17 @@ export function badestegLage(x, z) {
   return { laengs: rx * r.x + rz * r.z, quer: Math.abs(-rx * r.z + rz * r.x) }
 }
 
-// Zieht das Gelaende auf die Hoehe des Stegs. Quer mit einem kurzen Saum wie
-// an der Klamm (keine senkrechte Kante), laengs am Landende ueber einen Meter
-// in die Boeschung, vorn hart: dort springt man aufs Eis.
+// Zieht das Gelaende auf die Hoehe des Stegs. Quer und vorn mit einer
+// Verwehung (saum), laengs am Landende ueber einen Meter in die Boeschung.
+// Vorn war die Kante erst hart; vom Eis aus kam man dort nicht hinauf, und
+// eine Stufe von 45 cm in einem Bild ist fuer das Fahrmodell eine Schanze
+// mit 27 m/s Steigrate.
 function badesteg(x, z, h) {
   const { laengs, quer } = badestegLage(x, z)
-  if (laengs <= -1 || laengs >= BADESTEG_LAENGE || quer >= BADESTEG.halb + BADESTEG.saum) return h
+  const L = BADESTEG_LAENGE
+  if (laengs <= -1 || laengs >= L + BADESTEG.saum || quer >= BADESTEG.halb + BADESTEG.saum) return h
   const wq = quer <= BADESTEG.halb ? 1 : 1 - smooth((quer - BADESTEG.halb) / BADESTEG.saum)
-  const wl = laengs >= 0 ? 1 : 1 - smooth(-laengs)
+  const wl = laengs < 0 ? 1 - smooth(-laengs) : laengs > L ? 1 - smooth((laengs - L) / BADESTEG.saum) : 1
   const w = wq * wl
   // Nur anheben: auf der Boeschung liegt das Gelaende schon hoeher als der
   // Steg, dort traegt es ihn.

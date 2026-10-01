@@ -8,12 +8,11 @@ import * as THREE from 'three'
 // nur beim Zeichnen ins Bild); ACES und sRGB kommen hier am Ende dazu. So
 // sehen beide Welten im Uebergang genau so aus wie davor und danach.
 //
-// Zwei Arten, zum Vergleichen (?verwandlung=tauchen):
-// - welle:   vom Fahrer aus laeuft ein Tauring ueber das Bild. Aussen Winter,
-//            innen Sommer, am Rand bricht das Licht wie an nassem Eis.
-// - tauchen: die Kamera stuerzt aufs Eis zu, ein heller Ring, und aus dem
-//            Wasser taucht der Sommer auf.
-// Rueckwaerts (Sommer -> Winter) laeuft derselbe Weg von 1 nach 0.
+// Abtauchen: die Kamera stuerzt aufs Eis zu, ein heller Ring, und aus dem
+// Wasser taucht der Sommer auf. Rueckwaerts (Sommer -> Winter) laeuft
+// derselbe Weg von 1 nach 0. Eine Tauwelle (Ring vom Fahrer aus, aussen
+// Winter, innen Sommer) stand zur Wahl; Julian nahm das Abtauchen (01.10.).
+// Sie steckt in 39a4402, falls sie noch einmal gebraucht wird.
 
 const vert = /* glsl */ `
   varying vec2 vUv;
@@ -32,41 +31,6 @@ const frag = /* glsl */ `
   uniform float uAspect;     // Breite / Hoehe
   uniform float uP;          // 0 = Winter, 1 = Sommer
   uniform float uZeit;
-  uniform float uArt;        // 0 = welle, 1 = tauchen
-  uniform float uWeit;       // Radius, der die fernste Bildecke erreicht
-
-  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float noise(vec2 p) {
-    vec2 i = floor(p), f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-  }
-
-  vec3 welle(vec2 uv) {
-    vec2 d = (uv - uMitte) * vec2(uAspect, 1.0);
-    float r = length(d);
-    float a = atan(d.y, d.x);
-    // Ausgefranster Rand: zwei Lagen Rauschen ueber den Winkel, die mitlaufen.
-    float rand = (noise(vec2(a * 3.0, uZeit * 0.8)) - 0.5) * 0.09
-               + (noise(vec2(a * 11.0, uZeit * 2.0 + 7.0)) - 0.5) * 0.035;
-    float p = uP * uP * (3.0 - 2.0 * uP);
-    float R = p * (uWeit + 0.16) - 0.04 + rand * smoothstep(0.0, 0.08, p);
-    float k = r - R;                       // < 0: schon Sommer
-    float rim = exp(-k * k / 0.0016);      // 4 cm breiter Saum
-
-    // Brechung am Rand: radial nach aussen versetzt, im Winter staerker.
-    vec2 n = r > 0.0001 ? d / r : vec2(0.0);
-    vec2 off = n / vec2(uAspect, 1.0) * rim * 0.035;
-    vec3 w = texture2D(tWinter, uv + off).rgb;
-    vec3 s = texture2D(tSommer, uv - off * 0.6).rgb;
-    float m = smoothstep(0.012, -0.012, k);
-    vec3 col = mix(w, s, m);
-    // Tau: ein heller, kuehler Schein auf dem Rand, darin Glitzer.
-    float glitzer = step(0.985, hash(floor(uv * vec2(uAspect, 1.0) * 220.0) + floor(uZeit * 12.0)));
-    col += vec3(0.85, 0.95, 1.1) * rim * (0.55 + glitzer * 2.5) * (1.0 - smoothstep(0.85, 1.0, uP));
-    return col;
-  }
 
   vec3 tauchen(vec2 uv) {
     // Erste Haelfte: Winter zoomt zum Fahrer hin. Zweite: Sommer zoomt aus
@@ -91,7 +55,7 @@ const frag = /* glsl */ `
   }
 
   void main() {
-    vec3 col = uArt < 0.5 ? welle(vUv) : tauchen(vUv);
+    vec3 col = tauchen(vUv);
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -99,9 +63,8 @@ const frag = /* glsl */ `
 `
 
 export class Verwandlung {
-  constructor(renderer, { art = 'welle' } = {}) {
+  constructor(renderer) {
     this.renderer = renderer
-    this.art = art
     const flaeche = () => new THREE.WebGLRenderTarget(1, 1, {
       type: THREE.HalfFloatType,
       // Kantenglaettung wie im Bild; ohne sie flimmerten Tannen und Seil
@@ -122,8 +85,6 @@ export class Verwandlung {
         uAspect: { value: 1 },
         uP: { value: 0 },
         uZeit: { value: 0 },
-        uArt: { value: art === 'tauchen' ? 1 : 0 },
-        uWeit: { value: 1 },
       },
     })
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.material)
@@ -157,11 +118,6 @@ export class Verwandlung {
     u.uP.value = p
     u.uZeit.value = zeit
     u.uAspect.value = v.x / v.y
-    // Bis zur fernsten Ecke, in Bildhoehen gemessen.
-    const m = u.uMitte.value
-    const ax = Math.max(m.x, 1 - m.x) * u.uAspect.value
-    const ay = Math.max(m.y, 1 - m.y)
-    u.uWeit.value = Math.hypot(ax, ay)
     zeichneWinter(this.winter)
     zeichneSommer(this.sommer)
     this.renderer.setRenderTarget(null)

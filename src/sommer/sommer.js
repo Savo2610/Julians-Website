@@ -21,7 +21,7 @@ const COUNTDOWN = 3
 // Kabelsees am Startsteg (26 m, gleicher Winkel, gleiche Brennweite): im
 // Moment der Verwandlung sind beide Fahrer gleich gross und am selben Fleck.
 const ABSTAND = 26
-const DAUER = { welle: 1.8, tauchen: 1.6 }
+const DAUER = 1.6
 // So lange gleitet der Fahrer an seinen Platz vorn auf dem Steg.
 const HINSTELLEN = 0.7
 // Buegel ab Beginn der Verwandlung: gut eine Sekunde nach ihrem Ende –
@@ -31,10 +31,6 @@ const HINSTELLEN = 0.7
 // See gesehen hatte.
 const ANKUNFT = 2.8
 
-const art = () => {
-  const a = new URLSearchParams(location.search).get('verwandlung')
-  return a === 'tauchen' ? 'tauchen' : 'welle'
-}
 const gl = (t) => t * t * (3 - 2 * t)
 const winkel = (a, b, t) => a + (Math.atan2(Math.sin(b - a), Math.cos(b - a))) * t
 
@@ -47,7 +43,6 @@ export class Sommer {
     this._bau = null
     this._t = 0
     this._zeit = 0
-    this.art = art()
     this.verwandlung = null
     // Die Bestenliste des Sees; die Uebersicht (M) zeigt sie im Winter mit.
     this.liste = new KabelseeListe()
@@ -207,9 +202,9 @@ export class Sommer {
     if (this.zustand === 'hin' || this.zustand === 'zurueck') {
       this.see.advance(dt)
       // Die Anzeige des Sees kommt erst, wenn der Sommer das Bild hat.
-      const p = Math.min(1, this._t / DAUER[this.art])
+      const p = Math.min(1, this._t / DAUER)
       this.see.root.style.opacity = this.zustand === 'hin' ? gl(Math.max(0, (p - 0.6) / 0.4)).toFixed(3) : '0'
-      if (this._t >= DAUER[this.art]) {
+      if (this._t >= DAUER) {
         if (this.zustand === 'hin') {
           this.zustand = 'sommer'
         } else {
@@ -229,7 +224,7 @@ export class Sommer {
     this._setzeZahl('')
     this.zustand = 'hin'
     this._t = 0
-    this.verwandlung ??= new this._Verwandlung(this.renderer, { art: this.art })
+    this.verwandlung ??= new this._Verwandlung(this.renderer)
     // Mitte: der Fahrer im Winterbild. Der Kabelsee-Fahrer steht im
     // Sommerbild am selben Fleck (gleiche Kamera, gleicher Abstand).
     const p = this.skier.position
@@ -251,7 +246,7 @@ export class Sommer {
       return true
     }
     if (this.zustand !== 'hin' && this.zustand !== 'zurueck') return false
-    const p = Math.min(1, this._t / DAUER[this.art])
+    const p = Math.min(1, this._t / DAUER)
     this.verwandlung.zeichnen(this.zustand === 'hin' ? p : 1 - p, this._zeit,
       (ziel) => {
         this.renderer.setRenderTarget(ziel)

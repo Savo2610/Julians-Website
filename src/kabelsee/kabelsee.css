@@ -1,7 +1,11 @@
 /* Die Anzeige des Kabelsees. Glas, Frost und Tasten kommen aus
    src/basis.css, wie im Tal; alles hier haengt unter .kabelsee-hud, weil
-   beide Spiele dieselben Namen benutzen (.trick-hud, .hint, .fade) und der
-   See im selben Dokument laeuft wie das Tal. */
+   der See im selben Dokument laeuft wie das Tal. Gleiche Namen reichen
+   trotzdem nicht: Regeln des Tals greifen weiter, wo diese hier nichts
+   sagen. Die Trickmeldung hiess wie die des Tals (.trick-hud), bekam von
+   dort bottom: 96px zu ihrem top: 22% und war 596 px hoch – ihr Frosthauch
+   lag waehrend jeder Meldung weichgezeichnet ueber der Bildmitte. Daher
+   .see-trick. */
 
 .kabelsee-hud {
   --ink: #1b2a3a;
@@ -74,7 +78,7 @@
 }
 .kabelsee-hud .hud-stats strong { display: block; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
-.kabelsee-hud .trick-hud {
+.kabelsee-hud .see-trick {
   position: absolute;
   left: 50%;
   top: 22%;
@@ -84,15 +88,15 @@
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
-.kabelsee-hud .trick-hud.visible { opacity: 1; transform: translate(-50%, 0); }
-.kabelsee-hud .trick-hud strong {
+.kabelsee-hud .see-trick.visible { opacity: 1; transform: translate(-50%, 0); }
+.kabelsee-hud .see-trick strong {
   display: block;
   font-size: 30px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.kabelsee-hud .trick-hud small {
+.kabelsee-hud .see-trick small {
   display: block;
   margin-top: 4px;
   font-size: 13px;
@@ -101,9 +105,9 @@
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-.kabelsee-hud .trick-hud[data-q="perfect"] small { color: #1d8a5a; }
-.kabelsee-hud .trick-hud[data-q="sketchy"] small { color: #b8782a; }
-.kabelsee-hud .trick-hud[data-q="crash"] strong { color: #b23f24; }
+.kabelsee-hud .see-trick[data-q="perfect"] small { color: #1d8a5a; }
+.kabelsee-hud .see-trick[data-q="sketchy"] small { color: #b8782a; }
+.kabelsee-hud .see-trick[data-q="crash"] strong { color: #b23f24; }
 
 .kabelsee-hud .toast {
   position: absolute;
@@ -347,7 +351,7 @@
 @media (max-width: 640px) {
   .kabelsee-hud .hud-stats { gap: 16px; }
   .kabelsee-hud .hud-score strong { font-size: 24px; }
-  .kabelsee-hud .trick-hud strong { font-size: 22px; }
+  .kabelsee-hud .see-trick strong { font-size: 22px; }
   .kabelsee-hud .hint { font-size: 12px; }
   .kabelsee-hud .panel h1 { font-size: 36px; }
 }

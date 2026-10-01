@@ -30,6 +30,28 @@ test('Eis, Holz und Schnee teilen eindeutige Oberflaechengrenzen', () => {
     }
   }
   assert.equal(isSnowSurface(BADESTEG.von.x + 4, BADESTEG.von.z - 2), true)
+
+  // Vom Eis auf den Steg: nirgends steiler als 0,4. Mit dem Saum von 0,6 m
+  // waren es 1,1, und das Fahrmodell warf Fahrer von der Seite 3,5 m hoch.
+  const r = { x: (BADESTEG.bis.x - BADESTEG.von.x) / BADESTEG_LAENGE, z: (BADESTEG.bis.z - BADESTEG.von.z) / BADESTEG_LAENGE }
+  const steilste = (x0, z0, dx, dz) => {
+    let max = 0
+    for (let t = 0; t < 4; t += 0.05) {
+      const a = terrainHeight(x0 + dx * t, z0 + dz * t)
+      const b = terrainHeight(x0 + dx * (t + 0.05), z0 + dz * (t + 0.05))
+      max = Math.max(max, Math.abs(b - a) / 0.05)
+    }
+    return max
+  }
+  for (const u of [3, 4.5, 6]) {
+    const mx = BADESTEG.von.x + r.x * u, mz = BADESTEG.von.z + r.z * u
+    for (const s of [-1, 1]) {
+      const qx = r.z * s, qz = -r.x * s
+      assert.ok(steilste(mx + qx * 0.5, mz + qz * 0.5, qx, qz) < 0.4, `Seite ${s} bei ${u} m`)
+    }
+  }
+  const sx = BADESTEG.von.x + r.x * (BADESTEG_LAENGE - 0.5), sz = BADESTEG.von.z + r.z * (BADESTEG_LAENGE - 0.5)
+  assert.ok(steilste(sx, sz, r.x, r.z) < 0.4, 'vorn')
   for (const [u, v] of [[0, 2], [-6, 5], [1, 6]]) {
     const p = terraceWorld(u, v)
     assert.ok(terraceDistance(p.x, p.z) < 0)

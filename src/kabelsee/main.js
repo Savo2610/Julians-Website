@@ -35,7 +35,7 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 // Renderer, und ein Wechsel der Schattenart haette jedes Material neu
 // uebersetzt.
 renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.shadowMap.type = THREE.PCFShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1.05
 renderer.setClearColor(COLORS.fog)

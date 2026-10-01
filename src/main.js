@@ -69,7 +69,10 @@ function applyPixelRatio() {
 applyPixelRatio()
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+// PCF statt PCFSoft: r185 ersetzt PCFSoft beim Zeichnen ohnehin durch PCF
+// und warnt dabei – das Bild war also schon PCF. Der Kabelsee muss dieselbe
+// Art nehmen (siehe kabelsee/main.js).
+renderer.shadowMap.type = THREE.PCFShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1.05
 renderer.setClearColor(COLORS.fog)

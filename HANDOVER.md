@@ -1087,7 +1087,9 @@ neuen Wertung `kabelsee.rekord` (vorher `kabelsee.best`) – alte Rekorde
 sind nicht vergleichbar, und das Angebot der Bestenliste hängt daran.
 **Grab** zählt nur, wenn man vor dem Aufsetzen loslässt (`grabZuSpaet`,
 Meldung „Grab zu spät losgelassen“); der Rest des Tricks zählt weiter.
-Tests in `kabelsee-spiel.test.js`.
+Tests in `kabelsee-spiel.test.js`. Mit dem Livegang (`d9bae55`) ist
+Julians einziger Eintrag aus der alten Wertung (63 410) aus der D1
+gelöscht; die Liste beginnt leer.
 
 **Hinweise am See** (`Session.updateHint`): höchstens einer. Erste Runde
 der Reihe nach (lenken, springen, Luft), danach nach einem Sturz einmal
@@ -1454,6 +1456,8 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+d9bae55  Kabelsee: neue Wertung, Abzeichen, eigene Seite mit Menue (Merge)
+1d9f926  Kabelsee: Sammeln ausserhalb der Kombo, Abzeichen, Grab loslassen, eigene Seite mit Menue
 9656ed1  Kabelsee: vom Badesteg am Eissee in den Sommer (Merge)
 f129842  Steg mit Kante, Ticket fuer den Kabelsee, Wertung und Hinweise am See
 e963f65  Abtauchen bleibt, Steg ohne Schanze, Trickmeldung ohne Schleier

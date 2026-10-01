@@ -200,8 +200,8 @@ Workers Builds live (Worker `website`), der See liegt dann unter
 veerka.mp/kabelsee/. Die Bestenliste ist `worker/kabelsee.js` mit der
 Tabelle aus `worker/migrations/0002_kabelsee.sql`.
 
-Der alte Worker `kabelsee` unter kabelsee.veerka.mp stammt noch aus dem
-eigenen Repo; was mit ihm passiert, steht in HANDOVER.md unter „Offen“.
+Das alte Repo `Kabelsee` ist archiviert, der Worker `kabelsee` und die
+Adresse kabelsee.veerka.mp sind gelöscht (01.10.2026).
 
 ## Aufbau
 

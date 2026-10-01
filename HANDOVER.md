@@ -958,7 +958,9 @@ der Kartenknopf sitzt). Wunsch von Julian, 01.10.: ein Countdown, keiner
 am See; die Verwandlung als Überraschung am Ende.
 
 **Der Kabelsee ist eingezogen.** Er war ein eigenes Repo (`Kabelsee`,
-`kabelsee.veerka.mp`); seine Geschichte hängt über einen Subtree-Commit
+`kabelsee.veerka.mp`). Das Repo ist seit 01.10. auf GitHub archiviert,
+der Worker `kabelsee` samt Adresse gelöscht – die kannte niemand, eine
+Umleitung brauchte es nicht (Ansage). Seine Geschichte hängt über einen Subtree-Commit
 hier an (`git log -- src/kabelsee` zeigt nur die Zeit danach, die alten
 Commits stehen unter `kabelsee-import/` im Baum von `4c7babe`). Eine
 Codebasis, kein Nebeneinander (Ansage):
@@ -1413,16 +1415,11 @@ Abschnitt 1, Nordabfahrt).
   `kabelsee` in der D1 stört dann nicht). Die Tabelle ist am 01.10. remote
   angelegt (`wrangler d1 migrations apply skiportfolio-slalom --remote`,
   nur `0002` stand aus). Offen:
-  1. `kabelsee.veerka.mp` ist noch der alte Worker `kabelsee` aus dem alten
-     Repo, mit dem Stand vor dem Einzug. Vorschlag: auf
-     `veerka.mp/kabelsee/` umleiten (oder die Custom Domain an den Worker
-     `website` hängen) und das Repo `Kabelsee` auf GitHub archivieren.
-     Nicht gemacht – außen sichtbar, braucht ein Ja.
-  2. Auf dem echten Handy ansehen: Bildrate während der Verwandlung (zwei
+  1. Auf dem echten Handy ansehen: Bildrate während der Verwandlung (zwei
      Welten mit MSAA), Speicher mit beiden Welten. Geprüft nur in Chrome,
      verdecktes Fenster, Bild für Bild gespult.
-  3. Im Sommer gibt es kein `M`; die Übersicht kommt erst wieder im Winter.
-  4. Die eigene Seite /kabelsee/ hat weder Bestenliste noch Ticket.
+  2. Im Sommer gibt es kein `M`; die Übersicht kommt erst wieder im Winter.
+  3. Die eigene Seite /kabelsee/ hat weder Bestenliste noch Ticket.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.

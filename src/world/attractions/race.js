@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { terrainHeight, SLED_LANE } from '../heightfield.js'
 import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readableYaw } from '../props/slalom.js'
 import { createHalo } from '../props/screens.js'
+import { MEDALS } from './medaillen.js'
 
 // Die Zeitnahme einer Bahn: Start, Ziel, Tore – und die Farbe im Schnee, die
 // sagt, wo man langfahren soll.
@@ -35,20 +36,9 @@ const GATE_OFFSET = 4.6
 const GATE_TOLERANCE = 0.5  // etwas Nachsicht an den Stangen
 const PENALTY = 2           // s je verfehltem Tor
 
-// Medaillen, gemessen mit einem Testfahrer, der mit vier bis zehn Metern
-// Vorausschau auf der Linie durch die Tormitten faehrt: sein bester sauberer
-// Lauf war 3,58 s, ein vorsichtiger 4,05. Mit mehr Vorausschau wurde er
-// schneller, schnitt aber Tore – ein verfehltes Tor kostet 2 s und damit
-// jede Medaille. Die Grenzen danach (3,60 / 3,85 / 4,20) waren fuer
-// Menschen zu eng: nach Tagen Uebung stand Julians Bestzeit bei 4,18 –
-// knapp Bronze. Jetzt Bronze fuer einen ordentlichen Lauf, Silber knapp
-// unter seiner Bestzeit, Gold zwischen ihr und dem Testfahrer: schwer,
-// aber ohne dessen ideale Linie erreichbar.
-export const MEDALS = [
-  { name: 'Gold', time: 3.9 },
-  { name: 'Silber', time: 4.2 },
-  { name: 'Bronze', time: 4.5 },
-]
+// Die Medaillen stehen in medaillen.js – ohne three.js, damit Pass und
+// Bestenliste sie holen koennen, ohne die Rennstrecke mitzuladen.
+export { MEDALS }
 
 const STORE = 'skiportfolio.slalom'
 function loadBest() {

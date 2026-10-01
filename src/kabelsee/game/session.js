@@ -10,35 +10,37 @@ import { Slalom } from './slalom.js'
 // Meldungen und Effekten. Die Anzeige selbst macht hud.js.
 
 export const LAPS = 3
-// Punkte fuer das, was auf dem See liegt (Ansage 01.10.: mit Kombos kommt
-// man leicht auf 40 000, ein Cork 360 bringt schon 1700 – Sammeln muss sich
-// dagegen lohnen).
+// Punkte fuer das, was auf dem See liegt. Es geht direkt aufs Konto, nicht
+// in die Kombo: die gehoert den Tricks (Ansage 01.10., zweite Runde – in der
+// ersten liefen Ringe noch durch die Kombo und brachten bis 40 000). Belohnt
+// wird dafuer das Vollstaendige: alle Bojen, alle Ringe, alle Tore einer
+// Runde je 10 000, und alle drei in einer Session sind ein Abzeichen.
 //
-// Slalom: jede Fahne mehr als die vorige derselben Runde (300, 450 … 1050,
-// zusammen 4050). Wer in einer Runde alle sechs schafft, bekommt 8000 – nur
-// einmal je Session; danach versinken die Fahnen, und die Geraden gehoeren
-// wieder den Kickern. Vorher 150 … 400 und 1200 in jeder Runde.
+// Bojen 100. Ringe verdoppeln sich, 1000 bis 8000 – schon der vierte ist
+// eine Ansage. Tore: jede Fahne mehr als die vorige derselben Runde (300,
+// 450 … 1050); alle sechs in einer Runde nur einmal je Session, danach
+// versinken die Fahnen, und die Geraden gehoeren wieder den Kickern.
+const BOJE = 100
+const RING_BASIS = 1000
 const GATE_POINTS = 150
 const GATE_STEP = 150
-const SLALOM_BONUS = 8000
-// Ringe verdoppeln sich: der erste 1000, dann 2000, 4000, 8000. Alle vier in
-// drei Runden zu holen ist schwer. Sie gehen wie alles Gesammelte in die
-// Kombo und zaehlen dort mit ihrem Faktor. Vorher 250 je Ring.
-const RING_BASIS = 1000
-// Alle 17 Bojen: 6000 obendrauf, wie der Slalom fest aufs Konto.
-const BOJEN_BONUS = 6000
+const ALLE = 10000
 const fmt = (n) => Math.round(n).toLocaleString('de-DE')
 
+// Neuer Schluessel mit der neuen Wertung (01.10.): Rekorde aus der alten
+// sind nicht vergleichbar, und das Angebot fuer die Bestenliste haengt am
+// Rekord in diesem Browser.
+const REKORD = 'kabelsee.rekord'
 function loadBest() {
   try {
-    return Number(localStorage.getItem('kabelsee.best')) || 0
+    return Number(localStorage.getItem(REKORD)) || 0
   } catch {
     return 0
   }
 }
 function saveBest(v) {
   try {
-    localStorage.setItem('kabelsee.best', String(v))
+    localStorage.setItem(REKORD, String(v))
   } catch {
     // Privates Fenster: dann eben ohne Rekord.
   }
@@ -47,8 +49,9 @@ function saveBest(v) {
 export class Session {
   // eingebettet: im Tal hinter dem Badesteg. Dann gibt es keinen Titel, und
   // onErgebnis bekommt die Auswertung (Bestenliste).
-  constructor({ rider, cable, collectibles, hud, fx, eingebettet = false, onErgebnis = null, onStart = null }) {
+  constructor({ rider, cable, collectibles, hud, fx, eingebettet = false, onErgebnis = null, onStart = null, onAbzeichen = null }) {
     this.eingebettet = eingebettet
+    this.onAbzeichen = onAbzeichen
     this.onErgebnis = onErgebnis
     this.onStart = onStart
     this.rider = rider
@@ -69,7 +72,7 @@ export class Session {
   reset({ ankunft = null } = {}) {
     this.combo = new Combo()
     this.slalom = new Slalom()
-    this.stats = { buoys: 0, rings: 0, crashes: 0, bestTrick: null, bestCombo: 0, topSpeed: 0 }
+    this.stats = { buoys: 0, rings: 0, crashes: 0, bestTrick: null, bestCombo: 0, topSpeed: 0, abgeraeumt: false }
     this.slalomFertig = false
     // Hinweise: Fahrzeit, letzte Benutzung je Taste, laufende Erinnerung.
     this.fahrzeit = 0
@@ -90,6 +93,16 @@ export class Session {
   // Enter / Antippen.
   confirm() {
     if (this.state === 'title' || this.state === 'results') this.starten()
+  }
+
+  // Allein (veerka.mp/kabelsee/): Esc fuehrt ins Menue. Die Session ist dann
+  // vorbei, der Fahrer wartet am Steg, die Anlage faehrt leer weiter.
+  zumMenue() {
+    if (this.state === 'title') return
+    this.reset()
+    this.state = 'title'
+    this.hud.showTitle(this.best)
+    this.fx.snapCamera()
   }
 
   // Neue Session am Steg, gleich aus welchem Zustand.
@@ -288,6 +301,7 @@ export class Session {
         break
       case 'land': {
         fx.land(e)
+        if (e.air?.grabZuSpaet) this.hud.showToast('Grab zu spät losgelassen', 1.4)
         if (e.result) {
           const pts = this.combo.trick(e.result, e.quality)
           if (!this.stats.bestTrick || pts > this.stats.bestTrick.points) this.stats.bestTrick = { name: e.result.name, points: pts }
@@ -331,19 +345,31 @@ export class Session {
     } else if (e.type === 'gate') {
       this.items.setGate?.(e.gate.index, true)
       const pts = GATE_POINTS + GATE_STEP * e.streak
-      this.combo.collect(pts, 'Tor')
+      this.combo.bonus(pts, 'Tor')
       this.fx.gate?.(e.gate)
       if (e.all) {
         this.slalomFertig = true
-        this.combo.bonus(SLALOM_BONUS, 'Slalom')
-        this.hud.showTrick('Slalom', `alle ${e.of} Tore +${fmt(SLALOM_BONUS)}`, 'perfect')
+        this.combo.bonus(ALLE, 'Slalom')
+        this.hud.showTrick('Slalom', `alle ${e.of} Tore +${fmt(ALLE)}`, 'perfect')
         this.items.versenkeTore?.()
+        this.abgeraeumt()
       } else {
         this.hud.showToast(`Tor ${e.n}/${e.of}  +${pts}`, 1)
       }
     } else if (e.type === 'miss') {
       this.hud.showToast('Tor verpasst', 1.2)
     }
+  }
+
+  // Alle Ringe, alle Bojen und alle Tore einer Runde in derselben Session:
+  // das Abzeichen „Abgeraeumt“ (Pistenpass). Einmal je Session gemeldet.
+  abgeraeumt() {
+    const alles = this.stats.rings === this.items.rings.length
+      && this.stats.buoys === this.items.buoys.length && this.slalomFertig
+    if (!alles || this.stats.abgeraeumt) return
+    this.stats.abgeraeumt = true
+    this.hud.showToast('Alles abgeräumt – neues Abzeichen', 2.4)
+    this.onAbzeichen?.('abgeraeumt')
   }
 
   checkItems() {
@@ -355,11 +381,12 @@ export class Session {
         b.taken = true
         b.pop = 0.35
         this.stats.buoys += 1
-        this.combo.collect(b.points, 'Boje')
+        this.combo.bonus(BOJE, 'Boje')
         this.fx.collect(b)
         if (this.stats.buoys === this.items.buoys.length) {
-          this.combo.bonus(BOJEN_BONUS, 'Bojen')
-          this.hud.showTrick('Alle Bojen', `+${fmt(BOJEN_BONUS)}`, 'perfect')
+          this.combo.bonus(ALLE, 'Bojen')
+          this.hud.showTrick('Alle Bojen', `+${fmt(ALLE)}`, 'perfect')
+          this.abgeraeumt()
         }
       }
     }
@@ -371,8 +398,13 @@ export class Session {
         g.pop = 0.4
         const pts = RING_BASIS * 2 ** this.stats.rings
         this.stats.rings += 1
-        this.combo.collect(pts, 'Ring')
+        this.combo.bonus(pts, 'Ring')
         this.hud.showToast(`Ring ${this.stats.rings}/${this.items.rings.length}  +${fmt(pts)}`, 1.2)
+        if (this.stats.rings === this.items.rings.length) {
+          this.combo.bonus(ALLE, 'Ringe')
+          this.hud.showTrick('Alle Ringe', `+${fmt(ALLE)}`, 'perfect')
+          this.abgeraeumt()
+        }
         this.fx.collect(g)
       }
     }

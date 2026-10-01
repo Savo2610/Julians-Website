@@ -1,4 +1,4 @@
-import { MEDALS } from '../world/attractions/race.js'
+import { MEDALS } from '../world/attractions/medaillen.js'
 
 // Der Pistenpass: wie weit man das Tal kennt, was man gefahren ist.
 //
@@ -59,13 +59,16 @@ export const ABZEICHEN = [
   { id: 'klamm', geheim: true, icon: '🕳️', name: 'Brücke verpasst', text: 'Unten in der Klamm statt auf dem Steg.' },
   { id: 'aussicht', geheim: true, icon: '🌄', name: 'Aussicht genossen', text: 'Eine Minute lang nichts gedrückt.' },
   { id: 'nacht', geheim: true, icon: '🌙', name: 'Nachtskifahrer', text: 'Zwischen Mitternacht und fünf Uhr im Tal.' },
+  // Vom Kabelsee (src/kabelsee/game/session.js). Offen, aber nicht fuer die
+  // goldenen Ski: wer sie schon hat, soll sie nicht wieder verlieren.
+  { id: 'abgeraeumt', extra: true, icon: '🌊', name: 'Abgeräumt', text: 'Am Kabelsee in einer Session alle Ringe, alle Bojen und alle Tore einer Runde.' },
 ]
 
 const MELDBAR = new Map([
   ...MEDAILLEN.map((m) => [m.id, { icon: m.icon, name: `Slalom ${m.name}`, text: `Unter ${m.zeit} s.` }]),
   ...ABZEICHEN.map((a) => [a.id, a]),
 ])
-const FUER_GOLD = ['silber', ...ABZEICHEN.filter((a) => !a.geheim).map((a) => a.id)]
+const FUER_GOLD = ['silber', ...ABZEICHEN.filter((a) => !a.geheim && !a.extra).map((a) => a.id)]
 const IST_ORT = new Set(ORTE_ERKUNDET.map((o) => o.id))
 
 function laden() {
@@ -76,6 +79,16 @@ function laden() {
   const erreicht = {}
   for (const [id, t] of Object.entries(d.erreicht ?? {})) if (MELDBAR.has(id)) erreicht[id] = t
   return { erreicht, orte: [...orte].filter((id) => IST_ORT.has(id)) }
+}
+
+// Ohne Pass auf der Seite (veerka.mp/kabelsee/): still vermerken. Dieselbe
+// Adresse, derselbe Speicher; im Tal steht es beim naechsten Besuch im Pass.
+export function abzeichenVermerken(id) {
+  if (!MELDBAR.has(id)) return
+  const d = laden()
+  if (d.erreicht[id]) return
+  d.erreicht[id] = Date.now()
+  try { localStorage.setItem(STORE, JSON.stringify(d)) } catch { /* egal */ }
 }
 
 export class Pistenpass {

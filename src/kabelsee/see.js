@@ -29,13 +29,15 @@ import { FEATURES } from './world/features.js'
 //
 // eingebettet: kein Titel, die Session beginnt am Steg, Esc fuehrt zurueck
 // in den Winter (onZurueck), und die Tasten hoeren nur zu, solange der See
-// aktiv ist. pause: siehe core/zeitscheiben.js – im Tal baut sich der See
+// aktiv ist. Allein ist der Titel das Menue, und Esc fuehrt dorthin.
+// liste: die Bestenliste (kabelsee/bestenliste.js), auf beiden Seiten
+// dieselbe. onAbzeichen: „Abgeraeumt“ fuer den Pistenpass. pause: siehe core/zeitscheiben.js – im Tal baut sich der See
 // in Scheiben, allein am Stueck.
 
 export const TITLE_VIEW = { x: 30, y: 1, z: -70, distance: 46 }
 const STEP = 1 / 120
 
-export async function createKabelsee({ renderer, canvas, touch = false, eingebettet = false, onZurueck = null, onErgebnis = null, onStart = null, onListe = null, pause = null }) {
+export async function createKabelsee({ renderer, canvas, touch = false, eingebettet = false, liste = null, onZurueck = null, onAbzeichen = null, pause = null }) {
   const weiter = pause ?? (() => null)
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.4, 900)
@@ -123,20 +125,33 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
     },
   }
 
-  const session = new Session({ rider, cable, collectibles: items, hud, fx, eingebettet, onErgebnis, onStart })
+  const session = new Session({
+    rider, cable, collectibles: items, hud, fx, eingebettet, onAbzeichen,
+    onStart: () => liste?.start(),
+    onErgebnis: (e) => liste?.ziel(e),
+  })
+  if (liste) liste.onAngebot = (an) => hud.angebot(an)
 
-  const zurueck = () => { if (input.aktiv) onZurueck?.() }
+  // Esc: im Tal zurueck in den Winter, allein ins Menue.
+  const zurueck = () => {
+    if (!input.aktiv) return
+    if (eingebettet) onZurueck?.()
+    else session.zumMenue()
+  }
+  // B: in der Auswertung eintragen oder anschauen, im Menue anschauen.
+  const zurListe = () => (session.state === 'play' ? false : !!liste?.bOderListe())
   input.onAction = (a) => {
     if (a === 'confirm') session.confirm()
     if (a === 'reset') session.restart()
-    if (a === 'back' && eingebettet) zurueck()
-    if (a === 'liste' && session.state === 'results') return !!onListe?.()
+    if (a === 'back') zurueck()
+    if (a === 'liste') return zurListe()
     return false
   }
   hud.titleGo.addEventListener('click', () => session.confirm())
+  hud.titleListe?.addEventListener('click', zurListe)
   hud.resultsGo.addEventListener('click', () => session.confirm())
   hud.resultsBack?.addEventListener('click', zurueck)
-  hud.resultsListe?.addEventListener('click', () => onListe?.())
+  hud.resultsListe?.addEventListener('click', zurListe)
   hud.winter?.addEventListener('click', zurueck)
   if (touch) new TouchControls(input, canvas, { root, onTap: () => { if (input.aktiv && session.state !== 'play') session.confirm() } })
 

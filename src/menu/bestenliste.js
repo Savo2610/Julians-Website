@@ -1,5 +1,5 @@
 import { TOUCH } from '../core/device.js'
-import { MEDALS } from '../world/attractions/race.js'
+import { MEDALS } from '../world/attractions/medaillen.js'
 
 // Die Bestenliste des Slaloms – Gegenstueck zu worker/slalom.js.
 //

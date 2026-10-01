@@ -122,6 +122,7 @@ const sommer = new Sommer({
   renderer, canvas, scene, camera, chase, skier, input, registry: stations, steg: props.badesteg, eis: props.lake, touch: TOUCH,
 })
 interaction.sommer = sommer
+sommer.onAbzeichen = (id) => pass.erreiche(id)
 mapMenu.kabelseeListe = sommer.liste
 // Drei Meter vor dem Steg auf der Boeschung, Blick zur Spitze.
 mapMenu.zumBadesteg = () => {

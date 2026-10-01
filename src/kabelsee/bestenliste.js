@@ -7,8 +7,10 @@ import { post, lesen, schreiben, listeZeichnen, NAME_KEY, LISTEN } from '../menu
 // Am Steg holt das Spiel still eine Startmarke, nach der dritten Runde eine
 // Zielmarke. Nur bei einem neuen eigenen Rekord (in diesem Browser) und wenn
 // beides geklappt hat, steht in der Auswertung „In die Bestenliste“. Gefragt
-// wird nie; wer nicht will, faehrt noch eine Session oder geht in den Winter.
-// Ohne Netz oder ohne /api (vite ohne wrangler dev) erscheint nichts.
+// wird nie; wer nicht will, faehrt noch eine Session oder geht.
+// Anschauen geht immer (zeigen): auf veerka.mp/kabelsee/ aus dem Menue,
+// im Tal aus der Uebersicht. Beide Seiten benutzen diese Klasse.
+// Ohne Netz oder ohne /api (vite ohne wrangler dev) erscheint kein Angebot.
 
 const API = '/api/kabelsee'
 const fmt = (n) => Math.round(n).toLocaleString('de-DE')
@@ -83,10 +85,38 @@ export class KabelseeListe {
     })
   }
 
+  // Taste B: eintragen, wenn es etwas einzutragen gibt, sonst anschauen.
+  bOderListe() {
+    return this.angebotOffen ? this.oeffnen() : this.zeigen()
+  }
+
+  // Nur die Liste, ohne Formular.
+  async zeigen() {
+    if (this.dialog.open) return false
+    this.form.hidden = true
+    this.statusEl.hidden = true
+    this.ergebnisEl.hidden = false
+    this.dialog.querySelector('#kb-titel').textContent = 'Bestenliste'
+    const platz = this.ergebnisEl.querySelector('.sb-platz')
+    platz.textContent = ''
+    platz.hidden = true
+    const ziel = this.ergebnisEl.querySelector('.sb-liste')
+    ziel.innerHTML = '<p class="sb-leer">Lade die Bestenliste…</p>'
+    this.dialog.showModal()
+    document.activeElement?.blur()
+    try {
+      listeZeichnen(ziel, await this.laden(), { art: 'kabelsee' })
+    } catch {
+      ziel.innerHTML = '<p class="sb-leer">Die Bestenliste ist gerade nicht erreichbar.</p>'
+    }
+    return true
+  }
+
   oeffnen() {
     const s = this._session
     if (!s || this.dialog.open) return false
     this.form.hidden = false
+    this.ergebnisEl.querySelector('.sb-platz').hidden = false
     this.ergebnisEl.hidden = true
     this.statusEl.hidden = true
     this.dialog.querySelector('#kb-titel').textContent = 'In die Bestenliste'

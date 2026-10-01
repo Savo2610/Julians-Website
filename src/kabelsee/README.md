@@ -27,10 +27,13 @@ npm install
 npm run dev          # http://localhost:5173/kabelsee/ (allein), / (vom Badesteg aus)
 ```
 
-Online unter **veerka.mp/kabelsee/** und vom Badesteg im Tal. Im Tal gibt
-es keinen Titel: man steht gleich am Steg, nach drei Runden geht es mit
-Enter weiter, mit `B` in die Bestenliste (bei neuem Rekord) und mit `Esc`
-zurück in den Winter.
+Online unter **veerka.mp/kabelsee/** und vom Badesteg im Tal. Allein ist der
+Titel das Menü: Enter fährt los, `B` zeigt die Bestenliste, darunter geht es
+ins Skital; `Esc` führt aus Fahrt und Auswertung zurück ins Menü (am Handy
+der Knopf oben rechts). Im Tal gibt es keinen Titel: man steht gleich am
+Steg, nach drei Runden geht es mit Enter weiter und mit `Esc` zurück in
+den Winter. `B` trägt in beiden Fällen nach einem neuen Rekord in die
+Bestenliste ein und zeigt sie sonst nur an.
 
 | Taste | auf dem Wasser | in der Luft |
 |---|---|---|
@@ -41,6 +44,8 @@ zurück in den Winter.
 | `Shift` | | Grab |
 | `Enter` | Session starten | |
 | `R` | zurück an den Steg | |
+| `B` | Bestenliste (nach neuem Rekord: eintragen) | |
+| `Esc` | Menü (im Tal: zurück in den Winter) | |
 | Mausrad | Kamera näher oder weiter | |
 
 Am Handy gibt es Tasten, belegt wie die Tastatur: links die Wippe ◀ ▶
@@ -106,27 +111,24 @@ zählen die Fahnen in jeder Runde neu.
 
 **Punkte wie in Steep.** Jede Figur zählt für sich, aber die großen Zahlen
 macht die **Kombo**: wer innerhalb von 3,5 Sekunden nach einer Landung den
-nächsten Trick steht, eine Boje holt oder durch ein Tor fährt, hält die Kette
-am Leben, und jede neue Figur hebt den Faktor bis ×5. Läuft die Zeit ab,
-wird die Kette ausgezahlt; ein Sturz löscht sie. Dazu:
+nächsten Trick steht, hält die Kette am Leben, und jede neue Figur hebt den
+Faktor bis ×5. Läuft die Zeit ab, wird die Kette ausgezahlt; ein Sturz
+löscht sie.
 
-- 17 **Bojen** (50 Punkte), zu erkennen am leuchtenden Stein über dem
-  Schwimmer und dem Kreis auf dem Wasser. Sie liegen in Bögen nach außen und
-  innen: man holt sie nur, wenn man ausschwingt, und genau das macht schnell.
-  Wer alle 17 holt, bekommt **6000** dazu.
-- 4 **Ringe** über den Kickern, dort wo man mit voll geladenem Absprung den
-  höchsten Punkt hat. Sie verdoppeln sich: der erste 1000, dann 2000, 4000,
-  8000 – und gehen wie alles Gesammelte in die Kombo, mit ihrem Faktor.
-- 300 Punkte für jede Runde.
+**Sammeln** geht direkt aufs Konto, nicht in die Kombo – belohnt wird, wer
+alles holt:
 
-Slalom- und Bojenbonus gehen fest aufs Konto, ein Sturz kostet sie nicht.
+| | einzeln | alle |
+|---|---|---|
+| 17 **Bojen** (leuchtender Stein über dem Schwimmer) | 100 | +10 000 |
+| 4 **Ringe** über den Kickern, am Scheitel eines geladenen Sprungs | 1000 → 2000 → 4000 → 8000 | +10 000 |
+| 6 **Tore** im Slalom | 300 … 1050 je Fahne einer Runde | +10 000 für alle in einer Runde, einmal je Session |
 
-**Hinweise.** Unten steht immer höchstens einer. In der ersten Runde erklären
-sie der Reihe nach Lenken, Springen und die Luft. Danach melden sie sich nur
-noch, wenn sie etwas sagen: nach einem Sturz einmal `R` für eine neue
-Session, und wer Lenken, Springen, Salto oder Grab 30 Sekunden nicht benutzt
-hat, wird fünf Sekunden lang daran erinnert (höchstens alle zehn Sekunden
-eine Erinnerung).
+Dazu 300 Punkte für jede Runde. Wer alle Bojen, alle Ringe und alle Tore
+einer Runde in derselben Session holt, bekommt das Abzeichen **Abgeräumt**
+im Pistenpass von veerka.mp.
+
+Ein **Grab** zählt nur, wenn man die Ski vor dem Aufsetzen wieder loslässt.
 
 Trickwerte: 180 = 150, 360 = 300, 540 = 550, 720 = 800, 1080 = 1500;
 Backflip = 550, Frontflip = 550, Doppelsalto = 1500. Salto mit Drehung ist

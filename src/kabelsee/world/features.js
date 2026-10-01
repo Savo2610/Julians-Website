@@ -129,7 +129,7 @@ export const BUOYS = [
   ...buoyArc(326, 16, 3, 6, -1),       // innen durch die Suedostecke
   ...buoyArc(352, 24, 4, 12),          // Ostgerade aussen
   ...buoyArc(402, 20, 3, 8, -1),       // Ostgerade innen nach dem Kicker
-].map((b, i) => ({ ...b, id: `b${i}`, kind: 'buoy', points: 50 }))
+].map((b, i) => ({ ...b, id: `b${i}`, kind: 'buoy' }))
 
 // --- Slalom -----------------------------------------------------------------
 // Fahnen im Wechsel innen und aussen, alle auf den Geraden; jede muss man

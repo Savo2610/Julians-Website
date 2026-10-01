@@ -25,6 +25,8 @@ Das Wichtigste in Kürze:
   Genau **zwei** dokumentierte Ausnahmen: auf der Nordabfahrt geht sie hinter
   den Fahrer und dreht mit (`CHASE`, seit 28.09. mit `CHASE.an` abgeschaltet), und im Drohnen-Rundflug fliegt sie ums
   Tal (`player/drone-flight.js`, niemand steuert). Weitere nur nach Rückfrage.
+  Der Kabelsee hat dieselbe Kamera; die Verwandlung dorthin ist ein Bild
+  über zwei Welten, keine Kamerafahrt.
 - Was man **befährt**, ist Gelände; was man **sieht**, ist Aufbau. Schanzen,
   Steg und Bahnen stecken im Höhenfeld, das Holz liegt nur darauf.
 - `terrainHeight(x, z)` in `src/world/heightfield.js` ist die **einzige**
@@ -48,8 +50,18 @@ Das Wichtigste in Kürze:
   Lieber wenige, schwierige als für alles eins (erste Fassung zu viel).
 - Verworfen und nicht ohne Rückfrage neu anzufangen: **Halfpipe** (funktioniert
   im Fahrmodell nicht) und **Ton** (zweimal gebaut, zweimal abgelehnt).
+- **Kabelsee** (`src/kabelsee/`, HANDOVER 4a⁶): Wasserski im Sommer, vom
+  Badesteg am Eissee aus (`src/sommer/`) und allein unter `/kabelsee/`.
+  Eine Codebasis mit dem Tal, kein Nebeneinander: Gemeinsames liegt in
+  `src/core/` und `src/basis.css`, getrennt bleiben nur Eingabe und Touch.
+  Am See gilt `src/kabelsee/world/heightfield.js` als einzige Höhenquelle;
+  was man befährt (`features.js`) und was man sieht (`props/obstacles.js`)
+  ändert man nur gemeinsam; das Fahrmodell bleibt ohne three.js und DOM.
+  Wer Seiltempo, Schwerkraft oder Absprung ändert, misst Ringe und
+  Slalomfahnen nach (Tests). Ein Countdown am Badesteg, keiner am See.
 
-`npm run dev` startet, `npm run dev:api` den Worker dazu (Bestenliste,
-Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas
-fertig ist. Zum Prüfen im Browser: `window.__ski` und `S.step(frames, dt)`.
+`npm run dev` startet (Tal auf `/`, Kabelsee auf `/kabelsee/`),
+`npm run dev:api` den Worker dazu (Bestenlisten, Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas
+fertig ist. Zum Prüfen im Browser: `window.__ski` und `S.step(frames, dt)`; am See
+`window.__kabel`, im Tal `__ski.sommer.see`.
 Fremde Dienste (Kurzlink, Upload) hängen an Hostlisten – siehe HANDOVER 4c.

@@ -4,10 +4,11 @@ Wasserski am Kabel rund um eine kleine Insel. Ein 3D-Spiel für den Browser,
 gebaut mit three.js, ganz ohne Server und ohne geladene Modelle oder Bilder:
 jede Tanne, jeder Mast und jede Boje entsteht im Code.
 
-Kamera, Licht, Farben und Oberfläche kommen aus dem Skital von
-[veerka.mp](https://veerka.mp) (Repo `Julians-Website`). Dort liegt Schnee,
-hier liegt ein Sommersee; die feste Kamera von schräg oben, die warme
-tiefstehende Sonne, das Glas und der Frosttext sind dieselben.
+Er gehört zum Skital von [veerka.mp](https://veerka.mp) und liegt seit
+dem 01.10.2026 in dessen Repo: Vom Badesteg am Eissee verwandelt sich das
+Tal in diesen See (`src/sommer/`, HANDOVER 4a⁶), und unter `/kabelsee/`
+läuft er für sich allein. Kamera, Licht, Glas und Frosttext sind dieselben
+wie im Tal; dort liegt Schnee, hier ein Sommersee.
 
 ![Kabelsee von oben](../../docs/kabelsee/10-ueberblick.jpg)
 
@@ -23,12 +24,13 @@ Ein kurzes Video liegt unter [docs/kabelsee.webm](../../docs/kabelsee/kabelsee.w
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:5173/kabelsee/ (allein), / (vom Badesteg aus)
 ```
 
-Online unter **[kabelsee.veerka.mp](https://kabelsee.veerka.mp)**. Oder fertig
-gebaut: `npm run build` legt alles in `dist/`, das sich von jedem statischen
-Webspace ausliefern lässt (auch aus einem Unterordner).
+Online unter **veerka.mp/kabelsee/** und vom Badesteg im Tal. Im Tal gibt
+es keinen Titel: man steht gleich am Steg, nach drei Runden geht es mit
+Enter weiter, mit `B` in die Bestenliste (bei neuem Rekord) und mit `Esc`
+zurück in den Winter.
 
 | Taste | auf dem Wasser | in der Luft |
 |---|---|---|
@@ -163,53 +165,53 @@ Tasten, `overview()` zeichnet den ganzen See von oben.
 
 ## Entwickeln
 
+Alles aus dem Wurzelverzeichnis des Repos:
+
 ```bash
-npm install
 npm run dev          # Entwicklungsserver
-npm test             # node --test: Bahn, Ufer, Start, Runde, Sprung, 180, Rail, Slalom, Kombo
-npm run build        # dist/
-npm run preview:worker  # Build und lokal über wrangler, wie in Produktion
-npm run deploy       # von Hand veröffentlichen (sonst per Push auf main)
-npm run shots        # Bilder nach docs/ (nach dem Build)
-npm run video        # docs/kabelsee.webm (braucht ffmpeg mit VP8)
+npm test             # node --test, die Tests des Sees heissen tests/kabelsee-*
+npm run build        # dist/, darin dist/kabelsee/
+node tools/kabelsee/bilder.mjs   # Bilder nach docs/kabelsee/ (nach dem Build)
+node tools/kabelsee/video.mjs    # docs/kabelsee/kabelsee.webm (ffmpeg mit VP8)
 ```
 
-`npm run shots` und `npm run video` starten `vite preview`, öffnen den Build
-in Chromium (Playwright) und spulen die Welt mit `__kabel.step()` in feste
-Momente vor. Darum sehen die Bilder bei jedem Lauf gleich aus.
+Bilder und Video brauchen Playwright (`npm i -D playwright` oder global).
+Sie starten `vite preview`, öffnen `/kabelsee/` in Chromium und spulen die
+Welt mit `__kabel.step()` in feste Momente vor. Darum sehen die Bilder bei
+jedem Lauf gleich aus.
 
 ## Veröffentlichen
 
-Die Seite läuft als Cloudflare Worker `kabelsee`, nur mit statischen Dateien
-(kein Worker-Code), unter der Custom Domain `kabelsee.veerka.mp`, genau wie
-zeit.veerka.mp. Alles steht in `wrangler.jsonc`: `wrangler deploy` baut
-vorher selbst mit vite und lädt `dist/` hoch; die Custom Domain legt den
-DNS-Eintrag selbst an. `public/_headers` lässt die Dateien unter `/assets/`
-ein Jahr im Cache, `index.html` wird immer neu gefragt.
+Mit der Website: jeder Push auf `main` des Repos geht über Cloudflare
+Workers Builds live (Worker `website`), der See liegt dann unter
+veerka.mp/kabelsee/. Die Bestenliste ist `worker/kabelsee.js` mit der
+Tabelle aus `worker/migrations/0002_kabelsee.sql`.
 
-Jeder Push auf `main` wird über Cloudflare Workers Builds gebaut und
-veröffentlicht. Von Hand: `npm run deploy` (braucht `wrangler login` oder
-`CLOUDFLARE_API_TOKEN`).
+Der alte Worker `kabelsee` unter kabelsee.veerka.mp stammt noch aus dem
+eigenen Repo; was mit ihm passiert, steht in HANDOVER.md unter „Offen“.
 
 ## Aufbau
 
 ```
-src/
+src/kabelsee/
+  see.js          der See als Baustein (createKabelsee), ohne eigenen Renderer
+  main.js         Einstieg der eigenen Seite /kabelsee/
+  kabelsee.css    Anzeige, alles unter .kabelsee-hud
   config.js       alle Stellschrauben: See, Insel, Kabel, Fahrer, Tricks, Kamera, Farben
-  core/           Geometrie-Helfer, Zufall, Rauschen, Tastatur, Touch
+  core/           Tastatur und Touch (Geometrie, Zufall, Rauschen: src/core/)
   world/          Höhenfeld, Gelände, Wasser, Kielwasser, Himmel, Kabelbahn,
                   Hindernisse und Sammelsachen, Aufbau der Gegend (populate.js)
   props/          Bäume, Masten und Mitnehmer, Seil, Kicker und Box,
                   Station, Pavillon, Zelte, Bulli, Boote, Schilf, Enten …
   player/         Fahrmodell, Figur, Kamera, Gischt
   game/           Mitnehmer, Tricks und Kombo, Slalom, Ablauf der Session, Anzeige
-tests/            node --test (helpers.js: der Testfahrer)
-tools/            screenshots.mjs, video.mjs
-docs/             Bilder und Video
+tests/kabelsee-*  node --test (kabelsee-helfer.js: der Testfahrer)
+tools/kabelsee/   bilder.mjs, video.mjs
+docs/kabelsee/    Bilder und Video
 ```
 
-Regeln für die Arbeit am Code (auch für Coding-Agenten) stehen in
-[CLAUDE.md](CLAUDE.md).
+Regeln für die Arbeit am Code (auch für Coding-Agenten) stehen im
+[CLAUDE.md](../../CLAUDE.md) des Repos und in HANDOVER.md, Abschnitt 4a⁶.
 
 ## Die Gegend
 

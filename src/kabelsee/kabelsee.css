@@ -1,0 +1,370 @@
+/* Die Anzeige des Kabelsees. Glas, Frost und Tasten kommen aus
+   src/basis.css, wie im Tal; alles hier haengt unter .kabelsee-hud, weil
+   beide Spiele dieselben Namen benutzen (.trick-hud, .hint, .fade) und der
+   See im selben Dokument laeuft wie das Tal. */
+
+.kabelsee-hud {
+  --ink: #1b2a3a;
+  --ink-soft: #4a5f75;
+  --orange: #e4613a;
+  --teal: #2a8f9c;
+  --gold: #e0a52e;
+  color: var(--ink);
+}
+.kabelsee-hud kbd { margin: 0 1px; }
+.kabelsee-hud kbd.k-wide { padding: 0 9px; }
+.kabelsee-hud .frost { color: var(--ink); }
+.kabelsee-hud .frost-art { display: block; color: var(--ink-soft); }
+.kabelsee-hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+
+.kabelsee-hud .hud-score, .kabelsee-hud .hud-combo, .kabelsee-hud .hud-stats {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.kabelsee-hud[data-mode="play"] .hud-score, .kabelsee-hud[data-mode="play"] .hud-stats { opacity: 1; }
+
+.kabelsee-hud .hud-score {
+  top: max(22px, env(safe-area-inset-top));
+  left: max(26px, env(safe-area-inset-left));
+}
+.kabelsee-hud .hud-score strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.kabelsee-hud .hud-combo {
+  top: calc(max(22px, env(safe-area-inset-top)) + 58px);
+  left: max(26px, env(safe-area-inset-left));
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.kabelsee-hud[data-mode="play"] .hud-combo.visible { opacity: 1; }
+.kabelsee-hud .combo-pts { font-size: 20px; color: #1d6f7c; }
+.kabelsee-hud .combo-x { font-size: 22px; color: var(--orange); }
+.kabelsee-hud .combo-bar {
+  position: absolute;
+  left: 0;
+  bottom: -7px;
+  width: 120px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(27, 42, 58, 0.15);
+  overflow: hidden;
+}
+.kabelsee-hud .combo-bar b {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+  transform-origin: left;
+}
+
+.kabelsee-hud .hud-stats {
+  top: max(22px, env(safe-area-inset-top));
+  right: max(26px, env(safe-area-inset-right));
+  display: flex;
+  gap: 26px;
+  text-align: right;
+}
+.kabelsee-hud .hud-stats strong { display: block; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.kabelsee-hud .trick-hud {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translate(-50%, 10px);
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.kabelsee-hud .trick-hud.visible { opacity: 1; transform: translate(-50%, 0); }
+.kabelsee-hud .trick-hud strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.kabelsee-hud .trick-hud small {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.kabelsee-hud .trick-hud[data-q="perfect"] small { color: #1d8a5a; }
+.kabelsee-hud .trick-hud[data-q="sketchy"] small { color: #b8782a; }
+.kabelsee-hud .trick-hud[data-q="crash"] strong { color: #b23f24; }
+
+.kabelsee-hud .toast {
+  position: absolute;
+  left: 50%;
+  top: calc(22% + 78px);
+  transform: translateX(-50%);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.kabelsee-hud .toast.visible { opacity: 1; }
+
+.kabelsee-hud .hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(26px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.kabelsee-hud .hint.visible { opacity: 0.92; }
+
+/* Start am Steg: ein Balken, der sich mit dem Seil fuellt. Die gruene Zone
+   ist der Moment, in dem man in die Hocke gehen soll. */
+.kabelsee-hud .dock-hud {
+  position: absolute;
+  left: 50%;
+  top: 64%;
+  transform: translateX(-50%);
+  width: 300px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.kabelsee-hud .dock-hud.visible { opacity: 1; }
+.kabelsee-hud .dock-text { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+.kabelsee-hud .dock-text strong { color: var(--orange); font-variant-numeric: tabular-nums; }
+.kabelsee-hud .dock-meter {
+  position: relative;
+  height: 8px;
+  border-radius: 5px;
+  background: rgba(27, 42, 58, 0.16);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+}
+.kabelsee-hud .dock-meter b {
+  position: absolute;
+  inset: 0;
+  background: #1b2a3a;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.kabelsee-hud .dock-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--zone, 62%);
+  right: 0;
+  background: #3fb27f;
+  opacity: 0.7;
+}
+.kabelsee-hud .dock-hud[data-ready="1"] .dock-meter b { background: var(--orange); }
+
+/* Countdown: gross, ohne Behaelter, pocht bei jedem Wechsel. Oberhalb der
+   Mitte, denn am Steg steht der Fahrer genau dort. */
+.kabelsee-hud .dock-count {
+  position: absolute;
+  left: 50%;
+  top: 28%;
+  transform: translate(-50%, -50%);
+  font-size: 92px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  opacity: 0;
+}
+.kabelsee-hud .dock-count[data-now="1"] { color: var(--orange); font-size: 72px; }
+.kabelsee-hud .dock-count.beat { animation: kabel-count-beat 0.9s ease-out forwards; }
+@keyframes kabel-count-beat {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(0.94); }
+}
+.kabelsee-hud .dock-count[data-now="1"].beat { animation: kabel-count-now 0.5s ease-out infinite alternate; }
+@keyframes kabel-count-now {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0.85; transform: translate(-50%, -50%) scale(1.12); }
+}
+
+.kabelsee-hud .fade {
+  position: absolute;
+  inset: 0;
+  background: #e6f1f8;
+  opacity: 0;
+}
+
+/* --- Titel und Auswertung ------------------------------------------------ */
+.kabelsee-hud .panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 26px 28px 22px;
+  border-radius: 24px;
+  transform: translate(-50%, calc(-50% + 20px)) scale(0.97);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 1.2, 0.3, 1);
+}
+.kabelsee-hud[data-mode="title"] .title-panel, .kabelsee-hud[data-mode="results"] .results-panel {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+.kabelsee-hud .panel-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #1d6f7c;
+}
+.kabelsee-hud .panel h1 {
+  margin: 4px 0 8px;
+  font-size: 44px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.kabelsee-hud .panel .lead { margin: 0 0 18px; font-size: 15px; line-height: 1.45; color: #2c3e52; }
+.kabelsee-hud .keys {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 13.5px;
+}
+.kabelsee-hud .keys > span { white-space: nowrap; font-weight: 700; }
+.kabelsee-hud .keys em { font-style: normal; color: #34475b; }
+.kabelsee-hud .best { min-height: 18px; margin-bottom: 14px; font-size: 13px; color: var(--ink-soft); }
+.kabelsee-hud .best strong { color: var(--ink); }
+.kabelsee-hud .go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 14px;
+  font: 800 16px/1 ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+  color: #fff;
+  background: linear-gradient(#ec7a52, #d9553a);
+  box-shadow: 0 6px 16px -6px rgba(180, 69, 38, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+.kabelsee-hud .go kbd { color: #b44526; }
+/* Im Tal: der Weg zurueck in den Winter, leiser als „Noch eine Session“. */
+.kabelsee-hud .back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 16px;
+  border: 1px solid rgba(27, 42, 58, 0.18);
+  border-radius: 14px;
+  font: 800 15px/1 ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+}
+.kabelsee-hud .back:hover { background: rgba(255, 255, 255, 0.75); }
+.kabelsee-hud[hidden] { display: none; }
+.kabelsee-hud .go:hover { filter: brightness(1.05); }
+
+.kabelsee-hud .results-panel .r-score {
+  margin: 6px 0 2px;
+  font-size: 52px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.kabelsee-hud .r-record { min-height: 20px; margin-bottom: 14px; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.kabelsee-hud .r-record.new { color: #1d8a5a; letter-spacing: 0.08em; text-transform: uppercase; }
+.kabelsee-hud .r-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 0 0 18px;
+  font-size: 14px;
+}
+.kabelsee-hud .r-list dt { font-weight: 700; color: var(--ink-soft); }
+.kabelsee-hud .r-list dd { margin: 0; font-weight: 800; text-align: right; }
+.kabelsee-hud .r-list small { font-weight: 700; color: var(--ink-soft); margin-left: 6px; }
+
+@media (max-width: 640px) {
+  .kabelsee-hud .hud-stats { gap: 16px; }
+  .kabelsee-hud .hud-score strong { font-size: 24px; }
+  .kabelsee-hud .trick-hud strong { font-size: 22px; }
+  .kabelsee-hud .hint { font-size: 12px; }
+  .kabelsee-hud .panel h1 { font-size: 36px; }
+}
+
+/* Handy: sichtbare Tasten, belegt wie die Tastatur. Glas, weil man sie
+   bedient; nur waehrend der Fahrt, sonst zaehlt ein Tipp als Enter. */
+.kabelsee-hud .touch-ui { display: none; }
+.kabelsee-hud[data-mode="play"] .touch-ui { display: block; }
+.kabelsee-hud .touch-ui > *, .kabelsee-hud .t-right > * {
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.kabelsee-hud .t-rocker, .kabelsee-hud .t-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 800;
+  color: var(--ink);
+  padding: 0;
+}
+.kabelsee-hud .t-rocker span { font-size: 22px; opacity: 0.55; transition: opacity 0.08s; }
+.kabelsee-hud .t-steer {
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: 176px;
+  height: 84px;
+}
+.kabelsee-hud .t-steer[data-dir="l"] span:first-child, .kabelsee-hud .t-steer[data-dir="r"] span:last-child, .kabelsee-hud .t-pitch[data-dir="u"] span:first-child, .kabelsee-hud .t-pitch[data-dir="d"] span:last-child { opacity: 1; color: var(--orange); }
+.kabelsee-hud .t-right {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: 190px;
+  height: 200px;
+}
+.kabelsee-hud .t-jump { right: 0; bottom: 0; width: 96px; height: 96px; font-size: 15px; justify-content: center; }
+.kabelsee-hud .t-grab { right: 108px; bottom: 6px; width: 70px; height: 70px; font-size: 13px; justify-content: center; }
+.kabelsee-hud .t-pitch { right: 14px; bottom: 108px; width: 68px; height: 92px; flex-direction: column; }
+.kabelsee-hud .t-btn.on, .kabelsee-hud .t-rocker.on { background: rgba(255, 255, 255, 0.82); }
+.kabelsee-hud .t-jump.on { color: #fff; background: var(--orange); border-color: var(--orange); }
+/* Hinweise und Start-Anzeige ueber den Tasten, nicht darunter. */
+:root.touch .kabelsee-hud .hint { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 104px); }
+@media (max-width: 520px) {
+  .kabelsee-hud .t-steer { width: 148px; height: 76px; }
+  .kabelsee-hud .t-jump { width: 86px; height: 86px; }
+  .kabelsee-hud .t-grab { right: 96px; width: 62px; height: 62px; }
+  .kabelsee-hud .t-pitch { bottom: 98px; right: 10px; }
+  :root.touch .kabelsee-hud .hint { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 210px); }
+}

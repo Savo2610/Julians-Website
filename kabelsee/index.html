@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/kabelsee.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#cfe2f2" />
+    <title>Kabelsee</title>
+    <meta name="description" content="Kabelsee – Wasserski am Kabel rund um eine Insel. Ein kleines 3D-Spiel im Browser: ausschwingen, über Kicker springen, Bojen sammeln, Kombos halten." />
+    <style>
+      #ohne-3d { display: none; position: fixed; inset: 0; place-items: center; padding: 24px; background: linear-gradient(#dceaf7, #f3e9dd); text-align: center; }
+      :root.ohne-3d #scene, :root.ohne-3d #loader, :root.ohne-3d .kabelsee-hud { display: none; }
+      :root.ohne-3d #ohne-3d { display: grid; }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <div id="loader">
+      <div class="loader-inner">
+        <div class="loader-mark">〰</div>
+        <div class="loader-bar"><span></span></div>
+      </div>
+    </div>
+
+    <div id="ohne-3d">
+      <div>
+        <h1>Kabelsee</h1>
+        <p>Dieses Spiel braucht WebGL. Dein Browser oder Gerät stellt es gerade nicht bereit.</p>
+      </div>
+    </div>
+    <noscript><p style="padding:24px">Kabelsee braucht JavaScript.</p></noscript>
+
+    <script type="module" src="/src/kabelsee/main.js"></script>
+  </body>
+</html>

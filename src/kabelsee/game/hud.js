@@ -244,7 +244,7 @@ export class Hud {
     this.combo.classList.toggle('visible', on)
     if (on) {
       this.comboPts.textContent = `+${fmt(c.points)}`
-      this.comboX.textContent = c.multiplier > 1 ? `×${c.multiplier}` : ''
+      this.comboX.textContent = c.multiplier > 1 ? `×${c.multiplier.toLocaleString('de-DE')}` : ''
       this.comboBar.style.transform = `scaleX(${Math.max(0, c.timer / s.comboWindow).toFixed(3)})`
     }
     this.sLap.textContent = `${Math.min(s.laps, s.lap)}/${s.laps}`

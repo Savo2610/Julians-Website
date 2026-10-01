@@ -346,7 +346,7 @@ export class Session {
     if (e.type === 'trick') {
       this.hud.showTrick(e.name, `${e.quality} +${fmt(e.points)}${e.mal > 1 ? ` · ${e.mal}. Mal` : ''}`, e.key)
     } else if (e.type === 'bank' && e.multiplier > 1) {
-      this.hud.showToast(`Kombo ×${e.multiplier}  +${fmt(e.points)}`, 1.6)
+      this.hud.showToast(`Kombo ×${e.multiplier.toLocaleString('de-DE')}  +${fmt(e.points)}`, 1.6)
     } else if (e.type === 'lost') {
       this.hud.showToast(`Kombo verloren (${fmt(e.points)})`, 1.4)
     } else if (e.type === 'bonus' && e.label === 'Runde') {

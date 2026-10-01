@@ -1070,7 +1070,9 @@ Reiter **Bestenliste** der Übersicht: Slalom, darunter Kabelsee mit „Zum
 Badesteg“; die eigene Seite /kabelsee/ hat sie im Menü (B).
 
 **Wertung am See** (dritte Runde, Ansage 01.10.): Unterwegs zählen nur
-Tricks (Kombo) und 300 je Runde. Bojen, Ringe und Tore zählen erst **am
+Tricks (Kombo) und 300 je Runde. Die Kombo hebt den Faktor je Figur um
+**0,5** (×1,5, ×2 … bis ×5 ab neun Figuren); mit ganzen Schritten kamen
+90 % der Punkte aus der Kombo. Bojen, Ringe und Tore zählen erst **am
 Ende**, als Aufschlag in Prozent auf die gefahrenen Punkte – wer gut fährt
 *und* einsammelt, bekommt am meisten (`sammelBonus()` in `session.js`):
 

@@ -259,7 +259,12 @@ test('Kombo: Faktor steigt, Sturz loescht, Zeit zahlt aus', () => {
   c.trick({ name: 'a', points: 100 }, q)
   c.trick({ name: 'b', points: 100 }, q)
   c.collect(50)
+  // Jede Figur hebt den Faktor um 0,5, hoechstens ×5 (ab neun).
+  assert.equal(c.multiplier, 1.5)
+  c.trick({ name: 'c', points: 100 }, q)
   assert.equal(c.multiplier, 2)
+  for (let i = 0; i < 10; i++) c.trick({ name: 'x', points: 100 }, q)
+  assert.equal(c.multiplier, 5)
   c.crash()
   assert.equal(c.points, 0)
   assert.equal(c.score, 0)
@@ -267,7 +272,7 @@ test('Kombo: Faktor steigt, Sturz loescht, Zeit zahlt aus', () => {
   c.trick({ name: 'b', points: 200 }, q)
   let banked = 0
   for (let i = 0; i < 600 && !banked; i++) banked = c.update(1 / 60)
-  assert.equal(banked, (300 + 300) * 2)
+  assert.equal(banked, (300 + 300) * 1.5)
   assert.equal(c.score, banked)
   assert.ok(TRICK.comboWindow > 2)
 })

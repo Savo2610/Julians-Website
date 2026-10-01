@@ -103,16 +103,16 @@ aufkommt.
 innen und außen, je 10 m neben der Linie und 26 m auseinander. Der Wimpel
 zeigt, auf welcher Seite man vorbei muss: außen um die Fahne herum, so weit
 hinaus, dass das Seil straff ist. Auf der Südgeraden führt der Slalom innen
-am einen und außen am anderen Kicker vorbei, statt darüber. Jede Fahne gibt
-mehr als die vorige derselben Runde (300, 450 … 1050). Wer in einer Runde
-alle sechs schafft, bekommt **8000** – einmal je Session; danach versinken
-die Fahnen im See, und die Geraden gehören wieder den Kickern. Bis dahin
-zählen die Fahnen in jeder Runde neu.
+am einen und außen am anderen Kicker vorbei, statt darüber. Gewertet wird
+die beste Runde (siehe Sammeln). Wer in einer Runde alle sechs schafft,
+hat den Slalom – einmal je Session; danach versinken die Fahnen im See,
+und die Geraden gehören wieder den Kickern. Bis dahin zählen die Fahnen in
+jeder Runde neu.
 
 **Punkte wie in Steep.** Jede Figur zählt für sich, aber die großen Zahlen
 macht die **Kombo**: wer innerhalb von 3,5 Sekunden nach einer Landung den
 nächsten Trick steht, hält die Kette am Leben, und jede neue Figur hebt den
-Faktor bis ×5. Läuft die Zeit ab, wird die Kette ausgezahlt; ein Sturz
+Faktor um 0,5: ×1,5, ×2, ×2,5 … bis ×5. Läuft die Zeit ab, wird die Kette ausgezahlt; ein Sturz
 löscht sie.
 
 **Sammeln** zählt erst am Ende: als Aufschlag in Prozent auf die

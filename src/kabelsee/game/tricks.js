@@ -5,8 +5,10 @@ import { TRICK } from '../config.js'
 //
 // Vorbild ist Steep: jede Figur zaehlt fuer sich, aber erst die Kette macht
 // die grossen Zahlen. Wer innerhalb von TRICK.comboWindow nach der Landung
-// den naechsten Trick steht oder eine Boje holt, haelt die Kette am Leben;
-// jede neue Figur hebt den Faktor. Ein Sturz loescht die offene Kette.
+// den naechsten Trick steht, haelt die Kette am Leben; jede neue Figur hebt
+// den Faktor um 0,5 (Ansage 01.10.: mit ganzen Schritten kamen 90 Prozent
+// der Punkte aus der Kombo – vier Tricks zahlten ×4, jetzt ×2,5). Ein Sturz
+// loescht die offene Kette.
 
 const TAU = Math.PI * 2
 
@@ -146,7 +148,7 @@ export class Combo {
   }
 
   get multiplier() {
-    return Math.min(5, Math.max(1, this.count))
+    return Math.min(5, 1 + 0.5 * Math.max(0, this.count - 1))
   }
 
   // Ein gestandener Trick.
@@ -188,7 +190,7 @@ export class Combo {
   }
 
   bank() {
-    const total = this.points * this.multiplier
+    const total = Math.round((this.points * this.multiplier) / 10) * 10
     if (total > 0) {
       this.score += total
       this.events.push({ type: 'bank', points: total, multiplier: this.multiplier })

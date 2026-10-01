@@ -946,7 +946,7 @@ expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
 
 ## 4a⁶. Badesteg und Kabelsee: in den Sommer
 
-Seit 01.10. (Branch `kabelsee`, noch nicht auf `main`) steht am Nordufer des
+Seit 01.10. (`9656ed1`) steht am Nordufer des
 Eissees ein **Badesteg**. Vorn auf dem Steg Enter: der Fahrer stellt sich an
 die Spitze, die Kamera fährt heran, **3 – 2 – 1**, das Eis reißt vom Steg
 aus, und bei null **verwandelt sich die Welt** in den Kabelsee – Wasserski
@@ -1159,7 +1159,7 @@ antwortet.
 | Upload (upload.veerka.mp) | `dialogs/upload.js` | `CORS_HERKUNFT` im Worker `upload` | veerka.mp und www: Preflight 204; fremde Herkunft 405 |
 | Solana | `dialogs/wallet.js` | nichts – publicnode, CoinGecko und Binance antworten mit CORS `*` | geprüft |
 | Broadcast | `worker/broadcast.js` | nichts – der Worker holt serverseitig | geprüft |
-| Bestenliste | `worker/slalom.js`, `worker/kabelsee.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker; für den Kabelsee die Tabelle aus `0002_kabelsee.sql` (remote anlegen, siehe 9) | Slalom am Worker `website`, Kabelsee noch nicht |
+| Bestenliste | `worker/slalom.js`, `worker/kabelsee.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker; für den Kabelsee die Tabelle aus `0002_kabelsee.sql` (remote anlegen, siehe 9) | am Worker `website`; Tabelle `kabelsee` remote angelegt am 01.10. |
 
 Die Repos der Dienste liegen unter `~/Git/` (`kurz`, `file-uploader`,
 `broadcast`). In beiden Hostlisten und im Turnstile-Widget steht noch
@@ -1408,23 +1408,21 @@ Abschnitt 1, Nordabfahrt).
   Höhe. Das Tor hat es getroffen (0,85 m Luft), der Steg auch (1 m). Wer etwas
   Breites oder Langes setzt, misst das Gelände an dessen Enden und gibt es dem
   Bauteil mit — so wie `fuss` beim Tor und `neigung` beim Steg.
-- **Kabelsee (Branch `kabelsee`) vor dem Zusammenführen:**
-  1. Verwandlung entschieden (Abtauchen, 01.10.). Lokal ausprobieren:
-     `npm run dev`, für die Bestenliste zusätzlich `npm run dev:api` nach
-     `npx wrangler d1 migrations apply skiportfolio-slalom --local`.
-  2. **Vor** dem Push auf `main` die Tabelle in der echten D1 anlegen:
-     `npx wrangler d1 migrations apply skiportfolio-slalom --remote`. Ohne
-     sie antwortet `/api/kabelsee/*` mit 500, das Spiel zeigt dann einfach
-     kein Angebot und keine Liste.
-  3. `kabelsee.veerka.mp` ist noch der alte Worker `kabelsee` aus dem alten
-     Repo. Vorschlag: dort auf `veerka.mp/kabelsee/` umleiten (oder die
-     Custom Domain an den Worker `website` hängen) und das Repo `Kabelsee`
-     auf GitHub archivieren. Nicht gemacht – das ist außen sichtbar und
-     braucht ein Ja.
-  4. Nur in Chrome geprüft, verdecktes Fenster, Bild für Bild gespult. Auf
-     dem echten Handy ansehen: Bildrate während der Verwandlung (zwei
-     Welten mit MSAA), Speicher mit beiden Welten.
-  5. Im Sommer gibt es kein `M`; die Übersicht kommt erst wieder im Winter.
+- **Kabelsee** ist seit `9656ed1` in `main` (zusammengeführt mit
+  `--no-ff`: `git revert -m 1 9656ed1` nimmt ihn wieder ab; die Tabelle
+  `kabelsee` in der D1 stört dann nicht). Die Tabelle ist am 01.10. remote
+  angelegt (`wrangler d1 migrations apply skiportfolio-slalom --remote`,
+  nur `0002` stand aus). Offen:
+  1. `kabelsee.veerka.mp` ist noch der alte Worker `kabelsee` aus dem alten
+     Repo, mit dem Stand vor dem Einzug. Vorschlag: auf
+     `veerka.mp/kabelsee/` umleiten (oder die Custom Domain an den Worker
+     `website` hängen) und das Repo `Kabelsee` auf GitHub archivieren.
+     Nicht gemacht – außen sichtbar, braucht ein Ja.
+  2. Auf dem echten Handy ansehen: Bildrate während der Verwandlung (zwei
+     Welten mit MSAA), Speicher mit beiden Welten. Geprüft nur in Chrome,
+     verdecktes Fenster, Bild für Bild gespult.
+  3. Im Sommer gibt es kein `M`; die Übersicht kommt erst wieder im Winter.
+  4. Die eigene Seite /kabelsee/ hat weder Bestenliste noch Ticket.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.
@@ -1438,9 +1436,12 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
-39a4402  Badesteg am Eissee: Countdown, Verwandlung, Kabelsee im Tal   (Branch kabelsee)
-ee24ba8  Kabelsee einsortieren: ein Repo, ein Kern, zwei Seiten         (Branch kabelsee)
-4c7babe  Kabelsee mit seiner Geschichte hereinholen (Subtree)            (Branch kabelsee)
+9656ed1  Kabelsee: vom Badesteg am Eissee in den Sommer (Merge)
+f129842  Steg mit Kante, Ticket fuer den Kabelsee, Wertung und Hinweise am See
+e963f65  Abtauchen bleibt, Steg ohne Schanze, Trickmeldung ohne Schleier
+39a4402  Badesteg am Eissee: Countdown, Verwandlung, Kabelsee im Tal
+ee24ba8  Kabelsee einsortieren: ein Repo, ein Kern, zwei Seiten
+4c7babe  Kabelsee mit seiner Geschichte hereinholen (Subtree)
 9e19c9f  Ferne Bergkette: zwei Grate, die sich im Himmel aufloesen (Merge)
 e298036  Rohrpost verschickt: Kapseln, Maulwurf zum Funkmast, Vorschau im Eis (Merge)
 6c5cb7d  Stationen mit Auftritt: Stechuhr, Depot und Loeschzug zoomen heran (Merge)

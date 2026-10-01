@@ -1064,7 +1064,7 @@ am Steg, Zielmarke nach Runde drei; dazwischen mindestens **80 s** (drei
 Runden = 3 × 438 m bei 15 m/s = 88 s), höchstens 20 min, höchstens
 1 000 000 Punkte und **8 000 je Sekunde** (der Aufschlag am Ende macht
 höchstens das 2,5-Fache der Fahrt). Angebot nur
-bei neuem eigenen Rekord in diesem Browser (`kabelsee.rekord`, derselbe
+bei neuem eigenen Rekord in diesem Browser (`kabelsee.rekord.3`, derselbe
 Schlüssel wie auf der eigenen Seite). Der Name ist derselbe wie am Slalom.
 Reiter **Bestenliste** der Übersicht: Slalom, darunter Kabelsee mit „Zum
 Badesteg“; die eigene Seite /kabelsee/ hat sie im Menü (B).
@@ -1092,7 +1092,7 @@ Zahl läuft mit; ein neuer Rekord erscheint erst am Schluss. Vorher
 Alle drei in einer Session: Abzeichen **Abgeräumt** 🌊 im Pistenpass
 (`session.abgeraeumt()` → `onAbzeichen`; im Tal `pass.erreiche`, die
 Meldung rückt im Sommer in die Mitte). Der Rekord im Browser heißt seit der
-neuen Wertung `kabelsee.rekord` (vorher `kabelsee.best`) – alte Rekorde
+neuen Wertung `kabelsee.rekord.3` (vorher `kabelsee.rekord`, davor `kabelsee.best`) – alte Rekorde
 sind nicht vergleichbar, und das Angebot der Bestenliste hängt daran.
 **Abwechslung**: derselbe Trick gibt in einer Session beim ersten Mal
 alles, danach je 30 % weniger (70, 49, 34 …, nie unter 20 %;
@@ -1104,8 +1104,9 @@ Meldung „Grab zu spät losgelassen“); der Rest des Tricks zählt weiter.
 Tests in `kabelsee-spiel.test.js`. Mit dem Livegang (`d9bae55`) ist
 Julians einziger Eintrag aus der alten Wertung (63 410) aus der D1
 gelöscht, mit der dritten Runde (`68aceb9`) auf Julians Ansage alle drei
-aus der zweiten (Julian 84 760, jojo 9 970 und 5 950); die Liste beginnt
-wieder leer.
+aus der zweiten (Julian 84 760, jojo 9 970 und 5 950), mit der Kombo in
+halben Schritten (`7661c92`) Julians 97 370; die Liste beginnt wieder
+leer.
 
 **Hinweise am See** (`Session.updateHint`): höchstens einer. Erste Runde
 der Reihe nach (lenken, springen, Luft), danach nach einem Sturz einmal

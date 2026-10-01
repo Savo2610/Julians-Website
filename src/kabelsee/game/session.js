@@ -38,10 +38,12 @@ export function sammelBonus({ buoys, buoysTotal, rings, ringsTotal, gates, gates
 }
 const fmt = (n) => Math.round(n).toLocaleString('de-DE')
 
-// Neuer Schluessel mit der neuen Wertung (01.10.): Rekorde aus der alten
-// sind nicht vergleichbar, und das Angebot fuer die Bestenliste haengt am
-// Rekord in diesem Browser.
-const REKORD = 'kabelsee.rekord'
+// Neuer Schluessel mit jeder neuen Wertung: Rekorde aus der alten sind
+// nicht vergleichbar, und das Angebot fuer die Bestenliste haengt am Rekord
+// in diesem Browser – mit einem alten, zu hohen Rekord kaeme niemand mehr
+// hinein. kabelsee.best → kabelsee.rekord (feste Sammelpunkte) →
+// kabelsee.rekord.3 (Kombo in halben Schritten, Sammeln in Prozent; 01.10.).
+const REKORD = 'kabelsee.rekord.3'
 function loadBest() {
   try {
     return Number(localStorage.getItem(REKORD)) || 0

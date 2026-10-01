@@ -22,7 +22,7 @@ export function createShortcutTunnel({ label = 'ABKUERZUNG', width = 3.4 } = {})
   // Zwei Felsschultern links und rechts des Durchgangs.
   for (const side of [-1, 1]) {
     for (let i = 0; i < 3; i++) {
-      const geo = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
+      const geo = new THREE.IcosahedronGeometry(1, 1)
       jitter(geo, 0.3, rng)
       parts.push({
         geo,
@@ -40,7 +40,7 @@ export function createShortcutTunnel({ label = 'ABKUERZUNG', width = 3.4 } = {})
 
   // Felsbruecke ueber dem Durchgang.
   for (let i = 0; i < 3; i++) {
-    const geo = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
+    const geo = new THREE.IcosahedronGeometry(1, 1)
     jitter(geo, 0.26, rng)
     parts.push({
       geo,

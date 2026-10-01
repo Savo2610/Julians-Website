@@ -11,7 +11,9 @@ function rockGeometry(rng, blobs = 3) {
   // Gestein als ein einzelnes verzerrtes Ikosaeder.
   const parts = []
   for (let i = 0; i < blobs; i++) {
-    const geo = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
+    // Ikosaeder ist seit r185 schon ohne Index (240 Ecken, je Facette
+    // eigene) – toNonIndexed() gab nur sich selbst zurueck und warnte.
+    const geo = new THREE.IcosahedronGeometry(1, 1)
     jitter(geo, 0.34, rng)
     const sx = 0.7 + rng() * 0.65
     const sy = 0.55 + rng() * 0.45

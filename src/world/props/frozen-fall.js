@@ -272,7 +272,7 @@ export function createFrozenFall() {
   stones.forEach(({ mesh, r }, k) => {
     const oben = k >= 6
     if (!oben && k % 3 === 0) return
-    const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
+    const g = new THREE.IcosahedronGeometry(1, 1)
     jitter(g, 0.14, rng)
     caps.push({
       geo: g, color: 0xf6fbff,
@@ -327,7 +327,7 @@ export function createFrozenFall() {
   // haben – an den Seiten, damit sie nicht vor dem Bild liegen.
   const lumps = []
   for (let i = 0; i < 12; i++) {
-    const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed()
+    const g = new THREE.IcosahedronGeometry(1, 1)
     jitter(g, 0.2, rng)
     const s = 0.08 + rng() * 0.12
     const side = i % 2 ? 1 : -1

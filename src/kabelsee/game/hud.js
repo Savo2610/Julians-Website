@@ -64,26 +64,33 @@ export class Hud {
           <span><kbd class="k-wide">Leertaste</kbd></span><em>halten federt ein, loslassen springt</em>
           <span><kbd class="k-wide">Shift</kbd></span><em>Grab in der Luft</em>
           <span><kbd>R</kbd></span><em>zurück an den Steg</em>
+          <span><kbd class="k-wide">Esc</kbd></span><em>${eingebettet ? 'zurück in den Winter' : 'Menü'}</em>
         </div>`
+    const taste = (k, breit = false) => (touch ? '' : `<kbd${breit ? ' class="k-wide"' : ''}>${k}</kbd> `)
+    // Allein (veerka.mp/kabelsee/) ist der Titel das Menue: losfahren,
+    // Bestenliste, zurueck ins Skital. Im Tal gibt es ihn nicht.
     this.title = el('div', 'glass panel title-panel', root, `
       <div class="panel-kicker">Wasserski am Kabel</div>
       <h1>Kabelsee</h1>
-      <p class="lead">Drei Runden um die Insel. Schwing nach außen, dann bist du schneller als das Seil. Spring über die Kicker oder slide die Rail, fahr den Slalom um die Fahnen, hol die leuchtenden Bojen, und halte die Kombo am Leben.</p>
+      <p class="lead">Drei Runden um die Insel. Schwing nach außen, dann bist du schneller als das Seil. Spring über die Kicker oder slide die Rail und halte die Kombo am Leben. Wer alle Bojen, alle Ringe oder alle Fahnen einer Runde holt, bekommt am meisten.</p>
       ${keys}
       <div class="best"></div>
-      <button class="go" type="button">${touch ? '' : '<kbd class="k-wide">Enter</kbd> '}Auf den Steg</button>
+      <button class="go" type="button">${taste('Enter', true)}Auf den Steg</button>
+      <button class="liste" type="button">${taste('B')}Bestenliste</button>
+      <a class="heim" href="/">Ins Skital – veerka.mp</a>
     `)
     this.titleBest = this.title.querySelector('.best')
     this.titleGo = this.title.querySelector('.go')
+    this.titleListe = this.title.querySelector('.liste')
 
     this.results = el('div', 'glass panel results-panel', root, `
       <div class="panel-kicker">Session vorbei</div>
       <h2 class="r-score">0</h2>
       <div class="r-record"></div>
       <dl class="r-list"></dl>
-      <button class="go" type="button">${touch ? '' : '<kbd class="k-wide">Enter</kbd> '}Noch eine Session</button>
-      ${eingebettet ? `<button class="liste" type="button" hidden>${touch ? '' : '<kbd>B</kbd> '}In die Bestenliste</button>` : ''}
-      ${eingebettet ? `<button class="back" type="button">${touch ? '' : '<kbd class="k-wide">Esc</kbd> '}Zurück in den Winter</button>` : ''}
+      <button class="go" type="button">${taste('Enter', true)}Noch eine Session</button>
+      <button class="liste" type="button">${taste('B')}<span>Bestenliste</span></button>
+      <button class="back" type="button">${taste('Esc', true)}${eingebettet ? 'Zurück in den Winter' : 'Menü'}</button>
     `)
     this.rScore = this.results.querySelector('.r-score')
     this.rRecord = this.results.querySelector('.r-record')
@@ -93,13 +100,14 @@ export class Hud {
     this.resultsListe = this.results.querySelector('.liste')
 
     // Am Handy gibt es kein Esc. Im Tal sitzt dort oben rechts der
-    // Kartenknopf; im Sommer fuehrt derselbe Platz zurueck in den Winter.
-    this.winter = eingebettet && touch
-      ? el('button', 'glass t-winter', root, '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5M9.5 4l2.5 2.5L14.5 4M9.5 20l2.5-2.5 2.5 2.5M4.2 10.3l3.4.9-.9 3.4M19.8 13.7l-3.4-.9.9-3.4M4.2 13.7l3.4-.9-.9-3.4M19.8 10.3l-3.4.9.9 3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>')
-      : null
+    // Kartenknopf; im Sommer fuehrt derselbe Platz zurueck in den Winter
+    // (Schneeflocke), allein ins Menue (drei Striche).
+    const SCHNEEFLOCKE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5M9.5 4l2.5 2.5L14.5 4M9.5 20l2.5-2.5 2.5 2.5M4.2 10.3l3.4.9-.9 3.4M19.8 13.7l-3.4-.9.9-3.4M4.2 13.7l3.4-.9-.9-3.4M19.8 10.3l-3.4.9.9 3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    const MENUE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
+    this.winter = touch ? el('button', 'glass t-winter', root, eingebettet ? SCHNEEFLOCKE : MENUE) : null
     if (this.winter) {
       this.winter.type = 'button'
-      this.winter.setAttribute('aria-label', 'Zurück in den Winter')
+      this.winter.setAttribute('aria-label', eingebettet ? 'Zurück in den Winter' : 'Menü')
     }
   }
 
@@ -127,9 +135,11 @@ export class Hud {
     this.setMode('results')
   }
 
-  // Nur bei einem neuen eigenen Rekord, siehe src/sommer/bestenliste.js.
+  // Neuer eigener Rekord mit gueltigen Marken: dann traegt B ein, sonst
+  // zeigt es nur die Liste (kabelsee/bestenliste.js).
   angebot(an) {
-    if (this.resultsListe) this.resultsListe.hidden = !an
+    this.resultsListe.querySelector('span').textContent = an ? 'In die Bestenliste' : 'Bestenliste'
+    this.resultsListe.classList.toggle('neu', an)
   }
 
   showTrick(name, sub, key = '') {

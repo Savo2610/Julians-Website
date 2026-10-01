@@ -151,7 +151,8 @@ export class Combo {
     return pts
   }
 
-  // Sammelsachen fuellen die Kette, heben aber den Faktor nicht.
+  // Fuellt die Kette, ohne den Faktor zu heben – nur noch der Katapult-Start.
+  // Gesammeltes geht seit 01.10. direkt aufs Konto (bonus).
   collect(points, label) {
     this.points += points
     this.timer = Math.max(this.timer, 1.6)

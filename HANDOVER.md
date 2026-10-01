@@ -160,14 +160,16 @@ src/
     pass-regeln.js   Wann was im Pistenpass fällt
     bestenliste.js   Slalom-Bestenliste: Marken holen, eintragen, anzeigen;
                      listeZeichnen() auch für den Kabelsee
+    bestenliste.css  Stile beider Listen (auch für /kabelsee/)
   dialogs/           Solana, Briefkasten, Kurzlink – siehe Abschnitt 7
   sommer/            Vom Badesteg in den Sommer (4a⁶)
     sommer.js        Countdown, Nachladen, Verwandlung hin und zurück
     verwandlung.js   Beide Welten mischen: Abtauchen
-    bestenliste.js   Bestenliste des Kabelsees: Marken, Fenster
   kabelsee/          Der Kabelsee (eigene README.md darin)
     see.js           Der See als Baustein, ohne eigenen Renderer
-    main.js          Einstieg von /kabelsee/
+    main.js          Einstieg von /kabelsee/ (Titel als Menü)
+    bestenliste.js   Bestenliste des Sees: Marken, Eintragen, Anschauen –
+                     im Tal und auf /kabelsee/ dieselbe
     config.js, world/, props/, game/, player/, core/ (Eingabe, Touch)
 kabelsee/index.html  Die eigene Seite des Kabelsees
 worker/              Der Cloudflare-Worker hinter der Seite
@@ -776,11 +778,14 @@ Jetzt drei Teile:
   (auf dem Teppich), Nordabfahrt (bis unten). Ein Balken und Namensmarken,
   Drohne und Löschzug als „???“. **Keine Pille pro Ort**, nur beim letzten.
 - **Slalom-Medaillen** 4,50 / 4,20 / 3,90 (`MEDALS`), mit Meldung.
-- **Abzeichen** (8): offen *Raser* (58 km/h am Speedcheck – mit gerader
+- **Abzeichen** (8 + 1): offen *Raser* (58 km/h am Speedcheck – mit gerader
   Ideallinie gemessen 59–60, 60 hätte nur ein Autopilot) und *540er*.
   Geheim, nur „?“ ohne Hinweis: 720er, Hausverbot (vier Seitenwechsel am
   Tellerlift, `rider.offset` über ±1,1), Seebank zerlegt, unten in der
-  Klamm, eine Minute nichts gedrückt, 0–5 Uhr.
+  Klamm, eine Minute nichts gedrückt, 0–5 Uhr. Dazu seit 01.10. offen
+  *Abgeräumt* vom Kabelsee (4a⁶) – `extra`, also **nicht** für die goldenen
+  Ski: wer sie schon hat, soll sie nicht verlieren. Auf /kabelsee/ ohne Pass
+  vermerkt `abzeichenVermerken()` es still im selben Speicher.
 
 Nie ein Abzeichen fürs **Benutzen** (Hochladen, Wallet, Kurzlink,
 Bezahlen) – sonst Datenmüll und Cent-Beträge für einen Stempel.
@@ -1064,13 +1069,25 @@ Schlüssel wie auf der eigenen Seite). Der Name ist derselbe wie am Slalom.
 Reiter **Bestenliste** der Übersicht: Slalom, darunter Kabelsee mit „Zum
 Badesteg“. Die eigene Seite /kabelsee/ hat keine Bestenliste.
 
-**Wertung am See** (Ansage 01.10.: mit Kombos kommt man leicht auf
-40 000, ein Cork 360 bringt 1700 – Sammeln soll sich dagegen lohnen):
-Ringe verdoppeln sich, 1000 → 2000 → 4000 → 8000, und gehen wie alles
-Gesammelte in die Kombo. Slalom 300 … 1050 je Fahne; alle sechs in einer
-Runde **8000**, einmal je Session, dann versinken die Fahnen. Alle 17
-Bojen **6000**. Beide Boni gehen fest aufs Konto (`combo.bonus`), ein Sturz
-kostet sie nicht. Tests in `kabelsee-spiel.test.js`.
+**Wertung am See** (zweite Runde, Ansage 01.10.): Gesammeltes geht
+**direkt aufs Konto**, nicht in die Kombo – die gehört den Tricks. In der
+ersten Runde liefen Ringe durch die Kombo und brachten mit ×5 bis 40 000.
+Belohnt wird das Vollständige:
+
+| | einzeln | alle |
+|---|---|---|
+| Bojen | 100 | +10 000 (alle 17) |
+| Ringe | 1000 → 2000 → 4000 → 8000 | +10 000 (alle 4) |
+| Tore | 300 … 1050 je Fahne einer Runde | +10 000 (alle 6 in einer Runde, einmal je Session; dann versinken die Fahnen) |
+
+Alle drei in einer Session: Abzeichen **Abgeräumt** 🌊 im Pistenpass
+(`session.abgeraeumt()` → `onAbzeichen`; im Tal `pass.erreiche`, die
+Meldung rückt im Sommer in die Mitte). Der Rekord im Browser heißt seit der
+neuen Wertung `kabelsee.rekord` (vorher `kabelsee.best`) – alte Rekorde
+sind nicht vergleichbar, und das Angebot der Bestenliste hängt daran.
+**Grab** zählt nur, wenn man vor dem Aufsetzen loslässt (`grabZuSpaet`,
+Meldung „Grab zu spät losgelassen“); der Rest des Tricks zählt weiter.
+Tests in `kabelsee-spiel.test.js`.
 
 **Hinweise am See** (`Session.updateHint`): höchstens einer. Erste Runde
 der Reihe nach (lenken, springen, Luft), danach nach einem Sturz einmal
@@ -1419,7 +1436,11 @@ Abschnitt 1, Nordabfahrt).
      Welten mit MSAA), Speicher mit beiden Welten. Geprüft nur in Chrome,
      verdecktes Fenster, Bild für Bild gespult.
   2. Im Sommer gibt es kein `M`; die Übersicht kommt erst wieder im Winter.
-  3. Die eigene Seite /kabelsee/ hat weder Bestenliste noch Ticket.
+  3. /kabelsee/ ist seit der zweiten Runde eigenständig: der Titel ist ein
+     Menü (Auf den Steg, Bestenliste mit `B`, „Ins Skital“), Esc führt aus
+     Fahrt und Auswertung dorthin, am Handy ein Menüknopf oben rechts.
+     Bestenliste, Pass und Rekord teilen sich mit dem Tal den Speicher.
+     Ein Ticket braucht es dort nicht.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.

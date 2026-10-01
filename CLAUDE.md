@@ -48,7 +48,7 @@ Das Wichtigste in Kürze:
   steht statt des Tals eine Linkliste aus denselben Kacheln
   (`menu/kacheln.js`).
 - Pistenpass: stiller Erkundungsstand, Slalom-Medaillen, acht schwere
-  Abzeichen. **Nie** etwas fürs Hochladen, Wallet, Kurzlink oder Bezahlen.
+  Abzeichen, dazu *Abgeräumt* vom Kabelsee (zählt nicht für Gold). **Nie** etwas fürs Hochladen, Wallet, Kurzlink oder Bezahlen.
   Lieber wenige, schwierige als für alles eins (erste Fassung zu viel).
 - Verworfen und nicht ohne Rückfrage neu anzufangen: **Halfpipe** (funktioniert
   im Fahrmodell nicht) und **Ton** (zweimal gebaut, zweimal abgelehnt).

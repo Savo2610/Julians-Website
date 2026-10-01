@@ -265,7 +265,7 @@ function session() {
   const hud = new Proxy({ touch: false }, { get: (t, k) => (k in t ? t[k] : () => {}) })
   const fx = new Proxy({}, { get: () => () => {} })
   const items = {
-    buoys: [{ x: 10, z: 0, points: 50 }, { x: 20, z: 0, points: 50 }],
+    buoys: [{ x: 10, z: 0 }, { x: 20, z: 0 }],
     rings: [0, 1, 2, 3].map((i) => ({ x: i * 10, z: 5, y: 1, radius: 1.5 })),
     gates: [],
     gesunken: 0,
@@ -284,45 +284,64 @@ function session() {
   return { s, rider, items }
 }
 
-test('Wertung: Ringe verdoppeln sich, 1000 bis 8000', () => {
+test('Wertung: Ringe 1000 bis 8000 und 10 000 fuer alle, direkt aufs Konto', () => {
   const { s, rider, items } = session()
   rider.mode = 'ride'
   const geholt = []
   for (const g of items.rings) {
     Object.assign(rider, { x: g.x, z: g.z, y: g.y - 0.9 })
-    const vorher = s.combo.points
+    const vorher = s.combo.score
     s.checkItems()
-    geholt.push(s.combo.points - vorher)
+    geholt.push(s.combo.score - vorher)
   }
-  assert.deepEqual(geholt, [1000, 2000, 4000, 8000])
+  assert.deepEqual(geholt, [1000, 2000, 4000, 8000 + 10000])
+  // Nicht in die Kombo: dort steht nichts, was ein Sturz loeschen koennte.
+  assert.equal(s.combo.points, 0)
 })
 
-test('Wertung: alle Bojen geben 6000, erst mit der letzten', () => {
+test('Wertung: Bojen 100, alle 10 000 – erst mit der letzten', () => {
   const { s, rider, items } = session()
   rider.mode = 'ride'
   Object.assign(rider, { x: items.buoys[0].x, z: 0, y: 0 })
   s.checkItems()
-  assert.equal(s.combo.score, 0)
+  assert.equal(s.combo.score, 100)
   Object.assign(rider, { x: items.buoys[1].x, z: 0, y: 0 })
   s.checkItems()
-  assert.equal(s.combo.score, 6000)
+  assert.equal(s.combo.score, 200 + 10000)
+  assert.equal(s.combo.points, 0)
 })
 
-test('Wertung: Slalom 300 bis 1050 je Fahne, 8000 nur einmal, dann versinken die Fahnen', () => {
+test('Wertung: Slalom 300 bis 1050 je Fahne, 10 000 nur einmal, dann versinken die Fahnen', () => {
   const { s, items } = session()
   const tore = []
   for (let i = 1; i <= 6; i++) {
-    const vorher = s.combo.points
+    const vorher = s.combo.score
     s.slalomEvent({ type: 'gate', gate: { index: i - 1 }, n: i, of: 6, all: i === 6, streak: i })
-    tore.push(s.combo.points - vorher)
+    tore.push(s.combo.score - vorher)
   }
-  assert.deepEqual(tore, [300, 450, 600, 750, 900, 1050])
-  assert.equal(s.combo.score, 8000)
+  assert.deepEqual(tore, [300, 450, 600, 750, 900, 1050 + 10000])
   assert.equal(s.slalomFertig, true)
   assert.equal(items.gesunken, 1)
-  // Neue Session: der Slalom steht wieder.
   s.starten()
   assert.equal(s.slalomFertig, false)
+})
+
+test('Abzeichen: alle Ringe, alle Bojen und der Slalom in einer Session', () => {
+  const { s, rider, items } = session()
+  const abzeichen = []
+  s.onAbzeichen = (id) => abzeichen.push(id)
+  rider.mode = 'ride'
+  for (const g of items.rings) {
+    Object.assign(rider, { x: g.x, z: g.z, y: g.y - 0.9 })
+    s.checkItems()
+  }
+  for (const b of items.buoys) {
+    Object.assign(rider, { x: b.x, z: 0, y: 0 })
+    s.checkItems()
+  }
+  assert.deepEqual(abzeichen, [])
+  for (let i = 1; i <= 6; i++) s.slalomEvent({ type: 'gate', gate: { index: i - 1 }, n: i, of: 6, all: i === 6, streak: i })
+  assert.deepEqual(abzeichen, ['abgeraeumt'])
 })
 
 test('Hinweise: nach einem Sturz R, nach 30 s ohne Grab die Erinnerung', () => {
@@ -343,4 +362,31 @@ test('Hinweise: nach einem Sturz R, nach 30 s ohne Grab die Erinnerung', () => {
   }
   assert.ok(hinweise.some((t) => /Shift<\/kbd> an die Ski greifen/.test(t)))
   assert.ok(!hinweise.some((t) => /Salto vor und zurück/.test(t)))
+})
+
+test('Grab zaehlt nur, wenn man vor der Landung loslaesst', () => {
+  // Wie beim 180: kurz nach dem Steg 0,4 s laden und abspringen. In der Luft
+  // greifen – bis ins Wasser oder nur die erste halbe Sekunde.
+  const sprung = (bisWann) => {
+    let phase = 0
+    let t0 = 0
+    return ride(12, (r, t) => {
+      if (r.mode === 'dock') return dockStart(r)
+      if (phase === 0 && t > 5 && r.s > 25 && r.s < 45) { phase = 1; t0 = t }
+      if (phase === 1) {
+        if (t - t0 < 0.4) return { jump: true }
+        phase = 2
+      }
+      if (phase === 2 && r.airborne) return { grab: r.air.time < bisWann }
+      return {}
+    // Die erste Landung ist der Huepfer vom Startsteg.
+    }).events.filter((e) => e.type === 'land')[1]
+  }
+  const fest = sprung(Infinity)
+  const los = sprung(0.5)
+  assert.ok(fest && los, 'beide Spruenge gelandet')
+  assert.equal(fest.air.grabZuSpaet, true)
+  assert.ok(!/Grab/.test(fest.result?.name ?? ''), fest.result?.name)
+  assert.ok(!los.air.grabZuSpaet)
+  assert.match(los.result.name, /Mute Grab/)
 })

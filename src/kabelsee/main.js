@@ -1,14 +1,19 @@
 import * as THREE from 'three'
 import '../basis.css'
+import '../menu/bestenliste.css'
+import '../dialogs/dialogs.css'
 
 import { TOUCH } from '../core/device.js'
 import { pointScale } from '../core/point-scale.js'
 import { COLORS } from './config.js'
 import { createKabelsee, TITLE_VIEW } from './see.js'
+import { KabelseeListe } from './bestenliste.js'
+import { abzeichenVermerken } from '../menu/pistenpass.js'
 
-// Der Kabelsee allein, unter veerka.mp/kabelsee/: eigener Renderer, Titel,
-// eigene Schleife. Im Tal laeuft derselbe See ohne all das, siehe
-// src/sommer/.
+// Der Kabelsee allein, unter veerka.mp/kabelsee/: eigener Renderer, Titel
+// als Menue (losfahren, Bestenliste, ins Skital), eigene Schleife. Im Tal
+// laeuft derselbe See ohne all das, siehe src/sommer/. Bestenliste und
+// Pistenpass sind dieselben wie im Tal – gleiche Adresse, gleicher Speicher.
 
 const canvas = document.getElementById('scene')
 
@@ -41,7 +46,11 @@ renderer.toneMappingExposure = 1.05
 renderer.setClearColor(COLORS.fog)
 
 if (TOUCH) document.documentElement.classList.add('touch')
-const see = await createKabelsee({ renderer, canvas, touch: TOUCH })
+const see = await createKabelsee({
+  renderer, canvas, touch: TOUCH,
+  liste: new KabelseeListe(),
+  onAbzeichen: abzeichenVermerken,
+})
 
 // Bildzeit aus performance.now(); THREE.Clock gilt als veraltet.
 let last = performance.now()

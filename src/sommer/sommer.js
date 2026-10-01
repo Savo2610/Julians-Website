@@ -1,7 +1,7 @@
 import './sommer.css'
 import { zeitscheiben } from '../core/zeitscheiben.js'
 import { BADESTEG } from '../world/heightfield.js'
-import { KabelseeListe } from './bestenliste.js'
+import { KabelseeListe } from '../kabelsee/bestenliste.js'
 import { seeTicket } from '../stations/ticket.js'
 
 // Vom Badesteg in den Sommer und zurueck.
@@ -47,7 +47,6 @@ export class Sommer {
     this.verwandlung = null
     // Die Bestenliste des Sees; die Uebersicht (M) zeigt sie im Winter mit.
     this.liste = new KabelseeListe()
-    this.liste.onAngebot = (an) => this.see?.hud.angebot(an)
 
     this.zahl = document.createElement('div')
     this.zahl.className = 'frost sommer-zahl'
@@ -112,10 +111,9 @@ export class Sommer {
         touch: this.touch,
         eingebettet: true,
         pause: zeitscheiben(6),
+        liste: this.liste,
         onZurueck: () => this.zurueck(),
-        onStart: () => this.liste.start(),
-        onErgebnis: (e) => this.liste.ziel(e),
-        onListe: () => this.liste.oeffnen(),
+        onAbzeichen: (id) => this.onAbzeichen?.(id),
       })
       see.verlassen()
       // Shader im Hintergrund uebersetzen (KHR_parallel_shader_compile), sonst

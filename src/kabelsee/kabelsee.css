@@ -305,7 +305,21 @@
   background: rgba(255, 255, 255, 0.6);
   cursor: pointer;
 }
-.kabelsee-hud .liste[hidden] { display: none; }
+.kabelsee-hud .liste:not(.neu) { border-color: rgba(27, 42, 58, 0.18); color: var(--ink); }
+/* Steht das Fenster der Bestenliste offen, geht das Menue dahinter weg:
+   sein oranger Knopf schien durchs Glas und las sich wie eine Warnung. */
+:root:has(dialog[open]) .kabelsee-hud .panel { opacity: 0; }
+.kabelsee-hud .heim {
+  display: block;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.kabelsee-hud .heim::after { content: ' →'; }
+.kabelsee-hud .heim:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* Am Handy im Tal: zurueck in den Winter, wo im Tal der Kartenknopf sitzt.
    Die Zahlen oben rechts ruecken dafuer zur Seite. */
@@ -323,6 +337,7 @@
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 }
+.kabelsee-hud:not([data-mode="play"]) .t-winter { display: none; }
 .kabelsee-hud .t-winter:active { scale: 0.9; }
 .kabelsee-hud .t-winter svg { width: 24px; height: 24px; }
 .kabelsee-hud:has(.t-winter) .hud-stats { right: calc(max(16px, env(safe-area-inset-right)) + 62px); }

@@ -696,7 +696,14 @@ export class RiderPhysics {
       // 90 Grad aufsetzt, slidet quer und hat noch keinen 180 gedreht.
       air.spin = slider ? Math.sign(this.spin) * Math.PI * Math.floor(Math.abs(this.spin) / Math.PI + 0.25) : this.spin
       air.flip = this.flip
+      // Ein Grab zaehlt nur, wenn man die Ski vor dem Aufsetzen wieder
+      // loslaesst (Ansage 01.10.): wer greifend landet, steht nicht.
+      if (this.grabbing && air.grab > 0) {
+        air.grabZuSpaet = true
+        air.grab = 0
+      }
     }
+    this.grabbing = false
     const quality = landingQuality(this.spin, this.flip, { slider })
     const impact = -this.vy
     this.y = surf.h

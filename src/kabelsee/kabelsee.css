@@ -339,6 +339,7 @@
 }
 .kabelsee-hud:not([data-mode="play"]) .t-winter { display: none; }
 .kabelsee-hud .t-winter:active { scale: 0.9; }
+.kabelsee-hud .t-neu { top: calc(max(16px, env(safe-area-inset-top)) + 58px); }
 .kabelsee-hud .t-winter svg { width: 24px; height: 24px; }
 .kabelsee-hud:has(.t-winter) .hud-stats { right: calc(max(16px, env(safe-area-inset-right)) + 62px); }
 .kabelsee-hud[hidden] { display: none; }

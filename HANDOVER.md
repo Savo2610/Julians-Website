@@ -1085,6 +1085,11 @@ Alle drei in einer Session: Abzeichen **Abgeräumt** 🌊 im Pistenpass
 Meldung rückt im Sommer in die Mitte). Der Rekord im Browser heißt seit der
 neuen Wertung `kabelsee.rekord` (vorher `kabelsee.best`) – alte Rekorde
 sind nicht vergleichbar, und das Angebot der Bestenliste hängt daran.
+**Abwechslung**: derselbe Trick gibt in einer Session beim ersten Mal
+alles, danach je 30 % weniger (70, 49, 34 …, nie unter 20 %;
+`wiederholung()` in `tricks.js`). „Derselbe“ heißt gleicher Name ohne
+Slide-Länge und ohne „Big Air“; Grab und Switch machen einen anderen Trick.
+Die Meldung sagt „3. Mal“, die Auswertung zählt verschiedene Tricks.
 **Grab** zählt nur, wenn man vor dem Aufsetzen loslässt (`grabZuSpaet`,
 Meldung „Grab zu spät losgelassen“); der Rest des Tricks zählt weiter.
 Tests in `kabelsee-spiel.test.js`. Mit dem Livegang (`d9bae55`) ist
@@ -1093,7 +1098,8 @@ gelöscht; die Liste beginnt leer.
 
 **Hinweise am See** (`Session.updateHint`): höchstens einer. Erste Runde
 der Reihe nach (lenken, springen, Luft), danach nach einem Sturz einmal
-`R` für eine neue Session (am Handy nicht, dort gibt es kein R), und wer
+`R` für eine neue Session (am Handy der Knopf ↻ unter dem Menü- bzw.
+Schneeflockenknopf oben rechts, nur während der Fahrt), und wer
 Lenken, Springen, Salto oder Grab 30 s nicht benutzt hat, sieht dessen
 Hinweis 5 s lang, höchstens alle 10 s einer. Die Eingabe kommt je Bild über
 `session.merke(inp)`.

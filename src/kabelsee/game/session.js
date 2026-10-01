@@ -1,7 +1,7 @@
 import { TRICK } from '../config.js'
 import { CABLE_LENGTH } from '../world/cable-path.js'
 import { DOCK_S } from '../player/rider-physics.js'
-import { Combo } from './tricks.js'
+import { Combo, trickSchluessel } from './tricks.js'
 import { Slalom } from './slalom.js'
 
 // Der Ablauf einer Session: Titel, Start am Steg, drei Runden, Auswertung.
@@ -74,6 +74,8 @@ export class Session {
     this.slalom = new Slalom()
     this.stats = { buoys: 0, rings: 0, crashes: 0, bestTrick: null, bestCombo: 0, topSpeed: 0, abgeraeumt: false }
     this.slalomFertig = false
+    // Wie oft welcher Trick in dieser Session schon stand (Abwechslung).
+    this.gestanden = new Map()
     // Hinweise: Fahrzeit, letzte Benutzung je Taste, laufende Erinnerung.
     this.fahrzeit = 0
     this.zuletzt = { lenken: 0, springen: 0, salto: 0, grab: 0 }
@@ -240,7 +242,7 @@ export class Session {
       springen: touch ? 'Vor dem Kicker <b>Sprung</b> halten, an der Kante loslassen' : `Vor dem Kicker ${k('Leertaste', true)} halten, an der Kante loslassen`,
       salto: touch ? 'In der Luft: ▲ ▼ Salto vor und zurück' : `In der Luft: ${k('W')}${k('S')} Salto vor und zurück`,
       grab: touch ? 'In der Luft: <b>Grab</b> an die Ski greifen' : `In der Luft: ${k('Shift', true)} an die Ski greifen`,
-      neu: `${k('R')} zurück an den Steg – neue Session`,
+      neu: touch ? '↻ oben rechts: zurück an den Steg – neue Session' : `${k('R')} zurück an den Steg – neue Session`,
     }
     if (r.mode === 'ride') this.fahrzeit += dt
     this._ruhe = Math.max(0, this._ruhe - dt)
@@ -261,7 +263,7 @@ export class Session {
     }
     // Nach einem Sturz gleich, auch mitten in der ersten Runde.
     if (this._nachSturz && !this._erinnerung) {
-      if (!touch) this._erinnerung = { text: TEXT.neu, bis: 5 }
+      this._erinnerung = { text: TEXT.neu, bis: 5 }
       this._nachSturz = false
     }
     if (this._erinnerung) return this.hud.setHint(this._erinnerung.text)
@@ -303,7 +305,10 @@ export class Session {
         fx.land(e)
         if (e.air?.grabZuSpaet) this.hud.showToast('Grab zu spät losgelassen', 1.4)
         if (e.result) {
-          const pts = this.combo.trick(e.result, e.quality)
+          const key = trickSchluessel(e.result.name)
+          const mal = (this.gestanden.get(key) ?? 0) + 1
+          this.gestanden.set(key, mal)
+          const pts = this.combo.trick(e.result, e.quality, mal)
           if (!this.stats.bestTrick || pts > this.stats.bestTrick.points) this.stats.bestTrick = { name: e.result.name, points: pts }
         }
         break
@@ -328,7 +333,7 @@ export class Session {
 
   comboEvent(e) {
     if (e.type === 'trick') {
-      this.hud.showTrick(e.name, `${e.quality} +${fmt(e.points)}`, e.key)
+      this.hud.showTrick(e.name, `${e.quality} +${fmt(e.points)}${e.mal > 1 ? ` · ${e.mal}. Mal` : ''}`, e.key)
     } else if (e.type === 'bank' && e.multiplier > 1) {
       this.hud.showToast(`Kombo ×${e.multiplier}  +${fmt(e.points)}`, 1.6)
     } else if (e.type === 'lost') {
@@ -425,6 +430,7 @@ export class Session {
       score, record, best: this.best,
       bestTrick: this.stats.bestTrick,
       bestCombo: this.stats.bestCombo,
+      verschiedene: this.gestanden.size,
       buoys: this.stats.buoys, buoysTotal: this.items.buoys.length,
       rings: this.stats.rings, ringsTotal: this.items.rings.length,
       topSpeed: this.stats.topSpeed, crashes: this.stats.crashes,

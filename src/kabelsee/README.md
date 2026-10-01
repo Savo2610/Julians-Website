@@ -30,7 +30,7 @@ npm run dev          # http://localhost:5173/kabelsee/ (allein), / (vom Badesteg
 Online unter **veerka.mp/kabelsee/** und vom Badesteg im Tal. Allein ist der
 Titel das Menü: Enter fährt los, `B` zeigt die Bestenliste, darunter geht es
 ins Skital; `Esc` führt aus Fahrt und Auswertung zurück ins Menü (am Handy
-der Knopf oben rechts). Im Tal gibt es keinen Titel: man steht gleich am
+der Knopf ☰ oben rechts, darunter ↻ für eine neue Session). Im Tal gibt es keinen Titel: man steht gleich am
 Steg, nach drei Runden geht es mit Enter weiter und mit `Esc` zurück in
 den Winter. `B` trägt in beiden Fällen nach einem neuen Rekord in die
 Bestenliste ein und zeigt sie sonst nur an.
@@ -129,6 +129,10 @@ einer Runde in derselben Session holt, bekommt das Abzeichen **Abgeräumt**
 im Pistenpass von veerka.mp.
 
 Ein **Grab** zählt nur, wenn man die Ski vor dem Aufsetzen wieder loslässt.
+
+**Abwechslung** lohnt sich: derselbe Trick gibt in einer Session beim
+ersten Mal alles, danach jedes Mal 30 Prozent weniger, bis auf 20 Prozent.
+Ein Grab oder Switch macht daraus einen anderen Trick, mehr Höhe nicht.
 
 Trickwerte: 180 = 150, 360 = 300, 540 = 550, 720 = 800, 1080 = 1500;
 Backflip = 550, Frontflip = 550, Doppelsalto = 1500. Salto mit Drehung ist

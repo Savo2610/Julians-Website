@@ -109,6 +109,13 @@ export class Hud {
       this.winter.type = 'button'
       this.winter.setAttribute('aria-label', eingebettet ? 'Zurück in den Winter' : 'Menü')
     }
+    // Darunter das R der Tastatur: zurueck an den Steg, neue Session.
+    const NEU = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.2 12a7.2 7.2 0 1 1-2.1-5.1M19.5 4.2v4.6h-4.6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    this.neu = touch ? el('button', 'glass t-winter t-neu', root, NEU) : null
+    if (this.neu) {
+      this.neu.type = 'button'
+      this.neu.setAttribute('aria-label', 'Neu starten')
+    }
   }
 
   setMode(mode) {
@@ -127,6 +134,7 @@ export class Hud {
     this.rList.innerHTML = `
       <dt>Bester Trick</dt><dd>${r.bestTrick ? `${r.bestTrick.name} <small>${fmt(r.bestTrick.points)}</small>` : '–'}</dd>
       <dt>Größte Kombo</dt><dd>${r.bestCombo ? fmt(r.bestCombo) : '–'}</dd>
+      <dt>Verschiedene Tricks</dt><dd>${r.verschiedene || '–'}</dd>
       <dt>Bojen</dt><dd>${r.buoys} von ${r.buoysTotal}</dd>
       <dt>Ringe</dt><dd>${r.rings} von ${r.ringsTotal}</dd>
       <dt>Slalom</dt><dd>${r.slaloms ? 'alle Tore in einer Runde ✓' : `${r.gates} ${r.gates === 1 ? 'Tor' : 'Tore'}`}</dd>

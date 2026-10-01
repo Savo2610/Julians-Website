@@ -22,6 +22,7 @@ export class Slalom {
     this.passed = new Set()   // in dieser Runde
     this.total = 0            // in der Session
     this.runs = 0             // ganze Slaloms
+    this.beste = 0            // meiste Fahnen in einer Runde (Auswertung)
     this._lastS = null
   }
 
@@ -55,6 +56,7 @@ export class Slalom {
     if (ok) {
       this.passed.add(g.index)
       this.total += 1
+      this.beste = Math.max(this.beste, this.passed.size)
       const all = this.passed.size === this.gates.length
       if (all) this.runs += 1
       // streak: wie viele Fahnen in dieser Runde schon, diese mitgezaehlt.

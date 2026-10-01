@@ -8,10 +8,10 @@
 //    liegen: drei Runden sind 3 × 438 m Seil bei 15 m/s, also 88 s, und
 //    vorbeiziehen kann man am Mitnehmer hoechstens um die 17 m Seil.
 // 2. Die Punkte muessen moeglich sein: hoechstens 1 000 000 und hoechstens
-//    8 000 je Sekunde der Session. Seit 01.10. zaehlen Ringe 1000 bis 8000
-//    (in einer ×5-Kombo bis 40 000), der Slalom einmal 8000, alle Bojen
-//    6000; Julian kam mit Kombos schon vorher auf 40 000. Die Grenzen
-//    lassen dem reichlich Luft und fangen nur Unsinn.
+//    8 000 je Sekunde der Session. Gefahren kam Julian auf 40 000 bis
+//    60 000; Bojen, Ringe und Tore legen am Ende hoechstens das 1,5-Fache
+//    drauf (session.js sammelBonus), also um 150 000 in gut 90 s. Die
+//    Grenzen lassen dem reichlich Luft und fangen nur Unsinn.
 // 3. Jede Startmarke zaehlt einmal, jede Adresse hoechstens 40 Eintraege am
 //    Tag, Namen wie beim Slalom (marken.js).
 // Die Marken tragen k: 'kabelsee', damit keine Slalom-Marke hier gilt.

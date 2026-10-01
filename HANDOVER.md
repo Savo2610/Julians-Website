@@ -1062,23 +1062,30 @@ sommer → zurueck → winter):
 mit `k: 'kabelsee'`, damit keine Slalom-Marke gilt). Startmarke beim Start
 am Steg, Zielmarke nach Runde drei; dazwischen mindestens **80 s** (drei
 Runden = 3 × 438 m bei 15 m/s = 88 s), höchstens 20 min, höchstens
-1 000 000 Punkte und **8 000 je Sekunde** (mit den neuen Ringen bis
-40 000 je Ring in einer ×5-Kombo). Angebot nur
-bei neuem eigenen Rekord in diesem Browser (`kabelsee.best`, derselbe
+1 000 000 Punkte und **8 000 je Sekunde** (der Aufschlag am Ende macht
+höchstens das 2,5-Fache der Fahrt). Angebot nur
+bei neuem eigenen Rekord in diesem Browser (`kabelsee.rekord`, derselbe
 Schlüssel wie auf der eigenen Seite). Der Name ist derselbe wie am Slalom.
 Reiter **Bestenliste** der Übersicht: Slalom, darunter Kabelsee mit „Zum
-Badesteg“. Die eigene Seite /kabelsee/ hat keine Bestenliste.
+Badesteg“; die eigene Seite /kabelsee/ hat sie im Menü (B).
 
-**Wertung am See** (zweite Runde, Ansage 01.10.): Gesammeltes geht
-**direkt aufs Konto**, nicht in die Kombo – die gehört den Tricks. In der
-ersten Runde liefen Ringe durch die Kombo und brachten mit ×5 bis 40 000.
-Belohnt wird das Vollständige:
+**Wertung am See** (dritte Runde, Ansage 01.10.): Unterwegs zählen nur
+Tricks (Kombo) und 300 je Runde. Bojen, Ringe und Tore zählen erst **am
+Ende**, als Aufschlag in Prozent auf die gefahrenen Punkte – wer gut fährt
+*und* einsammelt, bekommt am meisten (`sammelBonus()` in `session.js`):
 
-| | einzeln | alle |
+| | anteilig | alle |
 |---|---|---|
-| Bojen | 100 | +10 000 (alle 17) |
-| Ringe | 1000 → 2000 → 4000 → 8000 | +10 000 (alle 4) |
-| Tore | 300 … 1050 je Fahne einer Runde | +10 000 (alle 6 in einer Runde, einmal je Session; dann versinken die Fahnen) |
+| Bojen (17) | bis 25 % | +50 % |
+| Ringe (4) | 5 → 10 → 20 % | +50 % |
+| Tore (6, beste Runde) | bis 25 % | +50 % (einmal je Session; dann versinken die Fahnen) |
+
+Alles zusammen ist das 2,5-Fache der Fahrt. Die Auswertung zählt vor
+(`Hud.abrechnen`, getaktet über `update(dt)`): erst steht „Gefahren“, dann
+kommt je 0,9 s eine Zeile „Ringe 2 von 4 · +10 % · +3 840“, und die große
+Zahl läuft mit; ein neuer Rekord erscheint erst am Schluss. Vorher
+(zweite Runde) gab es feste Punkte, Ringe 1000 bis 8000 und je Sorte
++10 000 für alle; davor liefen Ringe durch die Kombo (bis 40 000).
 
 Alle drei in einer Session: Abzeichen **Abgeräumt** 🌊 im Pistenpass
 (`session.abgeraeumt()` → `onAbzeichen`; im Tal `pass.erreiche`, die

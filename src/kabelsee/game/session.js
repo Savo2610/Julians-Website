@@ -5,26 +5,37 @@ import { Combo, trickSchluessel } from './tricks.js'
 import { Slalom } from './slalom.js'
 
 // Der Ablauf einer Session: Titel, Start am Steg, drei Runden, Auswertung.
-// Gewertet werden Tricks, Bojen, Ringe und der Slalom.
+// Unterwegs zaehlen Tricks und Runden; Bojen, Ringe und der Slalom legen
+// am Ende einen Aufschlag drauf (sammelBonus).
 // Hier landen die Ereignisse des Fahrmodells und werden zu Punkten,
 // Meldungen und Effekten. Die Anzeige selbst macht hud.js.
 
 export const LAPS = 3
-// Punkte fuer das, was auf dem See liegt. Es geht direkt aufs Konto, nicht
-// in die Kombo: die gehoert den Tricks (Ansage 01.10., zweite Runde – in der
-// ersten liefen Ringe noch durch die Kombo und brachten bis 40 000). Belohnt
-// wird dafuer das Vollstaendige: alle Bojen, alle Ringe, alle Tore einer
-// Runde je 10 000, und alle drei in einer Session sind ein Abzeichen.
+
+// Was auf dem See liegt, zaehlt erst am Ende (Ansage 01.10., dritte Runde):
+// als Aufschlag in Prozent auf die gefahrenen Punkte, den die Auswertung
+// Zeile fuer Zeile dazuzaehlt. So bleibt die Fahrt den Tricks, und wer
+// gut faehrt UND einsammelt, bekommt das meiste – die Haelfte obendrauf
+// je Sorte, alles zusammen das 2,5-Fache.
 //
-// Bojen 100. Ringe verdoppeln sich, 1000 bis 8000 – schon der vierte ist
-// eine Ansage. Tore: jede Fahne mehr als die vorige derselben Runde (300,
-// 450 … 1050); alle sechs in einer Runde nur einmal je Session, danach
-// versinken die Fahnen, und die Geraden gehoeren wieder den Kickern.
-const BOJE = 100
-const RING_BASIS = 1000
-const GATE_POINTS = 150
-const GATE_STEP = 150
-const ALLE = 10000
+// Bojen: anteilig bis 25 %, alle 50 %. Ringe verdoppeln sich wie vorher
+// die Punkte: 5, 10, 20 %, alle vier 50 %. Tore: die beste Runde anteilig
+// bis 25 %, alle sechs in einer Runde 50 % – danach versinken die Fahnen,
+// und die Geraden gehoeren wieder den Kickern.
+const ANTEIL = 25
+const ALLE = 50
+export function sammelBonus({ buoys, buoysTotal, rings, ringsTotal, gates, gatesTotal }, basis) {
+  const zeile = (art, n, von, prozent) => ({
+    art, n, von, prozent, alle: n > 0 && n === von,
+    punkte: Math.round((basis * prozent) / 1000) * 10,
+  })
+  const anteilig = (n, von) => (n >= von ? ALLE : Math.round((ANTEIL * n) / von))
+  return [
+    zeile('Bojen', buoys, buoysTotal, anteilig(buoys, buoysTotal)),
+    zeile('Ringe', rings, ringsTotal, rings >= ringsTotal ? ALLE : rings ? 5 * 2 ** (rings - 1) : 0),
+    zeile('Tore', gates, gatesTotal, anteilig(gates, gatesTotal)),
+  ]
+}
 const fmt = (n) => Math.round(n).toLocaleString('de-DE')
 
 // Neuer Schluessel mit der neuen Wertung (01.10.): Rekorde aus der alten
@@ -349,17 +360,14 @@ export class Session {
       this.items.resetGates?.()
     } else if (e.type === 'gate') {
       this.items.setGate?.(e.gate.index, true)
-      const pts = GATE_POINTS + GATE_STEP * e.streak
-      this.combo.bonus(pts, 'Tor')
       this.fx.gate?.(e.gate)
       if (e.all) {
         this.slalomFertig = true
-        this.combo.bonus(ALLE, 'Slalom')
-        this.hud.showTrick('Slalom', `alle ${e.of} Tore +${fmt(ALLE)}`, 'perfect')
+        this.hud.showTrick('Slalom', `alle ${e.of} Tore · +${ALLE} % am Ende`, 'perfect')
         this.items.versenkeTore?.()
         this.abgeraeumt()
       } else {
-        this.hud.showToast(`Tor ${e.n}/${e.of}  +${pts}`, 1)
+        this.hud.showToast(`Tor ${e.n}/${e.of}`, 1)
       }
     } else if (e.type === 'miss') {
       this.hud.showToast('Tor verpasst', 1.2)
@@ -386,11 +394,9 @@ export class Session {
         b.taken = true
         b.pop = 0.35
         this.stats.buoys += 1
-        this.combo.bonus(BOJE, 'Boje')
         this.fx.collect(b)
         if (this.stats.buoys === this.items.buoys.length) {
-          this.combo.bonus(ALLE, 'Bojen')
-          this.hud.showTrick('Alle Bojen', `+${fmt(ALLE)}`, 'perfect')
+          this.hud.showTrick('Alle Bojen', `+${ALLE} % am Ende`, 'perfect')
           this.abgeraeumt()
         }
       }
@@ -401,14 +407,12 @@ export class Session {
       if (d < g.radius + 0.4) {
         g.taken = true
         g.pop = 0.4
-        const pts = RING_BASIS * 2 ** this.stats.rings
         this.stats.rings += 1
-        this.combo.bonus(pts, 'Ring')
-        this.hud.showToast(`Ring ${this.stats.rings}/${this.items.rings.length}  +${fmt(pts)}`, 1.2)
         if (this.stats.rings === this.items.rings.length) {
-          this.combo.bonus(ALLE, 'Ringe')
-          this.hud.showTrick('Alle Ringe', `+${fmt(ALLE)}`, 'perfect')
+          this.hud.showTrick('Alle Ringe', `+${ALLE} % am Ende`, 'perfect')
           this.abgeraeumt()
+        } else {
+          this.hud.showToast(`Ring ${this.stats.rings}/${this.items.rings.length}`, 1.2)
         }
         this.fx.collect(g)
       }
@@ -419,7 +423,14 @@ export class Session {
     this.combo.bank()
     for (const e of this.combo.events) this.comboEvent(e)
     this.combo.events.length = 0
-    const score = this.combo.score
+    const fahrt = this.combo.score
+    const sammeln = sammelBonus({
+      buoys: this.stats.buoys, buoysTotal: this.items.buoys.length,
+      rings: this.stats.rings, ringsTotal: this.items.rings.length,
+      gates: this.slalom.beste, gatesTotal: this.slalom.gates.length,
+    }, fahrt)
+    const score = fahrt + sammeln.reduce((n, z) => n + z.punkte, 0)
+    const bisher = this.best
     const record = score > this.best && score > 0
     if (record) {
       this.best = score
@@ -427,14 +438,11 @@ export class Session {
     }
     this.state = 'results'
     const ergebnis = {
-      score, record, best: this.best,
+      score, fahrt, sammeln, record, best: this.best, bisher,
       bestTrick: this.stats.bestTrick,
       bestCombo: this.stats.bestCombo,
       verschiedene: this.gestanden.size,
-      buoys: this.stats.buoys, buoysTotal: this.items.buoys.length,
-      rings: this.stats.rings, ringsTotal: this.items.rings.length,
       topSpeed: this.stats.topSpeed, crashes: this.stats.crashes,
-      gates: this.slalom.total, gatesTotal: this.slalom.gates.length * LAPS, slaloms: this.slalom.runs,
     }
     this.hud.showResults(ergebnis)
     this.onErgebnis?.(ergebnis)

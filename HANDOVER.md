@@ -1462,6 +1462,7 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+bdf229d  Kabelsee: Abwechslung bei Tricks, Neustart am Handy (Merge)
 d9bae55  Kabelsee: neue Wertung, Abzeichen, eigene Seite mit Menue (Merge)
 1d9f926  Kabelsee: Sammeln ausserhalb der Kombo, Abzeichen, Grab loslassen, eigene Seite mit Menue
 9656ed1  Kabelsee: vom Badesteg am Eissee in den Sommer (Merge)

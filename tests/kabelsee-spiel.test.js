@@ -199,8 +199,8 @@ test('Slalom: mit grossen Boegen alle Tore, ohne Lenken keines', () => {
 
 test('Bojen: wer den Boegen folgt, holt in der ersten Runde fast alle', () => {
   // Wie ein Fahrer, der den Bogen sieht: 5 m vorausschauend auf seine
-  // Linie, in der Luft nicht lenken. Mit dem alten Ostbogen (12 m aussen)
-  // kam er am Scheitel nur auf 9 bis 11 m und holte 10 bis 13 von 17.
+  // Linie, in der Luft nicht lenken. Mit dem alten Ostbogen (12 m aussen) kam er
+  // am Scheitel nur auf 9 bis 11 m und holte 10 bis 13 von 17.
   const ziel = (s) => {
     for (const [s0, span, , max, side = 1] of BUOY_ARCS) {
       const t = wrap(s - s0) / span

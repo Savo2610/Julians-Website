@@ -120,29 +120,6 @@ function buoyArc(s0, span, count, maxOffset, side = 1) {
   return list
 }
 
-// Auf West- und Suedgerade liegt der Slalom, dort gibt es keine Bojen. Es
-// sind bewusst wenige: mit 29 lag ueberall etwas, und man sammelte nur noch,
-// statt zu fahren.
-//
-// 15 seit 01.10. (vorher 17, davon 10 im Osten, unten rechts im Bild): der
-// Bogen aussen auf der Ostgeraden lag 12 m neben der Linie, weiter als die
-// Slalomfahnen, und ein Testfahrer, der dem Bogen mit 5 m Vorschau folgt,
-// kam am Scheitel nur auf 9 bis 11 m; der Bogen innen hinter Kicker und
-// Rail war im selben Atemzug kaum zu holen. Jetzt aussen drei bis 8 m
-// (Scheitel 7 bis 9 m erreicht), der Bogen hinter der Rail ist weg, und
-// dafuer zieht der Innenbogen der Nordwestecke bis auf die Westgerade. Der
-// Testfahrer holt in der ersten Runde 13 von 15 statt 10 bis 13 von 17.
-// [Start s, Laenge, Anzahl, Scheitel neben der Linie, Seite]; der Test
-// faehrt die Boegen ab (kabelsee-spiel.test.js).
-export const BUOY_ARCS = [
-  [24, 30, 4, 11],          // Nordgerade gleich nach dem Start
-  [84, 40, 5, 7, -1],       // innen durch die Nordwestecke auf die Westgerade
-  [326, 16, 3, 6, -1],      // innen durch die Suedostecke
-  [352, 24, 3, 8],          // Ostgerade aussen
-]
-export const BUOYS = BUOY_ARCS.flatMap((a) => buoyArc(...a))
-  .map((b, i) => ({ ...b, id: `b${i}`, kind: 'buoy' }))
-
 // --- Slalom -----------------------------------------------------------------
 // Fahnen im Wechsel innen und aussen, alle auf den Geraden; jede muss man
 // auf ihrer abgewandten Seite umfahren, also weit hinaus, bis das Seil
@@ -188,3 +165,28 @@ export const RINGS = FEATURES.filter((f) => f.type === 'kicker').map((f, i) => {
     dx: f.dx, dz: f.dz, radius: 1.7,
   }
 })
+
+// --- Bojen ------------------------------------------------------------------
+// Es sind bewusst wenige: mit 29 lag ueberall etwas, und man sammelte nur
+// noch, statt zu fahren. 15 seit 01.10., je drei in einem Bogen auf jeder
+// Seite des Sees, auch auf den Slalomgeraden – man hat drei Runden, Slalom
+// in der einen, Bojen in der anderen. Dort liegen sie zwischen den Fahnen
+// und hoechstens 6 m draussen.
+//
+// Vorher lagen 10 von 17 im Osten (unten rechts im Bild), ein Bogen 12 m
+// draussen, weiter als die Fahnen: ein Testfahrer, der dem Bogen mit 5 m
+// Vorschau folgt, kam am Scheitel nur auf 9 bis 11 m und holte in der
+// ersten Runde 10 bis 13 von 17. Jetzt hoechstens 9 m, und er holt 13
+// bis 14 von 15.
+//
+// [Start s, Laenge, Anzahl, Scheitel neben der Linie, Seite]; der Test
+// faehrt die Boegen ab (kabelsee-spiel.test.js).
+export const BUOY_ARCS = [
+  [24, 30, 3, 9],           // Nordgerade gleich nach dem Start
+  [84, 20, 3, 7, -1],       // innen durch die Nordwestecke
+  [150, 36, 3, 6, -1],      // Westgerade innen, neben der Box
+  [258, 30, 3, 6],          // Suedgerade aussen, zwischen den Kickern
+  [352, 24, 3, 8],          // Ostgerade aussen
+]
+export const BUOYS = BUOY_ARCS.flatMap((a) => buoyArc(...a))
+  .map((b, i) => ({ ...b, id: `b${i}`, kind: 'buoy' }))

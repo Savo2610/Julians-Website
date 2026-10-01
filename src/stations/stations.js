@@ -13,7 +13,7 @@ import { createTimeClock } from '../world/props/time-clock.js'
 import { CAMERA } from '../config.js'
 import { TOUCH } from '../core/device.js'
 import { findFlatSpot } from '../world/heightfield.js'
-import { ticket } from './ticket.js'
+import { ticket, seeTicket } from './ticket.js'
 
 // Die Kamera blickt immer aus derselben Richtung. Objekte mit einer
 // Schauseite muessen ihr also zugewandt sein, sonst liest man Schilder von
@@ -259,7 +259,7 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
   register({
     id: 'kasse',
     label: 'Skikasse',
-    hint: 'Trinkgeld & Rundflug',
+    hint: 'Trinkgeld & Tickets',
     color: '#2b8ce6',
     position: STATION_SPOTS.ticket,
     radius: 5.0,
@@ -282,6 +282,12 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
         label: 'Rundflug', glyph: 'ticket', color: '#e0662b',
         sub: () => ticket.vorhanden ? 'Ticket in der Tasche ✓' : 'Ticket für die Drohne · gratis',
         action: () => { ticket.loesen() },
+      },
+      // Und eins fuer den Kabelsee: entwertet am Badesteg (src/sommer/).
+      {
+        label: 'Kabelsee', glyph: 'welle', color: '#2a8f9c',
+        sub: () => seeTicket.vorhanden ? 'Ticket in der Tasche ✓' : 'Ticket für den Badesteg · gratis',
+        action: () => { seeTicket.loesen() },
       },
     ],
   })

@@ -71,6 +71,67 @@ function lakeGround(x, z, height) {
   return height + (LAKE.level - height) * blend
 }
 
+// Der Badesteg am Nordufer: von hier geht es in den Sommer an den Kabelsee
+// (src/sommer/). Er steckt wie der Steg ueber die Klamm im Hoehenfeld,
+// damit man ihn befaehrt und vorn aufs Eis huepft; das Holz liegt nur
+// darauf (props/badesteg.js). 45 cm ueber dem Eis: so hoch steht die Boeschung
+// 1,2 m hinter der Uferlinie, dort setzt er an. Er zeigt nach Sueden, nur
+// zehn Grad nach Westen: im Bild nach links unten wie der Startsteg am
+// Kabelsee – im Moment der Verwandlung liegen beide Stege fast gleich.
+// Genau radial zur Seemitte lag er im Bild waagerecht.
+export const BADESTEG = {
+  von: { x: -41.19, z: 25.03 },   // Landende auf der Boeschung
+  bis: { x: -42.35, z: 31.73 },   // Spitze, 6,8 m weiter ueber dem Eis
+  // Ebener Streifen und Saum liegen ganz unter den Bohlen (2,2 m breit):
+  // man sieht Holz ueber Eis, keine Rampe. Eine 2 m breite Verwehung fing
+  // den Sprung ab, nahm dem Steg aber die Kante (Ansage 01.10.). Dass die
+  // Stufe keine Schanze ist, regelt stattdessen kantenSprung().
+  breite: 1.1,   // halbe Breite der Bohlen
+  halb: 0.8,     // halbe Breite des ebenen Streifens darunter
+  saum: 0.3,
+  hoehe: LAKE.level + 0.45,
+}
+const STEG_DX = BADESTEG.bis.x - BADESTEG.von.x
+const STEG_DZ = BADESTEG.bis.z - BADESTEG.von.z
+export const BADESTEG_LAENGE = Math.hypot(STEG_DX, STEG_DZ)
+export const BADESTEG_RICHTUNG = { x: STEG_DX / BADESTEG_LAENGE, z: STEG_DZ / BADESTEG_LAENGE }
+
+// Laengs (ab Landende) und quer (Abstand zur Mittellinie) auf dem Steg.
+export function badestegLage(x, z) {
+  const rx = x - BADESTEG.von.x
+  const rz = z - BADESTEG.von.z
+  const r = BADESTEG_RICHTUNG
+  return { laengs: rx * r.x + rz * r.z, quer: Math.abs(-rx * r.z + rz * r.x) }
+}
+
+// Zieht das Gelaende auf die Hoehe des Stegs. Quer und vorn mit dem kurzen
+// Saum unter den Bohlen, laengs am Landende ueber einen Meter in die
+// Boeschung.
+function badesteg(x, z, h) {
+  const { laengs, quer } = badestegLage(x, z)
+  const L = BADESTEG_LAENGE
+  if (laengs <= -1 || laengs >= L || quer >= BADESTEG.halb + BADESTEG.saum) return h
+  const wq = quer <= BADESTEG.halb ? 1 : 1 - smooth((quer - BADESTEG.halb) / BADESTEG.saum)
+  const vorn = L - BADESTEG.saum
+  const wl = laengs < 0 ? 1 - smooth(-laengs) : laengs > vorn ? 1 - smooth((laengs - vorn) / BADESTEG.saum) : 1
+  const w = wq * wl
+  // Nur anheben: auf der Boeschung liegt das Gelaende schon hoeher als der
+  // Steg, dort traegt es ihn.
+  return h < BADESTEG.hoehe ? h + (BADESTEG.hoehe - h) * w : h
+}
+
+// Wie schnell der Boden hier einen Fahrer hoechstens in die Luft werfen
+// darf (m/s). Das Fahrmodell nimmt die Steigrate des Bodens mit ueber jede
+// Kante (skier.js) – an einer Schanze ist das gewollt, an einer Stufe nicht:
+// vom Eis auf den Badesteg sind es 45 cm auf 30 cm, also bis 24 m/s, und man
+// flog 5 m hoch. Mit 4 m/s huepft man gut 40 cm, wie man eben auf einen Steg
+// huepft. Ueberall sonst keine Grenze.
+export function kantenSprung(x, z) {
+  if (Math.abs(x - BADESTEG.von.x) > 12 || Math.abs(z - BADESTEG.von.z) > 12) return Infinity
+  const { laengs, quer } = badestegLage(x, z)
+  return quer < BADESTEG.breite + 1 && laengs > -1 && laengs < BADESTEG_LAENGE + 1 ? 4 : Infinity
+}
+
 // Der Startplatz ist ein echtes Plateau: flach genug zum Abstecken, leicht
 // erhoeht, damit man von dort in die drei Taeler blickt.
 export const PLATEAU = { x: 0, z: 30, radius: 11, height: 2.4 }
@@ -704,6 +765,7 @@ export function terrainHeight(x, z) {
   // Zugefrorener See. Bewusst flach: man soll hineinfahren koennen, ohne in
   // ein Loch zu fallen.
   h = lakeGround(x, z, h)
+  h = badesteg(x, z, h)
 
   // Renn- und Funparkband: ziehen ihren Streifen auf gleichmaessiges Gefaelle.
   // Das feine Rauschen kommt danach wieder drauf, damit die Bahn nicht wie

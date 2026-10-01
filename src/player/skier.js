@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
@@ -294,7 +294,9 @@ export class Skier {
           // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
           // Deckel liegt bei vierzehn – knapp sechs Meter Scheitelhoehe und
           // anderthalb Sekunden Flug, mehr als jede Schanze im Park hergibt.
-          this.vy = Math.min(this._rise - G * dt, 14)
+          // Und eine Stufe ist keine Schanze: am Badesteg wirft sie
+          // hoechstens mit 4 m/s (kantenSprung in heightfield.js).
+          this.vy = Math.min(this._rise - G * dt, 14, kantenSprung(nx, nz))
           this.height = Math.min(free - groundY, 0.6)
         }
       }

@@ -68,6 +68,17 @@ export function assemble(parts) {
     })
   }
 
+  // Selbstgebaute Flaechen haben nur Positionen, Primitive auch Normalen und
+  // UVs – der Kabelsee mischt beides. Dann zaehlt fuer das Zusammenfuehren
+  // nur die Position; Normalen rechnet computeVertexNormals() danach ohnehin
+  // neu. Passen alle zusammen, bleibt alles wie es ist (Tafeln im Tal).
+  const attribute = (g) => Object.keys(g.attributes).sort().join()
+  if (new Set(list.map(attribute)).size > 1) {
+    list.forEach((g) => {
+      for (const name of Object.keys(g.attributes)) if (name !== 'position') g.deleteAttribute(name)
+    })
+  }
+
   list.forEach((g, i) => tint(g, parts[i].color))
   const merged = mergeGeometries(list, false)
   list.forEach((g) => g.dispose())

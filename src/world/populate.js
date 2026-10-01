@@ -8,10 +8,11 @@ import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
 import { WORLD, CAMERA } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE, BADESTEG } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
+import { createBadesteg } from './props/badesteg.js'
 import { createBackdrop } from './props/backdrop.js'
 import { createFence, createPisteMarkers } from './props/fence.js'
 import { createBreakableFence } from './props/park-fence.js'
@@ -44,6 +45,7 @@ const CLEARINGS = [
   { x: -58.5, z: 25, r: 5.5 },
   { x: PLATEAU.x, z: PLATEAU.z, r: PLATEAU.radius + 5 },   // Startplateau
   { x: LAKE.x, z: LAKE.z, r: LAKE.radius * 1.02 },
+  { x: BADESTEG.von.x, z: BADESTEG.von.z, r: 4 },   // Landende des Badestegs
   { x: SUMMIT.x, z: SUMMIT.z, r: 13 },   // Gipfelbereich frei halten
   { x: -40, z: -44, r: 6 },    // Ausbuchtung der freien Abfahrt
   { x: 24, z: -60, r: 12 }, // Terrasse mit der Apres-Ski-Huette
@@ -996,6 +998,8 @@ export function populate(world, sky, registry, stationOptions = {}) {
     fogDensity: world.scene.fog.density,
     sunDir: sky.sunDir,
   })
+  // Der Badesteg: von hier in den Sommer, siehe src/sommer/.
+  const badesteg = createBadesteg(world)
 
-  return { apresTerrace, landscape, rohrpost: stations.pipe, broadcast: feed, lake, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
+  return { apresTerrace, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
 }

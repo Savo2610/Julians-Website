@@ -31,6 +31,7 @@ import { DroneFlight } from './player/drone-flight.js'
 import { Bestenliste } from './menu/bestenliste.js'
 import { Spray } from './player/spray.js'
 import { RohrpostNetz } from './world/rohrpost-netz.js'
+import { Sommer } from './sommer/sommer.js'
 
 const canvas = document.getElementById('scene')
 
@@ -112,7 +113,19 @@ props.race.onAbort = () => bestenliste.abbruch()
 const mapMenu = new MapMenu({ registry: stations, input, skier, world, camera: chase, pass, bestenliste, race: props.race })
 flight = new DroneFlight({ camera, input, onEnd: () => chase.snap() })
 const interaction = new StationInteraction({ registry: stations, ui: stationUI, input, camera: chase, skier, map: mapMenu, flight, bestenliste })
-input.onAction = (action) => interaction.press(action)
+// Der Badesteg am Eissee fuehrt in den Sommer an den Kabelsee. Solange er
+// laeuft (Countdown, Verwandlung, See), gehoeren ihm die Tasten des Tals.
+const sommer = new Sommer({
+  renderer, canvas, scene, camera, chase, skier, input, registry: stations, steg: props.badesteg, eis: props.lake, touch: TOUCH,
+})
+interaction.sommer = sommer
+mapMenu.kabelseeListe = sommer.liste
+// Drei Meter vor dem Steg auf der Boeschung, Blick zur Spitze.
+mapMenu.zumBadesteg = () => {
+  const s = props.badesteg.stand
+  mapMenu.travelTo({ x: s.x - Math.sin(s.heading) * 5.5, z: s.z - Math.cos(s.heading) * 5.5, heading: s.heading })
+}
+input.onAction = (action) => sommer.taste(action) || interaction.press(action)
 
 // Die Rohrpost verschickt, wenn das Upload-Fenster zugeht: Kapseln in den
 // Trichter, dann unter dem Schnee zum Funkmast. Das Fenster meldet sich per
@@ -160,7 +173,7 @@ if (TOUCH) document.documentElement.classList.add('touch')
 // Vor dem Horcher darunter, damit es noch sieht, ob eine Auswahl offen war.
 new Antippen(canvas, camera, stations, {
   onUse: () => interaction.press('use'),
-  darf: () => !interaction.focus && !mapMenu.open && !flight.active && !skier.tow,
+  darf: () => !interaction.focus && !mapMenu.open && !flight.active && !skier.tow && !sommer.aktiv,
 })
 canvas.addEventListener('pointerdown', () => {
   if (flight.active) flight.stop()
@@ -283,6 +296,11 @@ const clock = new THREE.Clock()
 let elapsed = 0
 
 function advance(dt) {
+  // Im Sommer steht das Tal still; es laeuft nur der See.
+  if (sommer.imSommer) {
+    sommer.advance(dt)
+    return
+  }
   elapsed += dt
   // Der Lift laeuft vor dem Fahrer: er gibt dessen Zielposition vor, wenn
   // dieser am Buegel haengt.
@@ -343,6 +361,7 @@ function advance(dt) {
   stations.update(dt, skier)
   interaction.update()
   rohrpost.update(dt)
+  sommer.update(dt)
   hints.update(dt)
   regeln.update(dt)
   // dt kommt mit, weil inzwischen nicht mehr alles eine Funktion der Uhrzeit
@@ -362,6 +381,8 @@ function advance(dt) {
 }
 
 function draw() {
+  if (sommer.draw()) return
+  renderer.setRenderTarget(null)
   renderer.render(scene, camera)
 }
 
@@ -373,7 +394,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)
@@ -394,6 +415,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   applyPixelRatio()
   renderer.setSize(window.innerWidth, window.innerHeight)
+  sommer.resize()
 })
 
 // Die Schrift im Schnee wird einmalig eingestempelt und bleibt dann liegen.

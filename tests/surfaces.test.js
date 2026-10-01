@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import * as THREE from 'three'
 import { isSnowSurface } from '../src/world/surfaces.js'
 import { APRES, terraceWorld, terraceDistance, terraceHeight } from '../src/world/areas/apres-layout.js'
-import { LAKE, lakeRadius, terrainHeight } from '../src/world/heightfield.js'
+import { LAKE, lakeRadius, terrainHeight, BADESTEG, BADESTEG_LAENGE, badestegLage } from '../src/world/heightfield.js'
 import { Skier } from '../src/player/skier.js'
 import { createApresTerrace } from '../src/world/areas/apres-terrace.js'
 
@@ -12,8 +12,35 @@ test('Eis, Holz und Schnee teilen eindeutige Oberflaechengrenzen', () => {
   for (let a = 0; a < Math.PI * 2; a += 0.1) {
     const r = lakeRadius(a)
     assert.equal(isSnowSurface(LAKE.x + Math.cos(a) * (r - 0.1), LAKE.z + Math.sin(a) * (r - 0.1)), false)
-    assert.equal(isSnowSurface(LAKE.x + Math.cos(a) * (r + 1), LAKE.z + Math.sin(a) * (r + 1)), true)
+    const ux = LAKE.x + Math.cos(a) * (r + 1), uz = LAKE.z + Math.sin(a) * (r + 1)
+    // Am Badesteg liegt hinter dem Ufer Holz, siehe unten.
+    if (badestegLage(ux, uz).quer < BADESTEG.breite + 1) continue
+    assert.equal(isSnowSurface(ux, uz), true)
   }
+  // Der Badesteg: Holz von der Boeschung bis zur Spitze, auf der ganzen
+  // Breite eben und 45 cm ueber dem Eis; daneben wieder Schnee.
+  for (let u = 0.2; u < BADESTEG_LAENGE; u += 0.5) {
+    for (const q of [-BADESTEG.halb + 0.05, 0, BADESTEG.halb - 0.05]) {
+      const r = { x: -BADESTEG.bis.z + BADESTEG.von.z, z: BADESTEG.bis.x - BADESTEG.von.x }
+      const n = Math.hypot(r.x, r.z)
+      const x = BADESTEG.von.x + (BADESTEG.bis.x - BADESTEG.von.x) * u / BADESTEG_LAENGE + r.x / n * q
+      const z = BADESTEG.von.z + (BADESTEG.bis.z - BADESTEG.von.z) * u / BADESTEG_LAENGE + r.z / n * q
+      assert.equal(isSnowSurface(x, z), false)
+      if (u > 1.2 && u < BADESTEG_LAENGE - BADESTEG.saum) assert.ok(Math.abs(terrainHeight(x, z) - BADESTEG.hoehe) < 0.001, `Steg bei ${u.toFixed(1)} m`)
+    }
+  }
+  assert.equal(isSnowSurface(BADESTEG.von.x + 4, BADESTEG.von.z - 2), true)
+
+  // Neben dem Steg liegt Eis, keine Verwehung: einen halben Meter neben den
+  // Bohlen ist das Gelaende schon wieder auf Seehoehe.
+  const r = { x: (BADESTEG.bis.x - BADESTEG.von.x) / BADESTEG_LAENGE, z: (BADESTEG.bis.z - BADESTEG.von.z) / BADESTEG_LAENGE }
+  for (const u of [3, 4.5, 6]) {
+    for (const s of [-1, 1]) {
+      const q = 1.1 + 0.5
+      assert.ok(Math.abs(terrainHeight(BADESTEG.von.x + r.x * u + r.z * s * q, BADESTEG.von.z + r.z * u - r.x * s * q) - LAKE.level) < 0.001)
+    }
+  }
+  assert.ok(Math.abs(terrainHeight(BADESTEG.bis.x + r.x * 0.5, BADESTEG.bis.z + r.z * 0.5) - LAKE.level) < 0.001)
   for (const [u, v] of [[0, 2], [-6, 5], [1, 6]]) {
     const p = terraceWorld(u, v)
     assert.ok(terraceDistance(p.x, p.z) < 0)

@@ -12,7 +12,7 @@ als Liste zur Verfügung, wenn man keine Lust hat zu spielen.
 |---|---|
 | Werkstatt | LinkedIn, GitHub |
 | Kontaktposten | Signal, Instagram |
-| Skikasse | PayPal, Solana, Ticket für den Drohnen-Rundflug |
+| Skikasse | PayPal, Solana, Tickets für Drohnen-Rundflug und Kabelsee |
 | Rohrpost | Upload (upload.veerka.mp) |
 | Abkürzung | Kurzlink (s.veerka.mp) |
 | Stechuhr | Arbeitszeitrechner (zeit.veerka.mp) |
@@ -20,9 +20,15 @@ als Liste zur Verfügung, wenn man keine Lust hat zu spielen.
 | Drohne | Uniprojekt, Rundflug (nicht auf der Karte) |
 | Löschzug | Lernwerkstatt der Jugendfeuerwehr (nicht auf der Karte) |
 | Gefrorene Quelle | aktuelle Sendung von broadcast.veerka.mp (nicht auf der Karte) |
+| Badesteg am Eissee | mit Ticket: Countdown, dann verwandelt sich das Tal in den Kabelsee |
 
 Außerdem: Schlepplift, Nordabfahrt, Funpark, Slalom mit Bestenliste,
-Speedcheck, Kinderland mit Zauberteppich, Hütte mit Terrasse. Der
+Speedcheck, Kinderland mit Zauberteppich, Hütte mit Terrasse.
+
+Vom Badesteg geht es in den Sommer: der **Kabelsee**, Wasserski am Kabel
+rund um eine Insel, mit eigener Bestenliste. Esc führt zurück in den
+Winter. Allein spielbar unter `/kabelsee/`; Steuerung und Regeln in
+[src/kabelsee/README.md](src/kabelsee/README.md). Der
 Pistenpass speichert lokal, welche Orte man gefunden hat, dazu
 Slalom-Medaillen und Abzeichen. Die Seite hat keinen Ton.
 
@@ -53,14 +59,16 @@ rechts.
 - Feste Kamera, die sich nicht dreht; Ausnahmen sind die Nordabfahrt und
   der Drohnen-Rundflug.
 - Cloudflare Worker mit statischen Assets. Der Worker bearbeitet `/` und
-  `/api/*`: Umleitung von www, Slalom-Bestenliste in D1, Durchreiche der
-  Sendung von broadcast.veerka.mp.
+  `/api/*`: Umleitung von www, Bestenlisten von Slalom und Kabelsee in D1,
+  Durchreiche der Sendung von broadcast.veerka.mp.
+- Der Kabelsee wird erst am Badesteg nachgeladen und zeichnet im selben
+  Renderer wie das Tal; der Übergang mischt beide Bilder in einem Shader.
 
 ## Entwickeln
 
 ```bash
 npm install
-npm run dev          # Seite auf http://localhost:5173
+npm run dev          # Tal auf http://localhost:5173, Kabelsee auf /kabelsee/
 npm run dev:api      # Worker auf :8787, Vite leitet /api dorthin weiter
 npm test             # node --test
 npm run build
@@ -107,9 +115,14 @@ src/
   stations/     Stationen, Links, Interaktion
   menu/         Übersicht, Linkliste, Hinweise, Pistenpass, Bestenliste
   dialogs/      Fenster für Solana, Upload, Kurzlink
-worker/         Cloudflare Worker: Router, Bestenliste, Broadcast
+  sommer/       Badesteg-Countdown, Verwandlung, Bestenliste des Kabelsees
+  kabelsee/     Der Kabelsee (eigene README)
+kabelsee/       Eigene Seite des Kabelsees (index.html)
+worker/         Cloudflare Worker: Router, Bestenlisten, Broadcast
 public/         Icons
-tools/          skifahrer-icon.mjs erzeugt das Homescreen-Icon
+tools/          skifahrer-icon.mjs erzeugt das Homescreen-Icon; kabelsee/
+                Bilder und Video des Sees
+docs/           Bilder fürs README, docs/kabelsee/ für den See
 tests/          node --test
 ```
 

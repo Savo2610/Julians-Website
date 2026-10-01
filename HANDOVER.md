@@ -1,6 +1,6 @@
 # veerka.mp — Übergabe
 
-Stand: 27.09.2026. Dieses Dokument ist der Einstieg für jeden, der hier
+Stand: 01.10.2026. Dieses Dokument ist der Einstieg für jeden, der hier
 weiterarbeitet. Es beschreibt nicht nur *was* da ist, sondern *warum* — denn an
 mehreren Stellen sieht die naheliegende Lösung besser aus als die gewählte, und
 ist es nicht.
@@ -101,13 +101,15 @@ index.html           Canvas, Ladebalken, Markup der drei Fenster, Aussehen der L
 src/
   main.js            Loop, Renderer, window.__ski (Debug-Zugriff)
   config.js          Alle Stellschrauben: WORLD, SKIER, CAMERA, CHASE, TRICK, COLORS
-  style.css          Frost, Glas, Einladung, Auswahl, Übersicht, Handymodus
+  basis.css          Seite, Ladeblende, Glas, Frost, Tasten – für Tal und Kabelsee
+  style.css          Einladung, Auswahl, Übersicht, Handymodus (holt basis.css)
   core/              Werkzeug ohne Spielwissen: geometry.js (assemble,
                      vertexColorMaterial), input.js, touch.js (Handymodus),
-                     device.js (TOUCH), noise.js, rng.js, point-scale.js
+                     device.js (TOUCH), noise.js, rng.js, point-scale.js,
+                     zeitscheiben.js (lange Rechnungen in Scheiben)
   world/             Gelände und alles, was darauf steht
     heightfield.js   terrainHeight() – die einzige Höhenquelle; Pistenbänder,
-                     PLATEAU/SUMMIT/LAKE/SPORT_HILL, Klamm, Steg
+                     PLATEAU/SUMMIT/LAKE/SPORT_HILL, Klamm, Steg, Badesteg
     terrain.js       Mesh und Schnee-Shader aus der Höhenfunktion
     world.js         Terrain und Kollisionsraster (resolve, addCollider)
     populate.js      Setzt alles ins Tal — die zentrale Werkbank
@@ -130,7 +132,8 @@ src/
     props/           Ein Modul je Gegenstand, nur Geometrie und eigene
                      Bewegung; z. B. screens.js (leuchtende Bildschirme),
                      park-fence.js (bricht), map-board.js (Panoramatafel +
-                     lawinenstufe()), signpost.js (Pfeiltafeln), frozen-fall.js
+                     lawinenstufe()), signpost.js (Pfeiltafeln), frozen-fall.js,
+                     badesteg.js, lake.js (Eis, Risse im Countdown)
   player/
     skier.js         Fahrmodell, Sprung, Tricks, Haltung
     skier-model.js   Die Figur
@@ -155,16 +158,30 @@ src/
     hints.js         Hinweise unten: Start-Hinweis, Festgefahren-Erkennung, R
     pistenpass.js    Erkundet, Medaillen, Abzeichen; Speicher und Meldung
     pass-regeln.js   Wann was im Pistenpass fällt
-    bestenliste.js   Slalom-Bestenliste: Marken holen, eintragen, anzeigen
+    bestenliste.js   Slalom-Bestenliste: Marken holen, eintragen, anzeigen;
+                     listeZeichnen() auch für den Kabelsee
   dialogs/           Solana, Briefkasten, Kurzlink – siehe Abschnitt 7
+  sommer/            Vom Badesteg in den Sommer (4a⁶)
+    sommer.js        Countdown, Nachladen, Verwandlung hin und zurück
+    verwandlung.js   Beide Welten mischen: Abtauchen
+    bestenliste.js   Bestenliste des Kabelsees: Marken, Fenster
+  kabelsee/          Der Kabelsee (eigene README.md darin)
+    see.js           Der See als Baustein, ohne eigenen Renderer
+    main.js          Einstieg von /kabelsee/
+    config.js, world/, props/, game/, player/, core/ (Eingabe, Touch)
+kabelsee/index.html  Die eigene Seite des Kabelsees
 worker/              Der Cloudflare-Worker hinter der Seite
   index.js           Router: www-Umleitung, Startseite no-cache, /api/*
   slalom.js          Bestenliste: Marken, Plausibilität, D1
+  kabelsee.js        Bestenliste des Kabelsees, dieselbe D1
+  marken.js          Was beide teilen: Marken, Namen, Adresse
   broadcast.js       Durchreiche zu broadcast.veerka.mp
   antwort.js         JSON-Antworten
   migrations/        Schema der D1 skiportfolio-slalom
 public/              _headers (Cache für /assets/), Symbole, site.webmanifest
-tools/               skifahrer-icon.mjs – rendert das Homescreen-Symbol neu
+tools/               skifahrer-icon.mjs – rendert das Homescreen-Symbol neu;
+                     kabelsee/ – Bilder und Video des Sees (Playwright)
+docs/kabelsee/       Bilder und Video des Sees fürs README
 tests/               node --test (npm test)
 wrangler.jsonc       Worker "website" auf veerka.mp und www.veerka.mp
 ```
@@ -219,6 +236,7 @@ mitwachsen müssen, wäre die Schneespur-Textur 11 % gröber geworden.
 | `SUMMIT` | −58, −64 — Höhe 30 | Bergarm, Liftende, längste Abfahrt |
 | `SPORT_HILL` | 27, −87 — Radius 68 | Flanke im Nordosten: Rennstrecke und Funpark |
 | `LAKE` | −47, 41 — Radius 17 | Zugefrorener See |
+| `BADESTEG` | −41,2, 25,0 → −42,4, 31,7 | Badesteg, 45 cm über dem Eis (4a⁶) |
 | `NORTH_LANE` | −58,−72 → 6,−65 — 80 m | Nordabfahrt über die Rückseite |
 
 **Pistenbänder** (`makeLane` in `heightfield.js`): ziehen das Gelände entlang
@@ -247,6 +265,7 @@ Strang zu Ende fahren kann.
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | zoomt, Blaulicht an; „Ausrücken“ fährt los und wechselt im selben Tab zu jf.veerka.mp/?einfahrt=1 (am Waldrand, eigene Baumgruppen) |
 | Gefrorene Quelle (Eisfall am See) | −56,2, 27,7 (Fuß) | broadcast.veerka.mp, zeigt die laufende Sendung (4a⁵) |
+| Badesteg (Nordufer des Sees) | −42,2, 30,6 (vorn) | Countdown, Verwandlung, Kabelsee (4a⁶) |
 
 Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
 mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
@@ -781,7 +800,8 @@ Größe 0,16 ergab aus 33 m zwei Pixel – jetzt normal gemischt, 0,45–0,75.
 
 ## 4a‴. Drohnen-Rundflug und Ticket
 
-An der **Skikasse** gibt es als dritte Wahl ein **Rundflug-Ticket**
+An der **Skikasse** gibt es als dritte Wahl ein **Rundflug-Ticket** (als
+vierte eins für den Kabelsee, 4a⁶)
 (`stations/ticket.js`, `localStorage` `skiportfolio.rundflug`, `3` wählt
 direkt). Umsonst und immer nur eins – ein Stapel wäre eine Währung. An der
 **Drohne** (jetzt eine Station mit Auswahl: Uniprojekt / Rundflug) wird es
@@ -924,6 +944,146 @@ unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
 Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
 expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
 
+## 4a⁶. Badesteg und Kabelsee: in den Sommer
+
+Seit 01.10. (Branch `kabelsee`, noch nicht auf `main`) steht am Nordufer des
+Eissees ein **Badesteg**. Vorn auf dem Steg Enter: der Fahrer stellt sich an
+die Spitze, die Kamera fährt heran, **3 – 2 – 1**, das Eis reißt vom Steg
+aus, und bei null **verwandelt sich die Welt** in den Kabelsee – Wasserski
+am Kabel rund um eine Insel. Man steht auf dessen Startsteg, der Bügel kommt
+gleich, und es geht los. Nach drei Runden: noch eine Session (Enter), in die
+Bestenliste (B, nur bei neuem Rekord) oder **zurück in den Winter (Esc)**.
+Esc geht jederzeit, am Handy die Schneeflocke oben rechts (dort, wo im Tal
+der Kartenknopf sitzt). Wunsch von Julian, 01.10.: ein Countdown, keiner
+am See; die Verwandlung als Überraschung am Ende.
+
+**Der Kabelsee ist eingezogen.** Er war ein eigenes Repo (`Kabelsee`,
+`kabelsee.veerka.mp`); seine Geschichte hängt über einen Subtree-Commit
+hier an (`git log -- src/kabelsee` zeigt nur die Zeit danach, die alten
+Commits stehen unter `kabelsee-import/` im Baum von `4c7babe`). Eine
+Codebasis, kein Nebeneinander (Ansage):
+
+- `src/kabelsee/` – der See wie vorher, nur ohne eigenen Renderer.
+  `see.js` baut ihn als Baustein (`createKabelsee`), `main.js` ist der
+  Einstieg der eigenen Seite **veerka.mp/kabelsee/** (vite baut beide
+  Seiten, `kabelsee/index.html`). `README.md` darin beschreibt das Spiel.
+- Gemeinsam: `core/` (rng, noise, point-scale waren gleich, `assemble()`
+  streicht Normalen/UVs nur, wenn Teile sonst nicht zusammenpassen) und
+  `src/basis.css` (Glas, Frost, Tasten).
+- Getrennt mit Absicht: Eingabe und Touch (`kabelsee/core/`). Am See
+  gibt es Wippen statt Daumenstick, und die Tasten bedeuten anderes.
+- Die Anzeige des Sees hängt unter `.kabelsee-hud`. Das allein reicht
+  nicht: Regeln des Tals greifen weiter, wo die des Sees nichts sagen. Die
+  Trickmeldung hieß in beiden `.trick-hud`, bekam aus dem Tal `bottom:
+  96px` zu ihrem `top: 22%`, war 596 px hoch, und ihr Frosthauch lag bei
+  jeder Meldung weichgezeichnet über der Bildmitte. Jetzt `.see-trick`.
+  Andere Namen kollidieren nicht (geprüft gegen style.css, basis.css,
+  dialogs.css).
+
+**Die Regeln des Sees** (aus seinem alten CLAUDE.md) gelten weiter: feste
+Kamera (Azimut 45°, 36°), `kabelsee/world/heightfield.js` ist dort die
+einzige Höhenquelle; was man befährt, steht in `features.js`, was man sieht,
+in `props/obstacles.js`, aus denselben Profilen; das Fahrmodell bleibt ohne
+three.js und DOM; die Bahn hält 16 m zum Ufer und 24 m zur Insel (Test);
+Ringe und Slalomfahnen hängen am gemessenen Fahrmodell – wer Seiltempo,
+Schwerkraft oder Absprung ändert, misst beides nach.
+
+**Ablauf** (`src/sommer/sommer.js`, Zustände winter → countdown → hin →
+sommer → zurueck → winter):
+
+- Der **Badesteg** steckt im Höhenfeld (`BADESTEG` in `heightfield.js`):
+  6,8 m lang, 2,2 m breit (`breite`), 45 cm über dem Eis – so hoch steht
+  die Böschung 1,2 m hinter der Uferlinie, dort setzt er an. Der ebene
+  Streifen (`halb` 0,8) und sein Saum (0,3 m) liegen ganz unter den Bohlen:
+  man sieht Holz über Eis. **Eine Stufe ist keine Schanze**: das Fahrmodell
+  nimmt die Steigrate des Bodens über jede Kante mit, und 45 cm auf 30 cm
+  warfen Fahrer vom Eis aus 3,5 bis 5 m hoch. `kantenSprung(x, z)` in
+  `heightfield.js` deckelt den Absprung am Steg auf 4 m/s, `skier.js`
+  fragt es beim Abheben; gemessen 0,5–0,8 m Hüpfer von jeder Seite, auch
+  mit 16 m/s. Überall sonst gibt es keine Grenze. Eine 2 m breite
+  Schneeverwehung ringsum fing den Sprung auch ab, nahm dem Steg aber die
+  Kante (Ansage 01.10.). Holz, Pfähle, Leiter und Rettungsring mit Wasserski-Hantel
+  liegen nur darauf (`props/badesteg.js`). Er zeigt nach Süden, zehn Grad
+  nach Westen: im Bild nach links unten wie der Startsteg am Kabelsee.
+  Genau radial zur Seemitte lag er im Bild waagerecht. `surfaces.js` hält
+  Spur und Staub vom Holz fern (Test in `surfaces.test.js`).
+- **Station** `kabelsee` vorn auf dem Steg, Radius 2,6 m, ohne Ring im
+  Schnee. Keine Auswahl: der Countdown ist die Vorführung.
+- **Ticket**: wie der Rundflug braucht der Steg ein Ticket von der
+  Skikasse (vierte Wahl dort, Taste `4`, `seeTicket` in
+  `stations/ticket.js`, `localStorage` `skiportfolio.kabelsee`). Es wird
+  beim Start des Countdowns entwertet und gilt für einen Besuch, gleich wie
+  viele Sessions; Esc im Countdown gibt es zurück. Ohne Ticket schüttelt
+  sich die Einladung (`onUse` gibt `false`, `ui.nope()` ohne Index), und
+  sie sagt „Ticket an der Skikasse lösen“ (Wunsch 01.10.).
+- **Countdown**: Fahrer gleitet in 0,7 s an die Spitze, Kamera auf **26 m**
+  heran – so weit steht die Kamera des Kabelsees am Startsteg, mit
+  gleichem Winkel und gleicher Brennweite; im Moment der Verwandlung sind
+  beide Fahrer gleich groß am selben Fleck. Zahl als Frosttext. Risse im
+  Eis (`risse()` in `props/lake.js`) wachsen mit jedem Schlag bis 9,5 m,
+  zum Ende leuchtet türkis Wasser durch. Esc bricht ab.
+- **Nachladen**: in 30 m Umkreis wird das Modul geholt (33 kB See, 2 kB
+  Verwandlung), nach Enter gebaut – in Scheiben (`core/zeitscheiben.js`),
+  am Stück wären es 450 ms (370 davon das Gelände mit 145 000 Ecken), also
+  ein Ruck mitten im Countdown. Freigegeben wird mit `scheduler.yield`/
+  MessageChannel, nicht mit rAF: im verdeckten Fenster (1 Bild/s) zog sich
+  der Bau sonst über eine Minute. Dann `compileAsync`. Gemessen: 0,6 s bis
+  fertig, im Entwicklungsmodus. Der See bleibt danach gebaut.
+- **Ein Renderer**: der See zeichnet im Kontext des Tals, kein iframe, kein
+  zweiter WebGL-Kontext. Schatten PCF wie im Tal (PCFSoft meldet r185
+  ohnehin als veraltet).
+- **Verwandlung** (`src/sommer/verwandlung.js`), 1,6 s, **Abtauchen**:
+  die Kamera stürzt aufs Eis zu (bis 3,2× vergrößert), heller Blitz mit
+  Ring, und der Sommer taucht aus der Nähe auf. Beide Welten zeichnen in
+  je eine Fläche (HalfFloat, 4× MSAA, linear), ein Bild mischt und macht am
+  Ende ACES und sRGB – so sehen beide aus wie sonst. Zurück läuft dieselbe
+  Verwandlung rückwärts, Mitte ist dann der Fahrer im Sommerbild. Die
+  Anzeige des Sees blendet erst ab 60 % ein. Zur Wahl stand auch eine
+  **Tauwelle** (Ring vom Fahrer aus, außen Winter, innen Sommer); Julian
+  nahm das Abtauchen (01.10.). Die Tauwelle steckt noch in `39a4402`.
+- **Bügel**: 2,8 s nach Beginn der Verwandlung, ohne zweiten Countdown
+  („Gleich kommt der Bügel“). Mit 1,6 s kam er noch in der Verwandlung,
+  und man wurde vom Steg gerissen, bevor man den See sah. Wer den Start
+  verpatzt, bekommt einen neuen Bügel mit der gewohnten Anzeige des Sees.
+- Solange Sommer ist, **steht das Tal still** (kein Schritt, kein Bild),
+  seine Anzeigen sind weg (`:root.sommer` in `sommer.css`, eine Regel
+  statt einer Liste), seine Tasten gehören dem See (`sommer.taste()`).
+  Danach steht der Fahrer wieder vorn auf dem Steg und rollt aufs Eis.
+
+**Bestenliste**: `worker/kabelsee.js`, Tabelle `kabelsee` in derselben D1
+(`0002_kabelsee.sql`). Marken wie beim Slalom (geteilt in `worker/marken.js`,
+mit `k: 'kabelsee'`, damit keine Slalom-Marke gilt). Startmarke beim Start
+am Steg, Zielmarke nach Runde drei; dazwischen mindestens **80 s** (drei
+Runden = 3 × 438 m bei 15 m/s = 88 s), höchstens 20 min, höchstens
+1 000 000 Punkte und **8 000 je Sekunde** (mit den neuen Ringen bis
+40 000 je Ring in einer ×5-Kombo). Angebot nur
+bei neuem eigenen Rekord in diesem Browser (`kabelsee.best`, derselbe
+Schlüssel wie auf der eigenen Seite). Der Name ist derselbe wie am Slalom.
+Reiter **Bestenliste** der Übersicht: Slalom, darunter Kabelsee mit „Zum
+Badesteg“. Die eigene Seite /kabelsee/ hat keine Bestenliste.
+
+**Wertung am See** (Ansage 01.10.: mit Kombos kommt man leicht auf
+40 000, ein Cork 360 bringt 1700 – Sammeln soll sich dagegen lohnen):
+Ringe verdoppeln sich, 1000 → 2000 → 4000 → 8000, und gehen wie alles
+Gesammelte in die Kombo. Slalom 300 … 1050 je Fahne; alle sechs in einer
+Runde **8000**, einmal je Session, dann versinken die Fahnen. Alle 17
+Bojen **6000**. Beide Boni gehen fest aufs Konto (`combo.bonus`), ein Sturz
+kostet sie nicht. Tests in `kabelsee-spiel.test.js`.
+
+**Hinweise am See** (`Session.updateHint`): höchstens einer. Erste Runde
+der Reihe nach (lenken, springen, Luft), danach nach einem Sturz einmal
+`R` für eine neue Session (am Handy nicht, dort gibt es kein R), und wer
+Lenken, Springen, Salto oder Grab 30 s nicht benutzt hat, sieht dessen
+Hinweis 5 s lang, höchstens alle 10 s einer. Die Eingabe kommt je Bild über
+`session.merke(inp)`.
+
+Zum Prüfen: `__ski.sommer.starten()` vor dem Steg (vorher ein Ticket:
+an der Skikasse `4`), oder `__ski.goto('kabelsee', 0, 0)`, dann
+`__ski.step(…)`; der See liegt danach
+unter `__ski.sommer.see` (`rider`, `session`, `step` gibt es dort als
+`advance`). Für Bilder im verdeckten Fenster `requestAnimationFrame` leer
+setzen, sonst läuft die Schleife zwischen den Aufnahmen weiter.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/
@@ -980,7 +1140,8 @@ ganze Seite so aus wie veerka.mp.
 **Arbeitsweise** (Ansage 26.09., für veerka.mp bestätigt 27.09.: jede
 fertige Runde sofort live, ohne Rückfrage): Tests und Build, deutsch
 committen, Commit-Nummer hier im Verlauf nachtragen, `git push` auf `main`.
-Danach prüfen, dass veerka.mp dieselbe `assets/index-*.js` ausliefert wie
+Danach prüfen, dass veerka.mp dieselbe `assets/tal-*.js` (seit dem Kabelsee
+zwei Einstiege: `tal`, `kabelsee`) ausliefert wie
 `dist/` – Workers Builds braucht dafür etwa 40 Sekunden. Schlägt der Build
 fehl, bleibt der alte Stand online; den Fehler zeigt der Check
 „Workers Builds: website“ am Commit auf GitHub.
@@ -998,7 +1159,7 @@ antwortet.
 | Upload (upload.veerka.mp) | `dialogs/upload.js` | `CORS_HERKUNFT` im Worker `upload` | veerka.mp und www: Preflight 204; fremde Herkunft 405 |
 | Solana | `dialogs/wallet.js` | nichts – publicnode, CoinGecko und Binance antworten mit CORS `*` | geprüft |
 | Broadcast | `worker/broadcast.js` | nichts – der Worker holt serverseitig | geprüft |
-| Bestenliste | `worker/slalom.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker | am Worker `website` |
+| Bestenliste | `worker/slalom.js`, `worker/kabelsee.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker; für den Kabelsee die Tabelle aus `0002_kabelsee.sql` (remote anlegen, siehe 9) | Slalom am Worker `website`, Kabelsee noch nicht |
 
 Die Repos der Dienste liegen unter `~/Git/` (`kurz`, `file-uploader`,
 `broadcast`). In beiden Hostlisten und im Turnstile-Widget steht noch
@@ -1247,6 +1408,23 @@ Abschnitt 1, Nordabfahrt).
   Höhe. Das Tor hat es getroffen (0,85 m Luft), der Steg auch (1 m). Wer etwas
   Breites oder Langes setzt, misst das Gelände an dessen Enden und gibt es dem
   Bauteil mit — so wie `fuss` beim Tor und `neigung` beim Steg.
+- **Kabelsee (Branch `kabelsee`) vor dem Zusammenführen:**
+  1. Verwandlung entschieden (Abtauchen, 01.10.). Lokal ausprobieren:
+     `npm run dev`, für die Bestenliste zusätzlich `npm run dev:api` nach
+     `npx wrangler d1 migrations apply skiportfolio-slalom --local`.
+  2. **Vor** dem Push auf `main` die Tabelle in der echten D1 anlegen:
+     `npx wrangler d1 migrations apply skiportfolio-slalom --remote`. Ohne
+     sie antwortet `/api/kabelsee/*` mit 500, das Spiel zeigt dann einfach
+     kein Angebot und keine Liste.
+  3. `kabelsee.veerka.mp` ist noch der alte Worker `kabelsee` aus dem alten
+     Repo. Vorschlag: dort auf `veerka.mp/kabelsee/` umleiten (oder die
+     Custom Domain an den Worker `website` hängen) und das Repo `Kabelsee`
+     auf GitHub archivieren. Nicht gemacht – das ist außen sichtbar und
+     braucht ein Ja.
+  4. Nur in Chrome geprüft, verdecktes Fenster, Bild für Bild gespult. Auf
+     dem echten Handy ansehen: Bildrate während der Verwandlung (zwei
+     Welten mit MSAA), Speicher mit beiden Welten.
+  5. Im Sommer gibt es kein `M`; die Übersicht kommt erst wieder im Winter.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.
@@ -1260,6 +1438,9 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+39a4402  Badesteg am Eissee: Countdown, Verwandlung, Kabelsee im Tal   (Branch kabelsee)
+ee24ba8  Kabelsee einsortieren: ein Repo, ein Kern, zwei Seiten         (Branch kabelsee)
+4c7babe  Kabelsee mit seiner Geschichte hereinholen (Subtree)            (Branch kabelsee)
 9e19c9f  Ferne Bergkette: zwei Grate, die sich im Himmel aufloesen (Merge)
 e298036  Rohrpost verschickt: Kapseln, Maulwurf zum Funkmast, Vorschau im Eis (Merge)
 6c5cb7d  Stationen mit Auftritt: Stechuhr, Depot und Loeschzug zoomen heran (Merge)

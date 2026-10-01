@@ -117,6 +117,15 @@ export function scoreJump(air) {
   return { name: parts.join(' '), points }
 }
 
+// Abwechslung (Ansage 01.10.): derselbe Trick gibt in einer Session beim
+// ersten Mal alles, danach je 30 Prozent weniger – 70, 49, 34 … und nie unter
+// 20 Prozent. Wer immer nur den sicheren 360 springt, kommt so nicht weit.
+// Derselbe Trick heisst: gleicher Name ohne Laenge eines Slides und ohne
+// „Big Air“ – ein hoeherer 360 ist kein anderer 360. Grab und Switch machen
+// ihn dagegen zu einem anderen.
+export const trickSchluessel = (name) => name.replace(/ \d+ m\b/, '').replace(/ Big Air$/, '')
+export const wiederholung = (mal) => Math.max(0.2, 0.7 ** (mal - 1))
+
 export class Combo {
   constructor() {
     this.score = 0
@@ -141,13 +150,14 @@ export class Combo {
   }
 
   // Ein gestandener Trick.
-  trick(result, quality) {
-    const pts = Math.round((result.points * quality.factor) / 10) * 10
+  // mal: das wievielte Mal dieser Trick in der Session (siehe oben).
+  trick(result, quality, mal = 1) {
+    const pts = Math.round((result.points * quality.factor * wiederholung(mal)) / 10) * 10
     this.count += 1
     this.points += pts
     this.names.push(result.name)
     this.timer = TRICK.comboWindow
-    this.events.push({ type: 'trick', name: result.name, points: pts, quality: quality.label, key: quality.key })
+    this.events.push({ type: 'trick', name: result.name, points: pts, quality: quality.label, key: quality.key, mal })
     return pts
   }
 

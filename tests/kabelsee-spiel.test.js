@@ -390,3 +390,24 @@ test('Grab zaehlt nur, wenn man vor der Landung loslaesst', () => {
   assert.ok(!los.air.grabZuSpaet)
   assert.match(los.result.name, /Mute Grab/)
 })
+
+test('Abwechslung: derselbe Trick gibt jedes Mal 30 Prozent weniger, nie unter 20', () => {
+  const { s } = session()
+  const q = { factor: 1, label: 'Sauber', key: 'clean' }
+  const land = (name) => {
+    const vorher = s.combo.points
+    s.handle({ type: 'land', result: { name, points: 1000 }, quality: q })
+    return s.combo.points - vorher
+  }
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7].map(() => land('360')), [1000, 700, 490, 340, 240, 200, 200])
+  // Ein anderer Trick zaehlt wieder voll – Grab und Switch machen ihn anders,
+  // Big Air und die Laenge eines Slides nicht.
+  assert.equal(land('360 Indy'), 1000)
+  assert.equal(land('Switch 360'), 1000)
+  assert.equal(land('360 Big Air'), 200)
+  assert.equal(land('Box-Slide 12 m'), 1000)
+  assert.equal(land('Box-Slide 9 m'), 700)
+  // Neue Session: alles wieder voll.
+  s.starten()
+  assert.equal(land('360'), 1000)
+})

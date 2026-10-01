@@ -153,6 +153,7 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
   hud.resultsBack?.addEventListener('click', zurueck)
   hud.resultsListe?.addEventListener('click', zurListe)
   hud.winter?.addEventListener('click', zurueck)
+  hud.neu?.addEventListener('click', () => session.restart())
   if (touch) new TouchControls(input, canvas, { root, onTap: () => { if (input.aktiv && session.state !== 'play') session.confirm() } })
 
   // --- Gischt -------------------------------------------------------------------

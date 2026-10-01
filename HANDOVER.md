@@ -1076,7 +1076,7 @@ Ende**, als Aufschlag in Prozent auf die gefahrenen Punkte – wer gut fährt
 
 | | anteilig | alle |
 |---|---|---|
-| Bojen (17) | bis 25 % | +50 % |
+| Bojen (15, seit 01.10. statt 17 – der Osten war zu voll) | bis 25 % | +50 % |
 | Ringe (4) | 5 → 10 → 20 % | +50 % |
 | Tore (6, beste Runde) | bis 25 % | +50 % (einmal je Session; dann versinken die Fahnen) |
 

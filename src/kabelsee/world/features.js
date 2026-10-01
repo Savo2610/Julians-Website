@@ -123,13 +123,25 @@ function buoyArc(s0, span, count, maxOffset, side = 1) {
 // Auf West- und Suedgerade liegt der Slalom, dort gibt es keine Bojen. Es
 // sind bewusst wenige: mit 29 lag ueberall etwas, und man sammelte nur noch,
 // statt zu fahren.
-export const BUOYS = [
-  ...buoyArc(24, 30, 4, 11),           // Nordgerade gleich nach dem Start
-  ...buoyArc(84, 20, 3, 7, -1),        // innen vor der Nordwestecke
-  ...buoyArc(326, 16, 3, 6, -1),       // innen durch die Suedostecke
-  ...buoyArc(352, 24, 4, 12),          // Ostgerade aussen
-  ...buoyArc(402, 20, 3, 8, -1),       // Ostgerade innen nach dem Kicker
-].map((b, i) => ({ ...b, id: `b${i}`, kind: 'buoy' }))
+//
+// 15 seit 01.10. (vorher 17, davon 10 im Osten, unten rechts im Bild): der
+// Bogen aussen auf der Ostgeraden lag 12 m neben der Linie, weiter als die
+// Slalomfahnen, und ein Testfahrer, der dem Bogen mit 5 m Vorschau folgt,
+// kam am Scheitel nur auf 9 bis 11 m; der Bogen innen hinter Kicker und
+// Rail war im selben Atemzug kaum zu holen. Jetzt aussen drei bis 8 m
+// (Scheitel 7 bis 9 m erreicht), der Bogen hinter der Rail ist weg, und
+// dafuer zieht der Innenbogen der Nordwestecke bis auf die Westgerade. Der
+// Testfahrer holt in der ersten Runde 13 von 15 statt 10 bis 13 von 17.
+// [Start s, Laenge, Anzahl, Scheitel neben der Linie, Seite]; der Test
+// faehrt die Boegen ab (kabelsee-spiel.test.js).
+export const BUOY_ARCS = [
+  [24, 30, 4, 11],          // Nordgerade gleich nach dem Start
+  [84, 40, 5, 7, -1],       // innen durch die Nordwestecke auf die Westgerade
+  [326, 16, 3, 6, -1],      // innen durch die Suedostecke
+  [352, 24, 3, 8],          // Ostgerade aussen
+]
+export const BUOYS = BUOY_ARCS.flatMap((a) => buoyArc(...a))
+  .map((b, i) => ({ ...b, id: `b${i}`, kind: 'buoy' }))
 
 // --- Slalom -----------------------------------------------------------------
 // Fahnen im Wechsel innen und aussen, alle auf den Geraden; jede muss man

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { landingQuality, scoreJump, Combo } from '../src/kabelsee/game/tricks.js'
 import { Slalom } from '../src/kabelsee/game/slalom.js'
 import { CABLE_LENGTH, cableAt, wrap } from '../src/kabelsee/world/cable-path.js'
-import { FEATURES, GATES, offsetAt } from '../src/kabelsee/world/features.js'
+import { FEATURES, GATES, BUOYS, BUOY_ARCS, offsetAt } from '../src/kabelsee/world/features.js'
 import { CABLE, TRICK } from '../src/kabelsee/config.js'
 import { ride, dockStart, steerTo } from './kabelsee-helfer.js'
 import { CableSystem } from '../src/kabelsee/game/cable-system.js'
@@ -197,6 +197,32 @@ test('Slalom: mit grossen Boegen alle Tore, ohne Lenken keines', () => {
   assert.ok(!lazy.sl.events.some((e) => e.type === 'miss'), 'wer gar nicht mitfaehrt, bekommt keine Meldung')
 })
 
+test('Bojen: wer den Boegen folgt, holt in der ersten Runde fast alle', () => {
+  // Wie ein Fahrer, der den Bogen sieht: 5 m vorausschauend auf seine
+  // Linie, in der Luft nicht lenken. Mit dem alten Ostbogen (12 m aussen)
+  // kam er am Scheitel nur auf 9 bis 11 m und holte 10 bis 13 von 17.
+  const ziel = (s) => {
+    for (const [s0, span, , max, side = 1] of BUOY_ARCS) {
+      const t = wrap(s - s0) / span
+      if (t <= 1) return Math.sin(t * Math.PI) * max * side
+    }
+    return 0
+  }
+  const geholt = new Set()
+  ride(45, (r) => {
+    if (r.mode === 'dock') return dockStart(r)
+    if (r.airborne) return {}
+    return { steer: steerTo(r, ziel(r.s + 5)) }
+  }, {
+    onStep: (r) => {
+      if (r.mode !== 'ride' || r.progress > CABLE_LENGTH + 20) return
+      for (const b of BUOYS) if (Math.hypot(b.x - r.x, b.z - r.z) < 1.7 && r.y < 1.8) geholt.add(b.id)
+    },
+  })
+  assert.equal(BUOYS.length, 15)
+  assert.ok(geholt.size >= 13, `${geholt.size} von ${BUOYS.length}`)
+})
+
 test('Landung: Winkelfenster', () => {
   assert.equal(landingQuality(TAU + 0.1, 0).key, 'perfect')
   assert.equal(landingQuality(TAU + 0.4, 0).key, 'clean')
@@ -304,18 +330,18 @@ test('Wertung: Gesammeltes zaehlt unterwegs nichts, erst am Ende', () => {
 })
 
 test('Wertung: am Ende Prozente auf die Fahrt, alle einer Sorte 50', () => {
-  const z = (o) => sammelBonus({ buoysTotal: 17, ringsTotal: 4, gatesTotal: 6, buoys: 0, rings: 0, gates: 0, ...o }, 40000)
+  const z = (o) => sammelBonus({ buoysTotal: 15, ringsTotal: 4, gatesTotal: 6, buoys: 0, rings: 0, gates: 0, ...o }, 40000)
   const prozent = (o) => z(o).map((x) => x.prozent)
   assert.deepEqual(prozent({}), [0, 0, 0])
   // Ringe verdoppeln sich, der vierte macht alle.
   assert.deepEqual([1, 2, 3, 4].map((rings) => prozent({ rings })[1]), [5, 10, 20, 50])
   // Bojen und Tore anteilig bis 25, alle 50.
-  assert.deepEqual(prozent({ buoys: 8, gates: 3 }), [12, 0, 13])
-  assert.deepEqual(prozent({ buoys: 16, gates: 5 }), [24, 0, 21])
-  assert.deepEqual(prozent({ buoys: 17, rings: 4, gates: 6 }), [50, 50, 50])
+  assert.deepEqual(prozent({ buoys: 8, gates: 3 }), [13, 0, 13])
+  assert.deepEqual(prozent({ buoys: 14, gates: 5 }), [23, 0, 21])
+  assert.deepEqual(prozent({ buoys: 15, rings: 4, gates: 6 }), [50, 50, 50])
   // Punkte aus der Fahrt, auf zehn gerundet; alles zusammen das 2,5-Fache.
-  assert.deepEqual(z({ buoys: 8, rings: 2, gates: 3 }).map((x) => x.punkte), [4800, 4000, 5200])
-  const alles = z({ buoys: 17, rings: 4, gates: 6 })
+  assert.deepEqual(z({ buoys: 8, rings: 2, gates: 3 }).map((x) => x.punkte), [5200, 4000, 5200])
+  const alles = z({ buoys: 15, rings: 4, gates: 6 })
   assert.equal(40000 + alles.reduce((n, x) => n + x.punkte, 0), 100000)
   assert.ok(alles.every((x) => x.alle))
 })

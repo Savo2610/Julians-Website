@@ -120,7 +120,7 @@ gefahrenen Punkte. Wer gut fährt *und* alles holt, bekommt am meisten:
 
 | | anteilig | alle |
 |---|---|---|
-| 17 **Bojen** (leuchtender Stein über dem Schwimmer) | bis 25 % | +50 % |
+| 15 **Bojen** (leuchtender Stein über dem Schwimmer) | bis 25 % | +50 % |
 | 4 **Ringe** über den Kickern, am Scheitel eines geladenen Sprungs | 5 → 10 → 20 % | +50 % |
 | 6 **Tore** im Slalom (beste Runde) | bis 25 % | +50 %, dann versinken die Fahnen |
 

@@ -8,7 +8,7 @@ import { CABLE, TRICK } from '../src/kabelsee/config.js'
 import { ride, dockStart, steerTo } from './kabelsee-helfer.js'
 import { CableSystem } from '../src/kabelsee/game/cable-system.js'
 import { RiderPhysics, DOCK_S } from '../src/kabelsee/player/rider-physics.js'
-import { Session } from '../src/kabelsee/game/session.js'
+import { Session, sammelBonus } from '../src/kabelsee/game/session.js'
 
 const TAU = Math.PI * 2
 
@@ -284,46 +284,54 @@ function session() {
   return { s, rider, items }
 }
 
-test('Wertung: Ringe 1000 bis 8000 und 10 000 fuer alle, direkt aufs Konto', () => {
+test('Wertung: Gesammeltes zaehlt unterwegs nichts, erst am Ende', () => {
   const { s, rider, items } = session()
   rider.mode = 'ride'
-  const geholt = []
-  for (const g of items.rings) {
-    Object.assign(rider, { x: g.x, z: g.z, y: g.y - 0.9 })
-    const vorher = s.combo.score
+  for (const g of [...items.rings, ...items.buoys]) {
+    Object.assign(rider, { x: g.x, z: g.z, y: (g.y ?? 0.9) - 0.9 })
     s.checkItems()
-    geholt.push(s.combo.score - vorher)
   }
-  assert.deepEqual(geholt, [1000, 2000, 4000, 8000 + 10000])
-  // Nicht in die Kombo: dort steht nichts, was ein Sturz loeschen koennte.
+  for (let i = 1; i <= 6; i++) s.slalomEvent({ type: 'gate', gate: { index: i - 1 }, n: i, of: 6, all: i === 6, streak: i })
+  assert.equal(s.stats.rings, 4)
+  assert.equal(s.stats.buoys, 2)
+  assert.equal(s.combo.score, 0)
   assert.equal(s.combo.points, 0)
-})
-
-test('Wertung: Bojen 100, alle 10 000 – erst mit der letzten', () => {
-  const { s, rider, items } = session()
-  rider.mode = 'ride'
-  Object.assign(rider, { x: items.buoys[0].x, z: 0, y: 0 })
-  s.checkItems()
-  assert.equal(s.combo.score, 100)
-  Object.assign(rider, { x: items.buoys[1].x, z: 0, y: 0 })
-  s.checkItems()
-  assert.equal(s.combo.score, 200 + 10000)
-  assert.equal(s.combo.points, 0)
-})
-
-test('Wertung: Slalom 300 bis 1050 je Fahne, 10 000 nur einmal, dann versinken die Fahnen', () => {
-  const { s, items } = session()
-  const tore = []
-  for (let i = 1; i <= 6; i++) {
-    const vorher = s.combo.score
-    s.slalomEvent({ type: 'gate', gate: { index: i - 1 }, n: i, of: 6, all: i === 6, streak: i })
-    tore.push(s.combo.score - vorher)
-  }
-  assert.deepEqual(tore, [300, 450, 600, 750, 900, 1050 + 10000])
+  // Alle sechs Tore einer Runde: einmal je Session, dann versinken sie.
   assert.equal(s.slalomFertig, true)
   assert.equal(items.gesunken, 1)
   s.starten()
   assert.equal(s.slalomFertig, false)
+})
+
+test('Wertung: am Ende Prozente auf die Fahrt, alle einer Sorte 50', () => {
+  const z = (o) => sammelBonus({ buoysTotal: 17, ringsTotal: 4, gatesTotal: 6, buoys: 0, rings: 0, gates: 0, ...o }, 40000)
+  const prozent = (o) => z(o).map((x) => x.prozent)
+  assert.deepEqual(prozent({}), [0, 0, 0])
+  // Ringe verdoppeln sich, der vierte macht alle.
+  assert.deepEqual([1, 2, 3, 4].map((rings) => prozent({ rings })[1]), [5, 10, 20, 50])
+  // Bojen und Tore anteilig bis 25, alle 50.
+  assert.deepEqual(prozent({ buoys: 8, gates: 3 }), [12, 0, 13])
+  assert.deepEqual(prozent({ buoys: 16, gates: 5 }), [24, 0, 21])
+  assert.deepEqual(prozent({ buoys: 17, rings: 4, gates: 6 }), [50, 50, 50])
+  // Punkte aus der Fahrt, auf zehn gerundet; alles zusammen das 2,5-Fache.
+  assert.deepEqual(z({ buoys: 8, rings: 2, gates: 3 }).map((x) => x.punkte), [4800, 4000, 5200])
+  const alles = z({ buoys: 17, rings: 4, gates: 6 })
+  assert.equal(40000 + alles.reduce((n, x) => n + x.punkte, 0), 100000)
+  assert.ok(alles.every((x) => x.alle))
+})
+
+test('Wertung: die Auswertung zaehlt die beste Slalomrunde', () => {
+  const { s } = session()
+  const ergebnisse = []
+  s.onErgebnis = (e) => ergebnisse.push(e)
+  s.slalom.beste = 4
+  s.stats.rings = 2
+  s.combo.bonus(10000, 'Runde')
+  s.finish()
+  const e = ergebnisse[0]
+  assert.equal(e.fahrt, 10000)
+  assert.deepEqual(e.sammeln.map((x) => [x.art, x.n, x.von, x.prozent]), [['Bojen', 0, 2, 0], ['Ringe', 2, 4, 10], ['Tore', 4, 6, 17]])
+  assert.equal(e.score, 10000 + 1000 + 1700)
 })
 
 test('Abzeichen: alle Ringe, alle Bojen und der Slalom in einer Session', () => {

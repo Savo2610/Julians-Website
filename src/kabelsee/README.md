@@ -115,18 +115,18 @@ nächsten Trick steht, hält die Kette am Leben, und jede neue Figur hebt den
 Faktor bis ×5. Läuft die Zeit ab, wird die Kette ausgezahlt; ein Sturz
 löscht sie.
 
-**Sammeln** geht direkt aufs Konto, nicht in die Kombo – belohnt wird, wer
-alles holt:
+**Sammeln** zählt erst am Ende: als Aufschlag in Prozent auf die
+gefahrenen Punkte. Wer gut fährt *und* alles holt, bekommt am meisten:
 
-| | einzeln | alle |
+| | anteilig | alle |
 |---|---|---|
-| 17 **Bojen** (leuchtender Stein über dem Schwimmer) | 100 | +10 000 |
-| 4 **Ringe** über den Kickern, am Scheitel eines geladenen Sprungs | 1000 → 2000 → 4000 → 8000 | +10 000 |
-| 6 **Tore** im Slalom | 300 … 1050 je Fahne einer Runde | +10 000 für alle in einer Runde, einmal je Session |
+| 17 **Bojen** (leuchtender Stein über dem Schwimmer) | bis 25 % | +50 % |
+| 4 **Ringe** über den Kickern, am Scheitel eines geladenen Sprungs | 5 → 10 → 20 % | +50 % |
+| 6 **Tore** im Slalom (beste Runde) | bis 25 % | +50 %, dann versinken die Fahnen |
 
-Dazu 300 Punkte für jede Runde. Wer alle Bojen, alle Ringe und alle Tore
-einer Runde in derselben Session holt, bekommt das Abzeichen **Abgeräumt**
-im Pistenpass von veerka.mp.
+Alles zusammen ist das 2,5-Fache. Dazu 300 Punkte für jede Runde. Wer alle
+Bojen, alle Ringe und alle Tore einer Runde in derselben Session holt,
+bekommt das Abzeichen **Abgeräumt** im Pistenpass von veerka.mp.
 
 Ein **Grab** zählt nur, wenn man die Ski vor dem Aufsetzen wieder loslässt.
 
@@ -141,9 +141,10 @@ als beides einzeln. Grab 150 plus Haltezeit; Big Air ab 1,6 s Flug; Box 45
 und Rail 55 je Meter. Namen setzen sich zusammen, etwa „Switch Cork 540
 Method“.
 
-Nach drei Runden lässt der Fahrer das Seil los, und die Auswertung zeigt
-Punkte, besten Trick, größte Kombo, Bojen, Ringe, Slalom-Tore, Spitzentempo
-und Stürze.
+Nach drei Runden lässt der Fahrer das Seil los, und die Auswertung zählt
+vor: erst die gefahrenen Punkte, dann Zeile für Zeile Bojen, Ringe und Tore
+mit ihrem Aufschlag. Darunter bester Trick, größte Kombo, verschiedene
+Tricks, Spitzentempo und Stürze.
 Der Rekord bleibt im Browser (`localStorage`).
 
 ## Technik

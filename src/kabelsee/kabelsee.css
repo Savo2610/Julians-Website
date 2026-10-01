@@ -353,6 +353,48 @@
 }
 .kabelsee-hud .r-record { min-height: 20px; margin-bottom: 14px; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
 .kabelsee-hud .r-record.new { color: #1d8a5a; letter-spacing: 0.08em; text-transform: uppercase; }
+.kabelsee-hud .r-score.poch { animation: r-poch 0.45s ease-out; }
+.kabelsee-hud .r-record.poch { animation: r-poch 0.6s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes r-poch {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Abrechnung: was gefahren wurde, darunter je Sorte Anteil und Aufschlag.
+   Die Zeilen kommen nacheinander (hud.js abrechnen); alle einer Sorte
+   leuchten wie ein perfekter Trick, leere bleiben blass. */
+.kabelsee-hud .r-abrechnung {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 10px 0;
+  border-block: 1px solid color-mix(in srgb, var(--ink-soft) 22%, transparent);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.kabelsee-hud .r-zeile {
+  display: grid;
+  grid-template-columns: 1fr auto 5.5em;
+  gap: 12px;
+  align-items: baseline;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.kabelsee-hud .r-zeile.da { opacity: 1; transform: none; }
+.kabelsee-hud .r-zeile.leer.da { opacity: 0.45; }
+.kabelsee-hud .r-zeile span { font-weight: 700; color: var(--ink-soft); }
+.kabelsee-hud .r-zeile small { margin-left: 4px; font-weight: 700; }
+.kabelsee-hud .r-zeile b { font-weight: 800; color: var(--ink-soft); }
+.kabelsee-hud .r-zeile strong { font-weight: 800; text-align: right; }
+.kabelsee-hud .r-zeile.alle b, .kabelsee-hud .r-zeile.alle strong { color: #1d8a5a; }
+.kabelsee-hud .r-zeile.alle.da strong { animation: r-poch 0.5s ease-out 0.15s; }
+@media (prefers-reduced-motion: reduce) {
+  .kabelsee-hud .r-zeile { transition: none; }
+  .kabelsee-hud .poch, .kabelsee-hud .r-zeile.alle.da strong { animation: none; }
+}
+
 .kabelsee-hud .r-list {
   display: grid;
   grid-template-columns: auto 1fr;

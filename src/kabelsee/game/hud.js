@@ -72,7 +72,7 @@ export class Hud {
     this.title = el('div', 'glass panel title-panel', root, `
       <div class="panel-kicker">Wasserski am Kabel</div>
       <h1>Kabelsee</h1>
-      <p class="lead">Drei Runden um die Insel. Schwing nach außen, dann bist du schneller als das Seil. Spring über die Kicker oder slide die Rail und halte die Kombo am Leben. Wer alle Bojen, alle Ringe oder alle Fahnen einer Runde holt, bekommt am meisten.</p>
+      <p class="lead">Drei Runden um die Insel. Schwing nach außen, dann bist du schneller als das Seil. Spring über die Kicker oder slide die Rail und halte die Kombo am Leben. Bojen, Ringe und Fahnen legen am Ende Prozente auf deine Punkte – alle von einer Sorte die Hälfte obendrauf.</p>
       ${keys}
       <div class="best"></div>
       <button class="go" type="button">${taste('Enter', true)}Auf den Steg</button>
@@ -87,6 +87,7 @@ export class Hud {
       <div class="panel-kicker">Session vorbei</div>
       <h2 class="r-score">0</h2>
       <div class="r-record"></div>
+      <div class="r-abrechnung"></div>
       <dl class="r-list"></dl>
       <button class="go" type="button">${taste('Enter', true)}Noch eine Session</button>
       <button class="liste" type="button">${taste('B')}<span>Bestenliste</span></button>
@@ -95,6 +96,8 @@ export class Hud {
     this.rScore = this.results.querySelector('.r-score')
     this.rRecord = this.results.querySelector('.r-record')
     this.rList = this.results.querySelector('.r-list')
+    this.rAbrechnung = this.results.querySelector('.r-abrechnung')
+    this._abrechnung = null
     this.resultsGo = this.results.querySelector('.go')
     this.resultsBack = this.results.querySelector('.back')
     this.resultsListe = this.results.querySelector('.liste')
@@ -127,20 +130,76 @@ export class Hud {
     this.setMode('title')
   }
 
+  // Die Auswertung zaehlt vor: erst steht, was gefahren wurde, dann kommen
+  // Bojen, Ringe und Tore Zeile fuer Zeile dazu und die grosse Zahl laeuft
+  // mit (Ansage 01.10.). Getaktet ueber update(dt), damit es im Test und mit
+  // __kabel.step genauso laeuft wie im Bild.
   showResults(r) {
-    this.rScore.textContent = fmt(r.score)
-    this.rRecord.textContent = r.record ? 'Neuer Rekord!' : r.best ? `Rekord ${fmt(r.best)}` : ''
-    this.rRecord.classList.toggle('new', !!r.record)
+    const zeile = (z) => `
+      <div class="r-zeile${z.alle ? ' alle' : ''}${z.punkte ? '' : ' leer'}">
+        <span>${z.art} <small>${z.n} von ${z.von}</small></span>
+        <b>+${z.prozent} %</b><strong>+${fmt(z.punkte)}</strong>
+      </div>`
+    this.rAbrechnung.innerHTML = `
+      <div class="r-zeile r-fahrt da"><span>Gefahren</span><b></b><strong>${fmt(r.fahrt)}</strong></div>
+      ${r.sammeln.map(zeile).join('')}`
     this.rList.innerHTML = `
       <dt>Bester Trick</dt><dd>${r.bestTrick ? `${r.bestTrick.name} <small>${fmt(r.bestTrick.points)}</small>` : '–'}</dd>
       <dt>Größte Kombo</dt><dd>${r.bestCombo ? fmt(r.bestCombo) : '–'}</dd>
       <dt>Verschiedene Tricks</dt><dd>${r.verschiedene || '–'}</dd>
-      <dt>Bojen</dt><dd>${r.buoys} von ${r.buoysTotal}</dd>
-      <dt>Ringe</dt><dd>${r.rings} von ${r.ringsTotal}</dd>
-      <dt>Slalom</dt><dd>${r.slaloms ? 'alle Tore in einer Runde ✓' : `${r.gates} ${r.gates === 1 ? 'Tor' : 'Tore'}`}</dd>
       <dt>Spitze</dt><dd>${Math.round(r.topSpeed * 3.6)} km/h</dd>
       <dt>Stürze</dt><dd>${r.crashes}</dd>`
+    // Den alten Rekord sieht man gleich; ein neuer kommt erst am Schluss.
+    this.rRecord.textContent = r.bisher ? `Rekord ${fmt(r.bisher)}` : ''
+    this.rRecord.classList.remove('new')
+    this.rScore.textContent = fmt(r.fahrt)
+    this._abrechnung = {
+      t: 0, stand: r.fahrt, schritt: -1, r,
+      zeilen: [...this.rAbrechnung.querySelectorAll('.r-zeile:not(.r-fahrt)')],
+    }
+    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) this.abrechnen(Infinity)
     this.setMode('results')
+  }
+
+  // Takt der Auswertung: 0,6 s Ruhe, dann je Zeile 0,9 s – sie erscheint,
+  // und 0,15 bis 0,8 s danach laeuft ihr Aufschlag in die grosse Zahl.
+  abrechnen(dt) {
+    const a = this._abrechnung
+    if (!a) return
+    a.t += dt
+    const PAUSE = 0.6
+    const TAKT = 0.9
+    const i = Math.min(a.zeilen.length, Math.floor((a.t - PAUSE) / TAKT))
+    while (a.schritt < i) {
+      // Abgeschlossene Zeile: ihr Aufschlag steht ganz in der Zahl.
+      if (a.schritt >= 0) a.stand += a.r.sammeln[a.schritt].punkte
+      a.schritt += 1
+      const z = a.zeilen[a.schritt]
+      if (z) {
+        z.classList.add('da')
+        if (a.r.sammeln[a.schritt].punkte) this.pochen(this.rScore)
+      }
+    }
+    if (a.schritt >= a.zeilen.length) {
+      this.rScore.textContent = fmt(a.r.score)
+      if (a.r.record) {
+        this.rRecord.textContent = 'Neuer Rekord!'
+        this.rRecord.classList.add('new')
+        this.pochen(this.rRecord)
+      }
+      this._abrechnung = null
+      return
+    }
+    if (i < 0) return
+    const k = Math.min(1, Math.max(0, (a.t - PAUSE - i * TAKT - 0.15) / 0.65))
+    const weich = 1 - (1 - k) ** 3
+    this.rScore.textContent = fmt(a.stand + a.r.sammeln[i].punkte * weich)
+  }
+
+  pochen(e) {
+    e.classList.remove('poch')
+    void e.offsetWidth
+    e.classList.add('poch')
   }
 
   // Neuer eigener Rekord mit gueltigen Marken: dann traegt B ein, sonst
@@ -178,6 +237,7 @@ export class Hud {
   }
 
   update(dt, s) {
+    if (this.root.dataset.mode === 'results') this.abrechnen(dt)
     this.scoreValue.textContent = fmt(s.score)
     const c = s.combo
     const on = c.points > 0

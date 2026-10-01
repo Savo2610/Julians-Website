@@ -36,9 +36,10 @@ function saveBest(v) {
 export class Session {
   // eingebettet: im Tal hinter dem Badesteg. Dann gibt es keinen Titel, und
   // onErgebnis bekommt die Auswertung (Bestenliste).
-  constructor({ rider, cable, collectibles, hud, fx, eingebettet = false, onErgebnis = null }) {
+  constructor({ rider, cable, collectibles, hud, fx, eingebettet = false, onErgebnis = null, onStart = null }) {
     this.eingebettet = eingebettet
     this.onErgebnis = onErgebnis
+    this.onStart = onStart
     this.rider = rider
     this.cable = cable
     this.items = collectibles
@@ -69,13 +70,17 @@ export class Session {
   }
 
   // Enter / Antippen.
-  confirm(opts) {
-    if (this.state === 'title' || this.state === 'results') {
-      this.reset(opts)
-      this.state = 'play'
-      this.hud.setMode('play')
-      this.fx.snapCamera()
-    }
+  confirm() {
+    if (this.state === 'title' || this.state === 'results') this.starten()
+  }
+
+  // Neue Session am Steg, gleich aus welchem Zustand.
+  starten(opts) {
+    this.reset(opts)
+    this.state = 'play'
+    this.hud.setMode('play')
+    this.fx.snapCamera()
+    this.onStart?.()
   }
 
   // R: zurueck an den Steg, hinter der Blende.

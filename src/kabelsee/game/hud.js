@@ -82,6 +82,7 @@ export class Hud {
       <div class="r-record"></div>
       <dl class="r-list"></dl>
       <button class="go" type="button">${touch ? '' : '<kbd class="k-wide">Enter</kbd> '}Noch eine Session</button>
+      ${eingebettet ? `<button class="liste" type="button" hidden>${touch ? '' : '<kbd>B</kbd> '}In die Bestenliste</button>` : ''}
       ${eingebettet ? `<button class="back" type="button">${touch ? '' : '<kbd class="k-wide">Esc</kbd> '}Zurück in den Winter</button>` : ''}
     `)
     this.rScore = this.results.querySelector('.r-score')
@@ -89,6 +90,17 @@ export class Hud {
     this.rList = this.results.querySelector('.r-list')
     this.resultsGo = this.results.querySelector('.go')
     this.resultsBack = this.results.querySelector('.back')
+    this.resultsListe = this.results.querySelector('.liste')
+
+    // Am Handy gibt es kein Esc. Im Tal sitzt dort oben rechts der
+    // Kartenknopf; im Sommer fuehrt derselbe Platz zurueck in den Winter.
+    this.winter = eingebettet && touch
+      ? el('button', 'glass t-winter', root, '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5M9.5 4l2.5 2.5L14.5 4M9.5 20l2.5-2.5 2.5 2.5M4.2 10.3l3.4.9-.9 3.4M19.8 13.7l-3.4-.9.9-3.4M4.2 13.7l3.4-.9-.9-3.4M19.8 10.3l-3.4.9.9 3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+      : null
+    if (this.winter) {
+      this.winter.type = 'button'
+      this.winter.setAttribute('aria-label', 'Zurück in den Winter')
+    }
   }
 
   setMode(mode) {
@@ -113,6 +125,11 @@ export class Hud {
       <dt>Spitze</dt><dd>${Math.round(r.topSpeed * 3.6)} km/h</dd>
       <dt>Stürze</dt><dd>${r.crashes}</dd>`
     this.setMode('results')
+  }
+
+  // Nur bei einem neuen eigenen Rekord, siehe src/sommer/bestenliste.js.
+  angebot(an) {
+    if (this.resultsListe) this.resultsListe.hidden = !an
   }
 
   showTrick(name, sub, key = '') {

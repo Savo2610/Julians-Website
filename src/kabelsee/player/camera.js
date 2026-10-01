@@ -26,8 +26,12 @@ export class TopCamera {
     this._fov = 0
   }
 
-  snap() {
+  // focus: gleich am Ziel stehen statt hinzufahren. Aus dem Tal kommt man
+  // mitten in der Verwandlung am Steg an, und dort muss das Bild sofort
+  // stimmen – sonst fuhr die Kamera eine Sekunde lang von 34 auf 26 m heran.
+  snap(focus = null) {
     this._initialised = false
+    if (focus !== null) this._focus = focus
   }
 
   addShake(amount) {

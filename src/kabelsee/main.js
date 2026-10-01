@@ -8,7 +8,7 @@ import { createKabelsee, TITLE_VIEW } from './see.js'
 
 // Der Kabelsee allein, unter veerka.mp/kabelsee/: eigener Renderer, Titel,
 // eigene Schleife. Im Tal laeuft derselbe See ohne all das, siehe
-// src/sommer.js.
+// src/sommer/.
 
 const canvas = document.getElementById('scene')
 

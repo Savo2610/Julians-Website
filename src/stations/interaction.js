@@ -150,6 +150,7 @@ export class StationInteraction {
   update() {
     if (this.focus && this.registry.active !== this.focus) this.leave()
     // Aus der Luft schwebte sonst die Einladung der Drohne ueber dem Tal.
-    this.ui.update(this.flight?.active ? null : this.registry.active)
+    // Im Countdown am Badesteg ebenso: dort spricht die Zahl.
+    this.ui.update(this.flight?.active || this.sommer?.aktiv ? null : this.registry.active)
   }
 }

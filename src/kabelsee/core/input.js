@@ -16,8 +16,9 @@ const KEY_MAP = {
   ShiftLeft: 'grab', ShiftRight: 'grab', KeyJ: 'grab',
   Enter: 'confirm', NumpadEnter: 'confirm',
   KeyR: 'reset',
-  // Nur im Tal belegt: zurueck in den Winter.
+  // Nur im Tal belegt: zurueck in den Winter, Bestenliste nach der Session.
   Escape: 'back',
+  KeyB: 'liste',
 }
 
 export class Input {
@@ -40,10 +41,22 @@ export class Input {
     window.addEventListener('keydown', (e) => {
       const a = KEY_MAP[e.code]
       if (!a || !this.aktiv) return
+      // Im Fenster der Bestenliste tippt man seinen Namen: W ist dort ein
+      // Buchstabe und Esc schliesst das Fenster, nicht den Sommer.
+      if (document.querySelector('dialog[open]')) {
+        this.keys.clear()
+        return
+      }
       if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault()
       if (!e.repeat) {
         this.pressed.add(a)
-        this.onAction?.(a)
+        // true: die Taste hat etwas geoeffnet und gehoert nicht mehr dem
+        // Fahrer. Sonst stand das B, das die Bestenliste oeffnet, gleich als
+        // erster Buchstabe im Namensfeld.
+        if (this.onAction?.(a)) {
+          e.preventDefault()
+          return
+        }
       }
       this.keys.add(a)
     })

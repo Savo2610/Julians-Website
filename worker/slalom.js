@@ -19,6 +19,9 @@
 //    eine kurze Sperrliste. Loeschen geht mit wrangler d1 execute.
 
 import { json, fehler } from './antwort.js'
+import { signieren, pruefen, nameGlaetten, adresse as adresseVon } from './marken.js'
+
+export { nameGlaetten }
 
 const PENALTY = 2
 const GATES = 4
@@ -27,59 +30,6 @@ const MIN_FAHRT = 3.0
 const MARKE_GILT = 15 * 60 * 1000   // so lange darf man ueber dem Namen gruebeln
 const PRO_TAG = 40
 const TAGE = 30
-
-// Teilwoerter, nach dem Glaetten von 0→o, 1→i, 3→e, 4→a, 5→s, @→a.
-const SPERRE = [
-  'nazi', 'hitler', 'fotze', 'hure', 'schlampe', 'wichser', 'neger', 'nigg',
-  'fick', 'fuck', 'cunt', 'whore', 'slut', 'bitch', 'kanake', 'schwuchtel',
-  'spast', 'missgeburt', 'arschloch', 'penis', 'vagina', 'porn', 'sieg heil',
-]
-
-// --- Marken: base64url(JSON) . base64url(HMAC-SHA256) -----------------------
-
-const b64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
-  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-const unb64 = (text) => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0))
-
-async function schluessel(env) {
-  if (!env.SLALOM_GEHEIM) throw new Error('SLALOM_GEHEIM fehlt')
-  return crypto.subtle.importKey('raw', new TextEncoder().encode(env.SLALOM_GEHEIM),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify'])
-}
-
-async function signieren(env, inhalt) {
-  const roh = new TextEncoder().encode(JSON.stringify(inhalt))
-  const sig = await crypto.subtle.sign('HMAC', await schluessel(env), roh)
-  return `${b64(roh)}.${b64(sig)}`
-}
-
-async function pruefen(env, marke) {
-  if (typeof marke !== 'string' || marke.length > 400) return null
-  const [teil, sig] = marke.split('.')
-  if (!teil || !sig) return null
-  try {
-    const roh = unb64(teil)
-    const ok = await crypto.subtle.verify('HMAC', await schluessel(env), unb64(sig), roh)
-    return ok ? JSON.parse(new TextDecoder().decode(roh)) : null
-  } catch {
-    return null
-  }
-}
-
-// --- Namen -------------------------------------------------------------------
-
-export function nameGlaetten(roh) {
-  if (typeof roh !== 'string') return null
-  const name = roh.normalize('NFC').replace(/\s+/g, ' ').trim()
-  const laenge = [...name].length
-  if (laenge < 2 || laenge > 16) return null
-  if (!/^[\p{L}\p{N}][\p{L}\p{N} _'\-]*$/u.test(name)) return null
-  const flach = name.toLowerCase()
-    .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's')
-  const ohneLuecken = flach.replace(/[\s_'\-]/g, '')
-  if (SPERRE.some((w) => flach.includes(w) || ohneLuecken.includes(w.replace(/\s/g, '')))) return null
-  return { name, schluessel: ohneLuecken }
-}
 
 // --- Plausibilitaet ------------------------------------------------------------
 
@@ -102,11 +52,7 @@ export function fahrtPruefen({ zeit, fahrzeit, verfehlt, tore }, uhr) {
   return null
 }
 
-async function adresse(request) {
-  const ip = request.headers.get('cf-connecting-ip') ?? 'lokal'
-  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`slalom:${ip}`))
-  return b64(h).slice(0, 22)
-}
+const adresse = (request) => adresseVon(request, 'slalom')
 
 // Die Besten je Name im Zeitfenster. Ohne LIMIT, damit auch der Platz eines
 // Eintrags jenseits der ersten zwanzig stimmt; gedeckelt bei 500.

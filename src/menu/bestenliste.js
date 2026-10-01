@@ -14,18 +14,20 @@ import { MEDALS } from '../world/attractions/race.js'
 // nicht erreichbar ist.
 
 const API = '/api/slalom'
-const NAME_KEY = 'skiportfolio.slalom.name'
+// Der Name gilt fuer beide Listen: wer am Slalom „Jule“ heisst, heisst am
+// Kabelsee auch so.
+export const NAME_KEY = 'skiportfolio.slalom.name'
 const EIGENE_KEY = 'skiportfolio.slalom.eigene'
 const ANGEBOT_DAUER = 8
 
-const lesen = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
-const schreiben = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* privat */ } }
+export const lesen = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
+export const schreiben = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* privat */ } }
 
-async function post(pfad, body) {
+export async function post(pfad, body, api = API) {
   const ctl = new AbortController()
   const t = setTimeout(() => ctl.abort(), 6000)
   try {
-    const r = await fetch(`${API}/${pfad}`, {
+    const r = await fetch(`${api}/${pfad}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -50,27 +52,50 @@ function wann(ms) {
 }
 
 const medaille = (zeit) => MEDALS.find((m) => zeit <= m.time)?.name.toLowerCase() ?? null
+const punkteText = (p) => Math.round(p).toLocaleString('de-DE')
+
+// Zwei Listen, eine Darstellung: der Slalom zaehlt Zeit (kleiner ist
+// besser), der Kabelsee Punkte (siehe src/sommer/bestenliste.js).
+export const LISTEN = {
+  slalom: {
+    titel: 'Slalom',
+    unter: (t) => `Bestzeiten der letzten ${t} Tage`,
+    zahl: (d) => `${d.fahrten} ${d.fahrten === 1 ? 'Fahrt' : 'Fahrten'}`,
+    leer: 'Noch niemand eingetragen. Fahr die Rodelbahn durch die vier Tore und sei die erste Zeit hier.',
+    wert: (f) => zeitText(f.zeit),
+    eigeneKey: EIGENE_KEY,
+  },
+  kabelsee: {
+    titel: 'Kabelsee',
+    unter: (t) => `Beste Session der letzten ${t} Tage`,
+    zahl: (d) => `${d.sessions} ${d.sessions === 1 ? 'Session' : 'Sessions'}`,
+    leer: 'Noch niemand eingetragen. Vom Badesteg am Eissee geht es in den Sommer – drei Runden, und die erste Punktzahl steht hier.',
+    wert: (f) => punkteText(f.punkte),
+    eigeneKey: 'skiportfolio.kabelsee.eigene',
+  },
+}
 
 // Die Liste selbst – im Fenster nach dem Eintragen und im Reiter der
 // Uebersicht dieselbe. Die ersten drei stehen auf einem Treppchen, der Rest
 // darunter in Zeilen; eigene Eintraege tragen einen Rahmen.
-export function listeZeichnen(el, daten, { hervor = null } = {}) {
-  const eigene = new Set(lesen(EIGENE_KEY, []))
+export function listeZeichnen(el, daten, { hervor = null, art = 'slalom' } = {}) {
+  const L = LISTEN[art]
+  const eigene = new Set(lesen(L.eigeneKey, []))
   const ist = (f) => f.id === hervor || eigene.has(f.id)
   el.replaceChildren()
 
   const kopf = document.createElement('div')
   kopf.className = 'sb-kopf'
-  kopf.innerHTML = '<span class="sb-titel"><strong>Slalom</strong><small></small></span><span class="sb-zahlen"></span>'
-  kopf.querySelector('small').textContent = `Bestzeiten der letzten ${daten.tage} Tage`
-  kopf.querySelector('.sb-zahlen').textContent =
-    `${daten.fahrer} Fahrer · ${daten.fahrten} ${daten.fahrten === 1 ? 'Fahrt' : 'Fahrten'}`
+  kopf.innerHTML = '<span class="sb-titel"><strong></strong><small></small></span><span class="sb-zahlen"></span>'
+  kopf.querySelector('strong').textContent = L.titel
+  kopf.querySelector('small').textContent = L.unter(daten.tage)
+  kopf.querySelector('.sb-zahlen').textContent = `${daten.fahrer} Fahrer · ${L.zahl(daten)}`
   el.appendChild(kopf)
 
   if (!daten.liste.length) {
     const leer = document.createElement('p')
     leer.className = 'sb-leer'
-    leer.textContent = 'Noch niemand eingetragen. Fahr die Rodelbahn durch die vier Tore und sei die erste Zeit hier.'
+    leer.textContent = L.leer
     el.appendChild(leer)
     return
   }
@@ -85,7 +110,7 @@ export function listeZeichnen(el, daten, { hervor = null } = {}) {
     stufe.innerHTML = '<span class="sb-rang"></span><span class="sb-name"></span><span class="sb-zeit"></span><span class="sb-wann"></span><span class="sb-sockel"></span>'
     stufe.querySelector('.sb-rang').textContent = platz
     stufe.querySelector('.sb-name').textContent = f ? f.name : '–'
-    stufe.querySelector('.sb-zeit').textContent = f ? zeitText(f.zeit) : ''
+    stufe.querySelector('.sb-zeit').textContent = f ? L.wert(f) : ''
     stufe.querySelector('.sb-wann').textContent = f ? wann(f.erstellt) : ''
     podest.appendChild(stufe)
   }
@@ -99,14 +124,14 @@ export function listeZeichnen(el, daten, { hervor = null } = {}) {
     rest.forEach((f, i) => {
       const li = document.createElement('li')
       li.className = 'sb-zeile' + (ist(f) ? ' eigen' : '')
-      const m = medaille(f.zeit)
+      const m = art === 'slalom' ? medaille(f.zeit) : null
       li.innerHTML = '<span class="sb-rang"></span><span class="sb-punkt"></span><span class="sb-name"></span><span class="sb-straf"></span><span class="sb-wann"></span><span class="sb-zeit"></span>'
       li.querySelector('.sb-rang').textContent = i + 4
       if (m) li.querySelector('.sb-punkt').dataset.m = m
       li.querySelector('.sb-name').textContent = f.name
       li.querySelector('.sb-straf').textContent = f.verfehlt ? `+${f.verfehlt * 2} s` : ''
       li.querySelector('.sb-wann').textContent = wann(f.erstellt)
-      li.querySelector('.sb-zeit').textContent = zeitText(f.zeit)
+      li.querySelector('.sb-zeit').textContent = L.wert(f)
       ol.appendChild(li)
     })
     el.appendChild(ol)

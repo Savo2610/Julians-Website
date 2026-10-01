@@ -1,0 +1,33 @@
+/* --- Countdown am Badesteg --------------------------------------------------
+   Frost wie alles, was nur kurz ueber dem Tal steht: grosse Ziffer ohne
+   Behaelter, die bei jedem Wechsel einmal pocht – wie der Steg-Countdown
+   am Kabelsee, damit beide Seiten dieselbe Sprache sprechen. Ueber der
+   Mitte, denn dort steht der Fahrer. */
+.sommer-zahl {
+  position: fixed;
+  left: 50%;
+  top: 28%;
+  z-index: 12;
+  transform: translate(-50%, -50%);
+  font-size: 92px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  opacity: 0;
+}
+.sommer-zahl.beat { animation: sommer-beat 0.95s ease-out forwards; }
+@keyframes sommer-beat {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(0.94); }
+}
+
+/* --- Im Sommer --------------------------------------------------------------
+   Alles vom Tal geht weg – Hinweise, Einladungen, Daumenstick, Kartenknopf,
+   Abzeichen-Meldung. Nur das Bild, die Anzeige des Sees und offene Fenster
+   bleiben. Als eine Regel statt einer Liste, damit nichts Neues im Tal
+   vergessen wird und im Sommer stehen bleibt. */
+:root.sommer body > :not(#scene, .kabelsee-hud, dialog, .sommer-zahl) {
+  visibility: hidden !important;
+}

@@ -286,6 +286,42 @@
   cursor: pointer;
 }
 .kabelsee-hud .back:hover { background: rgba(255, 255, 255, 0.75); }
+.kabelsee-hud .liste {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 16px;
+  border: 1.5px solid #1d6f7c;
+  border-radius: 14px;
+  font: 800 15px/1 ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+  color: #1d6f7c;
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.kabelsee-hud .liste[hidden] { display: none; }
+
+/* Am Handy im Tal: zurueck in den Winter, wo im Tal der Kartenknopf sitzt.
+   Die Zahlen oben rechts ruecken dafuer zur Seite. */
+.kabelsee-hud .t-winter {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #13212f;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.kabelsee-hud .t-winter:active { scale: 0.9; }
+.kabelsee-hud .t-winter svg { width: 24px; height: 24px; }
+.kabelsee-hud:has(.t-winter) .hud-stats { right: calc(max(16px, env(safe-area-inset-right)) + 62px); }
 .kabelsee-hud[hidden] { display: none; }
 .kabelsee-hud .go:hover { filter: brightness(1.05); }
 

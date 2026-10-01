@@ -1001,6 +1001,9 @@ html.touch .sb-angebot { padding: 12px 20px; }
 .sb-liste { display: flex; flex-direction: column; gap: 14px; }
 /* In der breiten Uebersicht zerfiel das Treppchen in drei weit entfernte Stufen. */
 .ov-liste .sb-liste { max-width: 600px; margin: 0 auto; }
+/* Darunter der Kabelsee; ohne Antwort vom Worker bleibt er weg. */
+.ov-liste .kb-liste { margin-top: 30px; }
+.sb-liste[hidden] { display: none; }
 .sb-kopf {
   display: flex;
   align-items: baseline;

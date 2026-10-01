@@ -153,7 +153,7 @@ export class MapMenu {
           </div>
         </section>
         <section class="ov-pass"></section>
-        <section class="ov-liste"><div class="sb-liste"></div></section>
+        <section class="ov-liste"><div class="sb-liste"></div><div class="sb-liste kb-liste" hidden></div></section>
         <footer class="ov-keys">
           ${STEUERUNG.map(([k, t]) => `<span class="ov-key"><span class="ov-kbd">${k}</span>${t}</span>`).join('')}
         </footer>
@@ -416,6 +416,29 @@ export class MapMenu {
     fuss.innerHTML = '<span></span><button type="button" class="sb-hin">Zum Slalom-Start</button>'
     fuss.firstElementChild.textContent = eigene ? `Deine Bestzeit hier im Browser: ${eigene.toFixed(2).replace('.', ',')} s` : 'Noch keine eigene Zeit gefahren.'
     fuss.querySelector('button').addEventListener('click', () => this.zumSlalom())
+    ziel.appendChild(fuss)
+    this._buildKabelsee()
+  }
+
+  // Darunter der Kabelsee (src/sommer/bestenliste.js), wenn es ihn gibt.
+  // Faellt er aus, bleibt der Slalom stehen.
+  async _buildKabelsee() {
+    const ziel = this.listeEl.querySelector('.kb-liste')
+    if (!this.kabelseeListe) return
+    let daten
+    try {
+      daten = await this.kabelseeListe.laden()
+    } catch {
+      ziel.hidden = true
+      return
+    }
+    if (!this.open || this.view !== 'liste') return
+    ziel.hidden = false
+    listeZeichnen(ziel, daten, { art: 'kabelsee' })
+    const fuss = document.createElement('div')
+    fuss.className = 'sb-fussleiste'
+    fuss.innerHTML = '<span>Vom Badesteg am Eissee in den Sommer.</span><button type="button" class="sb-hin">Zum Badesteg</button>'
+    fuss.querySelector('button').addEventListener('click', () => this.zumBadesteg?.())
     ziel.appendChild(fuss)
   }
 

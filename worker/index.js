@@ -2,8 +2,9 @@
 // die gebauten Dateien aus dist/; der Worker springt nur an, wo
 // run_worker_first in wrangler.jsonc es sagt:
 //
-// - /api/* – die Bestenliste des Slaloms (slalom.js) und die laufende
-//   Sendung fuer die gefrorene Quelle (broadcast.js). Gleicher Host wie das
+// - /api/* – die Bestenlisten des Slaloms (slalom.js) und des Kabelsees
+//   (kabelsee.js) und die laufende Sendung fuer die gefrorene Quelle
+//   (broadcast.js). Gleicher Host wie das
 //   Spiel: kein CORS, kein eigener DNS-Eintrag.
 // - /      – www.veerka.mp leitet auf veerka.mp um. Pistenpass, Bestzeit und
 //   Ticket liegen im localStorage, und der gilt je Adresse: ohne Umleitung
@@ -11,6 +12,7 @@
 
 import { fehler } from './antwort.js'
 import { slalom } from './slalom.js'
+import { kabelsee } from './kabelsee.js'
 import { broadcast } from './broadcast.js'
 
 export default {
@@ -19,6 +21,7 @@ export default {
     if (!url.pathname.startsWith('/api/')) return startseite(request, env, url)
     try {
       if (url.pathname.startsWith('/api/slalom/')) return await slalom(request, env, url.pathname)
+      if (url.pathname.startsWith('/api/kabelsee/')) return await kabelsee(request, env, url.pathname)
       if (url.pathname.startsWith('/api/broadcast/')) return await broadcast(request, url.pathname)
       return fehler('Nicht gefunden', 404)
     } catch (e) {

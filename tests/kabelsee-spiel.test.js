@@ -7,7 +7,7 @@ import { FEATURES, GATES, offsetAt } from '../src/kabelsee/world/features.js'
 import { CABLE, TRICK } from '../src/kabelsee/config.js'
 import { ride, dockStart, steerTo } from './kabelsee-helfer.js'
 import { CableSystem } from '../src/kabelsee/game/cable-system.js'
-import { RiderPhysics } from '../src/kabelsee/player/rider-physics.js'
+import { RiderPhysics, DOCK_S } from '../src/kabelsee/player/rider-physics.js'
 
 const TAU = Math.PI * 2
 
@@ -243,4 +243,18 @@ test('Kombo: Faktor steigt, Sturz loescht, Zeit zahlt aus', () => {
   assert.equal(banked, (300 + 300) * 2)
   assert.equal(c.score, banked)
   assert.ok(TRICK.comboWindow > 2)
+})
+
+test('Aus dem Tal: der Buegel kommt nach der vorgegebenen Zeit, sonst nach 2,6 bis 4,4 s', () => {
+  // Am Badesteg lief der Countdown schon; dort gibt das Tal die Ankunft vor
+  // (src/sommer/sommer.js, 2,8 s ab Beginn der Verwandlung).
+  const cable = new CableSystem()
+  const r = new RiderPhysics(cable)
+  r.toDock(2.8)
+  assert.ok(Math.abs(cable.nextArriving(DOCK_S).seconds - 2.8) < 0.05)
+  for (let i = 0; i < 20; i++) {
+    r.toDock()
+    const s = cable.nextArriving(DOCK_S).seconds
+    assert.ok(s >= 2.55 && s <= 4.45, `Ankunft ${s.toFixed(2)} s`)
+  }
 })

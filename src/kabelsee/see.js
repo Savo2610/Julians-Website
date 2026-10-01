@@ -24,7 +24,7 @@ import { FEATURES } from './world/features.js'
 // Der Kabelsee als Baustein: Szene, Kamera, Fahrer, Anzeige und Schleife,
 // aber kein eigener Renderer. So laeuft er zweimal mit demselben Code –
 // allein unter /kabelsee/ (main.js) und im Tal, wo er hinter dem Badesteg
-// nachgeladen wird und im Renderer des Tals zeichnet (src/sommer.js). Ein
+// nachgeladen wird und im Renderer des Tals zeichnet (src/sommer/). Ein
 // zweiter WebGL-Kontext waere am Handy schnell einer zu viel.
 //
 // eingebettet: kein Titel, die Session beginnt am Steg, Esc fuehrt zurueck
@@ -35,7 +35,7 @@ import { FEATURES } from './world/features.js'
 export const TITLE_VIEW = { x: 30, y: 1, z: -70, distance: 46 }
 const STEP = 1 / 120
 
-export async function createKabelsee({ renderer, canvas, touch = false, eingebettet = false, onZurueck = null, onErgebnis = null, pause = null }) {
+export async function createKabelsee({ renderer, canvas, touch = false, eingebettet = false, onZurueck = null, onErgebnis = null, onStart = null, onListe = null, pause = null }) {
   const weiter = pause ?? (() => null)
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.4, 900)
@@ -123,17 +123,21 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
     },
   }
 
-  const session = new Session({ rider, cable, collectibles: items, hud, fx, eingebettet, onErgebnis })
+  const session = new Session({ rider, cable, collectibles: items, hud, fx, eingebettet, onErgebnis, onStart })
 
   const zurueck = () => { if (input.aktiv) onZurueck?.() }
   input.onAction = (a) => {
     if (a === 'confirm') session.confirm()
     if (a === 'reset') session.restart()
     if (a === 'back' && eingebettet) zurueck()
+    if (a === 'liste' && session.state === 'results') return !!onListe?.()
+    return false
   }
   hud.titleGo.addEventListener('click', () => session.confirm())
   hud.resultsGo.addEventListener('click', () => session.confirm())
   hud.resultsBack?.addEventListener('click', zurueck)
+  hud.resultsListe?.addEventListener('click', () => onListe?.())
+  hud.winter?.addEventListener('click', zurueck)
   if (touch) new TouchControls(input, canvas, { root, onTap: () => { if (input.aktiv && session.state !== 'play') session.confirm() } })
 
   // --- Gischt -------------------------------------------------------------------
@@ -248,10 +252,9 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
       input.aktiv = true
       input.keys.clear()
       root.hidden = false
-      session.reset({ ankunft })
-      session.confirm()
-      chase.update(0, rider, { focus: 1 })
-      chase.snap()
+      // Auch mitten aus einer Session heraus (Esc, spaeter wieder hin).
+      session.starten({ ankunft })
+      chase.snap(1)
       chase.update(0, rider, { focus: 1 })
     },
     verlassen() {

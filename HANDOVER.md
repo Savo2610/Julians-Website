@@ -1127,7 +1127,8 @@ setzen, sonst läuft die Schleife zwischen den Aufnahmen weiter.
 
 ## 4a⁷. Tiere: Schneehase, Schneehühner, Fuchs
 
-(02.10., Branch `tiere`, noch nicht in `main`.) Auf Wunsch „ein paar süße
+(02.10., seit `b2c6d69` in `main`, zusammengeführt mit `--no-ff`:
+`git revert -m 1 b2c6d69` nimmt sie wieder ab.) Auf Wunsch „ein paar süße
 Tiere, sehr selten und sehr schüchtern“. Alles in `src/world/tiere/`:
 
 - `modelle.js` – die drei Figuren, Low-Poly aus Ikosaedern wie Fels und
@@ -1546,6 +1547,7 @@ Zusammenführungs-Commit an `main` (`git log def8f43`); die Commit-Nummern
 des Tals sind dabei gleich geblieben.
 
 ```
+b2c6d69  Seltene Tiere: Schneehase, Schneehuehner, Fuchs (Merge)
 68aceb9  Kabelsee: Sammeln zaehlt am Ende in Prozent, Auswertung zaehlt vor (Merge)
 bdf229d  Kabelsee: Abwechslung bei Tricks, Neustart am Handy (Merge)
 d9bae55  Kabelsee: neue Wertung, Abzeichen, eigene Seite mit Menue (Merge)

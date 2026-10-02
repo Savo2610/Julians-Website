@@ -1001,5 +1001,5 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Der Badesteg: von hier in den Sommer, siehe src/sommer/.
   const badesteg = createBadesteg(world)
 
-  return { apresTerrace, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
+  return { trees: placements, apresTerrace, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
 }

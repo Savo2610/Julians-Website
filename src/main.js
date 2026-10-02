@@ -32,6 +32,7 @@ import { Bestenliste } from './menu/bestenliste.js'
 import { Spray } from './player/spray.js'
 import { RohrpostNetz } from './world/rohrpost-netz.js'
 import { Sommer } from './sommer/sommer.js'
+import { Wildnis } from './world/tiere/wildnis.js'
 
 const canvas = document.getElementById('scene')
 
@@ -184,6 +185,10 @@ canvas.addEventListener('pointerdown', () => {
   if (rohrpost.aktiv) rohrpost.ueberspringen()
   interaction.leave()
 })
+
+// Seltene Tiere: Schneehase, Schneehuehner, Fuchs (world/tiere/). Sie
+// stauben mit dem Schnee der Ski und stempeln in dieselbe Spurkarte.
+const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.trees, stationen: stations })
 
 const snowfall = createSnowfall()
 scene.add(snowfall)
@@ -371,6 +376,8 @@ function advance(dt) {
   stations.update(dt, skier)
   interaction.update()
   rohrpost.update(dt)
+  // Neue Tiere nur beim freien Fahren; wer schon da ist, lebt weiter.
+  tiere.update(dt, skier, !flight.active && !interaction.focus && !mapMenu.open && !sommer.aktiv)
   sommer.update(dt)
   hints.update(dt)
   regeln.update(dt)
@@ -404,7 +411,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer, tiere,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

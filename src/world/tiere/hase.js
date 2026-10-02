@@ -1,4 +1,5 @@
 import { terrainHeight, playAreaDistance } from '../heightfield.js'
+import { isSnowSurface } from '../surfaces.js'
 import { createHase } from './modelle.js'
 import { abdruck, amHang, buckel, glatt, imBild, stauben, winkelDiff } from './werkzeug.js'
 
@@ -38,6 +39,10 @@ export class Hase {
     this.z = von.z
     this.gier = Math.atan2(ziel.x - von.x, ziel.z - von.z)
     this.ziel = ziel
+    // Sein Platz am Waldrand: weiter als ein paar Meter entfernt er sich nicht.
+    this.heim = ziel
+    this.gesessen = 0
+    this.umzug = zufall(15, 30)
     this.ausgang = ausgang
     this.zustand = 'kommen'
     this.zeit = 0
@@ -95,6 +100,11 @@ export class Hase {
           if (this.zeit > 2.5) this._wechsel('sitzen')
         } else this.zeit = Math.min(this.zeit, 1)
         break
+    }
+
+    if (this.zustand === 'sitzen') {
+      this.gesessen += dt
+      this.umzug -= dt
     }
 
     this._bewegen(dt, skier, d)
@@ -183,7 +193,19 @@ export class Hase {
         break
       }
       case 'sitzen': {
-        if (this.zeit > this.bleibt) { this._wechsel('gehen'); return }
+        if (this.gesessen > this.bleibt) { this._wechsel('gehen'); return }
+        // Ab und zu ein paar Meter weiter, mit Sichern unterwegs – so sieht
+        // man ihn auch aus der Ferne einmal hoppeln, nicht nur still sitzen.
+        // Nicht oefter: ein Hase, der dauernd unterwegs ist, wirkt aufgezogen.
+        if (this.umzug <= 0 && this.tun !== 'maennchen' && this.tun !== 'putzen') {
+          const platz = this._neuerPlatz()
+          this.umzug = platz ? zufall(15, 30) : 5
+          if (platz) {
+            this.ziel = platz
+            this._wechsel('kommen')
+            return
+          }
+        }
         // Gelegentlich ein, zwei Hopser weiter – nie weit vom Platz.
         if (this.tun === 'hopsen') {
           const a = this.gier + zufall(-1.4, 1.4)
@@ -253,6 +275,22 @@ export class Hase {
         break
       }
     }
+  }
+
+  // 2,5–5 m weiter, hoechstens 7 m vom Heimplatz, frei und auf Schnee.
+  _neuerPlatz() {
+    for (let i = 0; i < 20; i++) {
+      const a = Math.random() * Math.PI * 2
+      const r = zufall(2.5, 5)
+      const x = this.x + Math.sin(a) * r
+      const z = this.z + Math.cos(a) * r
+      if (Math.hypot(x - this.heim.x, z - this.heim.z) > 7) continue
+      if (playAreaDistance(x, z) > -2 || !isSnowSurface(x, z, 1)) continue
+      if (this.wald.naechster(x, z, 1.2) < 1.2) continue
+      if (this.world.nearby(x, z).some((c) => Math.hypot(c.x - x, c.z - z) < c.r + 0.8)) continue
+      return { x, z }
+    }
+    return null
   }
 
   _hopsZu(p, ruhig) {

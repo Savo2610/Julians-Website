@@ -1168,13 +1168,20 @@ aber nur langsam. Fuchs 6 m + 0,85 je m/s, die Hühner 4 m + 0,7.
 - **Schneehase**: Winterfell, schwarze Ohrspitzen, Rücken eine Spur wärmer
   als der Schnee (reines Weiß verschwand bis auf Augen und Ohren). Sitzt,
   mümmelt, schaut sich um, macht Männchen, putzt sich, hoppelt ein Stück;
-  nach 100–180 s ungestört geht er von selbst. Flieht zurück dorthin, woher er
+  nach 100–180 s ungestört geht er von selbst. Alle 15–30 s
+  zieht er 2,5–5 m weiter, sichert unterwegs, höchstens 7 m von seinem
+  Platz (gemessen: 6 Umzüge in 200 s, nie mehr als 5,4 m weg). Flieht zurück dorthin, woher er
   kam – nur nach dem Schwerpunkt der Bäume rannte er quer über die offene
   Piste zur Talstation. Bis 2,6 m je Sprung (gut 10 m/s), Ohren flach.
   **Haken** unter 5,5 m: quer zur Fahrtlinie *und ein Stück zurück*; nur
   quer holte ihn ein Autopilot auf 0,5 m ein.
 - **Schneehühner**: 3–5 oberhalb 15 m Höhe ohne Baum im Umkreis von 7 m,
-  irgendwo bis 45 m um den Gipfel; sie warten drei Minuten.
+  irgendwo bis 45 m um den Gipfel; sie warten drei Minuten. Die Gruppe
+  zieht alle 10–25 s ein, zwei Meter weiter (höchstens 6 m vom ersten
+  Platz, unbegrenzt waren es 8,7 m in 2 min), die Vögel trippeln hinterher,
+  und alle 20–45 s flattert einer kurz auf. Ob sie am Gipfel auftauchen,
+  geprüft (03.10.): von Talstation, Lift, Liftende, Gipfel und Abfahrt aus
+  jedes Mal, 2–42 m vom Gipfelkreuz; vom Plateau aus nie (zu weit).
   Picken, trippeln. Fliegt einer, fliegen alle kurz nacheinander, mit dem
   Hang abwärts, schnelles Schlagen (≈ 9/s) und lange Gleitstrecken.
 - **Fuchs**: jagt 2–3 Minuten und zieht dabei von Stelle zu Stelle (je

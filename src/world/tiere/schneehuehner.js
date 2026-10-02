@@ -1,4 +1,5 @@
-import { terrainHeight, terrainNormal } from '../heightfield.js'
+import { terrainHeight, terrainNormal, playAreaDistance } from '../heightfield.js'
+import { isSnowSurface } from '../surfaces.js'
 import { createSchneehuhn } from './modelle.js'
 import { abdruck, amHang, glatt, imBild, stauben, winkelDiff } from './werkzeug.js'
 
@@ -13,8 +14,15 @@ const RUHE = 4          // m im Stand
 const JE_TEMPO = 0.7    // m je m/s
 
 export class Schneehuehner {
-  constructor({ scene, trail, spray, camera }, { x, z }) {
+  constructor({ scene, trail, spray, camera, wald }, { x, z }) {
     this.scene = scene
+    this.wald = wald
+    // Die Gruppe zieht langsam weiter: jeder Vogel hat seinen Platz relativ
+    // zur Mitte und trippelt hinterher, wenn sie sich verschiebt.
+    this.mitte = { x, z }
+    this.heim = { x, z }
+    this.umzug = zufall(10, 20)
+    this.flatterUhr = zufall(15, 35)
     this.trail = trail
     this.spray = spray
     this.camera = camera
@@ -38,6 +46,9 @@ export class Schneehuehner {
         x: x + Math.cos(a) * r,
         y: 0,
         z: z + Math.sin(a) * r,
+        ox: Math.cos(a) * r,
+        oz: Math.sin(a) * r,
+        flattern: null,
         gier: gier0 + zufall(-1, 1),
         zustand: 'sitzen',
         uhr: Math.random() * 10,
@@ -58,6 +69,7 @@ export class Schneehuehner {
     this.zeit += dt
     let sichtbar = false
     let naechster = Infinity
+    if (this.aufgeflogen < 0) this._ziehen(dt)
 
     for (const v of this.voegel) {
       const dx = v.x - skier.position.x
@@ -99,21 +111,61 @@ export class Schneehuehner {
     }
   }
 
+  // Die Mitte der Gruppe wandert alle 10–25 s ein, zwei Meter weiter, und
+  // ab und zu flattert einer kurz auf. Mehr nicht: sie sollen leben, aber
+  // ein Schwarm, der dauernd unterwegs ist, waere ein Gewimmel.
+  _ziehen(dt) {
+    this.umzug -= dt
+    if (this.umzug <= 0) {
+      this.umzug = zufall(10, 25)
+      for (let i = 0; i < 12; i++) {
+        const a = Math.random() * Math.PI * 2
+        const r = zufall(1.5, 3.5)
+        const x = this.mitte.x + Math.sin(a) * r
+        const z = this.mitte.z + Math.cos(a) * r
+        if (playAreaDistance(x, z) > -2 || !isSnowSurface(x, z, 1.5)) continue
+        // Hoechstens sechs Meter vom ersten Platz: sonst wanderten sie in
+        // zwei Minuten fast neun Meter und am Ende womoeglich ins Bild.
+        if (Math.hypot(x - this.heim.x, z - this.heim.z) > 6) continue
+        if (terrainHeight(x, z) < 14 || this.wald.naechster(x, z, 5) < 5) continue
+        this.mitte = { x, z }
+        break
+      }
+    }
+    this.flatterUhr -= dt
+    if (this.flatterUhr <= 0) {
+      this.flatterUhr = zufall(20, 45)
+      const v = this.voegel[Math.floor(Math.random() * this.voegel.length)]
+      const a = Math.random() * Math.PI * 2
+      const nx = v.x + Math.sin(a) * zufall(1, 1.5)
+      const nz = v.z + Math.cos(a) * zufall(1, 1.5)
+      if (isSnowSurface(nx, nz, 0.5)) {
+        v.flattern = { t: 0, von: { x: v.x, z: v.z }, nach: { x: nx, z: nz } }
+        v.gier = a
+      }
+    }
+  }
+
   _sitzen(v, dt) {
     const m = v.m
     v.uhr += dt
     v.tun -= dt
+    if (v.flattern) return this._flattern(v, dt)
     if (v.tun <= 0) {
-      // Picken, Umschauen oder ein paar Trippelschritte.
+      // Hinter der Gruppe her, sonst picken, umschauen oder trippeln.
+      const px = this.mitte.x + v.ox
+      const pz = this.mitte.z + v.oz
+      const weg = Math.hypot(px - v.x, pz - v.z)
       const w = Math.random()
-      if (w < 0.5) v.picken = zufall(0.8, 2)
+      if (weg > 0.7) v.schritt = { rest: Math.min(4, weg / 0.5), gier: Math.atan2(px - v.x, pz - v.z) }
+      else if (w < 0.5) v.picken = zufall(0.8, 2)
       else if (w < 0.75) v.schritt = { rest: zufall(0.3, 0.8), gier: v.gier + zufall(-1.2, 1.2) }
       v.tun = zufall(0.8, 2.5)
     }
     let hub = 0
     if (v.schritt) {
       v.gier += winkelDiff(v.gier, v.schritt.gier) * glatt(6, dt)
-      const s = 0.45 * dt
+      const s = 0.5 * dt
       v.x += Math.sin(v.gier) * s
       v.z += Math.cos(v.gier) * s
       v.schritt.rest -= dt
@@ -137,6 +189,29 @@ export class Schneehuehner {
       f.schlag.rotation.z = -s * 0.2
     }
     m.schwanz.scale.set(1, 1, 1)
+  }
+
+  // Ein kurzer Hopser mit ein paar Fluegelschlaegen, gut einen Meter weit.
+  _flattern(v, dt) {
+    const m = v.m
+    const f = v.flattern
+    f.t = Math.min(1, f.t + dt / 0.55)
+    v.x = f.von.x + (f.nach.x - f.von.x) * f.t
+    v.z = f.von.z + (f.nach.z - f.von.z) * f.t
+    m.root.position.set(v.x, terrainHeight(v.x, v.z) + 0.45 * Math.sin(Math.PI * f.t), v.z)
+    m.root.rotation.set(0, v.gier, 0)
+    m.rumpf.rotation.x = -0.2
+    m.kopf.rotation.x = -0.2
+    m.schwanz.scale.set(1.4, 1, 1.1)
+    for (const fl of m.fluegel) {
+      const s = fl.anlegen.userData.seite
+      fl.anlegen.rotation.y = s * 0.3
+      fl.schlag.rotation.z = s * (Math.sin(v.uhr * 50) * 0.9 + 0.2)
+    }
+    if (f.t >= 1) {
+      v.flattern = null
+      stauben(this.spray, v.x, terrainHeight(v.x, v.z), v.z, 3, 0.6)
+    }
   }
 
   _auffliegen(v, skier) {

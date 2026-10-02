@@ -83,10 +83,10 @@ export class Schneehuehner {
     if (sichtbar) this._gesehen = true
 
     // Weg, sobald keiner mehr im Bild ist: nach dem Auffliegen gleich, sonst
-    // erst nach anderthalb Minuten – so lange warten sie auf jemanden.
+    // erst nach drei Minuten – so lange warten sie auf jemanden.
     this.ausserBild = sichtbar ? 0 : this.ausserBild + dt
-    const fertig = this.aufgeflogen >= 0 ? this.ausserBild > 0.5 || this.zeit - this.aufgeflogen > 20 : this.zeit > 90 && this.ausserBild > 1
-    if (fertig || naechster > 75) this.entfernen()
+    const fertig = this.aufgeflogen >= 0 ? this.ausserBild > 0.5 || this.zeit - this.aufgeflogen > 20 : this.zeit > 180 && this.ausserBild > 1
+    if (fertig || naechster > 110) this.entfernen()
     return this.lebt
   }
 

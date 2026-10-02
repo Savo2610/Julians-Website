@@ -17,7 +17,8 @@ const RUHE = 4.5          // m, so nah darf man im Stand heran
 const JE_TEMPO = 0.8      // m Fluchtabstand je m/s
 const WACHSAM = 5.5       // m vor der Fluchtdistanz macht er Maennchen
 const HAKEN_AB = 5.5      // m, ab hier schlaegt er Haken
-const BLEIBT = [35, 60]   // s, so lange sitzt er, wenn niemand kommt
+const BLEIBT = [100, 180] // s, so lange sitzt er, wenn niemand kommt –
+                          // lang genug, dass man zufaellig vorbeikommt
 
 const zufall = (a, b) => a + Math.random() * (b - a)
 
@@ -104,7 +105,7 @@ export class Hase {
       this.ausserBild = sichtbar ? 0 : this.ausserBild + dt
       if (this.ausserBild > 0.6) this.entfernen()
     }
-    if (d > 60 || this.zeit > 240) this.entfernen()
+    if (d > 90 || this.zeit > 240) this.entfernen()
     return this.lebt
   }
 

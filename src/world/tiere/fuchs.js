@@ -1,4 +1,5 @@
 import { terrainHeight, playAreaDistance } from '../heightfield.js'
+import { isSnowSurface } from '../surfaces.js'
 import { createFuchs } from './modelle.js'
 import { abdruck, amHang, buckel, glatt, imBild, stauben, winkelDiff } from './werkzeug.js'
 
@@ -6,8 +7,10 @@ import { abdruck, amHang, buckel, glatt, imBild, stauben, winkelDiff } from './w
 // Offene, bleibt stehen und lauscht, den Kopf schief – unter dem Schnee
 // raschelt eine Maus. Dann der Maeuselsprung: hoch hinauf und kopfueber
 // hinein, bis nur noch Hinterteil und Lunte herausschauen. Er zieht den
-// Kopf wieder heraus, schuettelt sich und trabt auf der anderen Seite
-// davon. Seine Spur ist eine einzige Perlenkette quer durchs Bild.
+// Kopf wieder heraus, schuettelt sich und trabt
+// zur naechsten Stelle, ein paar Meter weiter, und das zwei, drei Minuten
+// lang, bevor er zurueck in den Wald geht. Wer vorbeikommt, erwischt ihn
+// mitten bei der Jagd. Seine Spur ist eine einzige Perlenkette.
 //
 // Er ist weniger schreckhaft als der Hase, aber schneller weg. Nur solange
 // er mit dem Kopf im Schnee steckt, merkt er fast nichts – wer genau dann
@@ -39,6 +42,8 @@ export class Fuchs {
     this.gier = Math.atan2(ziel.x - von.x, ziel.z - von.z)
     this.zustand = 'kommen'
     this.zeit = 0
+    this.alter = 0
+    this.leben = zufall(120, 200)
     this.uhr = 0
     this.phase = 0
     this.weg = 0
@@ -57,6 +62,7 @@ export class Fuchs {
   update(dt, skier) {
     if (!this.lebt) return false
     this.zeit += dt
+    this.alter += dt
     this.uhr += dt
 
     const dx = this.x - skier.position.x
@@ -79,7 +85,9 @@ export class Fuchs {
       this.ausserBild = sichtbar ? 0 : this.ausserBild + dt
       if (this.ausserBild > 0.6) this.entfernen()
     }
-    if (d > 65 || this.zeit > 200) this.entfernen()
+    // Ist seine Zeit um und schaut niemand hin, ist er einfach weg.
+    if (this.alter > this.leben + 60 && !sichtbar) this.entfernen()
+    if (d > 95 || this.alter > 400) this.entfernen()
     return this.lebt
   }
 
@@ -213,7 +221,15 @@ export class Fuchs {
         s.schwanzY = Math.sin(this.zeit * 32 + 1.2) * 0.5 * k
         s.kopfX = 0.1
         if (this.zeit > 0.25 && this.zeit < 0.3) stauben(this.spray, this.x, terrainHeight(this.x, this.z) + 0.4, this.z, 6, 0.8)
-        if (this.zeit > 1.1) this._wechsel('gehen')
+        if (this.zeit > 1.1) {
+          // Noch Zeit? Dann zur naechsten Maus.
+          const weiter = this.alter < this.leben && this._naechsteStelle()
+          if (weiter) {
+            this.ziel = weiter
+            this.lauschDauer = 0
+            this._wechsel('kommen')
+          } else this._wechsel('gehen')
+        }
         break
       }
       case 'gehen': {
@@ -270,6 +286,21 @@ export class Fuchs {
       }
     }
     return beine
+  }
+
+  // Eine freie Stelle fuenf bis zehn Meter weiter, nicht zurueck in den Wald.
+  _naechsteStelle() {
+    for (let i = 0; i < 30; i++) {
+      const a = this.gier + zufall(-1.8, 1.8)
+      const r = zufall(5, 10)
+      const x = this.x + Math.sin(a) * r
+      const z = this.z + Math.cos(a) * r
+      if (playAreaDistance(x, z) > -3 || !isSnowSurface(x, z, 1)) continue
+      if (this.wald.naechster(x, z, 3) < 3) continue
+      if (this.world.nearby(x, z).some((c) => Math.hypot(c.x - x, c.z - z) < c.r + 1.2)) continue
+      return { x, z }
+    }
+    return null
   }
 
   _setzen(k, beine) {

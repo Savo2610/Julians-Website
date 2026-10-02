@@ -1146,17 +1146,19 @@ Tiere, sehr selten und sehr schüchtern“. Alles in `src/world/tiere/`:
 **Selten**: Die Uhren laufen nur beim freien Fahren im Winter (kein
 Rundflug, keine Auswahl, keine Übersicht, kein Sommer) und erst wieder,
 wenn das vorige Tier fort ist. Hase zuerst nach 90–180 s, danach
-210–420 s Pause; Schneehühner nur im Umkreis von 48 m um den Gipfel,
+210–420 s Pause; Schneehühner nur, wenn man höchstens 90 m vom Gipfel ist,
 60–120 / 300–480 s; Fuchs 360–600 / 600–900 s. Zehn Minuten Simulation
 an wechselnden Orten: zwei Hasen, ein Schwarm, kein Fuchs. Am Lift kommt
 kein Hase (man käme nicht hin), die Hühner dürfen.
 
-**Kommen und gehen nur außerhalb des Bildes.** Gesucht wird ein freier
-Platz 11–20 m vom Fahrer, der im Bild liegt (NDC < 0,78), mit Wald im
-Umkreis von 16 m, und ein Einstieg von dort in den Wald, der es nicht
-tut. Das Tier hoppelt/trabt vom Einstieg herein und verschwindet erst,
-wenn es 0,6 s lang nicht mehr zu sehen ist. Ein Tier, das mitten im Bild
-entsteht, ist ein Fehler und kein Wildtier.
+**Gefunden, nicht vorgeführt** (03.10., auf Ansage). Ein Tier entsteht
+24–55 m vom Fahrer entfernt am Waldrand, **außerhalb des Bildes und nie im
+Kegel vor ihm** (50° zu jeder Seite bis 55 m, auch im Stand). Dort wartet es
+zwei, drei Minuten; wer vorbeikommt, entdeckt es durch Zufall. Die erste
+Fassung setzte es 11–20 m vor den Fahrer ins Bild und ließ es aus dem Wald
+herankommen – das war ein Auftritt und kein Fund. Verschwunden wird
+weiterhin nur, wenn es 0,6 s lang nicht im Bild war. Geprüft an zehn Orten
+mit 288 Auftritten: keiner im Bild, keiner vorn, keiner näher als 20 m.
 
 **Schüchtern**, abhängig vom Tempo und davon, ob man auf das Tier zuhält:
 Fluchtabstand Hase 4,5 m + 0,8 m je m/s (im Stand 4,5, gekantet ≈ 10,
@@ -1166,17 +1168,18 @@ aber nur langsam. Fuchs 6 m + 0,85 je m/s, die Hühner 4 m + 0,7.
 - **Schneehase**: Winterfell, schwarze Ohrspitzen, Rücken eine Spur wärmer
   als der Schnee (reines Weiß verschwand bis auf Augen und Ohren). Sitzt,
   mümmelt, schaut sich um, macht Männchen, putzt sich, hoppelt ein Stück;
-  nach 35–60 s ungestört geht er von selbst. Flieht zurück dorthin, woher er
+  nach 100–180 s ungestört geht er von selbst. Flieht zurück dorthin, woher er
   kam – nur nach dem Schwerpunkt der Bäume rannte er quer über die offene
   Piste zur Talstation. Bis 2,6 m je Sprung (gut 10 m/s), Ohren flach.
   **Haken** unter 5,5 m: quer zur Fahrtlinie *und ein Stück zurück*; nur
   quer holte ihn ein Autopilot auf 0,5 m ein.
-- **Schneehühner**: 3–5 oberhalb 15 m Höhe ohne Baum im Umkreis von 7 m.
+- **Schneehühner**: 3–5 oberhalb 15 m Höhe ohne Baum im Umkreis von 7 m,
+  irgendwo bis 45 m um den Gipfel; sie warten drei Minuten.
   Picken, trippeln. Fliegt einer, fliegen alle kurz nacheinander, mit dem
   Hang abwärts, schnelles Schlagen (≈ 9/s) und lange Gleitstrecken.
-- **Fuchs**: quert das Bild (Einstieg und Ausgang auf verschiedenen Seiten),
-  lauscht mit schiefem Kopf, duckt sich, **Mäuselsprung** kopfüber in den
-  Schnee, 1,5 s mit wedelnder Lunte, schüttelt sich, trabt weiter. Solange
+- **Fuchs**: jagt 2–3 Minuten und zieht dabei von Stelle zu Stelle (je
+  5–10 m, gemessen 13 Sprünge in 128 s); lauscht mit schiefem Kopf, duckt sich, **Mäuselsprung** kopfüber in den
+  Schnee, 1,5 s mit wedelnder Lunte, schüttelt sich, trabt zur nächsten Maus. Solange
   der Kopf im Schnee steckt, merkt er erst auf 3,5 m etwas.
 
 **Spuren** bleiben liegen, auch wenn man das Tier verpasst hat: Hasen-Y

@@ -15,10 +15,12 @@ import { Fuchs } from './fuchs.js'
 // Rundflug, nicht im Sommer, nicht in einer Auswahl. Und sie laufen erst
 // weiter, wenn das vorige Tier wieder fort ist.
 //
-// Gesucht wird ein Platz am Waldrand, der gerade im Bild liegt, und ein
-// Einstieg dazu im Wald, der es nicht tut. So kommt das Tier von draussen
-// herein und geht auch wieder dorthin – entstehen und verschwinden sieht
-// man nie.
+// Gesucht wird ein Platz am Waldrand, 24–55 m entfernt und ausserhalb des
+// Bildes, aber nie dort, wohin man gerade faehrt. Dort wartet das Tier zwei,
+// drei Minuten – wer vorbeikommt, entdeckt es durch Zufall. In der ersten
+// Fassung sass es 11–20 m vor dem Fahrer im Bild und hoppelte ihm entgegen:
+// das war kein Fund, sondern ein Auftritt. Entstehen und verschwinden sieht
+// man weiterhin nie.
 
 const zufall = (a, b) => a + Math.random() * (b - a)
 
@@ -77,8 +79,8 @@ export class Wildnis {
     if (this.tier) this.tier.entfernen()
     this.tier = null
     let platz = null
-    if (art === 'hase') platz = this._waldrand(skier, { nah: 11, fern: 19, frei: 3, einstieg: 16 })
-    else if (art === 'fuchs') platz = this._waldrand(skier, { nah: 12, fern: 20, frei: 4, einstieg: 18, quer: true })
+    if (art === 'hase') platz = this._waldrand(skier, { frei: 3 })
+    else if (art === 'fuchs') platz = this._waldrand(skier, { frei: 4 })
     else if (art === 'huehner') platz = this._hoehe(skier)
     if (!platz) return false
     const Art = { hase: Hase, fuchs: Fuchs, huehner: Schneehuehner }[art]
@@ -98,73 +100,57 @@ export class Wildnis {
     return true
   }
 
-  // Einen Weg vom Platz in den Wald hinein, bis er aus dem Bild ist.
-  _einstieg(x, z, r, max) {
-    const { camera, wald } = this.ctx
-    for (let d = 2; d <= max; d += 1) {
-      const ex = x + r.x * d
-      const ez = z + r.z * d
-      if (playAreaDistance(ex, ez) > 12) return null
-      if (!imBild(camera, ex, terrainHeight(ex, ez) + 0.4, ez, 1.12)) {
-        // Noch ein Stueck weiter, damit auch die Ohren draussen sind.
-        return { x: ex + r.x * 1.5, z: ez + r.z * 1.5 }
-      }
-      if (wald.naechster(ex, ez, 0.8) < 0.8) continue
+  // Liegt der Punkt im Bild oder dort, wohin der Fahrer gerade faehrt?
+  // Vorn heisst: bis 55 m und hoechstens 50° neben der Fahrtrichtung –
+  // dorthin ist man in drei, vier Sekunden, und dann waere es wieder ein
+  // Tier, das direkt vor einem auftaucht.
+  _verboten(skier, x, z, rand = 1.15) {
+    // Auch im Stand: wer steht, faehrt meist gleich dorthin los, wohin er schaut.
+    if (imBild(this.ctx.camera, x, terrainHeight(x, z) + 0.4, z, rand)) return true
+    const dx = x - skier.position.x
+    const dz = z - skier.position.z
+    const vor = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - skier.heading), Math.cos(Math.atan2(dx, dz) - skier.heading)))
+    return vor < 0.87 && Math.hypot(dx, dz) < 55
+  }
+
+  _waldrand(skier, { frei }) {
+    const { wald } = this.ctx
+    const p = skier.position
+    for (let i = 0; i < 200; i++) {
+      const a = Math.random() * Math.PI * 2
+      const dist = zufall(24, 55)
+      const x = p.x + Math.sin(a) * dist
+      const z = p.z + Math.cos(a) * dist
+      if (!this._frei(x, z, { frei })) continue
+      if (this._verboten(skier, x, z)) continue
+      if (wald.anzahl(x, z, 16) < 4) continue
+      const r = wald.richtung(x, z, 16)
+      if (!r) continue
+      // Ein paar Meter im Bestand kommt es her und geht es wieder hin.
+      const d = zufall(3, 6)
+      const von = { x: x + r.x * d, z: z + r.z * d }
+      if (playAreaDistance(von.x, von.z) > 12 || this._verboten(skier, von.x, von.z)) continue
+      return { von, ziel: { x, z }, ausgang: von }
     }
     return null
   }
 
-  _waldrand(skier, { nah, fern, frei, einstieg, quer = false }) {
-    const { camera, wald } = this.ctx
-    const p = skier.position
-    let best = null
-    for (let i = 0; i < 140; i++) {
-      // Bevorzugt dort, wo der Fahrer hinfaehrt: dann kommt er von selbst
-      // auf das Tier zu, statt es im Ruecken zu haben.
-      const a = skier.speed > 3 && i < 90 ? skier.heading + zufall(-1.2, 1.2) : Math.random() * Math.PI * 2
-      const dist = zufall(nah, fern)
-      const x = p.x + Math.sin(a) * dist
-      const z = p.z + Math.cos(a) * dist
-      if (!this._frei(x, z, { frei })) continue
-      if (!imBild(camera, x, terrainHeight(x, z) + 0.3, z, 0.78)) continue
-      if (wald.anzahl(x, z, 16) < 4) continue
-      const r = wald.richtung(x, z, 16)
-      if (!r) continue
-      const von = this._einstieg(x, z, r, einstieg)
-      if (!von) continue
-      let ausgang = von
-      if (quer) {
-        // Der Fuchs quert das Bild: er geht auf der anderen Seite wieder.
-        const q = { x: -r.x, z: -r.z }
-        const seite = { x: r.z, z: -r.x }
-        const zurueck = this._einstieg(x, z, { x: q.x * 0.5 + seite.x * 0.85, z: q.z * 0.5 + seite.z * 0.85 }, 22) ||
-          this._einstieg(x, z, { x: q.x * 0.5 - seite.x * 0.85, z: q.z * 0.5 - seite.z * 0.85 }, 22)
-        if (!zurueck) continue
-        ausgang = zurueck
-      }
-      const wertung = Math.random() + (skier.speed > 3 ? Math.cos(a - skier.heading) : 0)
-      if (!best || wertung > best.wertung) best = { von, ziel: { x, z }, ausgang, wertung }
-      if (i > 40 && best) break
-    }
-    return best
-  }
-
-  // Schneehuehner sitzen oberhalb der Baumgrenze im Offenen.
+  // Schneehuehner sitzen oberhalb der Baumgrenze im Offenen, irgendwo rund
+  // um den Gipfel – wer oben herumfaehrt, stoesst irgendwann auf sie.
   _hoehe(skier) {
     const p = skier.position
-    if (Math.hypot(p.x - SUMMIT.x, p.z - SUMMIT.z) > 48) return null
-    const { camera, wald } = this.ctx
-    for (let i = 0; i < 120; i++) {
-      const a = i < 70 && skier.speed > 3 ? skier.heading + zufall(-1, 1) : Math.random() * Math.PI * 2
-      const dist = zufall(14, 22)
-      const x = p.x + Math.sin(a) * dist
-      const z = p.z + Math.cos(a) * dist
+    if (Math.hypot(p.x - SUMMIT.x, p.z - SUMMIT.z) > 90) return null
+    const { wald } = this.ctx
+    for (let i = 0; i < 200; i++) {
+      const a = Math.random() * Math.PI * 2
+      const r = Math.sqrt(Math.random()) * 45
+      const x = SUMMIT.x + Math.sin(a) * r
+      const z = SUMMIT.z + Math.cos(a) * r
+      if (Math.hypot(x - p.x, z - p.z) < 24) continue
       if (terrainHeight(x, z) < 15) continue
       if (!this._frei(x, z, { frei: 5, kante: -2 })) continue
       if (wald.anzahl(x, z, 7) > 0) continue
-      // Gleich ausserhalb des Bildes, aber nicht weit: man faehrt hinein.
-      const lage = imBild(camera, x, terrainHeight(x, z), z, 1.0)
-      if (lage && !skier.tow) continue
+      if (this._verboten(skier, x, z)) continue
       return { x, z }
     }
     return null

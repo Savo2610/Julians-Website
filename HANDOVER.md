@@ -127,6 +127,8 @@ src/
     attractions/     Was den Fahrer übernimmt oder misst: drag-lift.js,
                      magic-carpet.js, rail-ride.js, race.js (Zeitnahme,
                      Slalom), speed-check.js, light-run.js, north-run.js
+    tiere/           Schneehase, Schneehühner, Fuchs (4a⁷): modelle.js,
+                     je Tier ein Verhalten, wildnis.js entscheidet wann
     areas/           Ensembles: kinderland.js, apres-layout.js und
                      apres-terrace.js (Hütte mit umwerfbaren Möbeln)
     props/           Ein Modul je Gegenstand, nur Geometrie und eigene
@@ -1123,6 +1125,76 @@ unter `__ski.sommer.see` (`rider`, `session`, `step` gibt es dort als
 `advance`). Für Bilder im verdeckten Fenster `requestAnimationFrame` leer
 setzen, sonst läuft die Schleife zwischen den Aufnahmen weiter.
 
+## 4a⁷. Tiere: Schneehase, Schneehühner, Fuchs
+
+(02.10., Branch `tiere`, noch nicht in `main`.) Auf Wunsch „ein paar süße
+Tiere, sehr selten und sehr schüchtern“. Alles in `src/world/tiere/`:
+
+- `modelle.js` – die drei Figuren, Low-Poly aus Ikosaedern wie Fels und
+  Wald, flach schattiert, Farbe in den Ecken. Anders als ein Baum ist ein
+  Tier ein **kleines Skelett aus Gruppen** (Rumpf, Kopf, Ohren, Läufe,
+  Schwanz, Flügel), jede am Gelenk, darin ein mit `assemble()`
+  verschmolzenes Teil. Hase 9, Fuchs 10, Schneehuhn 5 Zeichenaufrufe.
+- `hase.js`, `schneehuehner.js`, `fuchs.js` – Verhalten und Haltung.
+  Jede Pose sind Zielwinkel, denen die Gelenke gedämpft folgen.
+- `wildnis.js` – die Regie: wann, wo, nie zwei auf einmal.
+- `werkzeug.js` – Sichtprüfung gegen die Kamera, `Waldkarte` (Baum-
+  standorte aus `populate`, jetzt als `props.trees` zurückgegeben),
+  Ausrichten am Hang, Abdrücke, Schneestaub.
+
+**Selten**: Die Uhren laufen nur beim freien Fahren im Winter (kein
+Rundflug, keine Auswahl, keine Übersicht, kein Sommer) und erst wieder,
+wenn das vorige Tier fort ist. Hase zuerst nach 90–180 s, danach
+210–420 s Pause; Schneehühner nur im Umkreis von 48 m um den Gipfel,
+60–120 / 300–480 s; Fuchs 360–600 / 600–900 s. Zehn Minuten Simulation
+an wechselnden Orten: zwei Hasen, ein Schwarm, kein Fuchs. Am Lift kommt
+kein Hase (man käme nicht hin), die Hühner dürfen.
+
+**Kommen und gehen nur außerhalb des Bildes.** Gesucht wird ein freier
+Platz 11–20 m vom Fahrer, der im Bild liegt (NDC < 0,78), mit Wald im
+Umkreis von 16 m, und ein Einstieg von dort in den Wald, der es nicht
+tut. Das Tier hoppelt/trabt vom Einstieg herein und verschwindet erst,
+wenn es 0,6 s lang nicht mehr zu sehen ist. Ein Tier, das mitten im Bild
+entsteht, ist ein Fehler und kein Wildtier.
+
+**Schüchtern**, abhängig vom Tempo und davon, ob man auf das Tier zuhält:
+Fluchtabstand Hase 4,5 m + 0,8 m je m/s (im Stand 4,5, gekantet ≈ 10,
+im Grundtempo ≈ 15), davor 5,5 m Männchen machen. Anschleichen geht also,
+aber nur langsam. Fuchs 6 m + 0,85 je m/s, die Hühner 4 m + 0,7.
+
+- **Schneehase**: Winterfell, schwarze Ohrspitzen, Rücken eine Spur wärmer
+  als der Schnee (reines Weiß verschwand bis auf Augen und Ohren). Sitzt,
+  mümmelt, schaut sich um, macht Männchen, putzt sich, hoppelt ein Stück;
+  nach 35–60 s ungestört geht er von selbst. Flieht zurück dorthin, woher er
+  kam – nur nach dem Schwerpunkt der Bäume rannte er quer über die offene
+  Piste zur Talstation. Bis 2,6 m je Sprung (gut 10 m/s), Ohren flach.
+  **Haken** unter 5,5 m: quer zur Fahrtlinie *und ein Stück zurück*; nur
+  quer holte ihn ein Autopilot auf 0,5 m ein.
+- **Schneehühner**: 3–5 oberhalb 15 m Höhe ohne Baum im Umkreis von 7 m.
+  Picken, trippeln. Fliegt einer, fliegen alle kurz nacheinander, mit dem
+  Hang abwärts, schnelles Schlagen (≈ 9/s) und lange Gleitstrecken.
+- **Fuchs**: quert das Bild (Einstieg und Ausgang auf verschiedenen Seiten),
+  lauscht mit schiefem Kopf, duckt sich, **Mäuselsprung** kopfüber in den
+  Schnee, 1,5 s mit wedelnder Lunte, schüttelt sich, trabt weiter. Solange
+  der Kopf im Schnee steckt, merkt er erst auf 3,5 m etwas.
+
+**Spuren** bleiben liegen, auch wenn man das Tier verpasst hat: Hasen-Y
+(Hinterläufe vor den Vorderpfoten), die Perlenkette des Fuchses, das Loch
+nach dem Mäuselsprung, und die Flügelabdrücke der auffliegenden Hühner.
+Alle **deutlich größer als echt**: die Spurkarte hat 9 cm je Texel, eine
+echte Hasenpfote war darin unsichtbar. Gestempelt wird über
+`trail.stampDecal`, nur auf Schnee (`isSnowSurface`), beim ruhigen
+Hoppeln nur, wenn wieder 1,1 m Platz ist.
+
+Gemessen mit Hase im Bild: 376 Draw Calls, 883 k Dreiecke.
+
+Zum Prüfen: `__ski.tiere.rufen('hase' | 'huehner' | 'fuchs')` ruft sofort
+eins herbei (die Hühner nur in Gipfelnähe), `__ski.tiere.tier` ist das
+laufende (`zustand`, `x`, `z`), `__ski.tiere.gesichtet` zählt, was im Bild
+war. Nicht im Pistenpass – ein geheimes Abzeichen dafür wäre denkbar
+(etwa: dem Hasen auf 6 m nahekommen, ohne dass er flieht), aber erst
+nach Rückfrage.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/
@@ -1270,7 +1342,7 @@ dafür hängt jedes Bein an seiner Hüfte (`legSides`, Drehpunkt `HIP`).
 
 `window.__ski` = `{ skier, world, camera, renderer, scene, trail, props, sky,
 input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln,
-goldstaub, flight, bestenliste, step, goto }`. `goto('kasse')` stellt den
+goldstaub, flight, bestenliste, sommer, tiere, step, goto }`. `goto('kasse')` stellt den
 Fahrer vor eine Station (Ids in `stations.js`).
 
 `S.step(frames, dt)` spult die Welt ohne laufenden rAF-Loop vor — unentbehrlich,

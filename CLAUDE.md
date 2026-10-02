@@ -62,6 +62,10 @@ Das Wichtigste in Kürze:
   Wer Seiltempo, Schwerkraft oder Absprung ändert, misst Ringe und
   Slalomfahnen nach (Tests). Ein Countdown am Badesteg, keiner am See.
 
+- **Tiere** (`src/world/tiere/`, HANDOVER 4a⁷): Schneehase, Schneehühner,
+  Fuchs. Selten, schüchtern, nie zwei auf einmal; sie kommen und gehen nur
+  außerhalb des Bildes. Herbeirufen: `__ski.tiere.rufen('hase')`.
+
 `npm run dev` startet (Tal auf `/`, Kabelsee auf `/kabelsee/`),
 `npm run dev:api` den Worker dazu (Bestenlisten, Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas
 fertig ist. Zum Prüfen im Browser: `window.__ski` und `S.step(frames, dt)`; am See

@@ -275,9 +275,20 @@ Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
 mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
 
 **Anlagen**: Schlepplift (Teller, damit der Fahrer auf den Ski bleibt und die
-Spur weiterläuft), Zauberteppich im Kinderland, Rail im Funpark, Rennstrecke
-mit Zeitnahme, Speedcheck an der freien Piste, zwei Schneekanonen, Leucht-
-strecke, Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
+Spur weiterläuft), Zauberteppich und Skikarussell im Kinderland, Rail im
+Funpark, Rennstrecke mit Zeitnahme, Speedcheck an der freien Piste, zwei
+Schneekanonen, Leuchtstrecke, Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
+
+**Skikarussell** (`attractions/ski-carousel.js`, 04.10.): mitten auf der
+Kuppe des Kinderlands (46,6, −8,4), Station mit Ring wie der Teppich. Enter
+hängt einen an den nächsten der vier Griffe (`tow`, rechter Arm hoch), eine
+Runde im Uhrzeigersinn mit 4,4 m/s (leer dreht es langsam), losgelassen
+wird, sobald die Tangente auf den Slalomeinstieg zeigt – mit 6,5 m/s durch
+den grünen Nudelbogen hinunter. Enter oder S lassen früher los, die
+Einladung sagt dann „Loslassen“. Leere Griffe fliegen mit dem Tempo nach
+außen. Dafür sind zwei der drei Nudelbögen von der Kuppe weg, und der
+Schneetunnel auf der Leuchtstrecke ist entfernt (Ansage: keinen Zweck, aus
+der Kamera nur bunte Striche).
 
 **Wegenetz** (`paths.js`): die vier Wege plus sechs Verbindungen zu einem
 Netz; die Mittellinien steuern Waldschneisen *und* die Präparierung im
@@ -777,7 +788,7 @@ Jetzt drei Teile:
 
 - **Erkundet** (still): 15 Orte – die neun Stationen (erreicht =
   `registry.active`), See, Gipfel, Hüttenterrasse, Funpark, Kinderland
-  (auf dem Teppich), Nordabfahrt (bis unten). Ein Balken und Namensmarken,
+  (auf Teppich oder Karussell), Nordabfahrt (bis unten). Ein Balken und Namensmarken,
   Drohne und Löschzug als „???“. **Keine Pille pro Ort**, nur beim letzten.
 - **Slalom-Medaillen** 4,50 / 4,20 / 3,90 (`MEDALS`), mit Meldung.
 - **Abzeichen** (8 + 1): offen *Raser* (58 km/h am Speedcheck – mit gerader

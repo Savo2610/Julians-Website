@@ -99,7 +99,9 @@ export class PassRegeln {
     if (Math.hypot(x - SUMMIT.x, z - SUMMIT.z) < 7) p.entdecke('gipfel')
     if (terraceDistance(x, z) < 0) p.entdecke('huette')
     if (inFunpark(x, z)) p.entdecke('park')
-    if (this.props.kinderland.carpet.rider) p.entdecke('kinderland')
+    // Teppich oder Karussell: wer eines davon benutzt, war im Kinderland.
+    const kl = this.props.kinderland
+    if (kl.carpet.rider || kl.carousel?.rider) p.entdecke('kinderland')
 
     const st = this.stations.active
     if (st && STATIONEN.includes(st.id)) p.entdecke(st.id)

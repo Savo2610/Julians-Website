@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { KINDER_LANE, SHOOT_RUN, terrainHeight } from '../heightfield.js'
 import { MagicCarpet } from '../attractions/magic-carpet.js'
+import { SkiCarousel } from '../attractions/ski-carousel.js'
 import { readableYaw } from '../props/slalom.js'
 import { LightRun } from '../attractions/light-run.js'
 import { createMarker } from '../../stations/marker.js'
@@ -8,7 +9,6 @@ import { createSnowCannon } from '../props/snow-cannon.js'
 import {
   createNoodleArch,
   createCone,
-  createSnowTunnel,
   createSnowman,
   createBuntingFence,
   KINDER_COLORS,
@@ -38,8 +38,11 @@ const CARPET_FROM = 3
 const CARPET_TO = 23
 
 // Die Spielwiese oben. Weltkoordinaten, weil die Kuppe kein Band hat – sie
-// ist von selbst flach genug.
-const CAP = { x: 45.5, z: -7.5 }
+// ist von selbst flach genug. In ihrer Mitte steht das Skikarussell: auf
+// x 43–50, z −12…−5 liegt der Boden auf 0,6 m genau gleich hoch (8,2–8,7),
+// das ist die einzige Stelle im Kinderland, auf die ein Kreis mit 3,25 m
+// Fahrradius passt.
+const CAP = { x: 46.6, z: -8.4 }
 
 export class Kinderland {
   constructor(world, registry) {
@@ -74,6 +77,7 @@ export class Kinderland {
     })
 
     this._buildFence()
+    this._buildCarousel()
     this._buildCap()
     this._buildSlope()
     this._buildLightRun()
@@ -81,21 +85,17 @@ export class Kinderland {
   }
 
   // Die Leuchtstrecke: gerade, links am Teppich vorbei, aus dem Kinderland
-  // heraus ins Tal. Der Tunnel steht darin – er stand vorher allein auf der
-  // Kuppe und sah dort aus wie hingestellt; hier hat er eine Aufgabe.
+  // heraus ins Tal. Hier stand mittendrin ein Schneetunnel aus sieben Ringen.
+  // Er ist weg: aus der festen Kamera zeigten die Ringe nur ihre Kanten, sieben
+  // bunte Striche quer ueber der Gasse, und er stand direkt neben dem
+  // Auslauf des Funparks im Weg. Die Strecke reagiert selbst – den Tunnel
+  // brauchte sie dafuer nicht.
   _buildLightRun() {
     // Anfang und Ende kommen aus dem Hoehenfeld, nicht aus den
     // Bandkoordinaten des Kinderlands: die Strecke hat dort inzwischen ihr
     // eigenes Band, und beides muss dieselbe Linie meinen, sonst laufen
     // Leuchtleisten und Aufschuettung auseinander.
     this.lightRun = new LightRun(this.world, { from: SHOOT_RUN.from, to: SHOOT_RUN.to })
-
-    const mid = this.lightRun.pointAt(this.lightRun.length * 0.5)
-    this.add(createSnowTunnel({ length: 6.0, width: 5.0, height: 2.7 }), mid.x, mid.z, {
-      rotation: this.lightRun.heading,
-      trigger: 3.6,
-      kind: 'tunnel',
-    })
   }
 
   // --- Bandkoordinaten ----------------------------------------------------
@@ -158,21 +158,39 @@ export class Kinderland {
     }))
   }
 
-  _buildCap() {
-    // Drei Nudelboegen im Bogen ueber die Wiese – ein Rhythmus, kein Einzelstueck.
-    this.add(createNoodleArch({ color: KINDER_COLORS[1], span: 5.6 }), 45.6, -6.2, {
-      rotation: readableYaw(Math.atan2(0.72, -0.69)),
-      trigger: 3.2,
-      kind: 'arch',
+  // Das Skikarussell: Enter haengt einen an den naechsten Griff, nach einer
+  // Runde laesst es los, wenn die Tangente auf den Einstieg des Slaloms
+  // zeigt. Damit schliesst es die Schleife oben: Teppich hinauf, eine Runde
+  // im Kreis, hinaus in die Tore.
+  _buildCarousel() {
+    const exit = this.at(21.5, 1.0)
+    this.carousel = new SkiCarousel(this.world, { center: CAP, exit: { x: exit.x, z: exit.z } })
+
+    if (this.registry) this.world.scene.add(createMarker(CAP.x, CAP.z, 4.1, '#e8663a'))
+    this.registry?.add({
+      id: 'skikarussell',
+      label: 'Skikarussell',
+      hint: 'Einsteigen',
+      color: '#e8663a',
+      position: { x: CAP.x, z: CAP.z },
+      radius: 5.4,
+      labelHeight: terrainHeight(CAP.x, CAP.z) + 4.0,
+      onUse: () => this.carousel.board(this._skier),
     })
-    this.add(createNoodleArch({ color: KINDER_COLORS[0] }), 49.2, -9.4, {
+    // Die Einladung bleibt stehen, solange man im Kreis faehrt – dann sagt
+    // sie, was Enter dort tut. registry.add kopiert die Station, deshalb
+    // wird die gespeicherte Fassung geaendert, nicht das Literal oben.
+    this._carouselStation = this.registry?.stations.find((s) => s.id === 'skikarussell')
+  }
+
+  _buildCap() {
+    // Ein Nudelbogen dort, wo das Karussell einen loslaesst – man wird
+    // hindurchgeschleudert, hinunter zum Slalom. Vorher standen drei Boegen
+    // mitten auf der Kuppe; dort dreht jetzt das Karussell, und ein zweiter
+    // am Ausstieg des Teppichs stand dem orangen Schneemann auf den Fuessen.
+    this.add(createNoodleArch({ color: KINDER_COLORS[3], span: 4.6 }), 47.4, -2.6, {
       rotation: readableYaw(Math.atan2(0.62, -0.78)),
       trigger: 3.0,
-      kind: 'arch',
-    })
-    this.add(createNoodleArch({ color: KINDER_COLORS[3], span: 4.6 }), 46.4, -11.2, {
-      rotation: readableYaw(Math.atan2(0.9, -0.44)),
-      trigger: 2.8,
       kind: 'arch',
     })
 
@@ -269,6 +287,10 @@ export class Kinderland {
   update(dt, skier, input) {
     this._skier = skier
     this.carpet.update(dt, skier, input)
+    this.carousel.update(dt, skier, input)
+    if (this._carouselStation) {
+      this._carouselStation.hint = this.carousel.rider ? 'Loslassen' : 'Einsteigen'
+    }
     this.lightRun.update(dt, skier)
 
     const sx = skier.position.x

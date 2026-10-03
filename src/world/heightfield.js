@@ -568,8 +568,8 @@ export const NORTH_LANE = makeLane([
 // zur Haelfte wieder ausgeblendet und damit keine.
 //
 // Unten haengt ein Auslauf dran, der nach Westen in die Talsohle dreht. Er
-// traegt nichts mehr – er ist nur der Platz, den die zweite Schanze zum
-// Landen braucht. Nach Osten ginge es nicht: dort steigt schon die Kuppe des
+// traegt nichts mehr – er ist nur der Platz, auf dem die kleine Schanze
+// auslaeuft. Nach Osten ginge es nicht: dort steigt schon die Kuppe des
 // Kinderlands an, und ein Landehang, der bergauf laeuft, ist eine Wand.
 export const PARK_LANE = makeLane([
   { x: 10.0, z: -60.4, h: 11.20 },
@@ -727,27 +727,36 @@ function ledge(x, z, f) {
 // Die Hoehe einer Schanze ist nicht ihr Absprungwinkel: das Band faellt
 // darunter mit knapp 10 Grad weiter, das frisst einen Teil der Rampe. Was
 // zaehlt, ist die Steigung an der Kante, und die ist beim kubischen Profil
-// 3*Hoehe/Laenge minus dem Gefaelle des Bandes. Bei Tempo 13 sind das hier
-// gut eine Sekunde Flugzeit und knapp drei Meter Scheitelhoehe.
+// 3*Hoehe/Laenge minus dem Gefaelle des Bandes.
 //
-// Der Platz ist knapp gerechnet. Jede Schanze braucht Rampe *und* Landehang –
-// zusammen sechzehn bis achtzehn Einheiten – und der Landehang muss auch
-// wirklich frei sein, sonst landet man auf der naechsten Figur. Deshalb liegt
-// die zweite Schanze ganz unten und das Band hat einen Auslauf bekommen.
+// Seit 04.10. fliegt man im Park frei und leichter (freiFlug, SPRUNG.
+// schwerkraft), und die Kante wirft hoch statt weit. Damit landet jeder
+// Flug 11 bis 14 m hinter der Kante, gleich ob mit Pop oder ohne – und
+// genau dorthin reicht der Landehang (Knick bei 14 m). Gemessen bei Tempo
+// 11 bis 15: grosse Schanze 1,7–1,9 s ohne Taste, 2,0–2,1 s mit Pop; kleine
+// 1,1–1,2 s und 1,5 s. Vorher landeten beide im Flachen hinter dem
+// Landehang oder an der naechsten Rampe.
+//
+// Der Platz ist knapp gerechnet. Rampe und Landehang brauchen zusammen gut
+// zwanzig Meter, zweimal hintereinander, und unter s 48 liegt die Mulde,
+// hinter der das Gelaende wieder steigt – ein Landehang dort waere ein
+// Gegenhang. Deshalb steht die grosse Schanze oben, wo das Band noch steil
+// ist, die kleine darunter, und die Wellen sind aus der Mitte an den linken
+// Rand vor die Boxen gerueckt.
 //
 // Quer dazu ist der Park in drei Spuren geteilt: in der Mitte die
-// Sprunglinie, links die beiden Boxen, rechts das lange Rail. Der seitliche
+// Sprunglinie, links Wellen und Boxen, rechts das lange Rail. Der seitliche
 // Versatz von siebeneinhalb Einheiten ist kein Geschmack, sondern Rechnung:
 // die Flanke einer Schanze reicht mit halber Breite plus drei Einheiten
 // Auslauf bis 6,5 – wer naeher liegt, haengt schief in der Boeschung. Nach
 // aussen begrenzt die flache Breite des Bandes.
 export const PARK_FEATURES = [
-  { kind: 'rollers', x: 18.97, z: -44.80, dx: 0.496, dz: 0.868, count: 3, spacing: 4.2, height: 0.7, width: 9 },
-  { kind: 'kicker', x: 24.74, z: -34.28, dx: 0.394, dz: 0.919, length: 5.0, width: 7.0, height: 1.95, landing: 12.5, dip: 1.1 },
-  { kind: 'box', x: 17.85, z: -31.33, dx: 0.394, dz: 0.919, length: 6.6, width: 1.5, height: 0.42, ramp: 1.2 },
-  { kind: 'box', x: 20.36, z: -25.30, dx: 0.336, dz: 0.942, length: 8.2, width: 2.0, height: 0.60, ramp: 1.5 },
+  { kind: 'rollers', x: 12.59, z: -38.84, dx: 0.496, dz: 0.868, count: 3, spacing: 3.2, height: 0.7, width: 5 },
+  { kind: 'kicker', x: 16.74, z: -48.70, dx: 0.496, dz: 0.868, length: 5.5, width: 7.0, height: 1.8, landing: 16, dip: 0.4, knuckle: 0.88 },
+  { kind: 'box', x: 17.65, z: -31.79, dx: 0.394, dz: 0.919, length: 7.4, width: 1.5, height: 0.42, ramp: 1.2 },
+  { kind: 'box', x: 20.56, z: -24.73, dx: 0.336, dz: 0.942, length: 9.4, width: 2.0, height: 0.60, ramp: 1.5 },
   { kind: 'ledge', x: 34.49, z: -30.34, dx: 0.336, dz: 0.942, length: 12, width: 2.6, height: 0.85, ramp: 2.2 },
-  { kind: 'kicker', x: 29.70, z: -21.20, dx: 0.243, dz: 0.970, length: 5.5, width: 7.5, height: 2.85, landing: 12.5, dip: 1.3 },
+  { kind: 'kicker', x: 25.72, z: -31.98, dx: 0.200, dz: 0.980, length: 5.0, width: 7.0, height: 1.1, landing: 16, dip: 0.4, knuckle: 0.88 },
 ]
 
 // Ist der Punkt im Funpark? Gemessen wird am Band selbst, nicht an einem
@@ -758,12 +767,6 @@ export function inFunpark(x, z) {
   return laneAt(x, z, PARK_LANE) !== null
 }
 
-// Wo ein Flug ballistisch ist. Sonst rechnet das Fahrmodell die Flughoehe
-// ueber dem Boden darunter: faellt der Boden weg, sinkt der Fahrer mit. Fuer
-// Kicker mit Landehang ist das gutmuetig, ueber eine Luecke aber falsch –
-// ueber der Klamm tauchte er im Flug viereinhalb Meter mit hinab. Wo diese
-// Funktion ja sagt, fliegt er auf fester Hoehe weiter, bis der Boden ihn
-// wieder hat. Gefragt wird einmal, beim Absprung.
 // Wie sehr der Fahrer gerade auf die Schanze zuhaelt (0 bis 1). Auf der
 // Anfahrt pendelt er nicht: der Schwung schlaegt bis 0,55 rad aus, und
 // damit ging der Flug um bis zu 2,6 Meter seitlich neben die Schanze.
@@ -784,9 +787,91 @@ export function aufSteg(x, z) {
   return Math.abs(laengs) < e.laenge / 2 + 6 && quer < BRUECKE.halb + 1.5
 }
 
-export function freiFlug(x, z) {
+// Steht der Fahrer am Absprung der Klammschanze? Dort fliegt er frei und
+// springt wie im Park (Pop, Figuren), aber mit der Schwerkraft des Tals –
+// die Weiten an der Klamm sind darauf gemessen.
+export function klammFlug(x, z) {
   const { u, v } = schanzeLage(x, z)
   return u > -SCHANZE.laenge - 1 && u < 1 && Math.abs(v) < SCHANZE.halb + SCHANZE.flanke
+}
+
+// Wo ein Flug ballistisch ist. Sonst rechnet das Fahrmodell die Flughoehe
+// ueber dem Boden darunter: faellt der Boden weg, sinkt der Fahrer mit. Fuer
+// Kicker mit Landehang ist das gutmuetig, ueber eine Luecke aber falsch –
+// ueber der Klamm tauchte er im Flug viereinhalb Meter mit hinab. Wo diese
+// Funktion ja sagt, fliegt er auf fester Hoehe weiter, bis der Boden ihn
+// wieder hat. Gefragt wird einmal, beim Absprung.
+//
+// Im Funpark ja – dort traegt der Landehang den Flug, und erst so zaehlt er:
+// wer weiter fliegt, faellt tiefer und hat laenger Zeit fuer die Figur. Und
+// an der Klammschanze, wo sonst niemand ueber die Rinne kaeme.
+export function freiFlug(x, z) {
+  return parkFlug(x, z) || klammFlug(x, z)
+}
+
+// Wo ein Absprung nach den Regeln des Parks fliegt (leichtere Schwerkraft,
+// Kante wirft hoch statt weit, freier Flug). Enger als inFunpark: dessen
+// Saum reicht fuenfzehn Meter ueber die Mittellinie hinaus, bis auf den
+// Kopf der Leuchtstrecke und das Ende der Nordabfahrt – dort soll ein
+// Hopser bleiben, wie er war. Gezaehlt wird nur, wo das Band voll zieht.
+export function parkFlug(x, z) {
+  const hit = laneAt(x, z, PARK_LANE)
+  return hit !== null && hit.weight >= 0.9
+}
+
+// Faehrt der Fahrer gerade eine Schanze hinauf oder auf eine Box zu? Dort
+// pendelt er nicht. Sonst traf er die Kante bis zu 30 Grad schraeg und flog
+// neben den Landehang, und eine Box (1,5 m breit) verfehlte er ohne Lenken
+// um 2,8 m.
+export function vorFigur(x, z) {
+  for (const f of PARK_FEATURES) {
+    if (f.kind !== 'kicker' && f.kind !== 'box') continue
+    const { u, v } = local(x, z, f)
+    if (f.kind === 'kicker' && u > -f.length - 1 && u < 0.5 && Math.abs(v) < f.width * 0.5 + 1) return true
+    if (f.kind === 'box' && u > -f.length * 0.5 - 5 && u < f.length * 0.5 && Math.abs(v) < f.width * 0.5 + 1.5) return true
+  }
+  return false
+}
+
+// Auf welchem Deck einer Box steht der Punkt? Liefert die Box mit der Lage
+// darauf (u laengs, v quer, `ende`: u, an dem das Deck aufhoert), sonst
+// null. Das Deck ist das flache Dach der Aufschuettung; die Anrampung an
+// den Enden gehoert nicht dazu, dort faellt der Schnee schon ab.
+export function boxDeck(x, z) {
+  for (const f of PARK_FEATURES) {
+    if (f.kind !== 'box') continue
+    const { u, v } = local(x, z, f)
+    const ende = f.length * 0.5 - f.ramp + 0.2
+    if (Math.abs(u) <= ende && Math.abs(v) <= f.width * 0.5 + 0.7) return { f, u, v, ende }
+  }
+  return null
+}
+
+// Liegt der Punkt auf einer Box samt ihrer Anrampung? Dort wirft die
+// Anrampung nicht ab: 42 cm auf 1,2 m hoben den Fahrer bei Tempo 10 mit
+// gut 6 m/s in die Luft, und er flog ueber das ganze Deck hinweg.
+export function ueberBox(x, z) {
+  for (const f of PARK_FEATURES) {
+    if (f.kind !== 'box') continue
+    const { u, v } = local(x, z, f)
+    if (Math.abs(u) <= f.length * 0.5 && Math.abs(v) <= f.width * 0.5 + 0.6) return true
+  }
+  return false
+}
+
+// Wo der Boden nicht von selbst abwirft: Boxen samt Anrampung (siehe oben)
+// und die Wellen. Die Wellen stehen seit 04.10. vor den Boxen, und jede
+// warf bei Tempo 10 einen Hopser von 0,8 s – der letzte trug ueber die
+// erste Box hinweg. Jetzt sind sie zum Pumpen da; wer auf dem Anstieg
+// einer Welle die Leertaste drueckt, bekommt ihren Schwung als Pop dazu.
+export function ohneAbwurf(x, z) {
+  if (ueberBox(x, z)) return true
+  for (const f of PARK_FEATURES) {
+    if (f.kind !== 'rollers') continue
+    const { u, v } = local(x, z, f)
+    if (Math.abs(u) <= f.spacing * f.count * 0.5 && Math.abs(v) <= f.width * 0.5 + 2) return true
+  }
+  return false
 }
 
 // Steht der Fahrer gerade auf einer Box oder der Schneekante? Gebraucht wird

@@ -953,7 +953,10 @@ export function populate(world, sky, registry, stationOptions = {}) {
     for (const f of PARK_FEATURES) {
       if (f.kind === 'kicker') continue
       const half = (f.width ?? 8) * 0.5 + 2.2
-      for (const side of [-1, 1]) {
+      // Die Wellen liegen seit 04.10. am linken Rand neben dem Landehang
+      // der grossen Schanze; ein Polster auf ihrer Innenseite stuende
+      // mitten in dessen Flanke. Sie bekommen nur das aeussere.
+      for (const side of f.kind === 'rollers' ? [-1] : [-1, 1]) {
         const mx = f.x + f.dz * side * half
         const mz = f.z - f.dx * side * half
         const marker = createPadMarker(variant++)

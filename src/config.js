@@ -77,6 +77,16 @@ export const SPRUNG = {
   // 1,03 s Flug ohne Taste, 1,33 s mit Druck an der Kante.
   pop: 2.4,
   nachsicht: 0.12,    // s: so spaet nach der Kante zaehlt ein Druck noch
+  // Im Funpark fliegt man leichter, wie am Kabelsee (dort auch 13). Mit 18
+  // war ein Flug am grossen Kicker 1,45 s lang – fuer einen 720 braucht es
+  // gut 1,75 s. Jetzt 1,7–1,9 s ohne Taste und 2,0–2,1 s mit Pop.
+  schwerkraft: 13,
+  parkHopser: 5.4,    // m/s: bei 13 so hoch wie 6,4 bei 18
+  // Von der Box: ohne Taste rutscht man am Ende fast nur herunter (wie am
+  // See), mit der Leertaste springt man ab – zusammen 6 m/s, so viel wie
+  // ein Hopser, genug fuer einen 360 vom Ende der langen Box.
+  boxAbwurf: 1.5,
+  boxPop: 4.5,
 }
 
 // Tricks gibt es nur im Funpark, gesteuert wie am Kabelsee: in der Luft
@@ -104,6 +114,12 @@ export const TRICK = {
   slideLerp: 7,
   slideMinSpeed: 3.5,
   slideDrag: 1.6,     // zusaetzlicher Widerstand quer zur Fahrt
+  // Boxen (04.10., wie am See): einrasten, wer hoechstens so schraeg kommt
+  // (rad, gut 50 Grad – am See 0,87), und schnell genug ist.
+  boxWinkel: 0.9,
+  boxMinTempo: 3,
+  boxDrag: 0.12,      // 1/s: auf 6 m Deck verliert man so gut 5 Prozent
+  boxDeck: 0.1,       // m, so hoch liegt das Holz ueber dem Schnee
 }
 
 export const CAMERA = {

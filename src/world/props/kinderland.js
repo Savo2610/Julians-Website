@@ -174,72 +174,6 @@ export function createCone({ color = 0xe8663a, height = 0.66 } = {}) {
 // dem Wimpelzaun, der genau das tut. Zwei Sorten Wimpel in einer Anlage sind
 // eine zu viel.
 
-// --- Tunnel ------------------------------------------------------------------
-// Ein Bogen aus Ringen, durch den man faehrt. Beim Durchfahren laufen die
-// Ringe der Reihe nach an – von aussen sieht man, dass drinnen etwas passiert.
-
-export function createSnowTunnel({ length = 5.2, width = 4.4, height = 2.6 } = {}) {
-  const group = new THREE.Group()
-  const rings = []
-  const count = 7
-  const shell = []
-
-  for (let i = 0; i < count; i++) {
-    const z = (i / (count - 1) - 0.5) * length
-    // Der Ring: ein halber Torus, an den Enden etwas dicker.
-    const geo = new THREE.TorusGeometry(width / 2, 0.2, 7, 16, Math.PI)
-    const ring = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      color: KINDER_COLORS[i % KINDER_COLORS.length],
-      roughness: 0.6,
-      emissive: new THREE.Color(KINDER_COLORS[i % KINDER_COLORS.length]),
-      emissiveIntensity: 0,
-      flatShading: true,
-    }))
-    ring.position.set(0, 0, z)
-    ring.scale.y = height / (width / 2)
-    ring.castShadow = true
-    group.add(ring)
-    rings.push(ring)
-  }
-
-  // Die Roehre zwischen den Ringen: ein offener Halbzylinder statt einzelner
-  // Platten. Das ist nicht nur weniger Geometrie – die Kamera steht fest, und
-  // ein Tunnel, dessen Achse in die Blickrichtung zeigt, zeigt von seinen
-  // Ringen nur die Kanten. Erst die geschlossene Schale macht daraus wieder
-  // einen Koerper, den man als Roehre liest.
-  // Der offene Halbzylinder hat seine Achse auf Y und die Schale auf +X.
-  // rotateZ legt die Achse auf X und die Schale nach oben; danach ist Y die
-  // Hoehe und Z die Breite. Erst dann skalieren, sonst vertauscht man beide.
-  const tube = new THREE.CylinderGeometry(1, 1, length, 20, 1, true, 0, Math.PI)
-  tube.rotateZ(Math.PI / 2)
-  tube.scale(1, height, width / 2)
-  // Die letzte Vierteldrehung stellt die Achse auf Z, wo auch die Ringe liegen.
-  shell.push({ geo: tube, color: SNOW, position: [0, 0, 0], rotation: [0, Math.PI / 2, 0] })
-
-  const shellMesh = new THREE.Mesh(assemble(shell), vertexColorMaterial({ roughness: 0.85 }))
-  shellMesh.castShadow = true
-  shellMesh.receiveShadow = true
-  group.add(shellMesh)
-
-  let wave = -1
-  group.userData.react = () => { wave = 0 }
-  group.userData.animate = (t, dt) => {
-    if (wave >= 0) {
-      wave += dt * 3.4
-      if (wave > count + 1.5) wave = -1
-    }
-    rings.forEach((ring, i) => {
-      // Eine Lichtwelle laeuft von vorn nach hinten durch die Ringe.
-      const d = wave < 0 ? 9 : Math.abs(wave - i)
-      const lit = Math.max(0, 1 - d * 0.9)
-      // Immer ein leichtes Glimmen, damit die Roehre auch im Ruhezustand
-      // nach Innenraum aussieht.
-      ring.material.emissiveIntensity = 0.12 + lit * 0.9
-    })
-  }
-  return group
-}
-
 // --- Schneemann --------------------------------------------------------------
 // Drei Kugeln, Moehre, Kohleaugen, Astarme, Topfhut. Wer vorbeifaehrt, wird
 // angeschaut und bekommt gewinkt.
@@ -353,7 +287,7 @@ export function createSnowman({ scale = 1, hat = 0xe8663a, seed = 0 } = {}) {
 // dazwischen, die dem Gelaende folgt.
 //
 // Das ist das wichtigste Stueck der ganzen Anlage. Ohne Einfassung sind
-// Tunnel, Huetchen und Schneemaenner ein paar Dinge, die zufaellig
+// Nudelboegen, Huetchen und Schneemaenner ein paar Dinge, die zufaellig
 // nebeneinander im Schnee stehen. Mit ihr sind sie das, was drin ist.
 
 export function createBuntingFence(points, { height = 1.15, spacing = 3.6, sample } = {}) {

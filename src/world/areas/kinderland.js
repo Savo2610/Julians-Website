@@ -8,7 +8,6 @@ import { createSnowCannon } from '../props/snow-cannon.js'
 import {
   createNoodleArch,
   createCone,
-  createSnowTunnel,
   createSnowman,
   createBuntingFence,
   KINDER_COLORS,
@@ -81,21 +80,17 @@ export class Kinderland {
   }
 
   // Die Leuchtstrecke: gerade, links am Teppich vorbei, aus dem Kinderland
-  // heraus ins Tal. Der Tunnel steht darin – er stand vorher allein auf der
-  // Kuppe und sah dort aus wie hingestellt; hier hat er eine Aufgabe.
+  // heraus ins Tal. Hier stand mittendrin ein Schneetunnel aus sieben Ringen.
+  // Er ist weg: aus der festen Kamera zeigten die Ringe nur ihre Kanten, sieben
+  // bunte Striche quer ueber der Gasse, und er stand direkt neben dem
+  // Auslauf des Funparks im Weg. Die Strecke reagiert selbst – den Tunnel
+  // brauchte sie dafuer nicht.
   _buildLightRun() {
     // Anfang und Ende kommen aus dem Hoehenfeld, nicht aus den
     // Bandkoordinaten des Kinderlands: die Strecke hat dort inzwischen ihr
     // eigenes Band, und beides muss dieselbe Linie meinen, sonst laufen
     // Leuchtleisten und Aufschuettung auseinander.
     this.lightRun = new LightRun(this.world, { from: SHOOT_RUN.from, to: SHOOT_RUN.to })
-
-    const mid = this.lightRun.pointAt(this.lightRun.length * 0.5)
-    this.add(createSnowTunnel({ length: 6.0, width: 5.0, height: 2.7 }), mid.x, mid.z, {
-      rotation: this.lightRun.heading,
-      trigger: 3.6,
-      kind: 'tunnel',
-    })
   }
 
   // --- Bandkoordinaten ----------------------------------------------------

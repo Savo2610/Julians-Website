@@ -28,7 +28,7 @@ import { RaceCourse } from './attractions/race.js'
 import { RailRide } from './attractions/rail-ride.js'
 import { SpeedCheck } from './attractions/speed-check.js'
 import { createRail, createPadMarker, createParkSign, createParkBox, createLipMarker } from './props/funpark.js'
-import { APRES } from './areas/apres-layout.js'
+import { APRES, houseWorld } from './areas/apres-layout.js'
 import { createApresTerrace } from './areas/apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
@@ -881,14 +881,16 @@ export function populate(world, sky, registry, stationOptions = {}) {
     world.addCollider(signX, signZ, 0.8)
 
     // --- Apres-Ski auf der Terrasse ---------------------------------------
-    // Das Haus steht auf der rechten Hangschulter. Nur der flache Vorplatz
-    // liegt in der Verbindung zwischen Nordabfahrt und Park.
+    // Das Haus steht auf der rechten Hangschulter, leicht schraeg (siehe
+    // apres-layout.js). Nur das Sonnendeck liegt neben der Verbindung
+    // zwischen Nordabfahrt und Park, auf deren Hoehe.
     const apres = createApresSki()
-    world.place(apres, APRES.house.x, APRES.house.z, { rotation: APRES.house.yaw })
-    world.addCollider(APRES.house.x, APRES.house.z, 2.4)
-    for (const [x, z, r] of [[-2.6, 1.2, 0.45], [2.6, 1.2, 0.45], [-2.8, 2.25, 0.25]]) {
-      const c = Math.cos(APRES.house.yaw), s = Math.sin(APRES.house.yaw)
-      world.addCollider(APRES.house.x + x * c + z * s, APRES.house.z - x * s + z * c, r)
+    world.place(apres, APRES.house.x, APRES.house.z, { rotation: APRES.house.yaw + APRES.house.turn })
+    // Drei Kreise statt einem: einer mit 2,4 m sperrte bei 5 m Hausbreite
+    // entweder die Ecken nicht oder reichte 0,6 m vor die Tuer.
+    for (const [x, z, r] of [[-1.3, 0, 1.95], [0, 0, 1.95], [1.3, 0, 1.95], [-2.95, 2.1, 0.4], [2.95, 2.1, 0.4], [-2.95, -0.6, 0.45]]) {
+      const p = houseWorld(x, z)
+      world.addCollider(p.x, p.z, r)
     }
     apresTerrace = createApresTerrace(world)
     animatedProps.push(apres.userData.animate)

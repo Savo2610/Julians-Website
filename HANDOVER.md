@@ -454,7 +454,7 @@ schiebt `World.resolve` nicht zurück, man fährt hindurch.
 data, height)`, Standard unendlich). `resolve` bekommt die Flughöhe des
 Fahrers und prüft gegen ein Halbkugelprofil. Steine tragen ihre gemessene
 Kuppenhöhe (0,2–0,9 m), liegende Stämme 0,62 m (Wurzelteller nicht); der
-Sprung mit der Leertaste hat 1,14 m Scheitel. Gemessen: ohne Sprung bleibt
+Sprung mit der Leertaste (Loslassen) hat 1,14 m Scheitel. Gemessen: ohne Sprung bleibt
 man am Stein hängen, mit Sprung fliegt man drüber. Bäume, Zäune, Häuser
 und Findlinge bleiben unendlich hoch. Nebenbei: die Kreise der Stämme lagen
 quer zum Stamm (`sin/cos` vertauscht) und sind jetzt längs.
@@ -481,8 +481,8 @@ oder am Lift hängt.
 
 ## 4a. Stationen benutzen: Enter, Heranzoomen, Glas
 
-**Tasten insgesamt** (`core/input.js`): WASD/Pfeile, Shift kanten,
-Leertaste springen (im Park Tricks), Enter/E benutzen, `M` Übersicht,
+**Tasten insgesamt** (`core/input.js`): WASD/Pfeile, Leertaste springen
+(halten, loslassen; im Park in der Luft WASD für Drehung und Salto), Enter/E benutzen, `M` Übersicht,
 `R` zurück zum Start, `Tab` Reiter der Übersicht (Links, Talkarte, Pistenpass, Bestenliste), Esc/Backspace zurück.
 
 **Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
@@ -1161,7 +1161,7 @@ weiterhin nur, wenn es 0,6 s lang nicht im Bild war. Geprüft an zehn Orten
 mit 288 Auftritten: keiner im Bild, keiner vorn, keiner näher als 20 m.
 
 **Schüchtern**, abhängig vom Tempo und davon, ob man auf das Tier zuhält:
-Fluchtabstand Hase 4,5 m + 0,8 m je m/s (im Stand 4,5, gekantet ≈ 10,
+Fluchtabstand Hase 4,5 m + 0,8 m je m/s (im Stand 4,5, bei 6,5 m/s ≈ 10,
 im Grundtempo ≈ 15), davor 5,5 m Männchen machen. Anschleichen geht also,
 aber nur langsam. Fuchs 6 m + 0,85 je m/s, die Hühner 4 m + 0,7.
 
@@ -1228,7 +1228,7 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
   der Daumen weit hinaus, wandert der Stick mit. Geprüft mit echten
   Pointer-Ereignissen: oben/rechts/unten-links kommen als oben/rechts/
   unten-links an.
-- **Sprungknopf** nur im Funpark oder auf der Rail, gehalten statt getippt.
+- **Sprungknopf** nur im Funpark oder auf der Rail: halten lädt, loslassen springt.
 - **Kartenknopf** oben rechts, nur am Handy (dort gibt es kein `M`), weg,
   solange Karte, Auswahl oder Lift offen sind. Das einzige Bedienelement,
   das immer da ist — auf ausdrücklichen Wunsch.
@@ -1299,7 +1299,8 @@ Entwicklungszweig) und melden ohne die Worker daneben
 ## 5. Fahrmodell
 
 Kein Physiksimulator — ein Fahrgefühl aus wenigen Zahlen (`config.js` → `SKIER`).
-Grundtempo 13, bergab bis 18, mit Shift gekantet 6.5. Der Fahrer pendelt von
+Grundtempo 13, bergab bis 18. Kanten mit Shift (6.5) ist seit 03.10. raus –
+Ansage: bringt nichts. Der Fahrer pendelt von
 selbst um seine Zielrichtung (`swingAmplitude` 0.55 rad, Wellenlänge 18), damit
 aus der Spur eine Schlangenlinie wird, ohne dass man dauernd lenkt.
 
@@ -1319,8 +1320,35 @@ kippte ihn. Der Versuch wurde vollständig zurückgebaut; ein Kommentar in
 `heightfield.js` hält beide Gründe fest. **Airtime nur über Kicker mit Landung,
 die in Fahrtrichtung werfen.**
 
-Tricks liegen alle auf der Leertaste — am Boden Slide, in der Luft Drehung —
-und nur im Funpark (`inFunpark(...)`).
+**Absprung wie am Kabelsee** (03.10., Ansage: dort fühlen sich die Sprünge
+besser an). Leertaste halten lädt (0,45 s, Fahrer geht in die Hocke),
+Loslassen springt. Außerhalb des Funparks ist das der alte Hopser mit
+6,4 m/s, nur eben beim Loslassen – Rennstrecke, Wege und Zäune bleiben
+gleich. Im Park (`SPRUNG` in `config.js`):
+
+- Loslassen auf der Schanze gibt `max(6,4, _rise + 1,2) + 1,2·Ladung`, höchstens 14.
+  Wer zu früh loslässt, bekommt nur, was die Rampe dort schon hebt.
+- Wer über die Kante durchhält, springt wie ohne Taste; Loslassen bis
+  0,12 s nach der Kante (`nachsicht`) gibt Pop und Ladung noch dazu.
+  Festhalten darf nicht besser sein als der richtige Moment.
+- Gemessen am kleinen Kicker bei Tempo 13: ohne Taste 1,03 s Flug, Loslassen
+  an der Kante 1,33 s, 4 m zu früh 0,80 s. Großer Kicker: 1,45 / 1,53–1,70 / 0,80 s.
+
+**Tricks** nur im Funpark, gesteuert wie am See: in der Luft drehen A/D,
+W/S schlagen einen Salto, ohne Taste dreht die Landehilfe auf die nächste
+halbe (Drehung) bzw. ganze (Salto) Umdrehung. Was beim Absprung schon
+gedrückt ist, zählt erst nach dem Loslassen – W hält man beim Fahren fast
+immer. In der Luft lenken A/D im Park nicht, W/S geben kein Gas und bremsen
+nicht. Die Landung wird mit denselben Fenstern wie am See gewertet
+(`core/landung.js`, gemeinsam mit `kabelsee/game/tricks.js`): wackelig kostet
+22 % Tempo, Sturz (quer oder kopfüber) 70 % und zeigt STURZ – liegen bleibt
+man im Tal nicht. Namen wie am See: 360°, BACKFLIP, CORK 540°; die
+Abzeichen 540/720 lesen die Gradzahl aus dem Namen. Am Boden stellt die
+Leertaste nur noch auf Box und Kante die Ski quer (Slide); im Schnee lädt
+sie, sonst führe man quer auf den Kicker.
+
+Geprüft: Slalombahn mit Autopilot vorher/nachher Bild für Bild gleich
+(Position und Tempo, 280 Bilder) – ohne Sprung ändert sich am Fahren nichts.
 
 **Haltung** (`_applyPose` in `skier.js`) liegt nur auf der Darstellung, das
 Fahrmodell merkt nichts davon. Die Ruhelage ist pixelgleich zur alten Figur;

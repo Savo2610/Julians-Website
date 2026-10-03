@@ -232,7 +232,7 @@ function emitSpray(dt) {
     return
   }
   // Der Pflug schiebt Schnee vor den Innenkanten her – bei Schritttempo kaum.
-  const intensity = skier.carving * 1.6 + Math.abs(skier.turn) * 1.1 + (skier.speed / SKIER.boostSpeed) * 0.35 +
+  const intensity = Math.abs(skier.turn) * 1.1 + (skier.speed / SKIER.boostSpeed) * 0.35 +
     skier.plough * Math.min(1, skier.speed / 6) * 1.4
   sprayAccum += intensity * 130 * dt
   const count = Math.floor(sprayAccum)
@@ -253,7 +253,7 @@ function emitSpray(dt) {
     spray.emit(
       x, y, z,
       -skier.forward.x * spd + outX * spd * 0.6 + (Math.random() - 0.5),
-      1.2 + Math.random() * 2.4 + skier.carving * 2.2,
+      1.2 + Math.random() * 2.4,
       -skier.forward.z * spd + outZ * spd * 0.6 + (Math.random() - 0.5),
       0.28 + Math.random() * 0.5,
       0.75 + Math.random() * 0.5,

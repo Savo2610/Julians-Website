@@ -40,7 +40,8 @@ export class PassRegeln {
 
   // Aus main.js, sobald der Fahrer eine Figur ablegt.
   trick(text) {
-    const grad = parseInt(text, 10)
+    // „540°“, aber auch „CORK 540° · PERFEKT“: es zaehlt die Drehung.
+    const grad = Number(/(\d+)°/.exec(text)?.[1] ?? 0)
     if (grad >= 540) this.pass.erreiche('d540')
     if (grad >= 720) this.pass.erreiche('d720')
   }

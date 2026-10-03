@@ -9,7 +9,6 @@ const KEY_MAP = {
   KeyS: 'brake', ArrowDown: 'brake',
   KeyA: 'left', ArrowLeft: 'left',
   KeyD: 'right', ArrowRight: 'right',
-  ShiftLeft: 'carve', ShiftRight: 'carve',
   Space: 'jump',
   KeyE: 'use', Enter: 'use', NumpadEnter: 'use',
   Escape: 'back', Backspace: 'back',
@@ -35,6 +34,7 @@ export class Input {
     this.dom = domElement
     this.keys = new Set()
     this.pressed = new Set()   // nur im Frame des Tastendrucks gesetzt
+    this.released = new Set()  // nur im Frame des Loslassens – der Absprung
     this.zoom = 1
     // Wird noch *im* Tastenereignis gerufen, nicht erst im naechsten Bild.
     // Safari laesst window.open nur waehrend einer Nutzergeste zu; ein Link,
@@ -76,7 +76,7 @@ export class Input {
     })
     window.addEventListener('keyup', (e) => {
       const action = KEY_MAP[e.code]
-      if (action) this.keys.delete(action)
+      if (action && this.keys.delete(action)) this.released.add(action)
     })
     window.addEventListener('blur', () => this.keys.clear())
 
@@ -99,9 +99,17 @@ export class Input {
     return this.pressed.has(action)
   }
 
+  // Gesperrt zaehlt kein Loslassen: wer vor einer Station die Leertaste
+  // haelt und dann loslaesst, soll nicht hinterher abspringen.
+  justReleased(action) {
+    if (this.locked || this._blocked()) return false
+    return this.released.has(action)
+  }
+
   // Am Ende jedes Frames aufrufen.
   endFrame() {
     this.pressed.clear()
+    this.released.clear()
   }
 
   // Lenkung in [-1, 1]; positiv = nach rechts aus Sicht des Fahrers.

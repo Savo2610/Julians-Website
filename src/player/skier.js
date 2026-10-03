@@ -1,10 +1,21 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
-import { SKIER, TRICK } from '../config.js'
+import { SKIER, TRICK, SPRUNG } from '../config.js'
 import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
+import { landeStufe } from '../core/landung.js'
 
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
+
+// Welche der vier Richtungen gerade gedrueckt sind – Tasten oder Daumenstick.
+function richtungen(input) {
+  const r = []
+  if (input.steer > 0.3) r.push('rechts')
+  if (input.steer < -0.3) r.push('links')
+  if (input.throttle > 0.3) r.push('vor')
+  if (input.braking) r.push('zurueck')
+  return r
+}
 
 export class Skier {
   constructor(world) {
@@ -31,24 +42,33 @@ export class Skier {
     this.towTarget = null
     this.height = 0                 // Hoehe ueber dem Boden
     this.slope = 0
-    this.carving = 0
     this.tuck = 0                   // Abfahrtshocke bei hohem Tempo
     this.plough = 0                 // Schneepflug beim Bremsen mit S
     this.cross = 0                  // Quergefaelle, >0: lokales +X liegt talwaerts
     this.poise = 0                  // 0..1, wie deutlich die Hanghaltung gezeigt wird
 
+    // --- Sprung --------------------------------------------------------
+    this.laden = 0                  // 0..1, wie lange die Leertaste schon liegt
+    this._uhr = 0
+    this._nachsicht = 0             // s, in denen Loslassen nach der Kante noch zaehlt
+    this._kantenLadung = 0
+    this._parkSprung = false        // dieser Flug begann im Funpark
+
     // --- Tricks ---------------------------------------------------------
-    // spin ist eine Drehung des Modells *gegen* die Fahrtrichtung, slide ein
-    // Querstellen der Ski. Beide aendern die Fahrtrichtung nicht – sonst
-    // wuerde ein Trick die Steuerung uebernehmen, und man landet dort, wo man
-    // nicht hinwollte. Sie liegen nur auf der Darstellung obendrauf.
+    // spin ist eine Drehung des Modells *gegen* die Fahrtrichtung, flip ein
+    // Salto um die Querachse, slide ein Querstellen der Ski. Keines aendert
+    // die Fahrtrichtung – sonst wuerde ein Trick die Steuerung uebernehmen,
+    // und man landet dort, wo man nicht hinwollte. Sie liegen nur auf der
+    // Darstellung obendrauf.
     this.spin = 0
-    this.spinRate = 0
+    this.spinVel = 0
+    this.flip = 0
+    this.flipVel = 0
     this.slide = 0
     this.slideSide = 1
     this.trick = null        // { text, tone } nach einer gelungenen Figur
-    this._airSpin = 0
     this._wasAirborne = false
+    this._flug = null        // { spin, flip } beim Absprung, dazu die Sperren
 
     // Eingeschneit: die Schneekanone legt hier ihren Wert ab, der Rest der
     // Welt liest ihn nur.
@@ -139,9 +159,6 @@ export class Skier {
       return
     }
 
-    const carveKey = input.has('carve')
-    this.carving += ((carveKey ? 1 : 0) - this.carving) * damp(9, dt)
-
     // --- Lenkung -------------------------------------------------------
     // A/D drehen die Fahrtrichtung aus Sicht des Fahrers. Positives steer =
     // nach rechts; da forward = (sin h, cos h) ist, muss das Heading dafuer
@@ -152,8 +169,11 @@ export class Skier {
     const moving = this.speed > 0.15
     const fast = THREE.MathUtils.clamp(this.speed / SKIER.cruiseSpeed, 0, 1)
     // Bei wenig Tempo dreht man fast auf der Stelle, bei viel Tempo traege.
-    const rate = THREE.MathUtils.lerp(SKIER.turnRateSlow, SKIER.turnRate, fast) * (1 + this.carving * 0.5)
-    const turnApplied = -this.steer * rate * (this.airborne ? 0.35 : 1) * (moving ? 1 : 0.55) * dt
+    const rate = THREE.MathUtils.lerp(SKIER.turnRateSlow, SKIER.turnRate, fast)
+    // In der Luft lenkt man kaum noch – und im Funpark gar nicht: dort
+    // drehen A und D die Figur, nicht die Flugbahn (wie am Kabelsee).
+    const luftLenkung = this.airborne ? (this._parkSprung ? 0 : 0.35) : 1
+    const turnApplied = -this.steer * rate * luftLenkung * (moving ? 1 : 0.55) * dt
     this.heading += turnApplied
 
     const wantsMove = input.throttle > 0
@@ -171,7 +191,6 @@ export class Skier {
       Math.sin(this.swingPhase) *
       SKIER.swingAmplitude *
       swingSpeed *
-      (1 + this.carving * 0.7) *
       (1 - Math.abs(this.steer) * 0.9)
     this.swing += (swingTarget - this.swing) * damp(8, dt)
 
@@ -193,9 +212,9 @@ export class Skier {
     this.slope = slopeAlong(this.position.x, this.position.z, this.forward.x, this.forward.z)
     let target = 0
     if (wantsMove) {
-      target = carveKey ? SKIER.carveSpeed : SKIER.cruiseSpeed
-      // Enge Kurven kosten Tempo, das macht Carven spuerbar.
-      target -= Math.abs(this.turn) * (2.6 + this.carving * 2.2)
+      target = SKIER.cruiseSpeed
+      // Enge Kurven kosten Tempo.
+      target -= Math.abs(this.turn) * 2.6
     }
     target += this.slope * SKIER.slopeInfluence
     if (input.braking) target = Math.min(target, 0)
@@ -214,7 +233,12 @@ export class Skier {
         : wantsMove
           ? 3.0
           : SKIER.coastDrag
-    this.speed += (target - this.speed) * damp(this.airborne ? 0.5 : accelRate, dt)
+    // Ueber dem Funpark zaehlen W und S nicht als Gas und Bremse – sie
+    // schlagen dort den Salto, und ein Backflip soll nicht bremsen. Es
+    // bleibt der Luftwiderstand weiter unten.
+    if (!(this.airborne && this._parkSprung)) {
+      this.speed += (target - this.speed) * damp(this.airborne ? 0.5 : accelRate, dt)
+    }
     if (this.speed < 0.06) this.speed = 0
 
     // --- Bewegung ------------------------------------------------------
@@ -276,29 +300,51 @@ export class Skier {
     // das die Steiggeschwindigkeit, mit der er ueber die Kante geht.
     const climb = dt > 0 ? (groundY - this._prevGroundY) / dt : 0
 
+    // Absprung wie am Kabelsee: Halten laedt, Loslassen springt. Laden und
+    // Pop wirken nur im Funpark; ueberall sonst ist Loslassen der alte
+    // Hopser mit 6,4 m/s – auf der Rennstrecke aendert sich nichts.
+    const park = inFunpark(nx, nz)
+    const halten = input.has('jump')
+    const los = input.justReleased('jump')
+    this._uhr += dt
+
     if (!this.airborne) {
-      // Nur beim Tastendruck, nicht solange sie liegt: gehalten heisst
-      // inzwischen "sliden", und wer haelt, soll nicht in Sprungfolgen
-      // haengenbleiben.
-      if (input.justPressed('jump') && this.speed > 1) {
+      if (halten) this.laden = Math.min(1, this.laden + dt / SPRUNG.ladeZeit)
+      const free = this._prevGroundY + this._rise * dt - 0.5 * G * dt * dt
+      if (los && this.speed > 1) {
+        // Auf der Schanze nimmt der Pop mit, was die Rampe schon hebt: wer
+        // zu frueh loslaesst, bekommt nur den flachen Teil. Gemessen am
+        // grossen Kicker 4 m vor der Kante: Steigrate 3,5 statt gut 12.
         this.airborne = true
-        this.vy = 6.4
-      } else if (this._rise > 3.2) {
+        this.vy = park
+          ? Math.min(Math.max(SPRUNG.hopser, this._rise + SPRUNG.pop) + SPRUNG.ladung * this.laden, 14)
+          : SPRUNG.hopser
+      } else if (this._rise > 3.2 && free > groundY + 0.03) {
         // Faellt der Boden hinter der Kante schneller weg, als die Schwerkraft
         // den Fahrer holt, hebt er ab. Kein Sprungknopf noetig – die Schanze
-        // macht die Arbeit, so wie im Gelaende auch.
-        const free = this._prevGroundY + this._rise * dt - 0.5 * G * dt * dt
-        if (free > groundY + 0.03) {
-          this.airborne = true
-          // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
-          // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
-          // Deckel liegt bei vierzehn – knapp sechs Meter Scheitelhoehe und
-          // anderthalb Sekunden Flug, mehr als jede Schanze im Park hergibt.
-          // Und eine Stufe ist keine Schanze: am Badesteg wirft sie
-          // hoechstens mit 4 m/s (kantenSprung in heightfield.js).
-          this.vy = Math.min(this._rise - G * dt, 14, kantenSprung(nx, nz))
-          this.height = Math.min(free - groundY, 0.6)
-        }
+        // macht die Arbeit, so wie im Gelaende auch. Wer im Park noch haelt,
+        // darf kurz nach der Kante loslassen und bekommt Pop und Ladung
+        // trotzdem (Nachsicht wie am See: sonst verpasst man den Moment bei
+        // 13 m/s um zwei Bilder). Wer nur durchhaelt, springt wie ohne Taste –
+        // sonst waere Festhalten besser als der richtige Moment.
+        this.airborne = true
+        this._nachsicht = park && halten ? SPRUNG.nachsicht : 0
+        this._kantenLadung = this.laden
+        // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
+        // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
+        // Deckel liegt bei vierzehn – knapp sechs Meter Scheitelhoehe und
+        // anderthalb Sekunden Flug, mehr als jede Schanze im Park hergibt.
+        // Und eine Stufe ist keine Schanze: am Badesteg wirft sie
+        // hoechstens mit 4 m/s (kantenSprung in heightfield.js).
+        this.vy = Math.min(this._rise - G * dt, 14, kantenSprung(nx, nz))
+        this.height = Math.min(free - groundY, 0.6)
+      }
+      if (!halten || this.airborne) this.laden = 0
+    } else if (this._nachsicht > 0) {
+      this._nachsicht -= dt
+      if (los) {
+        this.vy = Math.min(this.vy + SPRUNG.pop + SPRUNG.ladung * this._kantenLadung, 14)
+        this._nachsicht = 0
       }
     }
 
@@ -326,7 +372,7 @@ export class Skier {
 
     // --- Haltung --------------------------------------------------------
     const speedNorm = THREE.MathUtils.clamp(this.speed / SKIER.cruiseSpeed, 0, 1.4)
-    const leanTarget = -this.turn * SKIER.leanMax * speedNorm * (1 + this.carving * 0.3)
+    const leanTarget = -this.turn * SKIER.leanMax * speedNorm
     this.lean += (leanTarget - this.lean) * damp(SKIER.leanLerp, dt)
 
     const pitchTarget = THREE.MathUtils.clamp(-this.slope * 0.5, -SKIER.pitchMax, SKIER.pitchMax)
@@ -361,78 +407,141 @@ export class Skier {
     const bergab = 1 - THREE.MathUtils.clamp(-this.slope * 4, 0, 1)
     this.poise += (flott * bergab - this.poise) * damp(3, dt)
 
-    const crouchTarget = this.carving * 0.55 + Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9 + this.tuck * 0.5
+    // Wer laedt, geht in die Hocke – wie am See sieht man, dass gleich
+    // etwas kommt.
+    const crouchTarget = this.laden * 0.7 + Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9 + this.tuck * 0.5
     this.crouch += (Math.min(1.1, crouchTarget) - this.crouch) * damp(10, dt)
 
     this._applyPose(dt)
     this._stampTrail(trail, groundY)
   }
 
-  // Leertaste: in der Luft dreht sie, am Boden stellt sie quer.
+  // Tricks im Funpark, gesteuert wie am Kabelsee: in der Luft drehen A/D um
+  // die Hochachse und W/S schlagen einen Salto, am Boden stellt die
+  // Leertaste auf Box und Kante die Ski quer.
   //
-  // Beides laeuft neben der Fahrphysik her und greift nicht in sie ein. Der
-  // Fahrer faehrt weiter dorthin, wohin er zeigt – nur sein Modell steht
-  // anders. Das ist die einzige Art, einen Trick einzubauen, ohne dass man
-  // beim Landen die Kontrolle verliert, und es ist genau das Gefuehl, das man
-  // aus einem Snowboardspiel kennt: die Drehung ist Schau, die Linie bleibt.
+  // Alles laeuft neben der Fahrphysik her und greift nicht in sie ein. Der
+  // Fahrer fliegt weiter dorthin, wohin er zeigt – nur sein Modell steht
+  // anders. Nur die Landung zaehlt: wer quer oder kopfueber aufsetzt,
+  // verliert sein Tempo.
   _updateTrick(dt, input) {
-    // Tricks gibt es nur im Park. Auf der Piste waere das Querstellen der Ski
-    // eine zweite Bremse und die Drehung in der Luft ein Gag ohne Ort – die
-    // Figuren, zu denen sie gehoeren, stehen nun einmal alle hier.
-    if (!inFunpark(this.position.x, this.position.z)) {
-      this.spinRate = 0
-      this._airSpin = 0
-      this._wasAirborne = false
-      this.spin += (0 - this.spin) * damp(7, dt)
-      this.slide += (0 - this.slide) * damp(TRICK.slideLerp, dt)
-      return
-    }
+    const TAU = Math.PI * 2
 
-    const key = input.has('jump')
-
-    if (this.airborne) {
-      this.slide += (0 - this.slide) * damp(TRICK.slideLerp, dt)
-      if (key) {
-        this.spinRate = Math.min(this.spinRate + TRICK.spinAccel * dt, TRICK.spinMax)
-      } else {
-        this.spinRate *= 1 - damp(TRICK.spinDecay, dt)
-      }
-      this.spin += this.spinRate * dt
-      this._airSpin += Math.abs(this.spinRate) * dt
+    // Der Absprung, von wo auch immer er kam – auch die Rail wirft ab.
+    if (this.airborne && !this._wasAirborne) {
       this._wasAirborne = true
+      this._parkSprung = inFunpark(this.position.x, this.position.z)
+      // Was beim Absprung schon gedrueckt ist, dreht nicht: W liegt beim
+      // Fahren fast immer, und wer zur Schanze hin lenkt, soll nicht
+      // ungewollt einen 180 springen. Erst loslassen, dann zaehlt die Taste;
+      // von W direkt auf S zu wechseln reicht.
+      this._flug = { spin: this.spin, flip: this.flip, gesperrt: new Set(richtungen(input)) }
+    }
+
+    if (this.airborne && this._parkSprung) {
+      const f = this._flug
+      this.slide += (0 - this.slide) * damp(TRICK.slideLerp, dt)
+      const aktiv = richtungen(input)
+      for (const r of f.gesperrt) if (!aktiv.includes(r)) f.gesperrt.delete(r)
+      const frei = (r) => aktiv.includes(r) && !f.gesperrt.has(r)
+
+      const steer = frei('rechts') ? input.steer : frei('links') ? input.steer : 0
+      if (steer) {
+        this.spinVel = Math.max(-TRICK.spinMax, Math.min(TRICK.spinMax, this.spinVel - steer * TRICK.spinAccel * dt))
+      } else {
+        this.spinVel *= Math.exp(-TRICK.spinDecay * dt)
+      }
+      const flipIn = (frei('vor') ? 1 : 0) - (frei('zurueck') ? 1 : 0)
+      if (flipIn) {
+        this.flipVel = Math.max(-TRICK.flipMax, Math.min(TRICK.flipMax, this.flipVel + flipIn * TRICK.flipAccel * dt))
+      } else {
+        this.flipVel *= Math.exp(-TRICK.flipDecay * dt)
+      }
+      this.spin += this.spinVel * dt
+      this.flip += this.flipVel * dt
+
+      // Landehilfe wie am See: ohne Taste dreht der Fahrer von selbst auf
+      // die naechste Landestellung – sacht im Steigen, entschieden kurz vor
+      // dem Aufsetzen. Halbe Umdrehungen beim Drehen, ganze beim Salto.
+      const snap = this.vy < 0 && this.height < 2.2 ? TRICK.assistLand : TRICK.assistRise
+      if (!steer) {
+        const t = Math.round(this.spin / Math.PI) * Math.PI
+        this.spin += (t - this.spin) * damp(snap, dt)
+        this.spinVel *= Math.exp(-8 * dt)
+      }
+      if (!flipIn) {
+        const t = Math.round(this.flip / TAU) * TAU
+        this.flip += (t - this.flip) * damp(snap, dt)
+        this.flipVel *= Math.exp(-8 * dt)
+      }
       return
     }
 
-    // Gelandet: war genug Drehung dabei, wird sie benannt. Danach dreht sich
-    // das Modell in die Fahrtrichtung zurueck, statt schief stehen zu bleiben.
-    if (this._wasAirborne) {
+    if (this._wasAirborne && !this.airborne) {
       this._wasAirborne = false
-      const turns = this._airSpin / (Math.PI * 2)
-      if (this._airSpin > TRICK.landedRotation) {
-        this.trick = { text: `${Math.round(turns * 2) * 180}°`, tone: 'good' }
-      }
-      this._airSpin = 0
-      this.spinRate = 0
+      if (this._parkSprung) this._landen()
+      this._parkSprung = false
+      this.spinVel = 0
+      this.flipVel = 0
     }
+
     // Zurueck auf die naechste volle Umdrehung, damit das Ausrichten kurz ist.
-    const home = Math.round(this.spin / (Math.PI * 2)) * Math.PI * 2
+    // Ausserhalb des Parks und bei Fluegen ohne Figur ist das sofort null.
+    const home = Math.round(this.spin / TAU) * TAU
     this.spin += (home - this.spin) * damp(7, dt)
     if (Math.abs(this.spin - home) < 0.01) this.spin = 0
+    const flipHome = Math.round(this.flip / TAU) * TAU
+    this.flip += (flipHome - this.flip) * damp(9, dt)
+    if (Math.abs(this.flip - flipHome) < 0.01) this.flip = 0
 
-    // Am Boden: Ski quer. Zu welcher Seite, entscheidet die letzte Lenkung –
-    // so slidet man aus der Kurve heraus und nicht gegen sie.
-    const sliding = key && this.speed > TRICK.slideMinSpeed
-    if (sliding && this.slide < 0.05) {
+    // Am Boden: Ski quer, aber nur auf Box und Kante. Im Schnee laedt die
+    // Leertaste den Sprung, und wer vor dem Kicker laedt, soll gerade
+    // hinauffahren. Zu welcher Seite, entscheidet die letzte Lenkung – so
+    // slidet man aus der Kurve heraus und nicht gegen sie.
+    const aufBox = inFunpark(this.position.x, this.position.z) && onParkRail(this.position.x, this.position.z)
+    const sliding = aufBox && !this.airborne && input.has('jump') && this.speed > TRICK.slideMinSpeed
+    if (sliding && this.slide < 0.05 && this.slide > -0.05) {
       this.slideSide = this.steer >= 0 ? 1 : -1
-      if (onParkRail(this.position.x, this.position.z)) {
-        this.trick = { text: 'BOARDSLIDE', tone: 'good' }
-      }
+      this.trick = { text: 'BOARDSLIDE', tone: 'good' }
     }
     const target = sliding ? this.slideSide * TRICK.slideAngle : 0
     this.slide += (target - this.slide) * damp(TRICK.slideLerp, dt)
     // Quergestellte Ski bremsen. Nicht viel – Sliden soll Spass machen und
     // nicht die zweite Bremse sein.
     if (sliding) this.speed -= this.speed * TRICK.slideDrag * Math.abs(this.slide) * dt
+  }
+
+  // Aufgesetzt nach einem Flug im Park: Figur benennen und Landung werten,
+  // mit denselben Fenstern wie am See. Quer oder kopfueber heisst Sturz – im
+  // Tal liegt man dann nicht, verliert aber fast alles Tempo.
+  _landen() {
+    const TAU = Math.PI * 2
+    const f = this._flug
+    const dSpin = this.spin - f.spin
+    const dFlip = this.flip - f.flip
+    const q = landeStufe(this.spin, this.flip, TRICK)
+    this._flug = null
+    if (q.key === 'crash') {
+      this.speed *= 0.3
+      this.landImpact = 1
+      this.trick = { text: 'STURZ', tone: 'bad' }
+      return
+    }
+    if (q.key === 'sketchy') this.speed *= 0.78
+    const halves = Math.min(8, Math.round(Math.abs(dSpin) / Math.PI))
+    const flips = Math.round(Math.abs(dFlip) / TAU)
+    let name = ''
+    if (flips > 0) {
+      const n = flips === 1 ? '' : flips === 2 ? 'DOPPEL-' : 'DREIFACH-'
+      if (halves > 0) name = `${n}${dFlip < 0 ? 'CORK' : 'RODEO'} ${halves * 180}°`
+      else name = `${n}${dFlip < 0 ? 'BACKFLIP' : 'FRONTFLIP'}`
+    } else if (halves > 0) {
+      name = `${halves * 180}°`
+    }
+    if (!name) return
+    if (q.key === 'perfect') name += ' · PERFEKT'
+    if (q.key === 'sketchy') name += ' · WACKELIG'
+    this.trick = { text: name, tone: q.key === 'sketchy' ? 'meh' : 'good' }
   }
 
   // Am Schlepplift gibt der Lift die Position vor. Alles andere laeuft
@@ -458,8 +567,13 @@ export class Skier {
     this.spin += (0 - this.spin) * damp(8, dt)
     const slideTarget = this.tow.slidePose ? TRICK.slideAngle : 0
     this.slide += (slideTarget - this.slide) * damp(8, dt)
-    this.spinRate = 0
-    this._airSpin = 0
+    this.flip += (0 - this.flip) * damp(8, dt)
+    this.spinVel = 0
+    this.flipVel = 0
+    this.laden = 0
+    this._nachsicht = 0
+    this._wasAirborne = false
+    this._parkSprung = false
 
     let diff = target.heading - this.heading
     diff = Math.atan2(Math.sin(diff), Math.cos(diff))
@@ -484,7 +598,6 @@ export class Skier {
     this.lean += ((hanging ? this.steer * 0.12 : 0) - this.lean) * damp(4, dt)
     this.pitch += ((hanging ? -0.1 : 0.02) - this.pitch) * damp(4, dt)
     this.crouch += ((hanging ? 0.28 : 0.06) - this.crouch) * damp(5, dt)
-    this.carving += (0 - this.carving) * damp(6, dt)
     this.tuck += (0 - this.tuck) * damp(6, dt)
     this.plough += (0 - this.plough) * damp(6, dt)
     this.cross += (0 - this.cross) * damp(6, dt)
@@ -507,6 +620,14 @@ export class Skier {
     g.position.copy(this.position)
     g.rotation.set(0, 0, 0)
     g.rotateY(this.facing + this.spin + this.slide)
+    if (this.flip) {
+      // Der Salto dreht um die Huefte, nicht um die Ski: sonst kippte der
+      // Fahrer wie ein umfallender Pfahl ueber seine Fuesse.
+      const P = 0.9
+      const off = new THREE.Vector3(0, P * (1 - Math.cos(this.flip)), -P * Math.sin(this.flip))
+      g.position.add(off.applyQuaternion(g.quaternion))
+      g.rotateX(this.flip)
+    }
     g.rotateX(this.pitch + (this.airborne ? -this.vy * 0.012 : 0))
     g.rotateZ(this.lean + this.slide * 0.18)
 
@@ -595,6 +716,14 @@ export class Skier {
     this.speed = 0
     this.airborne = false
     this.vy = 0
+    this.laden = 0
+    this._nachsicht = 0
+    this.spin = 0
+    this.spinVel = 0
+    this.flip = 0
+    this.flipVel = 0
+    this._wasAirborne = false
+    this._parkSprung = false
     this.heading = heading
     this.facing = heading
     this._prevFacing = heading
@@ -612,9 +741,8 @@ export class Skier {
     }
     const cos = Math.cos(this.facing)
     const sin = Math.sin(this.facing)
-    // Beim Kanten laufen die Ski weiter auseinander.
     // Im Pflug stehen die Skienden weit auseinander.
-    const spread = 0.19 + this.carving * 0.14 + Math.abs(this.turn) * 0.1 + this.plough * 0.2
+    const spread = 0.19 + Math.abs(this.turn) * 0.1 + this.plough * 0.2
 
     for (let i = 0; i < 2; i++) {
       const side = i === 0 ? -spread : spread
@@ -622,7 +750,7 @@ export class Skier {
       const wz = this.position.z - sin * side
       const prev = this._trailPrev[i]
       if (this._trailInit) {
-        const width = 0.5 + this.carving * 0.5 + Math.abs(this.turn) * 0.3 + this.plough * 0.35
+        const width = 0.5 + Math.abs(this.turn) * 0.3 + this.plough * 0.35
         if (isSnowSurface((prev.x + wx) / 2, (prev.y + wz) / 2, width)) trail.stamp(prev.x, prev.y, wx, wz, width)
       }
       prev.set(wx, wz)

@@ -74,8 +74,8 @@ const STEUERUNG = TOUCH
   ]
   : [
     ['<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>', 'fahren, lenken, bremsen'],
-    ['<kbd>⇧</kbd>', 'kanten'],
-    ['<kbd class="k-space">Leertaste</kbd>', 'springen, im Park Tricks'],
+    ['<kbd class="k-space">Leertaste</kbd>', 'halten, loslassen: springen'],
+    ['<kbd>A</kbd><kbd>D</kbd> <kbd>W</kbd><kbd>S</kbd>', 'im Park in der Luft: drehen, Salto'],
     ['<kbd class="k-enter">⏎</kbd><kbd>E</kbd>', 'Station benutzen'],
     ['<kbd>M</kbd>', 'diese Übersicht'],
     ['<kbd>R</kbd>', 'zurück zum Start'],

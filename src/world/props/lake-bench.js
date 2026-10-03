@@ -18,8 +18,7 @@ const WOOD_DARK = 0x604737
 const SNOW = 0xf8f4eb
 
 // Unter 5 m/s schiebt man sich an der Bank vorbei, darueber zerbricht sie.
-// Das Grundtempo ist 13, Kanten mit Shift 6,5: wer bremsend heranrutscht,
-// laesst sie stehen.
+// Das Grundtempo ist 13: wer bremsend heranrutscht, laesst sie stehen.
 const BREAK_SPEED = 5
 const GRAVITY = 18
 const REST_AFTER = 12       // s, bevor sie sich wieder aufbaut ...

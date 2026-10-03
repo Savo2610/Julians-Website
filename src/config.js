@@ -30,7 +30,6 @@ export const WORLD = {
 export const SKIER = {
   cruiseSpeed: 13,    // Grundtempo, konstant – keine Simulation
   boostSpeed: 18,     // bergab erreichbar
-  carveSpeed: 6.5,    // mit Shift (kanten / bremsen)
   turnRate: 3.1,      // rad/s, wie schnell sich die Fahrtrichtung dreht
   turnRateSlow: 6.5,  // bei niedrigem Tempo darf fast auf der Stelle gedreht werden
   accel: 3.4,         // wie schnell man auf Tempo kommt
@@ -65,22 +64,46 @@ export const SKIER = {
   ploughYaw: 0.21,
 }
 
-// Tricks liegen alle auf einer Taste – Leertaste, dieselbe, mit der man
-// abspringt. Das ist Absicht: was die Taste tut, haengt davon ab, wo man
-// gerade ist. Am Boden stellt sie die Ski quer, in der Luft dreht sie den
-// Fahrer. Zwei Tasten fuer zwei Zustaende waeren eine Regel mehr zu merken,
-// ohne dass man je beides gleichzeitig brauchte.
+// Springen wie am Kabelsee: Leertaste halten geht in die Hocke und laedt,
+// Loslassen springt ab. Bis 03.10. sprang der Fahrer schon beim Druecken,
+// und an der Schanze war die Taste gleichgueltig – der Kicker warf jeden
+// gleich weit. Jetzt zaehlt der Moment: wer an der Kante loslaesst, springt
+// hoeher. Laden und Pop gibt es nur im Funpark; ueberall sonst bleibt der
+// Hopser so hoch wie vorher, damit kein Weg, kein Zaun und keine
+// Slalomlinie anders zu fahren ist.
+export const SPRUNG = {
+  hopser: 6.4,        // m/s auf flachem Schnee: 1,14 m Scheitel, genug fuer jeden Stein
+  ladeZeit: 0.45,     // s bis zur vollen Ladung, wie am See
+  ladung: 1.2,        // m/s mehr bei voller Ladung (nur im Park)
+  pop: 1.2,           // m/s mehr, wer auf der Schanze loslaesst (nur im Park)
+  nachsicht: 0.12,    // s: so spaet nach der Kante zaehlt Loslassen noch
+}
+
+// Tricks gibt es nur im Funpark, gesteuert wie am Kabelsee: in der Luft
+// drehen A und D um die Hochachse, W und S schlagen einen Salto. Ohne Taste
+// dreht der Fahrer von selbst auf die naechste Landestellung zurueck. Die
+// Werte sind die vom See; dort sind sie erprobt.
+//
+// Am Boden stellt die Leertaste auf Box und Kante die Ski quer (Slide), im
+// Schnee laedt sie nur noch den Absprung – vorher stellte sie dort auch die
+// Ski quer, und wer vor dem Kicker lud, waere quer hinaufgefahren.
 export const TRICK = {
-  spinAccel: 30,      // rad/s^2, wie schnell die Drehung anlaeuft
-  spinMax: 9.5,       // rad/s – reicht bei knapp einer Sekunde Flugzeit fuer 360
-  spinDecay: 2.5,     // wie schnell die Drehung ohne Taste ausklingt
+  spinAccel: 28,      // rad/s^2
+  spinMax: 8.6,       // rad/s: ein 360 braucht so gut 0,85 s Luft
+  spinDecay: 9,
+  flipAccel: 22,
+  flipMax: 7,
+  flipDecay: 8,
+  // Landefenster in rad Abweichung, wie am See. Beim Drehen zaehlt die
+  // naechste halbe Umdrehung, beim Salto die naechste ganze.
+  spinLand: { perfect: 0.3, clean: 0.6, sketchy: 1.2 },
+  flipLand: { perfect: 0.3, clean: 0.65, sketchy: 1.2 },
+  assistRise: 3.5,    // Landehilfe im Steigen ...
+  assistLand: 9,      // ... und kurz vor dem Aufsetzen
   slideAngle: 1.35,   // rad, wie weit die Ski beim Sliden querstehen
   slideLerp: 7,
   slideMinSpeed: 3.5,
   slideDrag: 1.6,     // zusaetzlicher Widerstand quer zur Fahrt
-  // Ab dieser Drehung zaehlt ein Sprung als Trick. Etwas unter einer halben
-  // Umdrehung, damit auch ein knapper 180er anerkannt wird.
-  landedRotation: 2.7,
 }
 
 export const CAMERA = {

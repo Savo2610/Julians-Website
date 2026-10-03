@@ -679,6 +679,16 @@ export function inFunpark(x, z) {
   return laneAt(x, z, PARK_LANE) !== null
 }
 
+// Wo ein Flug ballistisch ist. Sonst rechnet das Fahrmodell die Flughoehe
+// ueber dem Boden darunter: faellt der Boden weg, sinkt der Fahrer mit. Fuer
+// Kicker mit Landehang ist das gutmuetig, ueber eine Luecke aber falsch –
+// ueber der Klamm tauchte er im Flug viereinhalb Meter mit hinab. Wo diese
+// Funktion ja sagt, fliegt er auf fester Hoehe weiter, bis der Boden ihn
+// wieder hat. Gefragt wird einmal, beim Absprung.
+export function freiFlug(x, z) {
+  return false
+}
+
 // Steht der Fahrer gerade auf einer Box oder der Schneekante? Gebraucht wird
 // das nur fuer die Rueckmeldung – ein Slide auf der Box heisst anders als
 // einer im Schnee. Geprueft wird das Rechteck der Figur, nicht die Hoehe:

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, SPRUNG } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 import { landeStufe } from '../core/landung.js'
 
@@ -50,6 +50,7 @@ export class Skier {
     // --- Sprung --------------------------------------------------------
     this._nachsicht = 0             // s, in denen ein Druck nach der Kante noch zaehlt
     this._parkSprung = false        // dieser Flug begann im Funpark
+    this._luftY = null              // Flughoehe ueber Null bei freiem Flug, sonst NaN
 
     // --- Tricks ---------------------------------------------------------
     // spin ist eine Drehung des Modells *gegen* die Fahrtrichtung, flip ein
@@ -342,14 +343,24 @@ export class Skier {
     }
 
     if (this.airborne) {
+      // Beim Absprung entscheidet sich, ob der Flug ueber dem Boden mitlaeuft
+      // oder auf fester Hoehe bleibt (freiFlug in heightfield.js).
+      if (this._luftY == null) {
+        this._luftY = freiFlug(nx, nz) ? groundY + this.height : NaN
+      }
       this.vy -= G * dt
-      this.height += this.vy * dt
+      if (Number.isNaN(this._luftY)) this.height += this.vy * dt
+      else {
+        this._luftY += this.vy * dt
+        this.height = this._luftY - groundY
+      }
       this.speed *= 1 - Math.min(0.5, SKIER.airDrag * dt)
       if (this.height <= 0) {
         this.height = 0
         this.airborne = false
         this.landImpact = Math.min(1, -this.vy / 12)
         this.vy = 0
+        this._luftY = null
       }
     } else {
       this.landImpact = (this.landImpact || 0) * (1 - damp(6, dt))
@@ -551,6 +562,7 @@ export class Skier {
     this.position.y = groundY + (this.tow.lift ?? 0)
     this.height = 0
     this.airborne = false
+    this._luftY = null
     this._rise = 0
     this._prevGroundY = groundY
     // Am Buegel oder auf dem Band wird nicht getrickst. Auf der Rail schon:
@@ -706,6 +718,7 @@ export class Skier {
     this.speed = 0
     this.airborne = false
     this.vy = 0
+    this._luftY = null
     this._nachsicht = 0
     this.spin = 0
     this.spinVel = 0

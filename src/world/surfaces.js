@@ -1,4 +1,4 @@
-import { LAKE, lakeRadius, BADESTEG, BADESTEG_LAENGE, badestegLage } from './heightfield.js'
+import { LAKE, lakeRadius, BADESTEG, BADESTEG_LAENGE, badestegLage, klammAt } from './heightfield.js'
 import { APRES, terraceDistance } from './areas/apres-layout.js'
 
 // Auch die Breite der Ski und der aufgeworfene Spurrand muessen auf Schnee
@@ -11,6 +11,9 @@ export function isSnowSurface(x, z, margin = 0) {
     const { laengs, quer } = badestegLage(x, z)
     if (quer <= BADESTEG.breite + margin && laengs >= -0.3 - margin && laengs <= BADESTEG_LAENGE + margin) return false
   }
+  // Der zugefrorene Bach in der Klamm (props/klamm-eis.js) liegt dort, wo
+  // sie tiefer als 1,2 Meter ist, und ihre Sohle ist drei Meter breit.
+  if (x > -30 && x < -5 && z < -58 && z > -104 && klammAt(x, z) < -1.1 - margin * 0.5) return false
   if (Math.abs(x - APRES.house.x) < 23 + margin && Math.abs(z - APRES.house.z) < 23 + margin && terraceDistance(x, z) <= margin) return false
   return true
 }

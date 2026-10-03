@@ -8,7 +8,7 @@ import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
 import { WORLD, CAMERA } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE, BADESTEG } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, SCHANZE, klammAt, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE, BADESTEG } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -34,8 +34,11 @@ import { createApresSki } from './props/apres-ski.js'
 import { createSledFence } from './props/sled.js'
 import { Kinderland } from './areas/kinderland.js'
 import { NorthRun } from './attractions/north-run.js'
+import { KlammSprung } from './attractions/klamm-sprung.js'
 import { createStartGate } from './props/start-gate.js'
 import { createGorgeBridge } from './props/gorge-bridge.js'
+import { createKlammSchanze } from './props/klamm-schanze.js'
+import { createKlammEis } from './props/klamm-eis.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -212,6 +215,23 @@ export function populate(world, sky, registry, stationOptions = {}) {
       const a = lane.points[i]
       const b = lane.points[i + 1]
       LANES.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, r })
+    }
+  }
+  // Die Nordabfahrt ist an der Gabel breiter, und die Flugbahn der Schanze
+  // muss frei sein: ein Baum hat keine Hoehe, an der man ihn ueberfliegt.
+  {
+    const u0 = -SCHANZE.laenge - 4
+    const u1 = SCHANZE.drueben + SCHANZE.landung + 2
+    LANES.push({
+      x1: SCHANZE.x + SCHANZE.dx * u0, z1: SCHANZE.z + SCHANZE.dz * u0,
+      x2: SCHANZE.x + SCHANZE.dx * u1, z2: SCHANZE.z + SCHANZE.dz * u1,
+      r: SCHANZE.halb + SCHANZE.flanke + 2.5,
+    })
+    for (let i = 0; i < NORTH_LANE.points.length - 1; i++) {
+      const a = NORTH_LANE.points[i]
+      const b = NORTH_LANE.points[i + 1]
+      const w = Math.max(a.w ?? 0, b.w ?? 0)
+      if (w) LANES.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, r: w / 2 + 2 })
     }
   }
   // Abstand zu einer Bahnmitte – gebraucht fuer die Waldbaender, die eine Bahn
@@ -593,6 +613,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // das Tor am Anfang und die Stangen an den Raendern – und der Zustand, an
   // dem die Kamera haengt.
   const northRun = new NorthRun()
+  const klammSprung = new KlammSprung(world)
   {
     const P = NORTH_LANE.points
     // Richtung der Bahn am Start; das Tor steht quer dazu.
@@ -617,12 +638,16 @@ export function populate(world, sky, registry, stationOptions = {}) {
     // Stangen an beiden Raendern. Eine versetzte Linie braucht je Punkt eine
     // Querrichtung; genommen wird die Richtung der beiden Nachbarn, damit an
     // den Knicken kein Knick in der Stangenreihe entsteht.
-    const seite = (versatz) => P.map((p, i) => {
+    //
+    // Der Versatz zaehlt vom Rand der Bahn nach innen: an der Gabel ist sie
+    // 22 statt 14 Meter breit, und die Stangen gehen mit.
+    const seite = (vomRand, sx) => P.map((p, i) => {
       const a = P[Math.max(0, i - 1)]
       const b = P[Math.min(P.length - 1, i + 1)]
       const dx = b.x - a.x
       const dz = b.z - a.z
       const L = Math.hypot(dx, dz) || 1
+      const versatz = sx * ((p.w ?? NORTH_LANE.width) / 2 - vomRand)
       return [p.x - (dz / L) * versatz, p.z + (dx / L) * versatz]
     })
     // Der Steg ueber die Klamm. Die Richtung nimmt er von der Bahn: seine
@@ -645,7 +670,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
       // und nur dessen Sehne durch die beiden Stegenden zaehlt. Waagerecht
       // hingelegt steckte er oben einen Meter im Hang und schwebte unten einen
       // Meter darueber – der Fahrer fuhr sichtbar durch das Holz.
-      const laenge = 14.5
+      const laenge = 15
       const ll = Math.hypot(nach.x - vor.x, nach.z - vor.z)
       const ux = (nach.x - vor.x) / ll
       const uz = (nach.z - vor.z) / ll
@@ -674,22 +699,24 @@ export function populate(world, sky, registry, stationOptions = {}) {
     // Stangen, die in der Klamm stuenden, faellt weg. Eine Pistenstange, die
     // vier Meter unter der Bahn im Graben steht, sieht nicht nach Absperrung
     // aus, sondern nach Fehler.
-    const inKlamm = (p) => Math.hypot(p.x - BRUECKE.x, p.z - BRUECKE.z) < 9
-    for (const [versatz, seed] of [[6.2, 71], [-6.2, 73]]) {
-      markerRows.push(createPisteMarkers(world, route(seite(versatz), 5.4).filter((p) => !inKlamm(p) && !(p.x > 17 && p.x < 32 && p.z > -68 && p.z < -49)), {
+    const inKlamm = (p) => {
+      const ax = KLAMM.bis.x - KLAMM.von.x
+      const az = KLAMM.bis.z - KLAMM.von.z
+      const la = Math.hypot(ax, az)
+      return Math.abs(((p.x - KLAMM.von.x) * az - (p.z - KLAMM.von.z) * ax) / la) < 8.5
+    }
+    for (const [sx, seed] of [[1, 71], [-1, 73]]) {
+      markerRows.push(createPisteMarkers(world, route(seite(0.8, sx), 5.4).filter((p) => !inKlamm(p) && !(p.x > 17 && p.x < 32 && p.z > -68 && p.z < -49)), {
         seed, color: 0x2f6bd8,
       }))
     }
 
-    // An ihrer Stelle steht eine eigene Reihe quer vor der Klamm, acht Meter vor
-    // der Rinnenmitte. Naeher geht nicht: der Steg reicht mit seiner halben
-    // Laenge 7,25 Meter dorthin, und eine Stange auf dem Deck waere eine Stange
-    // im Weg. Acht Meter ist ausserdem noch sicherer Grund – die Rinne greift
-    // nur 6,4 Meter weit.
-    //
-    // Die Reihe sperrt nicht nur, sie trichtert. Sie laesst genau vor dem Steg
-    // eine Luecke von 7,8 Metern in einer vierzehn Meter breiten Piste; wer
-    // hindurchfaehrt, trifft ihn, und das sieht man schon von oben am Tor.
+    // An ihrer Stelle steht eine Reihe quer vor der Klamm, acht Meter vor der
+    // Rinnenmitte – die Rinne greift 6,4 Meter weit, acht ist noch fester
+    // Grund. Sie laesst zwei Luecken: rechts vor der Bruecke, links vor der
+    // Schanze. Dazwischen trennt eine Stangenreihe die beiden Wege schon
+    // zwanzig Meter vorher, damit man sich entscheidet, bevor man an der
+    // Kante steht, und nicht erst dort.
     {
       const ax = KLAMM.bis.x - KLAMM.von.x
       const az = KLAMM.bis.z - KLAMM.von.z
@@ -700,11 +727,31 @@ export function populate(world, sky, registry, stationOptions = {}) {
       // die Klamm einmal verlegt, kippt die Reihe sonst auf die falsche Seite.
       const bergauf = terrainHeight(BRUECKE.x + quer.x, BRUECKE.z + quer.z)
         > terrainHeight(BRUECKE.x - quer.x, BRUECKE.z - quer.z) ? 1 : -1
-      const lippe = [-10.6, -8.2, -5.8, -3.9, 3.9, 5.8, 8.2, 10.6].map((s) => ({
-        x: BRUECKE.x + quer.x * bergauf + laengs.x * s,
-        z: BRUECKE.z + quer.z * bergauf + laengs.z * s,
-      }))
+      // Wo die Schanze, von der Bruecke aus laengs der Rinne gemessen, liegt.
+      const schanzeBei = (SCHANZE.x - BRUECKE.x) * laengs.x + (SCHANZE.z - BRUECKE.z) * laengs.z
+      const luecken = [[-BRUECKE.halb - 0.6, BRUECKE.halb + 0.6], [schanzeBei - SCHANZE.halb - 0.7, schanzeBei + SCHANZE.halb + 0.7]]
+      const lippe = []
+      for (let s = -6.6; s <= schanzeBei + 6; s += 1.9) {
+        if (luecken.some(([a, b]) => s > a && s < b)) continue
+        lippe.push({ x: BRUECKE.x + quer.x * bergauf + laengs.x * s, z: BRUECKE.z + quer.z * bergauf + laengs.z * s })
+      }
       markerRows.push(createPisteMarkers(world, lippe, { seed: 77, color: 0x2f6bd8 }))
+
+      // Die Trennlinie zwischen beiden Wegen, in Fahrtrichtung der Schanze
+      // zurueck bis dorthin, wo die Bahn breiter wird.
+      const mitte = (BRUECKE.halb + 0.6 + schanzeBei - SCHANZE.halb - 0.7) / 2
+      const trenn = []
+      for (let t = 10.5; t <= 21; t += 3.5) {
+        trenn.push({
+          x: BRUECKE.x + quer.x * bergauf * (t / 8) + laengs.x * mitte,
+          z: BRUECKE.z + quer.z * bergauf * (t / 8) + laengs.z * mitte,
+        })
+      }
+      markerRows.push(createPisteMarkers(world, trenn, { seed: 79, color: 0xd8462f }))
+
+      // Die Schanze selbst: Rampe mit Seitenbrettern, Kante, Weitenmarken.
+      const schanze = createKlammSchanze(world)
+      animatedProps.push(schanze.userData.animate)
 
       // Fels in der Klamm. Ohne ihn liest sie sich aus der festen Kamera als
       // heller Fleck im hellen Hang: gemessen viereinhalb Meter tief und
@@ -720,7 +767,10 @@ export function populate(world, sky, registry, stationOptions = {}) {
       for (let u = 0.1; u <= 0.93; u += 0.022) {
         const mx = KLAMM.von.x + (KLAMM.bis.x - KLAMM.von.x) * u
         const mz = KLAMM.von.z + (KLAMM.bis.z - KLAMM.von.z) * u
-        if (Math.abs((mx - BRUECKE.x) * laengs.x + (mz - BRUECKE.z) * laengs.z) < 7) continue
+        // Auch nicht dort, wo man ueber die Klamm springt: ein Fels auf der
+        // Kante ist ein Fels in der Flugbahn.
+        const l = (mx - BRUECKE.x) * laengs.x + (mz - BRUECKE.z) * laengs.z
+        if (Math.abs(l) < BRUECKE.halb + 2.6 || Math.abs(l - schanzeBei) < SCHANZE.halb + 2.6) continue
         for (const seite of [-1, 1]) {
           if (klammRng() > 0.5) continue
           // Meist auf der Oberkante, jeder sechste unten in der Sohle.
@@ -738,6 +788,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
         }
       }
       createRocks(world, klammFelsen, 30515)
+      createKlammEis(world)
     }
 
     // Felsriegel auf dem Grat. Er steht dort, wo der Grat ohnehin schon vier
@@ -1001,5 +1052,5 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Der Badesteg: von hier in den Sommer, siehe src/sommer/.
   const badesteg = createBadesteg(world)
 
-  return { trees: placements, apresTerrace, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, animated: [...stations.animated, ...animatedProps] }
+  return { trees: placements, apresTerrace, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
 }

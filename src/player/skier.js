@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, SPRUNG } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, schanzeAnlauf, aufSteg } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 import { landeStufe } from '../core/landung.js'
 
@@ -189,7 +189,9 @@ export class Skier {
       Math.sin(this.swingPhase) *
       SKIER.swingAmplitude *
       swingSpeed *
-      (1 - Math.abs(this.steer) * 0.9)
+      (1 - Math.abs(this.steer) * 0.9) *
+      (1 - schanzeAnlauf(this.position.x, this.position.z)) *
+      (aufSteg(this.position.x, this.position.z) ? 0 : 1)
     this.swing += (swingTarget - this.swing) * damp(8, dt)
 
     this.facing = this.heading + this.swing
@@ -214,7 +216,11 @@ export class Skier {
       // Enge Kurven kosten Tempo.
       target -= Math.abs(this.turn) * 2.6
     }
-    target += this.slope * SKIER.slopeInfluence
+    // Auf der Rampe der Klammschanze kostet das Steigen kein Tempo: sechs
+    // Meter Rampe mit bis zu 37 Grad bremsten von 16 auf 11,5 m/s, und
+    // damit flog jeder gleich weit – egal wie schnell er kam.
+    const rampe = this.slope < 0 ? schanzeAnlauf(this.position.x, this.position.z) : 0
+    target += this.slope * SKIER.slopeInfluence * (1 - rampe)
     if (input.braking) target = Math.min(target, 0)
     // Mit gedruecktem W kommt man auch den steilsten Hang noch hinauf – nur
     // sehr langsam. Sonst bleibt man vor Gegenhaengen einfach kleben.
@@ -235,7 +241,9 @@ export class Skier {
     // schlagen dort den Salto, und ein Backflip soll nicht bremsen. Es
     // bleibt der Luftwiderstand weiter unten.
     if (!(this.airborne && this._parkSprung)) {
-      this.speed += (target - this.speed) * damp(this.airborne ? 0.5 : accelRate, dt)
+      if (!(rampe > 0.5 && target < this.speed)) {
+        this.speed += (target - this.speed) * damp(this.airborne ? 0.5 : accelRate, dt)
+      }
     }
     if (this.speed < 0.06) this.speed = 0
 
@@ -302,7 +310,9 @@ export class Skier {
     // und Loslassen wie am See war nicht eingaengig genug). Im Funpark
     // zaehlt dafuer der Moment wie am See – ueberall sonst ist es der alte
     // Hopser mit 6,4 m/s, auf der Rennstrecke aendert sich nichts.
-    const park = inFunpark(nx, nz)
+    // Die Klammschanze zaehlt dabei wie der Park: Pop an der Kante, Figuren
+    // in der Luft.
+    const park = inFunpark(nx, nz) || freiFlug(nx, nz)
     const druck = input.justPressed('jump')
 
     if (!this.airborne) {
@@ -432,7 +442,7 @@ export class Skier {
     // Der Absprung, von wo auch immer er kam – auch die Rail wirft ab.
     if (this.airborne && !this._wasAirborne) {
       this._wasAirborne = true
-      this._parkSprung = inFunpark(this.position.x, this.position.z)
+      this._parkSprung = inFunpark(this.position.x, this.position.z) || freiFlug(this.position.x, this.position.z)
       // Was beim Absprung schon gedrueckt ist, dreht nicht: W liegt beim
       // Fahren fast immer, und wer zur Schanze hin lenkt, soll nicht
       // ungewollt einen 180 springen. Erst loslassen, dann zaehlt die Taste;

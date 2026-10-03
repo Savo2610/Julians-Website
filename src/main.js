@@ -366,6 +366,8 @@ function advance(dt) {
 
   // Rennstrecke: Zeitnahme laeuft mit, ohne dass man etwas starten muesste.
   props.race.update(dt, skier)
+  // Die Weite an der Klammschanze, ebenfalls ohne Startknopf.
+  props.klammSprung.update(dt, skier)
   bestenliste.update(dt)
   // Dasselbe auf der freien Abfahrt, nur eine Zahl statt einer Uhr.
   props.speedCheck.update(dt, skier)

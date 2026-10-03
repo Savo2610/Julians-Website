@@ -253,8 +253,8 @@ export const KLAMM = {
 // Steg vorher schon lag (Mitte, Richtung und Gefaelle), damit das Holz nicht
 // wandert; populate.js misst sie ohnehin vom Gelaende nach.
 export const BRUECKE = {
-  x: -17.4, z: -78.3, halb: 2.9, saum: 1.7,
-  ebene: { y: 15.4233, ux: 0.92848, uz: 0.37139, gefaelle: -0.15741, laenge: 14.5 },
+  x: -19.25, z: -74.2, halb: 2.0, saum: 0.7,
+  ebene: { y: 15.3933, ux: 0.92848, uz: 0.37139, gefaelle: -0.16509, laenge: 14.5 },
 }
 
 // Zieht das Gelaende unter dem Steg auf seine Ebene. Quer blendet es mit
@@ -272,6 +272,72 @@ function stegEbene(x, z, h) {
   const wl = 1 - smooth(Math.max(0, (Math.abs(laengs) - (halbL - 1.5)) / 1.5))
   const w = wq * wl
   return h + (e.y + e.gefaelle * laengs - h) * w
+}
+
+// --- Die Klammschanze -------------------------------------------------------
+// Neben dem Steg fuehrt ein zweiter Weg ueber die Klamm: durch die Luft. Die
+// Bahn gabelt sich davor, rechts liegt der Steg, links die Schanze. Wer sich
+// den Sprung nicht zutraut oder zu langsam ist, nimmt den Steg und verliert
+// nichts als die Weite.
+//
+// Wie die Kicker im Funpark ist sie Gelaende und kein Aufbau: eine kubische
+// Rampe, deren Kante genau dort endet, wo die Klamm ihre Oberkante rundet,
+// und drueben ein Landehuegel, der die Flugbahn auffaengt. Ohne Huegel landete
+// man auf der Bahn, die hier nur zwoelf Prozent faellt – das ist flach
+// gelandet, aus vier Metern.
+//
+// Die Richtung ist die Querrichtung der Klamm und nicht die der Bahn (sie
+// liegen 2,5 Grad auseinander): so ist die Luecke ueberall gleich breit,
+// 12,8 Meter von Kante zu Kante.
+export const SCHANZE = {
+  x: -21.63, z: -85.70,          // Mitte der Absprungkante
+  dx: 0.911, dz: 0.412,
+  laenge: 7,                     // Anlauframpe bis zur Kante
+  hoehe: 2.6,                    // ueber der Bahn an der Kante
+  halb: 2.75, flanke: 2.5,
+  drueben: 13.8,                 // Abstand Kante bis Oberkante gegenueber
+  huegel: 1.6,                   // so hoch steht der Landehuegel dort ueber der Bahn
+  landung: 15,                   // so lang faellt er wieder auf die Bahn ab
+}
+
+// Laengs ab der Kante (u, positiv in Flugrichtung) und quer zur Schanze.
+export function schanzeLage(x, z) {
+  const rx = x - SCHANZE.x
+  const rz = z - SCHANZE.z
+  return { u: rx * SCHANZE.dx + rz * SCHANZE.dz, v: -rx * SCHANZE.dz + rz * SCHANZE.dx }
+}
+
+function klammSchanze(x, z) {
+  const S = SCHANZE
+  const { u, v } = schanzeLage(x, z)
+  const av = Math.abs(v)
+  if (u < -S.laenge || u > S.drueben + S.landung || av > S.halb + S.flanke) return 0
+  const side = av <= S.halb ? 1 : smooth((S.halb + S.flanke - av) / S.flanke)
+  if (u <= 0) {
+    // Kubisch wie die Kicker im Park: der Fuss bleibt flach, die Steigung
+    // sammelt sich an der Kante.
+    const a = (u + S.laenge) / S.laenge
+    return S.hoehe * a * a * a * side
+  }
+  // Hinter der Kante bricht die Rampe auf einem halben Meter ab. Lief sie
+  // in die gerundete Oberkante der Klamm aus, rollte der Fahrer ueber die
+  // Kante hinunter in die Rinne, statt abzuheben (gemessen bei Tempo 10 und
+  // 13: kein Absprung, erst drueben wieder in der Luft).
+  if (u < 0.5) return S.hoehe * (1 - u / 0.5) * side
+  // Ueber der Rinne selbst nichts: dort schneidet die Klamm, und eine
+  // Aufschuettung haebe nur ihre Sohle an.
+  const vorn = S.drueben - 1.5
+  if (u < vorn) return 0
+  const auf = smooth(Math.min(1, (u - vorn) / 1.5))
+  // Oben einen Meter eben, dann gerade hinunter und unten gerundet auf die
+  // Bahn – gerade aus demselben Grund wie die Landehaenge im Park: eine weiche
+  // Kurve waere in der Mitte doppelt so steil wie im Mittel. Die Rundung ist
+  // die quadratische Glaettung von max(0, 1 − t) ueber ±r: Wert und Steigung
+  // laufen stetig in die Bahn.
+  const r = 0.2
+  const t = Math.max(0, (u - S.drueben - 1) / (S.landung - 1)) * (1 + r)
+  const ab = t < 1 - r ? 1 - t : t < 1 + r ? (1 + r - t) ** 2 / (4 * r) : 0
+  return S.huegel * auf * ab * side
 }
 
 function klammTiefe(u) {
@@ -327,19 +393,29 @@ export function klammAt(x, z) {
 // dem natuerlichen Gelaende abgemessen, dazwischen liegen sie auf einer
 // Geraden. Dadurch trifft das Band an seinen Enden das Gelaende von selbst
 // und muss dort nichts mehr ausgleichen.
+//
+// Ein Stuetzpunkt darf seine eigene Breite mitbringen ({ x, z, h, w }); dann
+// wird sie entlang der Bahn gemischt wie die Hoehe. Gebraucht an der Gabel
+// der Nordabfahrt: dort liegen Schanze und Steg nebeneinander, und auf
+// vierzehn Metern war fuer beide kein Platz.
 function makeLane(points, { width, feather, endFade, bank = 0, flat = 0.55 }) {
   const segments = []
   let total = 0
+  let widest = width
   for (let i = 0; i < points.length - 1; i++) {
     const a = points[i]
     const b = points[i + 1]
     const dx = b.x - a.x
     const dz = b.z - a.z
     const len = Math.hypot(dx, dz)
-    segments.push({ x: a.x, z: a.z, dx, dz, len2: dx * dx + dz * dz, h0: a.h, h1: b.h, s0: total, len })
+    segments.push({
+      x: a.x, z: a.z, dx, dz, len2: dx * dx + dz * dz, h0: a.h, h1: b.h, s0: total, len,
+      w0: a.w ?? width, w1: b.w ?? width,
+    })
+    widest = Math.max(widest, a.w ?? width, b.w ?? width)
     total += len
   }
-  const reach = width * 0.5 + feather
+  const reach = widest * 0.5 + feather
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
   for (const p of points) {
     minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x)
@@ -347,7 +423,7 @@ function makeLane(points, { width, feather, endFade, bank = 0, flat = 0.55 }) {
   }
   return {
     points, segments, total, width, feather, endFade, reach, bank,
-    flatHalf: width * 0.5 * flat,
+    flatShare: flat,
     minX: minX - reach, maxX: maxX + reach, minZ: minZ - reach, maxZ: maxZ + reach,
   }
 }
@@ -367,6 +443,7 @@ function laneAt(x, z, lane) {
   let sumW = 0
   let sumT = 0
   let sumS = 0
+  let sumB = 0
   for (const g of lane.segments) {
     let t = ((x - g.x) * g.dx + (z - g.z) * g.dz) / g.len2
     t = t < 0 ? 0 : t > 1 ? 1 : t
@@ -379,22 +456,24 @@ function laneAt(x, z, lane) {
     sumW += w
     sumT += w * (g.h0 + (g.h1 - g.h0) * t)
     sumS += w * (g.s0 + g.len * t)
+    sumB += w * (g.w0 + (g.w1 - g.w0) * t)
   }
   const target = sumT / sumW
   const s = sumS / sumW
-  if (bestD > lane.reach) return null
-  const half = lane.width * 0.5
+  const half = (sumB / sumW) * 0.5
+  if (bestD > half + lane.feather) return null
   // Bande: zur Mitte hin flach, nach aussen ansteigend. Sie macht aus der
   // Bahn eine Rinne, in der man die Kurve halten kann, statt oben hinaus zu
   // schiessen. Quadratisch, damit der Uebergang von Sohle zu Wand weich ist.
   // Wie hoch sie tatsaechlich wird, entscheidet erst die Hoehenfunktion:
   // aufgeschuettet wird nur, wo das Gelaende unter der Bahn liegt.
   let bank = 0
-  if (lane.bank > 0 && bestD > lane.flatHalf) {
-    const t = Math.min(1, (bestD - lane.flatHalf) / (half - lane.flatHalf))
+  const flatHalf = half * lane.flatShare
+  if (lane.bank > 0 && bestD > flatHalf) {
+    const t = Math.min(1, (bestD - flatHalf) / (half - flatHalf))
     bank = lane.bank * t * t
   }
-  const side = bestD <= half ? 1 : smooth((lane.reach - bestD) / lane.feather)
+  const side = bestD <= half ? 1 : smooth((half + lane.feather - bestD) / lane.feather)
   const ends = smooth(Math.min(1, Math.min(s, lane.total - s) / lane.endFade))
   const weight = side * ends
   return weight <= 0.001 ? null : { weight, base: target, bank }
@@ -463,10 +542,10 @@ export const NORTH_LANE = makeLane([
   { x: -57, z: -81, h: 23.05 },
   { x: -51, z: -87, h: 20.78 },
   { x: -42, z: -88, h: 19.15 },
-  { x: -32, z: -85, h: 17.71 },
-  { x: -22, z: -80, h: 16.21 },
-  { x: -12, z: -76, h: 14.48 },
-  { x: -2, z: -71, h: 13.06 },
+  { x: -32, z: -85, h: 17.71, w: 19 },
+  { x: -22, z: -80, h: 16.21, w: 22 },
+  { x: -12, z: -76, h: 14.48, w: 22 },
+  { x: -2, z: -71, h: 13.06, w: 17 },
   { x: 6, z: -65, h: 12.32 },
 ], { width: 14, feather: 9, endFade: 7, bank: 1.2, flat: 0.5 })
 
@@ -685,8 +764,29 @@ export function inFunpark(x, z) {
 // ueber der Klamm tauchte er im Flug viereinhalb Meter mit hinab. Wo diese
 // Funktion ja sagt, fliegt er auf fester Hoehe weiter, bis der Boden ihn
 // wieder hat. Gefragt wird einmal, beim Absprung.
+// Wie sehr der Fahrer gerade auf die Schanze zuhaelt (0 bis 1). Auf der
+// Anfahrt pendelt er nicht: der Schwung schlaegt bis 0,55 rad aus, und
+// damit ging der Flug um bis zu 2,6 Meter seitlich neben die Schanze.
+export function schanzeAnlauf(x, z) {
+  const { u, v } = schanzeLage(x, z)
+  if (u > 0.5 || u < -SCHANZE.laenge - 10 || Math.abs(v) > SCHANZE.halb + SCHANZE.flanke) return 0
+  return u > -SCHANZE.laenge - 4 ? 1 : smooth((u + SCHANZE.laenge + 10) / 6)
+}
+
+// Auf dem Steg pendelt der Fahrer ebenfalls nicht: der Schwung traegt ihn
+// gut anderthalb Meter zur Seite, und der tragende Streifen ist vier breit.
+export function aufSteg(x, z) {
+  const e = BRUECKE.ebene
+  const rx = x - BRUECKE.x
+  const rz = z - BRUECKE.z
+  const laengs = rx * e.ux + rz * e.uz
+  const quer = Math.abs(-rx * e.uz + rz * e.ux)
+  return Math.abs(laengs) < e.laenge / 2 + 6 && quer < BRUECKE.halb + 1.5
+}
+
 export function freiFlug(x, z) {
-  return false
+  const { u, v } = schanzeLage(x, z)
+  return u > -SCHANZE.laenge - 1 && u < 1 && Math.abs(v) < SCHANZE.halb + SCHANZE.flanke
 }
 
 // Steht der Fahrer gerade auf einer Box oder der Schneekante? Gebraucht wird
@@ -801,6 +901,10 @@ export function terrainHeight(x, z) {
   // Die Figuren im Funpark sitzen auf dem geglaetteten Band – deshalb erst
   // hier, nach der Bandformung.
   h += parkFeatures(x, z)
+
+  // Die Schanze ueber die Klamm liegt wie die Figuren im Park auf dem
+  // fertigen Band.
+  h += klammSchanze(x, z)
 
   // Die Klamm schneidet zuletzt – sie muss durch das fertige Band hindurch,
   // sonst fuellte das Band sie gleich wieder auf. Vorher wird der Streifen

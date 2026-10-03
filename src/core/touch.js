@@ -41,8 +41,8 @@ export class TouchControls {
     this.jump.setAttribute('aria-label', 'Springen')
     this.jump.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     document.body.appendChild(this.jump)
-    // Gehalten statt getippt: halten laedt den Sprung, loslassen springt ab,
-    // und auf der Rail haelt man, solange man grindet.
+    // Gehalten statt getippt: auf der Rail haelt man die Taste, solange man
+    // grindet.
     const down = (e) => {
       e.preventDefault()
       if (!input.keys.has('jump')) input.pressed.add('jump')
@@ -50,7 +50,7 @@ export class TouchControls {
       this.jump.classList.add('down')
     }
     const up = () => {
-      if (input.keys.delete('jump')) input.released.add('jump')
+      input.keys.delete('jump')
       this.jump.classList.remove('down')
     }
     this.jump.addEventListener('pointerdown', down)

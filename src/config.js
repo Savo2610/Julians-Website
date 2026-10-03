@@ -64,19 +64,19 @@ export const SKIER = {
   ploughYaw: 0.21,
 }
 
-// Springen wie am Kabelsee: Leertaste halten geht in die Hocke und laedt,
-// Loslassen springt ab. Bis 03.10. sprang der Fahrer schon beim Druecken,
-// und an der Schanze war die Taste gleichgueltig – der Kicker warf jeden
-// gleich weit. Jetzt zaehlt der Moment: wer an der Kante loslaesst, springt
-// hoeher. Laden und Pop gibt es nur im Funpark; ueberall sonst bleibt der
-// Hopser so hoch wie vorher, damit kein Weg, kein Zaun und keine
-// Slalomlinie anders zu fahren ist.
+// Springen: Leertaste druecken springt sofort. Bis 03.10. war die Taste an
+// der Schanze gleichgueltig – der Kicker warf jeden gleich weit. Jetzt
+// zaehlt der Moment wie am Kabelsee: wer an der Kante drueckt, springt
+// hoeher. Den Pop gibt es nur im Funpark; ueberall sonst bleibt der Hopser
+// so hoch wie vorher, damit kein Weg, kein Zaun und keine Slalomlinie
+// anders zu fahren ist. Halten zum Laden wie am See war probiert und nicht
+// eingaengig genug (Ansage 03.10.).
 export const SPRUNG = {
   hopser: 6.4,        // m/s auf flachem Schnee: 1,14 m Scheitel, genug fuer jeden Stein
-  ladeZeit: 0.45,     // s bis zur vollen Ladung, wie am See
-  ladung: 1.2,        // m/s mehr bei voller Ladung (nur im Park)
-  pop: 1.2,           // m/s mehr, wer auf der Schanze loslaesst (nur im Park)
-  nachsicht: 0.12,    // s: so spaet nach der Kante zaehlt Loslassen noch
+  // m/s mehr, wer auf der Schanze drueckt (nur im Park). Kleiner Kicker:
+  // 1,03 s Flug ohne Taste, 1,33 s mit Druck an der Kante.
+  pop: 2.4,
+  nachsicht: 0.12,    // s: so spaet nach der Kante zaehlt ein Druck noch
 }
 
 // Tricks gibt es nur im Funpark, gesteuert wie am Kabelsee: in der Luft

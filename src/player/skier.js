@@ -48,10 +48,7 @@ export class Skier {
     this.poise = 0                  // 0..1, wie deutlich die Hanghaltung gezeigt wird
 
     // --- Sprung --------------------------------------------------------
-    this.laden = 0                  // 0..1, wie lange die Leertaste schon liegt
-    this._uhr = 0
-    this._nachsicht = 0             // s, in denen Loslassen nach der Kante noch zaehlt
-    this._kantenLadung = 0
+    this._nachsicht = 0             // s, in denen ein Druck nach der Kante noch zaehlt
     this._parkSprung = false        // dieser Flug begann im Funpark
 
     // --- Tricks ---------------------------------------------------------
@@ -300,36 +297,33 @@ export class Skier {
     // das die Steiggeschwindigkeit, mit der er ueber die Kante geht.
     const climb = dt > 0 ? (groundY - this._prevGroundY) / dt : 0
 
-    // Absprung wie am Kabelsee: Halten laedt, Loslassen springt. Laden und
-    // Pop wirken nur im Funpark; ueberall sonst ist Loslassen der alte
-    // Hopser mit 6,4 m/s – auf der Rennstrecke aendert sich nichts.
+    // Absprung: Leertaste druecken springt sofort (Ansage 03.10.: Halten
+    // und Loslassen wie am See war nicht eingaengig genug). Im Funpark
+    // zaehlt dafuer der Moment wie am See – ueberall sonst ist es der alte
+    // Hopser mit 6,4 m/s, auf der Rennstrecke aendert sich nichts.
     const park = inFunpark(nx, nz)
-    const halten = input.has('jump')
-    const los = input.justReleased('jump')
-    this._uhr += dt
+    const druck = input.justPressed('jump')
 
     if (!this.airborne) {
-      if (halten) this.laden = Math.min(1, this.laden + dt / SPRUNG.ladeZeit)
       const free = this._prevGroundY + this._rise * dt - 0.5 * G * dt * dt
-      if (los && this.speed > 1) {
+      // Nur beim Tastendruck, nicht solange sie liegt: gehalten heisst auf
+      // Box und Kante "sliden", und wer haelt, soll nicht in Sprungfolgen
+      // haengenbleiben.
+      if (druck && this.speed > 1) {
         // Auf der Schanze nimmt der Pop mit, was die Rampe schon hebt: wer
-        // zu frueh loslaesst, bekommt nur den flachen Teil. Gemessen am
+        // zu frueh drueckt, bekommt nur den flachen Teil. Gemessen am
         // grossen Kicker 4 m vor der Kante: Steigrate 3,5 statt gut 12.
         this.airborne = true
-        this.vy = park
-          ? Math.min(Math.max(SPRUNG.hopser, this._rise + SPRUNG.pop) + SPRUNG.ladung * this.laden, 14)
-          : SPRUNG.hopser
+        this.vy = park ? Math.min(Math.max(SPRUNG.hopser, this._rise + SPRUNG.pop), 14) : SPRUNG.hopser
       } else if (this._rise > 3.2 && free > groundY + 0.03) {
         // Faellt der Boden hinter der Kante schneller weg, als die Schwerkraft
         // den Fahrer holt, hebt er ab. Kein Sprungknopf noetig – die Schanze
-        // macht die Arbeit, so wie im Gelaende auch. Wer im Park noch haelt,
-        // darf kurz nach der Kante loslassen und bekommt Pop und Ladung
-        // trotzdem (Nachsicht wie am See: sonst verpasst man den Moment bei
-        // 13 m/s um zwei Bilder). Wer nur durchhaelt, springt wie ohne Taste –
-        // sonst waere Festhalten besser als der richtige Moment.
+        // macht die Arbeit, so wie im Gelaende auch. Im Park darf man kurz
+        // nach der Kante noch druecken und bekommt den Pop trotzdem
+        // (Nachsicht wie am See: sonst verpasst man den Moment bei 13 m/s
+        // um zwei Bilder).
         this.airborne = true
-        this._nachsicht = park && halten ? SPRUNG.nachsicht : 0
-        this._kantenLadung = this.laden
+        this._nachsicht = park ? SPRUNG.nachsicht : 0
         // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
         // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
         // Deckel liegt bei vierzehn – knapp sechs Meter Scheitelhoehe und
@@ -339,11 +333,10 @@ export class Skier {
         this.vy = Math.min(this._rise - G * dt, 14, kantenSprung(nx, nz))
         this.height = Math.min(free - groundY, 0.6)
       }
-      if (!halten || this.airborne) this.laden = 0
     } else if (this._nachsicht > 0) {
       this._nachsicht -= dt
-      if (los) {
-        this.vy = Math.min(this.vy + SPRUNG.pop + SPRUNG.ladung * this._kantenLadung, 14)
+      if (druck) {
+        this.vy = Math.min(this.vy + SPRUNG.pop, 14)
         this._nachsicht = 0
       }
     }
@@ -407,9 +400,7 @@ export class Skier {
     const bergab = 1 - THREE.MathUtils.clamp(-this.slope * 4, 0, 1)
     this.poise += (flott * bergab - this.poise) * damp(3, dt)
 
-    // Wer laedt, geht in die Hocke – wie am See sieht man, dass gleich
-    // etwas kommt.
-    const crouchTarget = this.laden * 0.7 + Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9 + this.tuck * 0.5
+    const crouchTarget = Math.abs(this.turn) * 0.35 + (this.landImpact || 0) * 0.9 + this.tuck * 0.5
     this.crouch += (Math.min(1.1, crouchTarget) - this.crouch) * damp(10, dt)
 
     this._applyPose(dt)
@@ -570,7 +561,6 @@ export class Skier {
     this.flip += (0 - this.flip) * damp(8, dt)
     this.spinVel = 0
     this.flipVel = 0
-    this.laden = 0
     this._nachsicht = 0
     this._wasAirborne = false
     this._parkSprung = false
@@ -716,7 +706,6 @@ export class Skier {
     this.speed = 0
     this.airborne = false
     this.vy = 0
-    this.laden = 0
     this._nachsicht = 0
     this.spin = 0
     this.spinVel = 0

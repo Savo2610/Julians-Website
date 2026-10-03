@@ -4,8 +4,8 @@ import { Skier } from '../src/player/skier.js'
 import { terrainHeight, PARK_FEATURES, PLATEAU, inFunpark } from '../src/world/heightfield.js'
 import { SPRUNG } from '../src/config.js'
 
-// Springen wie am Kabelsee (03.10.): Halten laedt, Loslassen springt, an der
-// Kante zaehlt der Moment. Gefahren wird ohne three.js-Szene und ohne
+// Springen (03.10.): Druecken springt sofort, im Funpark zaehlt an der Kante
+// der Moment wie am Kabelsee. Gefahren wird ohne three.js-Szene und ohne
 // Hindernisse – nur Gelaende.
 
 const welt = { resolve: (x, z) => ({ x, z, hit: false, pushX: 0, pushZ: 0 }), heightAt: terrainHeight }
@@ -56,47 +56,46 @@ function kicker(plan) {
 }
 
 const nurW = () => ['forward']
-const losAnDerKante = (u, luft) => (!luft && u < -0.25 ? ['forward', 'jump'] : ['forward'])
+// Drueckt die Leertaste, sobald die Kante u0 Meter nah ist, und haelt sie.
+const druckAb = (u0) => (u, luft) => (!luft && u >= u0 ? ['forward', 'jump'] : ['forward'])
+const anDerKante = druckAb(-0.25)
 
-test('Loslassen an der Kante springt hoeher als durchfahren oder durchhalten', () => {
+test('Druck an der Kante springt hoeher als durchfahren oder zu frueh', () => {
   const ohne = kicker(nurW)
-  const halten = kicker((u, luft, t) => (luft && t > 0.3 ? ['forward'] : ['forward', 'jump']))
-  const pop = kicker(losAnDerKante)
-  const frueh = kicker((u, luft) => (!luft && u < -4 ? ['forward', 'jump'] : ['forward']))
-  // Festhalten darf nicht besser sein als der richtige Moment.
-  assert.ok(Math.abs(halten.flug - ohne.flug) < 0.02, `halten ${halten.flug} ohne ${ohne.flug}`)
+  const pop = kicker(anDerKante)
+  const danach = kicker((u, luft, t) => (luft && t < 0.06 ? ['forward', 'jump'] : ['forward']))
+  const frueh = kicker(druckAb(-4))
   assert.ok(pop.flug > ohne.flug + 0.2, `Pop ${pop.flug} ohne ${ohne.flug}`)
+  // Nachsicht: kurz hinter der Kante zaehlt der Druck noch.
+  assert.ok(danach.flug > ohne.flug + 0.15, `danach ${danach.flug} ohne ${ohne.flug}`)
   assert.ok(frueh.flug < ohne.flug, `zu frueh ${frueh.flug}`)
 })
 
 test('Im Park drehen A/D und W/S in der Luft, die Landehilfe richtet gerade', () => {
   const springe = (taste, dauer) => kicker((u, luft, t) =>
-    luft ? (t < dauer ? [taste] : []) : losAnDerKante(u, luft))
+    luft ? (t < dauer ? [taste] : []) : anDerKante(u, luft))
   assert.deepEqual(springe('right', 0.8).tricks, ['360° · PERFEKT'])
   assert.deepEqual(springe('brake', 0.95).tricks, ['BACKFLIP · PERFEKT'])
   // Was beim Absprung schon liegt, dreht nicht: W haelt man beim Fahren.
-  assert.deepEqual(kicker(losAnDerKante).tricks, [])
+  assert.deepEqual(kicker(anDerKante).tricks, [])
 })
 
 test('Wer kopfueber landet, stuerzt und verliert sein Tempo', () => {
   // S bis zum Aufsetzen gehalten: gut anderthalb Saltos, die Landehilfe
   // kommt nicht zum Zug, der Fahrer setzt kopfueber auf.
-  const quer = kicker((u, luft) => (luft ? ['brake'] : losAnDerKante(u, luft)))
-  const sauber = kicker(losAnDerKante)
+  const quer = kicker((u, luft) => (luft ? ['brake'] : anDerKante(u, luft)))
+  const sauber = kicker(anDerKante)
   assert.deepEqual(quer.tricks, ['STURZ'])
   assert.ok(quer.tempo < sauber.tempo * 0.5, `${quer.tempo} gegen ${sauber.tempo}`)
 })
 
-test('Ausserhalb des Parks bleibt der Hopser der alte', () => {
+test('Ausserhalb des Parks springt die Leertaste sofort den alten Hopser', () => {
   assert.equal(inFunpark(PLATEAU.x, PLATEAU.z + 2), false)
   const s = new Skier(welt)
   s.versetzen(PLATEAU.x, PLATEAU.z + 2)
   s.speed = 8
   const inp = eingabe()
-  // Eine Sekunde laden: ausserhalb des Parks bringt das nichts.
-  for (let i = 0; i < 60; i++) { inp.setze(['jump']); s.update(1 / 60, inp, null) }
-  assert.equal(s.airborne, false, 'Halten allein springt nicht')
-  inp.setze([])
+  inp.setze(['jump'])
   s.update(1 / 60, inp, null)
   assert.equal(s.airborne, true)
   assert.ok(Math.abs(s.vy - (SPRUNG.hopser - 18 / 60)) < 1e-9, `vy ${s.vy}`)

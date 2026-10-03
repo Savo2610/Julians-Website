@@ -454,7 +454,7 @@ schiebt `World.resolve` nicht zurück, man fährt hindurch.
 data, height)`, Standard unendlich). `resolve` bekommt die Flughöhe des
 Fahrers und prüft gegen ein Halbkugelprofil. Steine tragen ihre gemessene
 Kuppenhöhe (0,2–0,9 m), liegende Stämme 0,62 m (Wurzelteller nicht); der
-Sprung mit der Leertaste (Loslassen) hat 1,14 m Scheitel. Gemessen: ohne Sprung bleibt
+Sprung mit der Leertaste hat 1,14 m Scheitel. Gemessen: ohne Sprung bleibt
 man am Stein hängen, mit Sprung fliegt man drüber. Bäume, Zäune, Häuser
 und Findlinge bleiben unendlich hoch. Nebenbei: die Kreise der Stämme lagen
 quer zum Stamm (`sin/cos` vertauscht) und sind jetzt längs.
@@ -482,7 +482,7 @@ oder am Lift hängt.
 ## 4a. Stationen benutzen: Enter, Heranzoomen, Glas
 
 **Tasten insgesamt** (`core/input.js`): WASD/Pfeile, Leertaste springen
-(halten, loslassen; im Park in der Luft WASD für Drehung und Salto), Enter/E benutzen, `M` Übersicht,
+(im Park an der Kante höher, in der Luft WASD für Drehung und Salto), Enter/E benutzen, `M` Übersicht,
 `R` zurück zum Start, `Tab` Reiter der Übersicht (Links, Talkarte, Pistenpass, Bestenliste), Esc/Backspace zurück.
 
 **Enter** (oder `E`, oder Antippen) ist die eine Taste. Vor einer Station
@@ -1228,7 +1228,7 @@ Prüfen am Rechner mit `?touch` erzwingbar; dann trägt `<html>` die Klasse
   der Daumen weit hinaus, wandert der Stick mit. Geprüft mit echten
   Pointer-Ereignissen: oben/rechts/unten-links kommen als oben/rechts/
   unten-links an.
-- **Sprungknopf** nur im Funpark oder auf der Rail: halten lädt, loslassen springt.
+- **Sprungknopf** nur im Funpark oder auf der Rail, gehalten statt getippt.
 - **Kartenknopf** oben rechts, nur am Handy (dort gibt es kein `M`), weg,
   solange Karte, Auswahl oder Lift offen sind. Das einzige Bedienelement,
   das immer da ist — auf ausdrücklichen Wunsch.
@@ -1320,19 +1320,19 @@ kippte ihn. Der Versuch wurde vollständig zurückgebaut; ein Kommentar in
 `heightfield.js` hält beide Gründe fest. **Airtime nur über Kicker mit Landung,
 die in Fahrtrichtung werfen.**
 
-**Absprung wie am Kabelsee** (03.10., Ansage: dort fühlen sich die Sprünge
-besser an). Leertaste halten lädt (0,45 s, Fahrer geht in die Hocke),
-Loslassen springt. Außerhalb des Funparks ist das der alte Hopser mit
-6,4 m/s, nur eben beim Loslassen – Rennstrecke, Wege und Zäune bleiben
-gleich. Im Park (`SPRUNG` in `config.js`):
+**Absprung mit Timing wie am Kabelsee** (03.10., Ansage: dort fühlen sich
+die Sprünge besser an). Leertaste **drücken** springt sofort – Halten zum
+Laden und Loslassen wie am See war gebaut und nicht eingängig genug (Ansage
+03.10.). Außerhalb des Funparks ist das der alte Hopser mit 6,4 m/s –
+Rennstrecke, Wege und Zäune bleiben gleich. Im Park (`SPRUNG` in `config.js`):
 
-- Loslassen auf der Schanze gibt `max(6,4, _rise + 1,2) + 1,2·Ladung`, höchstens 14.
-  Wer zu früh loslässt, bekommt nur, was die Rampe dort schon hebt.
-- Wer über die Kante durchhält, springt wie ohne Taste; Loslassen bis
-  0,12 s nach der Kante (`nachsicht`) gibt Pop und Ladung noch dazu.
-  Festhalten darf nicht besser sein als der richtige Moment.
-- Gemessen am kleinen Kicker bei Tempo 13: ohne Taste 1,03 s Flug, Loslassen
-  an der Kante 1,33 s, 4 m zu früh 0,80 s. Großer Kicker: 1,45 / 1,53–1,70 / 0,80 s.
+- Druck auf der Schanze gibt `max(6,4, _rise + 2,4)`, höchstens 14. Wer zu
+  früh drückt, bekommt nur, was die Rampe dort schon hebt.
+- Ohne Taste wirft die Kante wie bisher; ein Druck bis 0,12 s nach der
+  Kante (`nachsicht`) gibt den Pop noch dazu.
+- Gemessen am kleinen Kicker bei Tempo 13: ohne Taste 1,03 s Flug, Druck an
+  der Kante 1,33 s, kurz danach 1,30 s, 4 m zu früh 0,68 s. Großer Kicker:
+  1,45 / 1,53–1,58 / 0,68 s.
 
 **Tricks** nur im Funpark, gesteuert wie am See: in der Luft drehen A/D,
 W/S schlagen einen Salto, ohne Taste dreht die Landehilfe auf die nächste
@@ -1344,8 +1344,8 @@ nicht. Die Landung wird mit denselben Fenstern wie am See gewertet
 22 % Tempo, Sturz (quer oder kopfüber) 70 % und zeigt STURZ – liegen bleibt
 man im Tal nicht. Namen wie am See: 360°, BACKFLIP, CORK 540°; die
 Abzeichen 540/720 lesen die Gradzahl aus dem Namen. Am Boden stellt die
-Leertaste nur noch auf Box und Kante die Ski quer (Slide); im Schnee lädt
-sie, sonst führe man quer auf den Kicker.
+Leertaste (gehalten) nur noch auf Box und Kante die Ski quer (Slide);
+im Schnee nicht mehr, sonst führe man quer auf den Kicker.
 
 Geprüft: Slalombahn mit Autopilot vorher/nachher Bild für Bild gleich
 (Position und Tempo, 280 Bilder) – ohne Sprung ändert sich am Fahren nichts.

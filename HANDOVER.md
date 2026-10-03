@@ -63,8 +63,9 @@ aus Sicht des Fahrers lenken — genau deshalb war der Modus überhaupt möglich
 **Seit 28.09. abgeschaltet** (`CHASE.an = false`): die Nordabfahrt macht nicht
 so viel Spaß wie gedacht, die Rückseite wird neu gedacht, und dafür soll man
 sie aus der festen Kamera sehen. Die Anlage steht noch, `true` schaltet sie
-wieder ein. Vorschläge für die Rückseite: Sprung über die Klamm statt Steg,
-Geisterfahrer, Skisprungschanze, Gipfelbuch mit Komoot.
+wieder ein. Seit 04.10. hat die Rückseite eine Gabel an der Klamm (Schanze
+oder Bogenbrücke) und ein Gipfelbuch mit Komoot – siehe „Die Gabel an der
+Klamm“ in Abschnitt 4.
 
 *Die zweite Ausnahme* (26.09., auf Ansage): der **Drohnen-Rundflug**
 (Abschnitt 4a‴). Dort steuert niemand – der Fahrer steht, jede Taste beendet
@@ -336,10 +337,15 @@ ein Pfosten blieb bei 50° stecken) und setzen sich nach 12 s wieder zusammen,
 sobald der Fahrer ≥ 14 m weg ist. Die Kollision ist solange aus (`c.off` in
 `World.resolve`); dort hängt auch das erste echte `onHit`.
 
-**Hütte und See**: Die Après-Ski-Hütte steht rechts bei (23, −64), Front zur
-Kamera, mit neuneckig zugeschnittener Terrasse, drei Sitzgruppen und
-umwerfbaren Möbeln (`areas/apres-terrace.js`; stehen nach 10 s wieder auf, wenn der
-Fahrer ≥ 7 m weg ist). Der See hat eine eigene Bucht in `WORLD.basins`, damit
+**Hütte und See**: Die Après-Ski-Hütte (seit 04.10. nach der Vorlage
+„Gipfelstube“: Blockhaus auf Steinsockel, Giebel mit Schild „APRÈS-SKI“ zur
+Kamera – die Traufe hätte bei 36° Schild und Tür verdeckt –, grüne Läden mit
+Geranien, Kamin, Lichterketten, Wimpel, Schirme, Skiständer, stumme Boxen)
+steht rechts bei (24, −65,5), um 0,22 rad gegen die Kameraachse gedreht.
+Die Terrasse hat zwei Ebenen: das Sonnendeck links zur Piste liegt 40 cm
+tiefer, eine Rampe (2,6 m, höchstens 13°) verbindet sie, keine Stufe. Drei
+Sitzgruppen mit umwerfbaren Möbeln (`areas/apres-terrace.js`; stehen nach
+10 s wieder auf, wenn der Fahrer ≥ 7 m weg ist), Schirme kippen mit. Der See hat eine eigene Bucht in `WORLD.basins`, damit
 das ganze Eis befahrbar ist; `lakeRadius()` teilt die Uferkontur zwischen Mesh
 und Höhenfeld. **Weiße Spuren auf Eis und Holz** kamen vom Spurstempel, dessen
 Rand durch den nur 1,2 cm höheren Belag ragte — `surfaces.js` sperrt jetzt
@@ -450,6 +456,65 @@ tiefer lag, stand der Fahrer bis über die Ski im Schneebelag. Seit
 **exakt auf der Ebene des Stegs** (`BRUECKE.ebene`: Mitte, Richtung, Gefälle
 als feste Zahlen, quer mit dem Saum, längs 1,5 m vor den Enden ausgeblendet).
 Gemessen: ±1 cm.
+
+### Die Gabel an der Klamm (04.10., Zweig `nordabfahrt-neu`)
+
+Ansage: die Nordabfahrt soll spannender werden, ein Sprung statt (oder neben)
+der Brücke, mit Wegwahl für alle, die den Sprung nicht schaffen, und einer
+Weite, die man verbessern will. Was davon steht:
+
+- **Die Bahn wird an der Klamm breiter**: 22 statt 14 Meter. `makeLane` nimmt
+  dafür je Stützpunkt eine eigene Breite (`w`), gemischt wie die Höhe. Ohne
+  `w` ist alles wie vorher (über die ganze Karte nachgemessen: 0 cm). Die
+  Randstangen zählen vom Rand nach innen und gehen mit.
+- **Links die Klammschanze** (`SCHANZE` in `heightfield.js`): Gelände wie die
+  Kicker im Park – kubische Rampe, 7 m lang, Kante 2,6 m über der Bahn, quer
+  zur Klamm ausgerichtet (die Lücke ist dann überall 12,8 m). Hinter der
+  Kante bricht die Rampe auf einem halben Meter ab; lief sie in die
+  gerundete Oberkante aus, rollte man in die Rinne statt abzuheben. Drüben
+  ein **Landehügel** (1,6 m hoch, 15 m lang, unten quadratisch gerundet).
+  Zu sehen: Seitenbretter, ein Schanzentisch aus Bohlen mit rot-weißer
+  Kante und Weitenlinien bei 15, 20 (rot) und 25 m (`props/klamm-schanze.js`).
+- **Freier Flug** (`freiFlug()` in `heightfield.js`, `_luftY` in `skier.js`):
+  sonst rechnet das Fahrmodell die Flughöhe über dem Boden darunter – über der
+  Klamm tauchte man im Flug mit hinab. Wo `freiFlug` beim Absprung ja sagt,
+  fliegt man auf fester Höhe, bis der Boden einen wieder hat. Gilt nur an
+  der Schanze (und dort, wo der Funpark es einschaltet).
+- **Auf der Rampe kostet Steigen kein Tempo** (`schanzeAnlauf()`), und der
+  Schwung pendelt auf der Anfahrt und auf dem Steg nicht. Vorher bremste die
+  Rampe jeden auf 11,5 m/s, und alle flogen 13 m; der Schwung trug bis zu
+  2,6 m neben die Schanze. Gemessen jetzt: mit W 17–20 m, mit Pop an der
+  Kante 21–23 m, zu früh gedrückt hüpft man auf der Rampe, ausrollend aus
+  7 m/s landet man in der Klamm (und fährt sie seitlich hinaus). Pop und
+  Tricks wie im Funpark. Tests: `tests/klammschanze.test.js`.
+- **Weite** (`attractions/klamm-sprung.js`): von der Kante bis zum Aufsetzen,
+  längs der Schanze. Frosttext oben wie die Zeitnahme („21,3 m“, darunter
+  Bestweite oder „Neue Bestweite“, in der Rinne „Zu kurz“), dazu eine Tafel
+  am Fuß des Landehügels. Bestweite nur im Browser
+  (`skiportfolio.klammsprung`). **Keine Bestenliste** – erst, wenn sich
+  zeigt, dass man hier wirklich um Meter fährt; dann über den Worker wie
+  beim Slalom (sonst ist jede Zahl in der Konsole zu setzen).
+- **Rechts die Bogenbrücke** (`props/gorge-bridge.js`), 9,5 m neben der
+  Schanze (`BRUECKE` 4,5 m weiter südlich als der alte Steg). Tragender
+  Streifen 4 m, Saum nur noch 0,7 m, Deck 6,2 m: Bögen über dem Deck,
+  Hänger, Andreaskreuze im Geländer, Steinwiderlager, Laternen an den Ecken.
+  Erst lagen die Bögen unter dem Deck – dort steht aber der Damm aus
+  Gelände, der den Fahrer trägt, und man sah von ihnen nichts.
+- **Stangen**: quer vor der Klamm mit zwei Lücken (Brücke, Schanze), dazu eine
+  rote Trennlinie 10–21 m vor der Rinne, damit man sich vorher entscheidet.
+- **Zugefrorener Bach** in der Sohle (`props/klamm-eis.js`), nicht unter dem
+  Damm. Seit an Brücke und Schanze kein Fels mehr liegen darf (er stünde in
+  Spur und Flugbahn), hatte die Klamm dort sonst keine Kante. `surfaces.js`
+  hält Spur und Staub vom Eis fern.
+
+**Gipfelbuch** (`props/gipfelbuch.js`, Station `gipfelbuch`): Komoot hatte
+keinen Platz im Tal. Es steht auf dem Rücken gut zehn Meter links hinter dem
+Startbogen (−65,6, −79,1), mit Blick ins Nordkar – nicht am Gipfelkreuz, wo
+jeder aus dem Lift vorbeikommt (Ansage: man soll es selbst entdecken). Rote
+Blechkassette mit weißem Kreuz auf einem Pfahl, Steinmann, Bank zur Aussicht.
+Herangezoomt klappt der Deckel auf, das Buch hebt sich heraus und blättert,
+beim Öffnen ein Stempel. Nicht auf der Talkarte (`VERSTECKT`), die
+Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
 
 **Charakter**: dichter Wald (Dichte-Aufschlag über `nordDist`), Felsriegel auf
 dem Grat, Wildspuren im Schnee (`stampTrack` in `snow-writing.js`, gestempelt in
@@ -709,7 +774,7 @@ Die Tafel ist eine Station (`id: 'talplan'`, `map: base`). **`M` überall**
   Menü. Fenster (Solana, Upload, Kurzlink) schließen die Übersicht vorher;
   wer sie mit Esc oder × schließt, ist wieder in der Übersicht auf derselben
   Kachel (ein `close`-Horcher in der Capture-Phase des Dokuments).
-  Spotify und Komoot stehen nur hier (noch kein Platz im Tal).
+  Spotify steht nur hier (noch kein Platz im Tal), Komoot auch im Gipfelbuch.
 - *Talkarte*: links die Karte mit Pins und „Du“, rechts die Legende,
   gruppiert nach den Wegen wie die Links (Karriere, Kontakt & Gipfel,
   Tools), dann Lifte und Orte (Start, Gipfel, Funpark, Hütte, See).
@@ -1527,12 +1592,12 @@ Abschnitt 1, Nordabfahrt).
 
 ## 9. Offen
 
-- **Spotify** (`https://stats.fm/savo`) und **Komoot**
-  (`https://www.komoot.de/user/464140060326`) haben noch keinen Platz im Tal
-  (in der Übersicht stehen sie schon, unter „Außerdem“).
-  Vom Nutzer ausdrücklich zurückgestellt, aber noch zu tun. Vorschlag aus der
-  letzten Sitzung: Spotify auf die Terrasse der Après-Ski-Hütte („Höre was ich
-  höre"), Komoot als Gipfelbuch am Gipfelkreuz („Wandern & Radfahren").
+- **Spotify** (`https://stats.fm/savo`) hat noch keinen Platz im Tal (in der
+  Übersicht steht es unter „Außerdem“). Vorschlag: auf die Terrasse der
+  Après-Ski-Hütte („Höre was ich höre"). Komoot liegt seit 04.10. im
+  Gipfelbuch über der Nordabfahrt.
+- **Klammsprung**: Bestenliste und ein Abzeichen (etwa 25 m) sind denkbar,
+  aber erst nach Rückfrage – zuerst zeigen, ob die Weite Spaß macht.
 - **Die Rodelbahn als Slalom** (`race.js`): 17 statt 13 m breit, zwei
   Stützpunkte 1 m nach links gerückt (rechts Fels und Wald bei 8 m), die
   Pistenkanone 3,2 m auf die Piste versetzt. Vier Tore, streng im Wechsel

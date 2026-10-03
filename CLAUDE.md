@@ -32,7 +32,9 @@ Das Wichtigste in Kürze:
 - `terrainHeight(x, z)` in `src/world/heightfield.js` ist die **einzige**
   Höhenquelle für Mesh und Kollision und darf sich nie selbst aufrufen.
   Eine Stufe ist keine Schanze: wo eine Kante nicht abwerfen soll (Badesteg),
-  deckelt `kantenSprung()` den Absprung.
+  deckelt `kantenSprung()` den Absprung. Über eine Lücke (Klammschanze der
+  Nordabfahrt) fliegt man nur, wo `freiFlug()` es sagt – sonst sinkt der
+  Fahrer im Flug mit dem Boden darunter mit.
 - Kommentare und Commits auf **Deutsch**, und sie erklären das *Warum*, meist
   mit einer gemessenen Zahl.
 - Klein und dicht — ein Spielzeugtal. Im Zweifel schrumpfen.

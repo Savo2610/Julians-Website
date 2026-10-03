@@ -6,7 +6,9 @@
 // Tal (linkliste.js) zeigt ihn fuer alle.
 //
 // Drohne, Loeschzug und die gefrorene Quelle fehlen absichtlich: sie liegen
-// abseits, damit man sie findet.
+// abseits, damit man sie findet. Ebenso das Gipfelbuch ueber der
+// Nordabfahrt: Komoot steht hier ohne Station, sonst verriete die Kachel,
+// wo es liegt.
 //
 // Reines Datenmodul ohne Browser und three.js – vite.config.js liest es
 // beim Bauen.
@@ -30,7 +32,8 @@ export const KACHELN = [
     { icon: '⏱️', label: 'Arbeitszeit', sub: 'Wie lange arbeitest du?', link: 'worktime', station: 'worktime' },
     { icon: '📤', label: 'File Uploader', sub: 'Sende mir Dateien', link: 'upload', station: 'upload' },
   ] },
-  // Spotify und Komoot haben noch keinen Platz im Tal (HANDOVER, Offen).
+  // Spotify hat noch keinen Platz im Tal (HANDOVER, Offen); Komoot liegt im
+  // Gipfelbuch, verraten wird es hier nicht.
   { titel: 'Außerdem', kacheln: [
     { icon: '🎵', label: 'Spotify', sub: 'Höre was ich höre', link: 'spotify' },
     { icon: '🏔️', label: 'Komoot', sub: 'Wandern & Radfahren', link: 'komoot' },

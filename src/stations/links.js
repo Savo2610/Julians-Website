@@ -19,8 +19,9 @@ export const LINKS = {
   paypal: 'https://paypal.me/juliansebv',
   solana: 'solana:BvCkY1zzww8gv6Akn7XNPw9dzj4XJxyyT4GHF9Jev5Da',
 
-  // Noch ohne Platz im Tal (siehe HANDOVER, Offen) – bis dahin nur in der
-  // Uebersicht, damit sie gegenueber veerka.mp nicht fehlen.
+  // Spotify hat noch keinen Platz im Tal (siehe HANDOVER, Offen) und steht
+  // bis dahin nur in der Uebersicht. Komoot liegt im Gipfelbuch ueber der
+  // Nordabfahrt.
   spotify: 'https://stats.fm/savo',
   komoot: 'https://www.komoot.de/user/464140060326',
 

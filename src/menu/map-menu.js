@@ -34,7 +34,7 @@ import { listeZeichnen } from './bestenliste.js'
 // Kachelseite standen sie auch nicht. Die Kacheln selbst stehen in
 // kacheln.js, weil auch die Linkliste ohne Tal sie braucht.
 
-const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast'])
+const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast', 'gipfelbuch'])
 
 // Welche Station an welchem Weg liegt – fuer die Farbe in der Liste.
 const WEG = {

@@ -10,6 +10,7 @@ import { createGearDepot } from '../world/props/gear-depot.js'
 import { createWorkbench } from '../world/props/workbench.js'
 import { createTicketBooth } from '../world/props/ticket-booth.js'
 import { createTimeClock } from '../world/props/time-clock.js'
+import { createGipfelbuch } from '../world/props/gipfelbuch.js'
 import { CAMERA } from '../config.js'
 import { TOUCH } from '../core/device.js'
 import { findFlatSpot } from '../world/heightfield.js'
@@ -89,6 +90,10 @@ export const STATION_SPOTS = {
   // und hinten und an den Seiten stehen eigene Baumgruppen (GROVES in
   // landscape-layout.js) – nach vorn zur Kamera bleibt er sichtbar.
   firetruck: { x: -15, z: 43, clearing: 4.5, footprint: 3.2, search: 4, trail: null },
+  // Das Gipfelbuch auf dem Ruecken links neben dem Startbogen der
+  // Nordabfahrt, gut zehn Meter vom Tor und zwei Meter unter ihm: man sieht
+  // es, wenn man oben steht und sich umschaut, nicht schon aus dem Lift.
+  gipfelbuch: { x: -66.5, z: -79, clearing: 3.5, footprint: 2.0, search: 2, trail: null },
 }
 
 // Abstand der Werkbank vor der Huettenmitte, zur Kamera hin. Die Huette ist
@@ -450,6 +455,36 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     if (!e.persisted) return
     truck.userData.zurueck?.()
     document.querySelector('.ausfahrt')?.classList.remove('an')
+  })
+
+  // --- Abseits: das Gipfelbuch -------------------------------------------
+  // Komoot hatte bisher keinen Platz im Tal und stand nur in der Uebersicht.
+  // Touren gehoeren in ein Gipfelbuch, und das steht oben am Berg, wo man
+  // es findet, wenn man sich umschaut.
+  const buch = createGipfelbuch({ blick: Math.PI * 0.75 })
+  place(buch, STATION_SPOTS.gipfelbuch, { rotation: FACING, collider: 0.3 })
+  // Steinmann und Bank sind feste Hindernisse; die Bank ist niedrig genug,
+  // um sie zu ueberspringen.
+  {
+    const { x, z } = STATION_SPOTS.gipfelbuch
+    const c = Math.cos(FACING), sn = Math.sin(FACING)
+    const welt = (lx, lz) => [x + lx * c + lz * sn, z - lx * sn + lz * c]
+    world.addCollider(...welt(-1.25, -0.35), 0.45)
+    world.addCollider(...welt(1.2, -0.6), 0.6, null, 0.75)
+  }
+  register({
+    id: 'gipfelbuch',
+    label: 'Gipfelbuch',
+    hint: 'Eintragen',
+    color: '#6aa127',
+    position: STATION_SPOTS.gipfelbuch,
+    radius: 4,
+    labelHeight: world.heightAt(STATION_SPOTS.gipfelbuch.x, STATION_SPOTS.gipfelbuch.z) + 2.4,
+    object: buch,
+    focus: { abstand: 6, hoehe: 1.2, vor: 0.6 },
+    choices: [
+      { label: 'Komoot', sub: 'Wandern & Radfahren', glyph: 'berg', url: LINKS.komoot, color: '#6aa127' },
+    ],
   })
 
   return { animated, pipe }

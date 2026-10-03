@@ -227,7 +227,8 @@ function emitGold(dt) {
 // --- Schneestaub aus den Ski ------------------------------------------------
 let sprayAccum = 0
 function emitSpray(dt) {
-  if (skier.airborne || skier.speed < 1 || !isSnowSurface(skier.position.x, skier.position.z, 0.7)) {
+  // Auf dem Holz einer Box staubt nichts.
+  if (skier.airborne || skier._box || skier.speed < 1 || !isSnowSurface(skier.position.x, skier.position.z, 0.7)) {
     sprayAccum = 0
     return
   }

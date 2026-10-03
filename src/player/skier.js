@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, SPRUNG } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 import { landeStufe } from '../core/landung.js'
 
@@ -49,8 +49,12 @@ export class Skier {
 
     // --- Sprung --------------------------------------------------------
     this._nachsicht = 0             // s, in denen ein Druck nach der Kante noch zaehlt
+    this._nachPop = 0               // m/s, die ein solcher Druck noch gibt
     this._parkSprung = false        // dieser Flug begann im Funpark
     this._luftY = null              // Flughoehe ueber Null bei freiem Flug, sonst NaN
+    this._g = 18                    // Schwerkraft dieses Flugs, beim Absprung festgelegt
+    this._abTempo = null            // Tempo beim Absprung im Park, sonst null
+    this._box = null                // { f, start, stellung, … } solange man auf einer Box slidet
 
     // --- Tricks ---------------------------------------------------------
     // spin ist eine Drehung des Modells *gegen* die Fahrtrichtung, flip ein
@@ -156,6 +160,10 @@ export class Skier {
       this._updateTowed(dt, input, trail)
       return
     }
+    if (this._box) {
+      this._updateBox(dt, input, trail)
+      return
+    }
 
     // --- Lenkung -------------------------------------------------------
     // A/D drehen die Fahrtrichtung aus Sicht des Fahrers. Positives steer =
@@ -182,15 +190,22 @@ export class Skier {
     const swingSpeed = THREE.MathUtils.clamp(
       (this.speed - SKIER.swingMinSpeed) / (SKIER.cruiseSpeed - SKIER.swingMinSpeed), 0, 1,
     )
-    if (this.speed > 0.1) {
+    // Im Funpark kein Pendeln auf der Schanze, vor einer Box und im Flug:
+    // wer pendelnd an die Kante kam, flog bis zu 30 Grad schraeg ab und
+    // landete neben dem Landehang in der Flanke, und eine Box verfehlte er
+    // ohne Lenken um 2,8 m. In der Luft zog das Pendeln die Bahn in eine
+    // Schlangenlinie.
+    const ruhigFliegen = this.airborne && this._abTempo != null
+    const rampe = !this.airborne && vorFigur(this.position.x, this.position.z)
+    if (this.speed > 0.1 && !ruhigFliegen) {
       this.swingPhase += (this.speed / SKIER.swingWavelength) * Math.PI * 2 * dt
     }
-    const swingTarget =
+    const swingTarget = rampe ? 0 :
       Math.sin(this.swingPhase) *
       SKIER.swingAmplitude *
       swingSpeed *
       (1 - Math.abs(this.steer) * 0.9)
-    this.swing += (swingTarget - this.swing) * damp(8, dt)
+    if (!ruhigFliegen) this.swing += (swingTarget - this.swing) * damp(rampe ? 14 : 8, dt)
 
     this.facing = this.heading + this.swing
     this.forward.set(Math.sin(this.facing), 0, Math.cos(this.facing))
@@ -292,7 +307,13 @@ export class Skier {
     // lang, wie der Park breit ist. Wer in der Luft langsamer wird, bleibt
     // laenger oben und kommt trotzdem auf dem Hang auf. Nebenbei ist es genau
     // das, was man erwartet: quer in der Luft stehen kostet Tempo.
-    const G = 18
+    //
+    // Im Funpark fliegt man leichter (SPRUNG.schwerkraft, wie am Kabelsee):
+    // dort ist der Flug die Figur. Entschieden wird beim Absprung und dann
+    // fuer den ganzen Flug behalten – sonst kippte die Bahn am Parkrand.
+    const park = inFunpark(nx, nz)
+    const parkRegeln = parkFlug(nx, nz)
+    const G = this.airborne && this._luftY != null ? this._g : parkRegeln ? SPRUNG.schwerkraft : 18
     const groundY = terrainHeight(nx, nz)
     // Wie schnell der Boden den Fahrer gerade anhebt. Auf einer Schanze ist
     // das die Steiggeschwindigkeit, mit der er ueber die Kante geht.
@@ -302,7 +323,6 @@ export class Skier {
     // und Loslassen wie am See war nicht eingaengig genug). Im Funpark
     // zaehlt dafuer der Moment wie am See – ueberall sonst ist es der alte
     // Hopser mit 6,4 m/s, auf der Rennstrecke aendert sich nichts.
-    const park = inFunpark(nx, nz)
     const druck = input.justPressed('jump')
 
     if (!this.airborne) {
@@ -315,8 +335,11 @@ export class Skier {
         // zu frueh drueckt, bekommt nur den flachen Teil. Gemessen am
         // grossen Kicker 4 m vor der Kante: Steigrate 3,5 statt gut 12.
         this.airborne = true
-        this.vy = park ? Math.min(Math.max(SPRUNG.hopser, this._rise + SPRUNG.pop), 14) : SPRUNG.hopser
-      } else if (this._rise > 3.2 && free > groundY + 0.03) {
+        // Der Hopser im Park ist bei leichterer Schwerkraft kleiner, damit er
+        // genauso hoch bleibt (1,14 m Scheitel) und nicht ueber den Kicker traegt.
+        const hopser = parkRegeln ? SPRUNG.parkHopser : SPRUNG.hopser
+        this.vy = park ? Math.min(Math.max(hopser, this._rise + SPRUNG.pop), 14) : SPRUNG.hopser
+      } else if (this._rise > 3.2 && free > groundY + 0.03 && !ohneAbwurf(nx, nz)) {
         // Faellt der Boden hinter der Kante schneller weg, als die Schwerkraft
         // den Fahrer holt, hebt er ab. Kein Sprungknopf noetig – die Schanze
         // macht die Arbeit, so wie im Gelaende auch. Im Park darf man kurz
@@ -325,6 +348,7 @@ export class Skier {
         // um zwei Bilder).
         this.airborne = true
         this._nachsicht = park ? SPRUNG.nachsicht : 0
+        this._nachPop = SPRUNG.pop
         // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
         // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
         // Deckel liegt bei vierzehn – knapp sechs Meter Scheitelhoehe und
@@ -337,8 +361,9 @@ export class Skier {
     } else if (this._nachsicht > 0) {
       this._nachsicht -= dt
       if (druck) {
-        this.vy = Math.min(this.vy + SPRUNG.pop, 14)
+        this.vy = Math.min(this.vy + this._nachPop, 14)
         this._nachsicht = 0
+        if (this._abTempo != null) this.speed = this._steil(this._abTempo, this.vy)
       }
     }
 
@@ -347,6 +372,13 @@ export class Skier {
       // oder auf fester Hoehe bleibt (freiFlug in heightfield.js).
       if (this._luftY == null) {
         this._luftY = freiFlug(nx, nz) ? groundY + this.height : NaN
+        this._g = G
+        // Im Park fliegt man hoch statt weit: die Kante lenkt das Tempo nach
+        // oben um, statt Hoehe obendrauf zu legen. Sonst trug jede Sekunde
+        // mehr Luft neun Meter weiter, und kein Landehang im Park waere lang
+        // genug fuer einen 720.
+        this._abTempo = parkRegeln ? this.speed : null
+        if (parkRegeln) this.speed = this._steil(this.speed, this.vy)
       }
       this.vy -= G * dt
       if (Number.isNaN(this._luftY)) this.height += this.vy * dt
@@ -359,6 +391,18 @@ export class Skier {
         this.height = 0
         this.airborne = false
         this.landImpact = Math.min(1, -this.vy / 12)
+        // Und der Landehang gibt es zurueck: auf dem Gefaelle wird aus der
+        // Fallgeschwindigkeit wieder Fahrt, hoechstens so viel wie beim
+        // Absprung. Wer flach aufsetzt, bleibt langsam.
+        if (this._abTempo != null) {
+          // Gemessen um den Aufsetzpunkt herum, nicht nur nach vorn: am Fuss
+          // des Landehangs saehe der Blick nach vorn schon den flachen Auslauf.
+          const fx = this.forward.x * 0.6, fz = this.forward.z * 0.6
+          const a = Math.atan(Math.max(0, (terrainHeight(nx - fx, nz - fz) - terrainHeight(nx + fx, nz + fz)) / 1.2))
+          const hang = this.speed * Math.cos(a) - this.vy * Math.sin(a)
+          this.speed = Math.max(this.speed, Math.min(this._abTempo, hang))
+          this._abTempo = null
+        }
         this.vy = 0
         this._luftY = null
       }
@@ -373,6 +417,7 @@ export class Skier {
     this.position.y = groundY + this.height
 
     this._updateTrick(dt, input)
+    if (!this.airborne) this._aufBox(input)
 
     // --- Haltung --------------------------------------------------------
     const speedNorm = THREE.MathUtils.clamp(this.speed / SKIER.cruiseSpeed, 0, 1.4)
@@ -466,8 +511,12 @@ export class Skier {
       // die naechste Landestellung – sacht im Steigen, entschieden kurz vor
       // dem Aufsetzen. Halbe Umdrehungen beim Drehen, ganze beim Salto.
       const snap = this.vy < 0 && this.height < 2.2 ? TRICK.assistLand : TRICK.assistRise
+      // Ueber einer Box darf man quer landen: dort hilft sie auf die naechste
+      // Vierteldrehung, sonst drehte sie einen Boardslide mitten im Sprung
+      // von Box zu Box halb heraus und er landete wackelig.
+      const raster = ueberBox(this.position.x, this.position.z) ? Math.PI / 2 : Math.PI
       if (!steer) {
-        const t = Math.round(this.spin / Math.PI) * Math.PI
+        const t = Math.round(this.spin / raster) * raster
         this.spin += (t - this.spin) * damp(snap, dt)
         this.spinVel *= Math.exp(-8 * dt)
       }
@@ -500,7 +549,9 @@ export class Skier {
     // Leertaste den Sprung, und wer vor dem Kicker laedt, soll gerade
     // hinauffahren. Zu welcher Seite, entscheidet die letzte Lenkung – so
     // slidet man aus der Kurve heraus und nicht gegen sie.
-    const aufBox = inFunpark(this.position.x, this.position.z) && onParkRail(this.position.x, this.position.z)
+    // Die Boxen haben seit 04.10. ihre eigene Fahrt (_updateBox); hier
+    // bleibt nur die Schneekante unter dem Rail.
+    const aufBox = inFunpark(this.position.x, this.position.z) && onParkRail(this.position.x, this.position.z) && !boxDeck(this.position.x, this.position.z)
     const sliding = aufBox && !this.airborne && input.has('jump') && this.speed > TRICK.slideMinSpeed
     if (sliding && this.slide < 0.05 && this.slide > -0.05) {
       this.slideSide = this.steer >= 0 ? 1 : -1
@@ -513,6 +564,12 @@ export class Skier {
     if (sliding) this.speed -= this.speed * TRICK.slideDrag * Math.abs(this.slide) * dt
   }
 
+  // Tempo in der Waagerechten, wenn die Kante `tempo` mit `vy` nach oben
+  // wirft: der Anteil, der nach vorn bleibt.
+  _steil(tempo, vy) {
+    return tempo * Math.cos(Math.atan2(Math.max(0, vy), tempo)) ** 2
+  }
+
   // Aufgesetzt nach einem Flug im Park: Figur benennen und Landung werten,
   // mit denselben Fenstern wie am See. Quer oder kopfueber heisst Sturz – im
   // Tal liegt man dann nicht, verliert aber fast alles Tempo.
@@ -521,7 +578,10 @@ export class Skier {
     const f = this._flug
     const dSpin = this.spin - f.spin
     const dFlip = this.flip - f.flip
-    const q = landeStufe(this.spin, this.flip, TRICK)
+    // Auf einer Box darf man quer aufsetzen – dort zaehlt die naechste
+    // Vierteldrehung, wie am See.
+    const slider = ueberBox(this.position.x, this.position.z)
+    const q = landeStufe(this.spin, this.flip, TRICK, { slider })
     this._flug = null
     if (q.key === 'crash') {
       this.speed *= 0.3
@@ -530,7 +590,12 @@ export class Skier {
       return
     }
     if (q.key === 'sketchy') this.speed *= 0.78
-    const halves = Math.min(8, Math.round(Math.abs(dSpin) / Math.PI))
+    // Wer quer von der Box kommt, dreht sich zurueck in die Fahrt – das ist
+    // eine Vierteldrehung und noch kein 180. Gezaehlt werden erst volle
+    // halbe Umdrehungen darueber hinaus.
+    const halves = Math.min(8, f.box
+      ? Math.floor(Math.abs(dSpin) / Math.PI + 0.25)
+      : Math.round(Math.abs(dSpin) / Math.PI))
     const flips = Math.round(Math.abs(dFlip) / TAU)
     let name = ''
     if (flips > 0) {
@@ -540,10 +605,148 @@ export class Skier {
     } else if (halves > 0) {
       name = `${halves * 180}°`
     }
+    // Erst die Box, dann was in der Luft kam: „BOARDSLIDE 5 m · 360°“.
+    if (f.box) name = name ? `${f.box} · ${name}` : f.box
     if (!name) return
     if (q.key === 'perfect') name += ' · PERFEKT'
     if (q.key === 'sketchy') name += ' · WACKELIG'
     this.trick = { text: name, tone: q.key === 'sketchy' ? 'meh' : 'good' }
+  }
+
+  // --- Box ---------------------------------------------------------------
+  // Wie am Kabelsee: wer auf das Deck einer Box kommt – hinaufgefahren oder
+  // hinaufgesprungen –, rastet ein. Die Box legt dann die Richtung fest, A/D
+  // drehen nur noch die Stellung (laengs 50-50, quer Boardslide), und am
+  // Ende wirft sie ab. Die Leertaste springt jederzeit herunter, mit Pop.
+  //
+  // Gutmuetig: es reicht, ungefaehr in Richtung der Box zu fahren (bis
+  // TRICK.boxWinkel daneben). Die Schraege beim Aufsetzen bleibt als
+  // Stellung erhalten und rastet auf die naechste Vierteldrehung ein – wer
+  // quer daraufspringt, slidet quer.
+  _aufBox(input) {
+    if (this.speed < TRICK.boxMinTempo) return
+    const d = boxDeck(this.position.x, this.position.z)
+    if (!d || d.u > d.ende - 0.5) return
+    const dir = Math.atan2(d.f.dx, d.f.dz)
+    let schraeg = this.facing - dir
+    schraeg = Math.atan2(Math.sin(schraeg), Math.cos(schraeg))
+    if (Math.abs(schraeg) > TRICK.boxWinkel) return
+    const q = Math.PI / 2
+    this.spin = Math.round((this.spin + schraeg) / q) * q
+    this.spinVel = 0
+    this.heading = this.facing = this._prevFacing = dir
+    this.swing = 0
+    this.slide = 0
+    this._box = { f: d.f, start: d.u, stellung: null, ziel: null, vorher: [], gesperrt: new Set(richtungen(input)) }
+    this._boxStellung(true)
+  }
+
+  // Name der Stellung auf der Box; meldet sich, wenn sie wechselt.
+  _boxStellung(neu) {
+    const q = Math.round(this.spin / (Math.PI / 2))
+    const name = q % 2 ? 'BOARDSLIDE' : '50-50'
+    if (name !== this._box.stellung) {
+      this._box.stellung = name
+      if (!neu || !this.trick) this.trick = { text: name, tone: 'good' }
+    }
+  }
+
+  _updateBox(dt, input, trail) {
+    const b = this._box
+    const f = b.f
+    const dir = Math.atan2(f.dx, f.dz)
+    const aktiv = richtungen(input)
+    for (const r of b.gesperrt) if (!aktiv.includes(r)) b.gesperrt.delete(r)
+    const frei = (r) => aktiv.includes(r) && !b.gesperrt.has(r)
+
+    // Laengs entlang, quer sacht zur Mitte. Fast ohne Reibung: die Box ist
+    // kurz, und wer langsam wird, faellt herunter statt zu sliden.
+    this.speed *= Math.exp(-TRICK.boxDrag * dt)
+    const ax = this.position.x - f.x
+    const az = this.position.z - f.z
+    let u = ax * f.dx + az * f.dz + this.speed * dt
+    let v = -ax * f.dz + az * f.dx
+    v += (0 - v) * damp(10, dt)
+    this.position.x = f.x + f.dx * u - f.dz * v
+    this.position.z = f.z + f.dz * u + f.dx * v
+
+    this.heading = this.facing = this._prevFacing = dir
+    this.forward.set(f.dx, 0, f.dz)
+    this.swing = 0
+    this.steer += (input.steer - this.steer) * damp(SKIER.steerLerp, dt)
+
+    // A/D drehen die Stellung um eine Vierteldrehung je Druck: D quer
+    // gestellt ist der Boardslide, noch einmal D steht man rueckwaerts.
+    // Am See dreht Halten weiter, bis man loslaesst – hier sprang die
+    // Anzeige dabei zwischen 50-50 und Boardslide hin und her (gemessen:
+    // viermal in einer Sekunde), und wer nur quer wollte, stand verkehrt.
+    const q = Math.PI / 2
+    if (b.ziel == null) b.ziel = Math.round(this.spin / q)
+    const neu = (r) => frei(r) && !b.vorher.includes(r)
+    if (neu('rechts')) b.ziel -= 1
+    if (neu('links')) b.ziel += 1
+    b.vorher = aktiv
+    this.spin += (b.ziel * q - this.spin) * damp(14, dt)
+    this.spinVel = 0
+    this.flip += (0 - this.flip) * damp(10, dt)
+    this.slide += (0 - this.slide) * damp(10, dt)
+    this._boxStellung(false)
+
+    const groundY = terrainHeight(this.position.x, this.position.z)
+    this.position.y = groundY + TRICK.boxDeck
+    this.height = 0
+    this._prevGroundY = groundY
+    this._rise = 0
+    this.slope = slopeAlong(this.position.x, this.position.z, f.dx, f.dz)
+
+    const ende = f.length * 0.5 - f.ramp + 0.2
+    const druck = input.justPressed('jump')
+    if (druck || u >= ende || this.speed < TRICK.boxMinTempo * 0.6) {
+      this._vonBox(druck, u - b.start, input)
+    }
+
+    // Haltung: leicht in den Knien, aufrecht, kein Pflug, keine Hocke.
+    this.turn += (0 - this.turn) * damp(10, dt)
+    this.lean += (0 - this.lean) * damp(8, dt)
+    this.pitch += (0 - this.pitch) * damp(8, dt)
+    this.crouch += (0.35 - this.crouch) * damp(8, dt)
+    this.tuck += (0 - this.tuck) * damp(8, dt)
+    this.plough += (0 - this.plough) * damp(8, dt)
+    this.cross += (0 - this.cross) * damp(8, dt)
+    this.poise += (0 - this.poise) * damp(8, dt)
+    this.landImpact = (this.landImpact || 0) * (1 - damp(6, dt))
+    this._applyPose(dt)
+    // Holz nimmt keine Spur an.
+    this._trailInit = false
+  }
+
+  // Herunter von der Box: am Ende wirft sie ab, mit der Leertaste springt
+  // man selbst (Pop). Der Flug ist ein Parkflug wie von einer Schanze, mit
+  // der Box im Namen.
+  _vonBox(druck, weg, input) {
+    const stellung = this._box.stellung
+    this._box = null
+    const meter = Math.max(1, Math.round(weg))
+    this.airborne = true
+    this.vy = SPRUNG.boxAbwurf + (druck ? SPRUNG.boxPop : 0)
+    // Vom Holz aus, nicht vom Schnee darunter – sonst sackte er beim
+    // Absprung erst um die Dicke des Decks durch.
+    this.height = TRICK.boxDeck
+    this._luftY = null
+    // Wer quer steht, dreht in der Luft von selbst zurueck in die Fahrt und
+    // nicht weiter in den Fakie: die Landehilfe nimmt die naechste halbe
+    // Umdrehung, und von genau 90 Grad aus waeren beide gleich weit.
+    const q = Math.PI / 2
+    if (Math.abs(Math.round(this.spin / q)) % 2 === 1) this.spin -= Math.sign(this.spin) * 0.05
+    this._wasAirborne = true
+    this._parkSprung = true
+    this._nachsicht = druck ? 0 : SPRUNG.nachsicht
+    this._nachPop = SPRUNG.boxPop
+    this._flug = {
+      spin: this.spin, flip: this.flip,
+      gesperrt: new Set(richtungen(input)),
+      box: `${stellung} ${meter} m`,
+    }
   }
 
   // Am Schlepplift gibt der Lift die Position vor. Alles andere laeuft
@@ -563,6 +766,8 @@ export class Skier {
     this.height = 0
     this.airborne = false
     this._luftY = null
+    this._abTempo = null
+    this._box = null
     this._rise = 0
     this._prevGroundY = groundY
     // Am Buegel oder auf dem Band wird nicht getrickst. Auf der Rail schon:
@@ -726,6 +931,8 @@ export class Skier {
     this.flipVel = 0
     this._wasAirborne = false
     this._parkSprung = false
+    this._box = null
+    this._abTempo = null
     this.heading = heading
     this.facing = heading
     this._prevFacing = heading

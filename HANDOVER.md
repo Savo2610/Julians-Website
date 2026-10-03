@@ -1426,6 +1426,30 @@ im Schnee nicht mehr, sonst führe man quer auf den Kicker.
 Geprüft: Slalombahn mit Autopilot vorher/nachher Bild für Bild gleich
 (Position und Tempo, 280 Bilder) – ohne Sprung ändert sich am Fahren nichts.
 
+**Funpark neu (04.10., Zweig `nordabfahrt-neu`)** – Ansage: der Park macht
+nicht so viel Spaß wie erhofft, Boxen funktional wie am Kabelsee, Sprünge
+spannender.
+
+- **Boxen**: wer auf das Deck fährt oder springt (bis gut 50° schräg, ab
+  Tempo 3), rastet ein und steht 10 cm über dem Schnee auf dem Holz. A/D
+  stellen die Ski je Druck um eine Vierteldrehung: **50-50** längs,
+  **BOARDSLIDE** quer. Am Ende rutscht man herunter, mit der Leertaste
+  springt man jederzeit ab und kann noch drehen; gemeldet wie
+  `50-50 6 m · 360° · PERFEKT`. Anrampung und Wellen werfen nicht mehr von
+  selbst ab (`ohneAbwurf()`): der letzte Wellenhopser trug über die ganze
+  erste Box. Vor Boxen und Kickern pendelt der Fahrer nicht (`vorFigur()`).
+- **Sprünge**: im Kern des Parkbands (`parkFlug()`) Schwerkraft 13 statt 18
+  (`SPRUNG.schwerkraft`, wie am See) und freier Flug; die Kante wirft hoch
+  statt weit, der Landehang gibt beim Aufsetzen die Fahrt zurück. Großer
+  Kicker oben, kleiner darunter, beide mit 16 m Landehang, die Wellen am
+  linken Rand vor den Boxen. Bei Tempo 13: großer Kicker 1,82 s ohne Taste,
+  2,13 s mit Druck an der Kante (Scheitel 7,4 m), kleiner 1,22 / 1,53 s;
+  720 am großen, 540 am kleinen sauber. Rodelbahn und Nordabfahrt mit
+  Autopilot über 840 Bilder bitgleich. Ob 7,4 m Scheitel zu viel Schweben
+  ist, steht noch zur Entscheidung (15 statt 13 ist gemessen).
+- **Offen**: der Landehang der kleinen Schanze hebt das oberste Ende der
+  Leuchtstrecke um bis zu 0,7 m. Eine Kombo-Zählung ist nicht gebaut.
+
 **Haltung** (`_applyPose` in `skier.js`) liegt nur auf der Darstellung, das
 Fahrmodell merkt nichts davon. Die Ruhelage ist pixelgleich zur alten Figur;
 dafür hängt jedes Bein an seiner Hüfte (`legSides`, Drehpunkt `HIP`).

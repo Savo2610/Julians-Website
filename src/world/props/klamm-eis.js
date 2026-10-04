@@ -49,7 +49,9 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
   const quer = 7
   let reihe = 0
   let offen = false
-  for (let s = 0; s <= la; s += schritt) {
+  // Das Eis beginnt an der Muendung des Rohrs (createRohr).
+  const ab = rohrLage()?.s0 ?? 0
+  for (let s = ab; s <= la; s += schritt) {
     const v = bachVersatz(s)
     const mx = KLAMM.von.x + ux * s + nx * v
     const mz = KLAMM.von.z + uz * s + nz * v
@@ -130,129 +132,124 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
   return mesh
 }
 
-// Das Rohr am oberen Ende des Bachs. Es kommt seitlich aus der Wand der
-// Klamm, aus der, die zur Kamera schaut: zuerst stand es quer in der Sohle
-// und zeigte bachab – aus der festen Kamera sah man dann nur die Rueckseite
-// der Mauer und das Rohr dahinter. Seitlich steckt es im Hang, wie ein
-// Durchlass unter einem Weg, und das Eis faellt als Zunge in das Bett.
-// Wo das Rohr sitzt, ohne Szene – populate.js haelt dort Baeume weg.
+// Das Rohr am oberen Ende des Bachs: ein Betonrohr, das bachab aus dem Hang
+// kommt, dort, wo die Rinne zwei Meter tief ist – flacher, und das Rohr
+// (1,8 m aussen) ragte oben aus der Klamm. Erst war es ein Wellblechrohr in
+// einer Mauer, dann kam es seitlich aus der hinteren Wand; gewuenscht ist
+// es links aus dem Berg, massiv (04.10.). Um 42 Grad zur Kamera gedreht (sonst sah
+// man das Rohr nur von der Seite), damit man in die Oeffnung sieht.
+const ROHR = { aussen: 0.9, innen: 0.62, tief: 2.0 }
+
+// Wo das Rohr sitzt, ohne Szene – populate.js haelt dort Baeume weg, und das
+// Eis beginnt an seiner Muendung.
 export function rohrLage() {
-  const ax0 = KLAMM.bis.x - KLAMM.von.x
-  const az0 = KLAMM.bis.z - KLAMM.von.z
-  const la = Math.hypot(ax0, az0)
-  const ux = ax0 / la, uz = az0 / la, nx = -uz, nz = ux
+  const kx = KLAMM.bis.x - KLAMM.von.x
+  const kz = KLAMM.bis.z - KLAMM.von.z
+  const la = Math.hypot(kx, kz)
+  const ux = kx / la, uz = kz / la, nx = -uz, nz = ux
   let s0 = null
   for (let s = 0; s <= la; s += 0.25) {
     const v = bachVersatz(s)
-    if (-klammAt(KLAMM.von.x + ux * s + nx * v, KLAMM.von.z + uz * s + nz * v) >= 1.2) { s0 = s + 0.4; break }
+    if (-klammAt(KLAMM.von.x + ux * s + nx * v, KLAMM.von.z + uz * s + nz * v) >= ROHR.tief) { s0 = s; break }
   }
   if (s0 === null) return null
-  // Heraus zeigt das Rohr zur Kamera hin (sie schaut von +x, +z).
+  // Die Kamera schaut von +x, +z.
   const vs = nx + nz > 0 ? 1 : -1
-  const ax = nx * vs, az = nz * vs
+  let ax = ux + nx * vs * 0.9, az = uz + nz * vs * 0.9
+  const l = Math.hypot(ax, az)
+  ax /= l; az /= l
   const v0 = bachVersatz(s0)
-  const bx = KLAMM.von.x + ux * s0 + nx * v0
-  const bz = KLAMM.von.z + uz * s0 + nz * v0
-  const bettY = terrainHeight(bx, bz)
-  // Die Muendung dort in der Wand, wo der Hang 0,35 m ueber dem Bett liegt.
-  let d = 0.8
-  while (d < 4 && terrainHeight(bx - ax * d, bz - az * d) < bettY + 0.35) d += 0.05
-  return { ux, uz, ax, az, bx, bz, bettY, mx: bx - ax * d, mz: bz - az * d }
+  const mx = KLAMM.von.x + ux * s0 + nx * v0
+  const mz = KLAMM.von.z + uz * s0 + nz * v0
+  return { s0, ax, az, mx, mz, bettY: terrainHeight(mx, mz) }
 }
 
 function createRohr(world) {
   const lage = rohrLage()
   if (!lage) return
-  const { ux, uz, ax, az, bx, bz, bettY, mx, mz } = lage
-  const R = 0.5
-  const my = terrainHeight(mx, mz)
-  const yc = my + R - 0.1
+  const { ax, az, mx, mz, bettY } = lage
+  const { aussen: RO, innen: RI } = ROHR
+  const yc = bettY + RI - 0.06
   const dreh = Math.atan2(ax, az)          // lokal +z zeigt aus dem Rohr heraus
-  // q laengs der Klamm, l aus dem Rohr heraus.
-  const welt = (q, h, l) => [mx + ux * q + ax * l, h, mz + uz * q + az * l]
+  // q quer (nach rechts, wenn man herausschaut), l aus dem Rohr heraus.
+  const qx = az, qz = -ax
+  const welt = (q, h, l) => [mx + qx * q + ax * l, h, mz + qz * q + az * l]
   const teile = []
-  const BLECH = 0x8e989f, BLECH_DUNKEL = 0x6d767c, INNEN = 0x1d2328
-
-  // Das Rohr: offen, mit Wellen als Ringe, und innen dunkel.
-  const L = 1.1
-  const rohr = new THREE.CylinderGeometry(R, R, L, 18, 1, true)
-  rohr.rotateX(Math.PI / 2)
-  rohr.rotateY(dreh)
-  teile.push({ geo: rohr, color: BLECH, position: welt(0, yc, 0.4 - L / 2) })
-  for (let l = 0.4; l > 0.4 - L; l -= 0.18) {
-    const ring = new THREE.TorusGeometry(R + 0.015, 0.025, 4, 18)
-    ring.rotateY(dreh)
-    teile.push({ geo: ring, color: BLECH_DUNKEL, position: welt(0, yc, l) })
+  const BETON = 0xa3a39c, BETON_HELL = 0xb9b8b0, BETON_DUNKEL = 0x5e5f5c, INNEN = 0x1f2326
+  const rohr = (geo, color, l) => {
+    geo.rotateX(Math.PI / 2)
+    geo.rotateY(dreh)
+    teile.push({ geo, color, position: welt(0, yc, l) })
   }
-  const dunkel = new THREE.CircleGeometry(R - 0.02, 18)
+
+  // Ein langes Stueck, das im Hang verschwindet: aussen, innen, die Stirn.
+  const L = 5
+  rohr(new THREE.CylinderGeometry(RO, RO, L, 24, 1, true), BETON, -L / 2)
+  rohr(new THREE.CylinderGeometry(RI, RI, L, 24, 1, true), BETON_DUNKEL, -L / 2)
+  const stirn = new THREE.RingGeometry(RI, RO + 0.12, 24)
+  stirn.rotateY(dreh)
+  teile.push({ geo: stirn, color: BETON_HELL, position: welt(0, yc, 0.01) })
+  // Muffe an der Muendung und eine Fuge weiter hinten: so liest es sich als
+  // gegossenes Rohr und nicht als Zylinder.
+  rohr(new THREE.CylinderGeometry(RO + 0.12, RO + 0.12, 0.45, 24, 1, true), BETON_HELL, -0.22)
+  rohr(new THREE.CylinderGeometry(RO + 0.04, RO + 0.04, 0.08, 24, 1, true), BETON_DUNKEL, -1.6)
+  const dunkel = new THREE.CircleGeometry(RI - 0.01, 24)
   dunkel.rotateY(dreh)
-  teile.push({ geo: dunkel, color: INNEN, position: welt(0, yc, -0.25) })
+  teile.push({ geo: dunkel, color: INNEN, position: welt(0, yc, -0.9) })
 
-  // Die Stirnmauer: Bruchstein in Lagen, quer zum Bach, mit Schnee obenauf.
-  const BREIT = 3.4, LAGE = 0.38
-  let unten = Infinity
-  for (let q = -BREIT / 2; q <= BREIT / 2 + 0.01; q += 0.4) { const p = welt(q, 0, -0.25); unten = Math.min(unten, terrainHeight(p[0], p[2])) }
-  const oben = yc + R + 0.45
-  let k = 0
-  for (let y = unten - 0.2, lage = 0; y < oben - 0.05; y += LAGE, lage++) {
-    let q = -BREIT / 2 - (lage % 2) * 0.3
-    while (q < BREIT / 2) {
-      const w = 0.6 + ((k * 37) % 5) * 0.1
-      const q0 = Math.max(q, -BREIT / 2), q1 = Math.min(q + w, BREIT / 2)
-      const h = Math.min(LAGE - 0.04, oben - y)
-      k++
-      q += w + 0.05
-      if (q1 - q0 < 0.15) continue
-      const qm = (q0 + q1) / 2
-      // Nichts vor die Oeffnung.
-      if (Math.abs(qm) < R + (q1 - q0) / 2 - 0.05 && y + h > yc - R && y < yc + R) {
-        // Links und rechts der Oeffnung kurze Stuecke, darueber und darunter nichts.
-        continue
-      }
-      const geo = new THREE.BoxGeometry(q1 - q0, h, 0.5)
-      geo.rotateY(dreh)
-      teile.push({ geo, color: (k + lage) % 3 ? STEIN : STEIN_HELL, position: welt(qm, y + h / 2, -0.25 - 0.02 * (k % 2)) })
-    }
-  }
-  // Ueber dem Rohr ein Sturz aus einem Stein.
-  const sturz = new THREE.BoxGeometry(R * 2 + 0.5, 0.3, 0.55)
-  sturz.rotateY(dreh)
-  teile.push({ geo: sturz, color: STEIN_HELL, position: welt(0, yc + R + 0.15, -0.25) })
-  const kappe = new THREE.BoxGeometry(BREIT + 0.1, 0.12, 0.6)
+  // Schnee auf dem Rohr, ein flacher Wulst laengs.
+  const kappe = new THREE.CylinderGeometry(RO * 0.75, RO * 0.75, L - 0.2, 12, 1, false, -Math.PI / 2, Math.PI)
+  kappe.scale(1, 1, 0.35)
+  kappe.rotateX(Math.PI / 2)
   kappe.rotateY(dreh)
-  teile.push({ geo: kappe, color: SCHNEE, position: welt(0, oben + 0.06, -0.25) })
-  const rohrSchnee = new THREE.CylinderGeometry(R * 0.7, R * 0.7, 0.42, 10, 1, false, -Math.PI / 2, Math.PI)
-  rohrSchnee.rotateX(Math.PI / 2)
-  rohrSchnee.scale(1, 0.35, 1)
-  rohrSchnee.rotateY(dreh)
-  teile.push({ geo: rohrSchnee, color: SCHNEE, position: welt(0, yc + R, 0.2) })
+  teile.push({ geo: kappe, color: SCHNEE, position: welt(0, yc + RO - 0.02, -L / 2 - 0.15) })
 
-  // Die gefrorene Zunge: aus dem Rohr ueber den Hang hinunter ins Bett.
-  const a = welt(0, yc - R + 0.05, -0.1)
-  const b = [bx + ax * 0.3, bettY + 0.12, bz + az * 0.3]
+  // Der Hang, aus dem es kommt: eine Schneewehe ueber dem hinteren Teil.
+  // Die Rinne steigt bachauf zu langsam an, und ohne sie lag das Rohr drei
+  // Meter frei mit abgeschnittenem Ende im Schnee.
+  const wehe = new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2)
+  wehe.scale(RO + 1.3, RO * 2 + 0.25, 3.2)
+  wehe.rotateY(dreh)
+  teile.push({ geo: wehe, color: SCHNEE, position: welt(0, bettY - 0.3, -3.6) })
+
+  // Steine, wo das Rohr aus dem Hang kommt und neben der Muendung.
+  for (const [q, l, r] of [[-1.15, -0.7, 0.42], [1.2, -0.9, 0.38], [-1.0, 0.35, 0.26], [1.05, 0.25, 0.3]]) {
+    const p = welt(q, 0, l)
+    const fels = new THREE.IcosahedronGeometry(r, 0)
+    fels.scale(1.2, 0.75, 1)
+    const y = terrainHeight(p[0], p[2])
+    teile.push({ geo: fels, color: (q > 0) ? STEIN : STEIN_HELL, position: [p[0], y + r * 0.3, p[2]], rotation: [0, q * 2, 0] })
+    const hut = new THREE.SphereGeometry(r * 0.8, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2)
+    hut.scale(1.2, 0.35, 1)
+    teile.push({ geo: hut, color: SCHNEE, position: [p[0], y + r * 0.62, p[2]], rotation: [0, q * 2, 0] })
+  }
+
+  // Die gefrorene Zunge: aus dem Rohr hinunter aufs Eis.
+  const a = welt(0, yc - RI + 0.04, -0.6)
+  const b = welt(0, bettY + 0.1, 1.4)
+  b[1] = terrainHeight(b[0], b[2]) + 0.11
   const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])
-  const zunge = new THREE.BoxGeometry(R * 1.5, 0.1, len)
+  const zunge = new THREE.BoxGeometry(RI * 1.5, 0.1, len)
   zunge.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.atan2(a[1] - b[1], Math.hypot(b[0] - a[0], b[2] - a[2]))))
   zunge.rotateY(dreh)
   teile.push({ geo: zunge, color: 0x9fd8e4, position: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2] })
-  // Eiszapfen am Rand der Oeffnung.
-  for (let i = 0; i < 7; i++) {
-    const w = -0.9 + i * 0.3
-    const l = 0.12 + ((i * 5) % 3) * 0.07
-    const zapfen = new THREE.ConeGeometry(0.03, l, 5)
+  // Eiszapfen am oberen Rand der Oeffnung.
+  for (let i = 0; i < 9; i++) {
+    const w = -1.0 + i * 0.25
+    const l = 0.14 + ((i * 5) % 3) * 0.09
+    const zapfen = new THREE.ConeGeometry(0.035, l, 5)
     zapfen.rotateX(Math.PI)
-    // Am oberen Bogen der Oeffnung, nach unten haengend.
-    teile.push({ geo: zapfen, color: 0xdff3ff, position: welt(Math.sin(w) * R, yc + Math.cos(w) * R - l / 2, 0.42) })
+    teile.push({ geo: zapfen, color: 0xdff3ff, position: welt(Math.sin(w) * RI, yc + Math.cos(w) * RI - l / 2, -0.05) })
   }
 
-  const m = new THREE.Mesh(assemble(teile), vertexColorMaterial({ roughness: 0.75, side: THREE.DoubleSide }))
+  const m = new THREE.Mesh(assemble(teile), vertexColorMaterial({ roughness: 0.9, side: THREE.DoubleSide }))
   m.castShadow = true
   m.receiveShadow = true
   m.name = 'bach-rohr'
   world.scene.add(m)
-  // Die Mauer ist fest.
-  for (const q of [-1.2, 0, 1.2]) {
-    const p = welt(q, 0, -0.25)
-    world.addCollider?.(p[0], p[2], 0.55)
+  // Das Rohr ist fest, soweit es aus dem Hang ragt.
+  for (const l of [-0.4, -1.6, -2.8]) {
+    const p = welt(0, 0, l)
+    if (terrainHeight(p[0], p[2]) < yc + RO - 0.3) world.addCollider?.(p[0], p[2], RO)
   }
 }

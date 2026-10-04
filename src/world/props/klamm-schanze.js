@@ -2,7 +2,6 @@ import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 import { CAMERA } from '../../config.js'
 import { terrainHeight, SCHANZE } from '../heightfield.js'
-import { ohneSpur } from '../surfaces.js'
 
 // Was man von der Klammschanze sieht. Befahren wird sie im Hoehenfeld
 // (SCHANZE in heightfield.js) – hier steht nur, was sie als gebaute Schanze
@@ -103,7 +102,6 @@ export function createKlammSchanze(world) {
       rotation: [0, yaw, 0],
     })
   }
-  ohneSpur([[punkt(0.05, -S.halb).x, punkt(0.05, -S.halb).z], [punkt(0.05, S.halb).x, punkt(0.05, S.halb).z]], 0.08)
   // Die Kante selbst rot-weiss, wie man sie an jeder Schanze anzeichnet.
   for (let i = 0; i < 7; i++) {
     const v = (i / 6 - 0.5) * S.halb * 2
@@ -123,15 +121,11 @@ export function createKlammSchanze(world) {
   const tafeln = []
   for (const w of WEITEN) {
     let prev = null
-    const spur = []
     for (let v = -S.halb - 0.6; v <= S.halb + 0.61; v += 0.55) {
       const p = auf(punkt(w, v), 0.03)
       if (prev) brett(parts, prev, p, 0.04, 0.2, w === 20 ? ROT : BLAU)
       prev = p
-      spur.push([p.x, p.z])
     }
-    // Keine Spur ueber der Linie, sonst ist sie nach drei Landungen weg.
-    ohneSpur(spur, 0.1)
     // Die Zahl steht auf der Kameraseite neben der Landung.
     const t = punkt(w, S.halb + 1.4)
     const y = terrainHeight(t.x, t.z)

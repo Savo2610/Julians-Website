@@ -32,7 +32,6 @@ import { APRES, houseWorld } from './areas/apres-layout.js'
 import { createApresTerrace } from './areas/apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
 import { createEiszapfen } from './props/eiszapfen.js'
-import { ohneSpur } from './surfaces.js'
 import { createSledFence } from './props/sled.js'
 import { Kinderland } from './areas/kinderland.js'
 import { NorthRun } from './attractions/north-run.js'
@@ -330,7 +329,8 @@ export function populate(world, sky, registry, stationOptions = {}) {
       const vor = { x: rohr.mx + 2.5, z: rohr.mz + 2.5 }
       for (let i = placements.length - 1; i >= 0; i--) {
         const p = placements[i]
-        if (Math.hypot(p.x - rohr.mx, p.z - rohr.mz) < 4 || Math.hypot(p.x - vor.x, p.z - vor.z) < 3.5) placements.splice(i, 1)
+        const hinten = { x: rohr.mx - rohr.ax * 3, z: rohr.mz - rohr.az * 3 }
+        if (Math.hypot(p.x - rohr.mx, p.z - rohr.mz) < 4 || Math.hypot(p.x - vor.x, p.z - vor.z) < 3.5 || Math.hypot(p.x - hinten.x, p.z - hinten.z) < 3) placements.splice(i, 1)
       }
     }
   }
@@ -984,7 +984,6 @@ export function populate(world, sky, registry, stationOptions = {}) {
         punkte.push([x, terrainHeight(x, z) + 0.025, z])
       }
       world.scene.add(createLipLine(punkte))
-      ohneSpur(punkte.map(([x, , z]) => [x, z]), 0.14)
     }
 
     // Beachflags links und rechts der Absprungkanten, wo vorher die Kloetze

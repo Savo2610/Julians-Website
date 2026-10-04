@@ -14,6 +14,7 @@ import { createObstacles, createCollectibles } from './props/obstacles.js'
 import { CableSystem } from './game/cable-system.js'
 import { RiderPhysics } from './player/rider-physics.js'
 import { createRiderModel, poseRider, ropeAnchor } from './player/rider-model.js'
+import { Murmeltiere } from './world/murmeltiere.js'
 import { TopCamera } from './player/camera.js'
 import { Spray } from './player/spray.js'
 import { Hud } from './game/hud.js'
@@ -50,6 +51,8 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
   const water = createWater(scene, { wake, sky })
   await weiter()
   const world = populate(scene)
+  // Murmeltiere am Nordwestufer, die beim Vorbeifahren verschwinden.
+  const murmeltiere = new Murmeltiere(scene)
   await weiter()
   createObstacles(scene)
   const items = createCollectibles(scene)
@@ -232,6 +235,7 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
     wake.update(dt)
     water.update(elapsed, rider)
     for (const f of world.animated) f(elapsed, dt)
+    murmeltiere.update(dt, rider)
 
     const focus = rider.mode === 'dock' ? 1 : 0
     // Im Titel ein ruhiger Blick auf Station und Steg, danach zum Fahrer.
@@ -260,7 +264,7 @@ export async function createKabelsee({ renderer, canvas, touch = false, eingebet
   }
 
   return {
-    scene, camera, renderer, rider, cable, session, input, chase, items, wake, water, hud, sky, root, FEATURES,
+    scene, camera, renderer, rider, cable, session, input, chase, items, wake, water, hud, sky, root, FEATURES, murmeltiere,
     advance, draw, resize,
     // Im Tal: Tasten an, Anzeige sichtbar, Session sofort am Steg. Der
     // Buegel kommt nach `ankunft` Sekunden – der Countdown lief schon am

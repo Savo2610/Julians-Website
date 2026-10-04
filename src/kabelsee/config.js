@@ -156,3 +156,10 @@ export const COLORS = {
   waterShallow: 0x5fc0c0,
   foam: 0xf4fbff,
 }
+
+// Die Murmeltierkolonie am Nordwestufer (world/murmeltiere.js): Richtung
+// vom Seemittelpunkt und Meter landeinwaerts. Dort kommt die Kabelbahn dem
+// Ufer am naechsten (36 m bis zur Seilmitte, gemessen alle 0,1 rad); am
+// Suedwestufer (2,35) waren es 48, da haette sie kaum je einer verscheucht.
+// Mit 5 m Inland sassen sie noch im Ufersand.
+export const MURMEL = { winkel: -2.35, inland: 9 }

@@ -1401,6 +1401,29 @@ war. Nicht im Pistenpass – ein geheimes Abzeichen dafür wäre denkbar
 (etwa: dem Hasen auf 6 m nahekommen, ohne dass er flieht), aber erst
 nach Rückfrage.
 
+## 4a¹⁰. Murmeltiere am Kabelsee (04.10., Branch `murmeltiere`)
+
+`src/kabelsee/world/murmeltiere.js`, also in beiden Fällen dabei, allein
+unter `/kabelsee/` und vom Badesteg aus. Im Tal gibt es keine: sie schlafen
+von Oktober bis April, und das Tal ist Winter. Drei Baue (flache Erdhügel
+mit Loch zum Wasser) am **Nordwestufer** (`MURMEL` in `kabelsee/config.js`,
+Winkel −2,35, 9 m landeinwärts). Dort kommt die Kabelbahn dem Ufer am
+nächsten, 36 m bis zur Seilmitte (gemessen alle 0,1 rad rundum). Am
+Südwestufer wären es 48 m gewesen, da hätte sie kaum einer verscheucht;
+mit 5 m Inland saßen sie noch im Ufersand. Der Wald lässt 9 m um die
+Kolonie frei.
+
+Drei Tiere (1,6× echt), eines davon die Wache, die meist aufrecht sitzt; die
+anderen grasen, schauen, laufen ein paar Meter. Kommt der Fahrer auf 40 m
+heran, pfeift die Wache (aufrecht, der Kopf ruckt alle 0,45 s), die anderen
+rennen nach dem ersten Pfiff, ab 30 m alle sofort, mit 4,2 m/s zum eigenen
+Loch, kopfüber hinein. Erst wenn er 52 m weg ist und 6–18 s Ruhe war, tauchen
+sie wieder auf, die Wache zuerst: Nase, Kopf, Blick in die Runde, heraus.
+Gemessen mit einem simulierten Vorbeifahren bei 15 m/s: bei 25 m alle im Bau,
+die Wache nach 15 s wieder draußen, alle nach 24 s – also zwischen zwei
+Runden. Der See bleibt still; der Pfiff ist nur zu sehen. Zum Prüfen:
+`__kabel.murmeltiere.tiere`.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/

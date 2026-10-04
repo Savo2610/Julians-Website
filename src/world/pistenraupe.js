@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../core/geometry.js'
-import { terrainHeight, terrainNormal } from './heightfield.js'
+import { terrainHeight, terrainNormal, NORTH_LANE, BRUECKE, DECK, stegLage, stegDeck, schuppenWelt, schuppenLokal, SCHUPPEN } from './heightfield.js'
 
 // Die Pistenraupe. Sie faehrt nur nachts, nach der echten Uhr des Besuchers:
 // zwischen 22 und 6 Uhr, und auch dann nur in jeder zweiten Sitzung, einmal,
@@ -9,23 +9,20 @@ import { terrainHeight, terrainNormal } from './heightfield.js'
 // echte Nacht waere ein Umbau an Licht und Himmel; man erkennt die
 // Nachtschicht an den Scheinwerfern und der Rundumleuchte.
 //
-// Sie walzt die freie Abfahrt, vier Minuten lang hinauf und hinunter, und
-// legt dabei feinen Cord in den Schnee. Steht jemand vor ihr, haelt sie an
-// und wartet. Kommen und gehen tut sie wie die Tiere nur ausser Bild.
+// Sie wohnt im Schuppen am Ende der Nordabfahrt (props/schuppen.js). Das Tor
+// faehrt hoch, sie rueckt aus und walzt eine feste Runde: ueber die Bruecke
+// die Nordabfahrt hinauf, hinunter und noch einmal hinauf, jedes Mal
+// versetzt, bis die ganze Breite gewalzt ist; hinueber zur freien Abfahrt
+// neben dem Lift, dort hinunter und daneben wieder hinauf; dann die
+// Nordabfahrt hinunter zurueck in den Schuppen, und das Tor geht zu. Dabei
+// legt sie feinen Cord in den Schnee. Steht jemand vor ihr, haelt sie an.
 
-// Die freie Abfahrt aus populate.js, an beiden Enden ein Stueck verlaengert:
-// oben bis auf die Gipfelschulter, unten bis vor die Talstation. Bei Meter
-// 23 lief sie mitten durch die Schneekanone (−35,1, −36,3); jetzt westlich
-// daran vorbei, drei Meter Luft.
-const ROUTE = [
-  [-46, -57], [-44, -52], [-41, -46], [-38, -40], [-38.9, -36.5],
-  [-36, -31.5], [-31.5, -28.3], [-28.5, -22], [-27, -14], [-26, -9],
-]
-const TEMPO = 3          // m/s – eine echte faehrt beim Walzen 10 bis 15 km/h
+const TEMPO = 3.5        // m/s – eine echte faehrt beim Walzen 10 bis 15 km/h
 const WENDEN = 0.8       // rad/s auf der Stelle, Ketten gegenlaeufig
-const DAUER = 240        // s Schicht, dann faehrt sie am naechsten Ende davon
+const KNICK = 0.6        // rad: groessere Knicke wendet sie im Stand
 const WARTEN = 7         // m: steht jemand naeher vor ihr, haelt sie an
 const KOERPER = 2.3      // m: so nah kommt keiner an ihre Mitte
+const TOR_ZEIT = 2.5     // s, bis das Tor ganz offen oder zu ist
 
 const zufall = (a, b) => a + Math.random() * (b - a)
 
@@ -33,6 +30,98 @@ export function nachtschicht(date = new Date()) {
   const h = date.getHours()
   return h >= 22 || h < 6
 }
+
+// --- Die Runde ---------------------------------------------------------------
+// Punkt der Nordabfahrt bei s mit seitlichem Versatz (positiv zum Grat). An
+// der Klamm schwenkt jede Spur auf die Achse der Bruecke ein: die Bahn
+// gabelt sich dort in Steg und Schanze, und die Bruecke liegt 4,7 m neben
+// der Bahnmitte.
+function nordPunkt(s, versatz) {
+  const segs = NORTH_LANE.segments
+  let g = segs[segs.length - 1]
+  for (const seg of segs) if (s <= seg.s0 + seg.len) { g = seg; break }
+  const t = Math.max(0, Math.min(1, (s - g.s0) / g.len))
+  const tx = g.dx / g.len
+  const tz = g.dz / g.len
+  let x = g.x + g.dx * t + tz * versatz
+  let z = g.z + g.dz * t - tx * versatz
+  const l = stegLage(x, z)
+  const reich = DECK.halbL + 7
+  if (Math.abs(l.laengs) < reich && Math.abs(l.quer) < 10) {
+    const w = Math.min(1, (reich - Math.abs(l.laengs)) / 5)
+    const quer = l.quer * (1 - w * w * (3 - 2 * w))
+    const e = BRUECKE.ebene
+    x = BRUECKE.x + l.laengs * e.ux - quer * e.uz
+    z = BRUECKE.z + l.laengs * e.uz + quer * e.ux
+  }
+  return { x, z }
+}
+
+function nordFahrt(von, bis, versatz) {
+  const pts = []
+  const schritt = von < bis ? 2 : -2
+  for (let s = von; schritt > 0 ? s <= bis : s >= bis; s += schritt) pts.push(nordPunkt(s, versatz))
+  return pts
+}
+
+// Die freie Abfahrt aus populate.js, oben bis auf die Gipfelschulter
+// verlaengert, unten bis vor die Talstation. Bei Meter 23 lief die erste
+// Fassung mitten durch die Schneekanone (−35,1, −36,3); jetzt westlich
+// daran vorbei.
+const FREI = [
+  [-46, -57], [-44, -52], [-41, -46], [-38, -40], [-38.9, -36.5],
+  [-36, -31.5], [-31.5, -28.3], [-28.5, -22], [-27, -14], [-26, -9],
+]
+function freiFahrt(versatz, hinauf) {
+  const pts = FREI.map(([x, z], i) => {
+    const a = FREI[Math.max(0, i - 1)]
+    const b = FREI[Math.min(FREI.length - 1, i + 1)]
+    const dx = b[0] - a[0]
+    const dz = b[1] - a[1]
+    const l = Math.hypot(dx, dz)
+    return { x: x + (dz / l) * versatz, z: z - (dx / l) * versatz }
+  })
+  // Alle zwei Meter ein Punkt wie auf der Nordabfahrt: mit den sechs Metern
+  // der Vorlage lief die Spur zwischen zwei ausgewichenen Punkten wieder
+  // ueber Kanone und Pfosten.
+  const dicht = []
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i]
+    const b = pts[i + 1]
+    const k = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.z - a.z) / 2))
+    for (let j = 0; j < k; j++) dicht.push({ x: a.x + (b.x - a.x) * j / k, z: a.z + (b.z - a.z) * j / k })
+  }
+  dicht.push(pts[pts.length - 1])
+  return hinauf ? dicht.reverse() : dicht
+}
+
+// Die ganze Runde als Linienzug. `cord: false` heisst: hier wird nicht
+// gewalzt (im Schuppen und auf den Bohlen der Bruecke).
+export function runde() {
+  const S = SCHUPPEN
+  // Das Tor liegt hinten und oeffnet direkt auf den Auslauf der Nordabfahrt.
+  const innen = schuppenWelt(0, 0.9)
+  const tor = schuppenWelt(0, -S.halbT - 1)
+  const vorTor = schuppenWelt(0, -S.halbT - 4)
+  const pts = [
+    innen, tor, vorTor,
+    ...nordFahrt(78, 5, 3.4),
+    ...nordFahrt(5, 78, -3.4),
+    ...nordFahrt(78, 5, 0),
+    // Oben durch die Mitte des Startbogens (quer hinueber streifte sie den
+    // oestlichen Pfosten) und unter dem Gipfelkreuz durch zur freien Abfahrt.
+    nordPunkt(0, 0), { x: -57.5, z: -68 }, { x: -52, z: -66 },
+    // Hinunter 2,4 m westlich, hinauf in der Mitte: Schneekanone und
+    // Pfosten stehen beide oestlich der Spur, mit +2,2 fuhr sie hinein.
+    ...freiFahrt(-2.4, false),
+    ...freiFahrt(0, true),
+    { x: -52, z: -66 }, { x: -57.5, z: -68 }, nordPunkt(0, 0),
+    ...nordFahrt(2, 78, 0),
+    vorTor, tor, innen,
+  ]
+  return pts
+}
+
 
 // --- Gestalt -----------------------------------------------------------------
 const ROT = 0xc42027
@@ -168,53 +257,55 @@ const qHang = new THREE.Quaternion()
 const qGier = new THREE.Quaternion()
 
 export class Pistenraupe {
-  constructor({ scene, camera, trail, erzwungen = new URLSearchParams(location.search).has('raupe') }) {
+  constructor({ scene, camera, trail, world = null, schuppen = null, erzwungen = new URLSearchParams(location.search).has('raupe') }) {
     this.scene = scene
     this.camera = camera
     this.trail = trail
+    this.schuppen = schuppen
     const m = bauen()
     this.m = m
-    m.group.visible = false
     scene.add(m.group)
 
-    // Die Strecke als Abschnitte mit Laenge.
-    this.punkte = ROUTE.map(([x, z]) => ({ x, z }))
-    this.laenge = 0
+    this.punkte = runde()
     this.abschnitte = []
+    this.laenge = 0
     for (let i = 0; i < this.punkte.length - 1; i++) {
       const a = this.punkte[i]
       const b = this.punkte[i + 1]
       const l = Math.hypot(b.x - a.x, b.z - a.z)
-      this.abschnitte.push({ a, b, s0: this.laenge, l })
+      if (l < 0.01) continue
+      this.abschnitte.push({ a, b, s0: this.laenge, l, gier: Math.atan2(b.x - a.x, b.z - a.z) })
       this.laenge += l
     }
 
     // Kommt sie heute? Nachts in jeder zweiten Sitzung, sonst nie.
     this.heute = erzwungen || (nachtschicht() && Math.random() < 0.5)
     this.uhr = erzwungen ? 2 : zufall(60, 300)
-    this.aktiv = false
+    this.zustand = 'parkt'   // tor_auf, faehrt, tor_zu
     this.fertig = false
     this.s = 0
-    this.richtung = 1
-    this.gier = 0
-    this.wenden = null
-    this.schicht = 0
+    this.gier = this.abschnitte[0].gier
+    this.wenden = false
     this.cordWeg = 0
     this.zeit = 0
+    this.torZeit = 0
     this.wartet = false
+    this._setzen()
+  }
+
+  get aktiv() { return this.zustand !== 'parkt' }
+
+  _abschnitt(s) {
+    let g = this.abschnitte[this.abschnitte.length - 1]
+    for (const a of this.abschnitte) if (s < a.s0 + a.l) { g = a; break }
+    return g
   }
 
   _punkt(s) {
     s = Math.max(0, Math.min(this.laenge, s))
-    let g = this.abschnitte[this.abschnitte.length - 1]
-    for (const a of this.abschnitte) if (s <= a.s0 + a.l) { g = a; break }
-    const t = (s - g.s0) / g.l
-    return { x: g.a.x + (g.b.x - g.a.x) * t, z: g.a.z + (g.b.z - g.a.z) * t, gier: Math.atan2(g.b.x - g.a.x, g.b.z - g.a.z) }
-  }
-
-  _imBild(x, z, rand = 1.25) {
-    v.set(x, terrainHeight(x, z) + 1.5, z).project(this.camera)
-    return v.z < 1 && Math.abs(v.x) < rand && Math.abs(v.y) < rand
+    const g = this._abschnitt(s)
+    const t = Math.min(1, (s - g.s0) / g.l)
+    return { x: g.a.x + (g.b.x - g.a.x) * t, z: g.a.z + (g.b.z - g.a.z) * t, gier: g.gier }
   }
 
   // Aus der Konsole: __ski.raupe.losfahren() – auch am Tag.
@@ -226,68 +317,61 @@ export class Pistenraupe {
 
   update(dt, skier, darf = true) {
     this.zeit += dt
-    if (this.fertig || !this.heute) return
-    if (!this.aktiv) {
-      if (!darf) return
+    this._leuchte()
+    if (this.zustand === 'parkt') {
+      if (this.fertig || !this.heute || !darf) return
       this.uhr -= dt
       if (this.uhr > 0) return
-      // An dem Ende anfangen, das keiner sieht.
-      const enden = [0, this.laenge].filter((s) => { const p = this._punkt(s); return !this._imBild(p.x, p.z) })
-      if (!enden.length) { this.uhr = 3; return }
-      this.s = enden[Math.floor(Math.random() * enden.length)]
-      this.richtung = this.s === 0 ? 1 : -1
-      this.gier = this._punkt(this.s).gier + (this.richtung < 0 ? Math.PI : 0)
-      this.aktiv = true
-      this.schicht = 0
-      this.m.group.visible = true
+      this.s = 0
+      this.zustand = 'tor_auf'
+      this.torZeit = 0
     }
-
-    this.schicht += dt
-    const sichtbar = this._imBild(this.m.group.position.x, this.m.group.position.z, 1.1)
-
-    // Feierabend: am Ende der Strecke und ausser Bild ist sie weg.
-    const amEnde = this.s <= 0.01 || this.s >= this.laenge - 0.01
-    if (this.schicht > DAUER && amEnde && !sichtbar && !this.wenden) {
-      this.aktiv = false
-      this.fertig = true
-      this.m.group.visible = false
+    if (this.zustand === 'tor_auf' || this.zustand === 'tor_zu') {
+      this.torZeit += dt
+      const k = Math.min(1, this.torZeit / TOR_ZEIT)
+      this.schuppen?.setzeTor(this.zustand === 'tor_auf' ? k : 1 - k)
+      if (k >= 1) {
+        if (this.zustand === 'tor_auf') this.zustand = 'faehrt'
+        else {
+          this.zustand = 'parkt'
+          this.fertig = true
+        }
+      }
       return
     }
 
     const p = this._punkt(this.s)
-    const soll = p.gier + (this.richtung < 0 ? Math.PI : 0)
-    let d = soll - this.gier
+    let d = p.gier - this.gier
     d = Math.atan2(Math.sin(d), Math.cos(d))
 
     // Steht jemand vor ihr, wartet sie.
-    const dx = skier.position.x - p.x
-    const dz = skier.position.z - p.z
+    const dx = skier.position.x - this.m.group.position.x
+    const dz = skier.position.z - this.m.group.position.z
     const vor = dx * Math.sin(this.gier) + dz * Math.cos(this.gier)
     this.wartet = vor > 0 && vor < WARTEN && Math.abs(-dx * Math.cos(this.gier) + dz * Math.sin(this.gier)) < 2.6
 
-    if (this.wenden || Math.abs(d) > 0.6) {
-      // Am Ende auf der Stelle wenden, Ketten gegenlaeufig. Die Knicke der
-      // Strecke (0,1 bis 0,2 rad) nimmt sie dagegen im Fahren.
+    if (this.wenden || Math.abs(d) > KNICK) {
+      // Im Stand wenden, Ketten gegenlaeufig. Die kleinen Knicke der Spur
+      // nimmt sie dagegen im Fahren.
       this.wenden = true
       this.gier += Math.sign(d) * Math.min(Math.abs(d), WENDEN * dt)
       if (Math.abs(d) < 0.02) this.wenden = false
     } else if (!this.wartet) {
       const vorher = this.s
-      this.s += this.richtung * TEMPO * dt
-      if (this.s <= 0 || this.s >= this.laenge) {
-        this.s = Math.max(0, Math.min(this.laenge, this.s))
-        // Am Ende umdrehen – oder Feierabend, siehe oben.
-        if (this.schicht <= DAUER) this.richtung *= -1
-      }
-      this.gier += d * Math.min(1, dt * 2.5)
-      // Cord hinter der Fraese, alle 0,8 Meter.
-      this.cordWeg += Math.abs(this.s - vorher)
-      if (this.trail && this.cordWeg > 0.8) {
-        this.cordWeg = 0
-        const h = this._punkt(this.s)
-        const bx = h.x - Math.sin(this.gier) * 2.4
-        const bz = h.z - Math.cos(this.gier) * 2.4
-        this.trail.stampDecal(cordTextur(), bx, bz, 3.0, 1.2, -this.gier, 0.45, 0.5)
+      // Im Schuppen und am Tor langsam.
+      const lokal = schuppenLokal(p.x, p.z)
+      const amSchuppen = lokal.lz < SCHUPPEN.halbT + 1 && lokal.lz > -SCHUPPEN.halbT - 5 && Math.abs(lokal.lx) < SCHUPPEN.halbB + 2
+      const tempo = amSchuppen ? TEMPO * 0.45 : TEMPO
+      this.s = Math.min(this.laenge, this.s + tempo * dt)
+      // Vorausschauen: der naechste Abschnitt soll keinen Ruck geben.
+      const q = this._punkt(this.s + 1.5)
+      let d2 = Math.atan2(q.x - p.x, q.z - p.z) - this.gier
+      d2 = Math.atan2(Math.sin(d2), Math.cos(d2))
+      this.gier += (Math.abs(d2) < KNICK ? d2 : d) * Math.min(1, dt * 2.5)
+      this._walzen(Math.abs(this.s - vorher))
+      if (this.s >= this.laenge) {
+        this.zustand = 'tor_zu'
+        this.torZeit = 0
       }
     }
 
@@ -295,26 +379,60 @@ export class Pistenraupe {
 
     // Niemand faehrt durch sie hindurch: wer ihr zu nahe kommt, wird
     // hinausgeschoben, wie an einem Baum.
-    const q = this.m.group.position
-    const ax = skier.position.x - q.x
-    const az = skier.position.z - q.z
+    const g = this.m.group.position
+    const ax = skier.position.x - g.x
+    const az = skier.position.z - g.z
     const ad = Math.hypot(ax, az)
     if (ad < KOERPER && ad > 0.01) {
-      skier.position.x = q.x + (ax / ad) * KOERPER
-      skier.position.z = q.z + (az / ad) * KOERPER
+      skier.position.x = g.x + (ax / ad) * KOERPER
+      skier.position.z = g.z + (az / ad) * KOERPER
     }
+  }
 
-    // Rundumleuchte: dreht sich, und einmal je Umlauf zeigt sie her.
+  // Cord hinter der Fraese, alle 0,8 Meter – nicht im Schuppen und nicht
+  // auf den Bohlen.
+  _walzen(weg) {
+    this.cordWeg += weg
+    if (!this.trail || this.cordWeg < 0.8) return
+    this.cordWeg = 0
+    const g = this.m.group.position
+    const bx = g.x - Math.sin(this.gier) * 2.4
+    const bz = g.z - Math.cos(this.gier) * 2.4
+    if (stegDeck(bx, bz)) return
+    const l = schuppenLokal(bx, bz)
+    if (Math.abs(l.lx) < SCHUPPEN.halbB + 0.5 && l.lz < SCHUPPEN.halbT + 0.5 && l.lz > -SCHUPPEN.halbT - 0.5) return
+    this.trail.stampDecal(cordTextur(), bx, bz, 3.0, 1.2, -this.gier, 0.45, 0.5)
+  }
+
+  _leuchte() {
+    // Rundumleuchte und Scheinwerfer nur, solange sie ausgerueckt ist.
+    const an = this.zustand === 'faehrt' || this.zustand === 'tor_auf' || this.zustand === 'tor_zu'
+    this.m.leuchte.visible = an
+    this.m.kegel.visible = an && this.zustand === 'faehrt'
     const u = this.zeit * 5.2
     this.m.leuchte.rotation.y = u
-    this.m.blitz.material.opacity = Math.pow(Math.max(0, Math.sin(u)), 6) * 0.55
+    this.m.blitz.material.opacity = an ? Math.pow(Math.max(0, Math.sin(u)), 6) * 0.55 : 0
   }
 
   _setzen() {
     const p = this._punkt(this.s)
     const g = this.m.group
-    g.position.set(p.x, terrainHeight(p.x, p.z), p.z)
-    terrainNormal(p.x, p.z, n)
+    const deck = stegDeck(p.x, p.z)
+    const lokal = schuppenLokal(p.x, p.z)
+    const imSchuppen = Math.abs(lokal.lx) < SCHUPPEN.halbB && Math.abs(lokal.lz) < SCHUPPEN.halbT
+    if (deck) {
+      // Auf der Bruecke traegt das Deck, nicht das Gelaende – darunter ist
+      // die Klamm. Geneigt nach dem Gefaelle der Bohlenebene.
+      const e = BRUECKE.ebene
+      g.position.set(p.x, deck.y, p.z)
+      n.set(-e.gefaelle * e.ux, 1, -e.gefaelle * e.uz).normalize()
+    } else if (imSchuppen) {
+      g.position.set(p.x, SCHUPPEN.h, p.z)
+      n.set(0, 1, 0)
+    } else {
+      g.position.set(p.x, terrainHeight(p.x, p.z), p.z)
+      terrainNormal(p.x, p.z, n)
+    }
     qHang.setFromUnitVectors(oben, n)
     qGier.setFromAxisAngle(oben, this.gier)
     g.quaternion.copy(qHang).multiply(qGier)

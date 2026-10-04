@@ -34,6 +34,7 @@ import { RohrpostNetz } from './world/rohrpost-netz.js'
 import { Sommer } from './sommer/sommer.js'
 import { Wildnis } from './world/tiere/wildnis.js'
 import { Pistenraupe } from './world/pistenraupe.js'
+import { createSchuppen } from './world/props/schuppen.js'
 
 const canvas = document.getElementById('scene')
 
@@ -192,7 +193,8 @@ canvas.addEventListener('pointerdown', () => {
 const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.trees, stationen: stations })
 // Die Pistenraupe der Nachtschicht: nur zwischen 22 und 6 Uhr nach der Uhr
 // des Besuchers, und auch dann selten (world/pistenraupe.js). ?raupe ruft sie.
-const raupe = new Pistenraupe({ scene, camera, trail })
+// Sie wohnt im Schuppen am Ende der Nordabfahrt (props/schuppen.js).
+const raupe = new Pistenraupe({ scene, camera, trail, world, schuppen: createSchuppen(world) })
 
 const snowfall = createSnowfall()
 scene.add(snowfall)

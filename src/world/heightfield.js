@@ -476,6 +476,45 @@ export function stegLage(x, z) {
 }
 
 // Die Hoehe des Decks, wo es eines gibt, sonst null.
+// --- Der Schuppen der Pistenraupe ---------------------------------------------
+// Am Ende der Nordabfahrt, zwischen Bahnende und Funparkzaun (neben der Huette
+// ist zwischen Terrasse, Park und Wald kein Platz). Zur Kamera zeigt die
+// lange Wand mit dem Schild, das Tor liegt am hinteren Giebel und oeffnet
+// direkt auf den Auslauf der Nordabfahrt. Mit dem Tor zur Kamera musste die Raupe
+// um das Haus herum, ueber den ersten Kicker des Funparks und am Zaun
+// entlang. Der Boden steigt ueber die Grundflaeche von 9,4 auf 11,0 Meter;
+// innen wird er auf 10,25 eben gezogen, damit die Raupe nicht schief im Haus
+// steht – was man befaehrt, ist Gelaende. Lokal: x quer, z zum Giebel
+// (Kamera), das Tor bei z = −halbT.
+export const SCHUPPEN = { x: 3, z: -56, gier: -0.322, halbB: 3.2, halbT: 3.6, vor: 2.5, h: 10.25, saum: 2.5 }
+
+export function schuppenLokal(x, z) {
+  const c = Math.cos(SCHUPPEN.gier)
+  const s = Math.sin(SCHUPPEN.gier)
+  const dx = x - SCHUPPEN.x
+  const dz = z - SCHUPPEN.z
+  return { lx: dx * c - dz * s, lz: dx * s + dz * c }
+}
+
+export function schuppenWelt(lx, lz) {
+  const c = Math.cos(SCHUPPEN.gier)
+  const s = Math.sin(SCHUPPEN.gier)
+  return { x: SCHUPPEN.x + lx * c + lz * s, z: SCHUPPEN.z - lx * s + lz * c }
+}
+
+// Eben unter dem Haus und noch 2,5 m vor dem Tor (hinten), dann weich ins
+// Gelaende.
+function schuppenPlatz(x, z, h) {
+  const { lx, lz } = schuppenLokal(x, z)
+  const S = SCHUPPEN
+  const ax = Math.max(0, Math.abs(lx) - S.halbB)
+  const az = Math.max(0, lz < 0 ? -lz - S.halbT - S.vor : lz - S.halbT)
+  const d = Math.hypot(ax, az)
+  if (d >= S.saum) return h
+  const w = 1 - smooth(d / S.saum)
+  return h + (S.h - h) * w
+}
+
 export function stegDeck(x, z) {
   const l = stegLage(x, z)
   return Math.abs(l.laengs) <= DECK.halbL && Math.abs(l.quer) <= DECK.halbQ + 0.2 ? l : null
@@ -1090,6 +1129,7 @@ export function terrainHeight(x, z) {
   // Die befahrbare Terrasse gliedert den Uebergang ein. Ihre Ebene kommt
   // nach den Baendern, damit Holz und Ski dieselbe Hoehe bekommen.
   h = apresGround(x, z, h)
+  h = schuppenPlatz(x, z, h)
 
   // Die Figuren im Funpark sitzen auf dem geglaetteten Band – deshalb erst
   // hier, nach der Bandformung.

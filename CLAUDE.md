@@ -73,6 +73,8 @@ Das Wichtigste in Kürze:
 
 - **Pistenraupe** (`src/world/pistenraupe.js`, HANDOVER 4a⁹): nur nach
   echter Uhr zwischen 22 und 6 Uhr und auch dann selten. Das Tal bleibt hell.
+  Wohnt im Schuppen am Ende der Nordabfahrt (`SCHUPPEN` im Höhenfeld) und
+  fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
 
 `npm run dev` startet (Tal auf `/`, Kabelsee auf `/kabelsee/`),
 `npm run dev:api` den Worker dazu (Bestenlisten, Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas

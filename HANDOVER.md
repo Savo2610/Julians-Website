@@ -1403,23 +1403,46 @@ nach Rückfrage.
 
 ## 4a⁹. Die Pistenraupe der Nachtschicht (04.10., Branch `pistenraupe`)
 
-`world/pistenraupe.js`. Fährt nur nach der **echten Uhr** des Besuchers
-zwischen 22 und 6 Uhr, und auch dann nur in jeder zweiten Sitzung, einmal,
-60–300 s nach dem Ankommen – fast niemand soll sie sehen. Das Tal bleibt
-hell (eine echte Nacht wäre ein Umbau an Licht und Himmel); die Nachtschicht
-erkennt man an Scheinwerfern, einem weichen Lichtkegel (eigener Shader,
-nach vorn und zu den Rändern auslaufend – mit fester Deckkraft war er ein
-harter weißer Fächer) und der orangen Rundumleuchte.
+`world/pistenraupe.js`, Schuppen in `props/schuppen.js`. Fährt nur nach der
+**echten Uhr** des Besuchers zwischen 22 und 6 Uhr, und auch dann nur in
+jeder zweiten Sitzung, einmal, 60–300 s nach dem Ankommen – fast niemand
+soll sie sehen. Das Tal bleibt hell; die Nachtschicht erkennt man an
+Scheinwerfern, einem weichen Lichtkegel (eigener Shader, nach vorn und zu
+den Rändern auslaufend – mit fester Deckkraft war er ein harter weißer
+Fächer) und der orangen Rundumleuchte, beide nur, solange sie ausgerückt ist.
 
-Sie walzt vier Minuten lang die freie Abfahrt hinauf und hinunter (54 m,
-3 m/s, an den Enden auf der Stelle gewendet, die Knicke im Fahren), beginnt
-am Ende, das nicht im Bild ist, und verschwindet nach der Schicht an einem
-Ende außer Bild. Die Route geht westlich an der Schneekanone vorbei (vorher
-mitten hindurch) und hält mindestens 1,85 m Abstand zu jeder Kollision.
-Steht jemand bis 7 m vor ihr, wartet sie; näher als 2,3 m an ihre Mitte
-kommt keiner (hinausgeschoben wie an einem Baum). Hinter der Fräse
-stempelt sie Cord in die Spurkarte, alle 0,8 m. Zum Prüfen: `?raupe` oder
-`__ski.raupe.losfahren()`, auch am Tag.
+**Der Schuppen** steht am Ende der Nordabfahrt bei (3, −56), zwischen
+Bahnende und Funparkzaun. Neben der Hütte war kein Platz (Terrasse, Park,
+Wald; gesucht mit 7 × 8 m Grundfläche). Zur Kamera zeigt die lange Wand mit
+Schild „PISTENDIENST“ und zwei Fenstern, das **Rolltor liegt hinten** und
+öffnet direkt auf den Auslauf der Nordabfahrt. Mit dem Tor zur Kamera musste
+die Raupe ums Haus herum, an den Kickern des Funparks und am Zaun vorbei.
+Der Boden darunter ist Gelände: `SCHUPPEN` im Höhenfeld zieht ihn innen und
+2,5 m vor dem Tor auf 10,25 m eben (vorher 9,4 bis 11,0) und läuft über
+2,5 m aus. Kollision für Wände und Giebel, nicht fürs Tor.
+
+**Die Runde** (504 m, gut 2:40 min): Tor auf, die Nordabfahrt hinauf (3,4 m
+zum Grat versetzt), hinunter (3,4 m zur anderen Seite), noch einmal hinauf
+in der Mitte, oben durch die Mitte des Startbogens (quer hinüber streifte
+sie einen Pfosten) zur freien Abfahrt, dort 2,4 m westlich hinunter und in
+der Mitte wieder hinauf (Schneekanone und ein Pfosten stehen östlich – mit
++2,2 fuhr sie hinein), dann die Nordabfahrt hinunter und vorwärts durchs
+Tor hinein, Tor zu. **Über die Klamm** schwenkt jede Spur auf
+die Achse der Brücke ein (sie liegt 4,7 m neben der Bahnmitte, weil sich die
+Bahn in Steg und Schanze gabelt), und dort trägt das Deck (`stegDeck`),
+nicht das Gelände – gemessen 4 × 15 m auf den Bohlen, Höhe glatt von 16,9 auf
+13,9. Geprüft gegen die ganze Kollisionsliste, nicht `world.nearby()` (das
+liefert nur die eigene Rasterzelle): überall mindestens 1,8 m Luft, 5,2 m
+zum Funparkzaun, 15 m zur nächsten Figur. Ein automatisches Ausweichen
+wurde versucht und verworfen: zwischen den Felsgruppen der Klamm schob es
+die Spur bis 13 m weit.
+
+Große Knicke (über 0,6 rad) wendet sie im Stand, kleine im Fahren; am
+Schuppen fährt sie mit 45 % Tempo. Steht jemand bis 7 m vor ihr, wartet
+sie; näher als 2,3 m kommt keiner (hinausgeschoben wie an einem Baum).
+Hinter der Fräse stempelt sie Cord in die Spurkarte, nicht auf den Bohlen
+und nicht im Schuppen. Zum Prüfen: `?raupe` oder `__ski.raupe.losfahren()`,
+auch am Tag; `__ski.raupe.zustand` ist parkt / tor_auf / faehrt / tor_zu.
 
 ## 4b. Handymodus
 

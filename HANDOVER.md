@@ -537,6 +537,49 @@ Herangezoomt klappt der Deckel auf, das Buch hebt sich heraus und blättert,
 beim Öffnen ein Stempel. Nicht auf der Talkarte (`VERSTECKT`), die
 Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
 
+**Zweite Runde (04.10.)** – Julians Rückmeldung zur Rückseite:
+
+- **Gipfelbuch zum Eintragen** (`menu/gipfelbuch.js`, `worker/gipfelbuch.js`,
+  Migration `0003_gipfelbuch.sql`): „Eintragen“ hieß vorher nur Komoot, das
+  war verwirrend. Jetzt erste Wahl *Eintragen*: ein Buch mit den Einträgen
+  anderer (Handschrift auf liniertem Papier) und zwei Felder, Text 3–240
+  Zeichen, keine Links, Sperrliste, drei je Adresse und Tag. **Öffentlich
+  erst nach Freigabe** – der eigene Eintrag steht sofort im Buch, mit
+  „wird noch gelesen“ (aus dem localStorage). Komoot bleibt zweite Wahl.
+  - **Vor dem Mergen auf main**: `npx wrangler d1 migrations apply
+    skiportfolio-slalom --remote`, sonst antwortet `/api/gipfelbuch/*` mit 500.
+  - Lesen: `npx wrangler d1 execute skiportfolio-slalom --remote --command
+    "SELECT id, name, text FROM gipfelbuch WHERE frei = 0"`
+  - Freigeben: `... --command "UPDATE gipfelbuch SET frei = 1 WHERE id = 7"`,
+    löschen mit `DELETE FROM gipfelbuch WHERE id = 7`. Die Liste ist
+    30 s gecacht.
+- **Buckel über dem Fels am Slalomstart** (−44, −74,5): `ridgeAlong` nahm die
+  Höhe vom nächsten Abschnitt, und innen im Knick der Schulter sprang sie auf
+  der Winkelhalbierenden um 0,73 m auf 25 cm – eine Kante, die jeden in die
+  Luft warf. Jetzt mischen Abschnitte bis 4 m weiter mit
+  (`RUECKEN_MISCHUNG`). Pisten unverändert (höchstens 1 mm), sonst bis
+  0,6 m nur in den Knicken von Schulter und Grat.
+- **Brücke nach unten zu**: eine Höhe je Punkt, also kann man nicht darunter
+  durch. Stattdessen Bruchsteinmauern unter beiden Deckrändern bis auf den
+  Grund der Klamm, mit gewölbtem Durchlass für den Bach (dunkle Röhre,
+  Eiszunge). Die Bohlen liegen 4 cm über der Fahrfläche – darunter
+  verschwanden sie unter dem Schnee des Geländes, und das Deck war ein
+  weißes Rechteck. `BRUECKE.ebene.laenge` 18 statt 14,5, damit sich oben
+  kein Schnee über die Bohlen hebt.
+- **Bach**: ein 22 cm tiefes, gewundenes Bett (`KLAMM.bach`,
+  `bachVersatz()`), das Eis ist eine ebene Fläche darin – das Ufer ergibt
+  sich, wo sie die Böschung schneidet. Dazu Steine am Ufer.
+- **Weitentafel** rechts außerhalb der Stangen, nicht mehr in der Auslauflinie.
+  Gemessen wird nur, was an der Klammschanze abhebt (`klammFlug`); vorher
+  zählte jeder Kicker im Funpark mit.
+- **Absprung mit Wertung** (`SPRUNG.kanten*`, `skier.absprung`): wer auf dem
+  letzten 0,6 m vor der Kante oder bis 0,06 s danach drückt, springt
+  perfekt (+3 m/s Steigen, Deckel 16,5 statt 14). Bei Tempo 13: ohne
+  Absprung 17,3 m, zu spät 20,4, perfekt 24,6, zu früh hüpft man auf der
+  Rampe. Die Anzeige nennt Absprung und Tempo („Absprung perfekt ·
+  56 km/h“), die Tafel vor dem ersten Sprung „AN DER ROTEN KANTE
+  ABSPRINGEN“.
+
 **Charakter**: dichter Wald (Dichte-Aufschlag über `nordDist`), Felsriegel auf
 dem Grat, Wildspuren im Schnee (`stampTrack` in `snow-writing.js`, gestempelt in
 `main.js`). Nichts zum Anklicken — das war die ausdrückliche Wahl.

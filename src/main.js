@@ -9,7 +9,7 @@ import { TOUCH } from './core/device.js'
 import { pointScale } from './core/point-scale.js'
 import { TouchControls } from './core/touch.js'
 import { Antippen } from './stations/antippen.js'
-import { inFunpark, PLATEAU } from './world/heightfield.js'
+import { inFunpark, PLATEAU, NORTH_LANE } from './world/heightfield.js'
 import { SnowTrail } from './world/snow-trail.js'
 import { World } from './world/world.js'
 import { createSky } from './world/sky.js'
@@ -33,6 +33,8 @@ import { Spray } from './player/spray.js'
 import { RohrpostNetz } from './world/rohrpost-netz.js'
 import { Sommer } from './sommer/sommer.js'
 import { Wildnis } from './world/tiere/wildnis.js'
+import { Schneebrett } from './world/attractions/schneebrett.js'
+import { lawinenstufe } from './world/props/map-board.js'
 
 const canvas = document.getElementById('scene')
 
@@ -191,6 +193,19 @@ canvas.addEventListener('pointerdown', () => {
 // dieselbe Spurkarte.
 const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.trees, stationen: stations, huette: props.huette, kreuz: props.kreuz, felsen: props.felsen })
 
+// Das Schneebrett auf der Nordabfahrt, so oft, wie die Warnstufe des Tages
+// sagt (world/attractions/schneebrett.js). Wer verschuettet wird, steht
+// hinter der Blende wieder am Start der Abfahrt – eine halbe Sekunde
+// spaeter, damit man die Wolke noch sieht.
+const schneebrett = new Schneebrett({ scene, northRun: props.northRun, stufe: lawinenstufe(), camera, trail, world })
+schneebrett.onErwischt = () => {
+  setTimeout(() => {
+    const a = NORTH_LANE.segments[0]
+    const l = Math.hypot(a.dx, a.dz)
+    mapMenu.travelTo({ x: a.x + (a.dx / l) * 3, z: a.z + (a.dz / l) * 3, heading: Math.atan2(a.dx, a.dz) })
+  }, 550)
+}
+
 const snowfall = createSnowfall()
 scene.add(snowfall)
 
@@ -340,6 +355,7 @@ function advance(dt) {
   // update() laeuft auch ohne Verfolger weiter: der Pistenpass liest daraus,
   // ob die Nordabfahrt bis unten gefahren wurde.
   const aufNord = props.northRun.update(dt, skier)
+  schneebrett.update(dt, skier)
   chase.verfolgen(CHASE.an && aufNord)
   // Im Rundflug gehoert die Kamera der Drohne; die feste Kamera wartet und
   // springt nach der Landung ohne Anfahrt zurueck (snap).
@@ -415,7 +431,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer, tiere,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer, tiere, schneebrett,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

@@ -286,9 +286,11 @@ export class Schneebrett {
   }
 
   // Steht hier etwas mit Kollision – Fels, Zaunpfosten, Baum, Kreuz?
+  // Die volle Liste, nicht world.nearby(): das liefert nur die eigene
+  // Rasterzelle, und ein Fels knapp hinter der Zellgrenze fehlte dann.
   _hindernis(x, z, rand) {
     if (!this.world) return false
-    for (const c of this.world.nearby(x, z)) if (Math.hypot(c.x - x, c.z - z) < c.r + rand) return true
+    for (const c of this.world.colliders) if (Math.hypot(c.x - x, c.z - z) < c.r + rand) return true
     return false
   }
 

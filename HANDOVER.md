@@ -450,6 +450,31 @@ die Verfolgerkamera zu rutschen (gemessen: zurück auf die feste Kamera, eine
 Dreiviertelsekunde später bei 77 von 80 Metern wieder hinter den Fahrer). Erst
 fünfzehn Meter zurück bergauf zählt als „nochmal".
 
+**Das Schneebrett** (04.10., Branch `schneebrett`;
+`world/attractions/schneebrett.js`, Aufbau in `props/schneebrett.js`). Wie
+oft es abgeht, hängt an der Lawinenwarnstufe des Tages (`lawinenstufe()`,
+Panoramatafel): einmal je Einfahrt gewürfelt, Stufe 1 bis 5 mit 1 / 6 / 20 /
+50 / 85 %. Ausgelöst wird zwischen Meter 8 und 30, ab 5 m/s. Es reißt am
+Südhang 16 m neben der Bahnmitte an (dort 3–4 m höher; bei 22 m lag die
+Kante aus der festen Kamera links außerhalb des Bildes), mit dunkler
+Anrisskante und einem Staubstoß, zerbricht nach 4–7 m von Schollen in
+Klumpen und kommt 2–7,5 m hinter der Mitte, vor dem Gratrücken, zum Stehen.
+Die Bahn ist **geführt** (quer zur Piste), nicht das Gefälle: so wie das
+Gelände fällt, rutschten die Schollen gemessen in drei von vier Fällen
+nach Süden in Kar und Klamm. Gelegt wird es so, dass es bei vollem Tempo gut
+eine halbe Sekunde hinter dem Fahrer über die Bahn geht (Front nach knapp
+2,9 s in der Mitte, Anriss 2,3 s × Tempo voraus): mit Gas kommt man durch,
+wer bremst, wird erwischt (gemessen nach 2,6 s bei 2,6 m/s). Erwischt heißt:
+Wolke, nach 0,55 s hinter der Blende zurück an den Start der Nordabfahrt
+(`main.js`, `onErwischt`). Die Brocken sind Aufbau ohne Kollision und
+bleiben 45 s liegen, weg erst außer Bild; die Bahn stempelt aufgewühlten
+Schnee in die Spurkarte (höchstens sechs Stempel je Bild, Stärke 0,3 –
+mit 0,55 lag nach drei Lawinen ein Leopardenmuster am Hang). Eigener
+Staub (`Spray`, 1600 Teilchen, Größe 2,6 + 0,3 je m/s; kleiner waren es
+Kügelchen). Die Schollen haben etwas Eigenlicht, sonst lasen sie sich im
+Hangschatten als Felsbrocken. Zum Prüfen: `?lawine=5`, oder
+`__ski.schneebrett.ausloesen(__ski.skier, 32)` an Meter 32.
+
 **Die Klamm** quert die Bahn zwischen Meter 48 und 62, wo das Gefälle auf sieben
 Grad zurückgeht. Sie ist Gelände und schneidet als **letzter** Schritt nach dem
 Pistenband — umgekehrt hätte das Band sie gleich wieder aufgefüllt. Viereinhalb

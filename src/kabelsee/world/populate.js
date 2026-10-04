@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { vertexColorMaterial } from '../../core/geometry.js'
 import { makeRng } from '../../core/rng.js'
 import { fbm } from '../../core/noise.js'
-import { WORLD, LAKE, ISLAND, CABLE } from '../config.js'
+import { WORLD, LAKE, ISLAND, CABLE, MURMEL } from '../config.js'
 import { terrainHeight, lakeDistance, islandDistance, PLAZA } from './heightfield.js'
 import { createTrees } from '../props/trees.js'
 import { signMesh } from '../props/obstacles.js'
@@ -206,10 +206,13 @@ export function populate(scene) {
 
   // --- Baeume -----------------------------------------------------------------
   const trees = []
+  const murmel = shorePoint(MURMEL.winkel, MURMEL.inland)
   const half = WORLD.size / 2 - 4
   const blocked = (x, z) => {
     if (Math.hypot(x - PLAZA.x, z - PLAZA.z) < PLAZA.radius + 4) return true
     if (Math.hypot(x - camp.x, z - camp.z) < 13) return true
+    // Die Murmeltierbaue bleiben offen, sonst saessen sie im Wald.
+    if (Math.hypot(x - murmel.x, z - murmel.z) < 9) return true
     // Station liegt im Norden; der Streifen zwischen Haus und Hang bleibt frei.
     if (Math.abs(x - PLAZA.x) < 8 && z < PLAZA.z && z > PLAZA.z - 40) return true
     return false

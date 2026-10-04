@@ -605,8 +605,12 @@ Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
   geht es hinunter. Die blauen Stangen dazwischen sind weg.
 - **Rohr am Bachanfang** (`rohrLage()`/`createRohr` in `klamm-eis.js`):
   ein massives Betonrohr (1,8 m außen, Muffe, Fuge, innen dunkel), das
-  links bachab aus einer Schneewehe im Hang kommt, um 42° zur Kamera
-  gedreht, damit man in die Öffnung sieht. Es sitzt, wo die Rinne 2 m tief
+  links gerade bachab aus einer Schneewehe im Hang kommt – man sieht es
+  von der Seite (so gewünscht; zur Kamera gedreht war die erste Fassung).
+- **Wegweiser frei**: `populate.js` nimmt Bäume aus einem Streifen von
+  ±4,2 × 2,6 m um jeden Wegweiser (`WEGWEISER` in `wayfinding.js`). Seit
+  sich der Wald mit dem Gelände an der Klamm neu verteilt hat (die Streuung
+  hängt am Gelände), stand einer in der Tafel WERKSTATT. Es sitzt, wo die Rinne 2 m tief
   ist; dort beginnt auch das Eis, als Zunge aus dem Rohr. Wellblech in einer
   Mauer und seitlich aus der hinteren Wand waren die Vorversuche. Bäume
   davor nimmt `populate.js` nach dem Streuen heraus.

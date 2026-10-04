@@ -136,8 +136,8 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
 // kommt, dort, wo die Rinne zwei Meter tief ist – flacher, und das Rohr
 // (1,8 m aussen) ragte oben aus der Klamm. Erst war es ein Wellblechrohr in
 // einer Mauer, dann kam es seitlich aus der hinteren Wand; gewuenscht ist
-// es links aus dem Berg, massiv (04.10.). Um 42 Grad zur Kamera gedreht (sonst sah
-// man das Rohr nur von der Seite), damit man in die Oeffnung sieht.
+// es links aus dem Berg, massiv, und gerade bachab – man sieht es von der
+// Seite (04.10.).
 const ROHR = { aussen: 0.9, innen: 0.62, tief: 2.0 }
 
 // Wo das Rohr sitzt, ohne Szene – populate.js haelt dort Baeume weg, und das
@@ -153,9 +153,7 @@ export function rohrLage() {
     if (-klammAt(KLAMM.von.x + ux * s + nx * v, KLAMM.von.z + uz * s + nz * v) >= ROHR.tief) { s0 = s; break }
   }
   if (s0 === null) return null
-  // Die Kamera schaut von +x, +z.
-  const vs = nx + nz > 0 ? 1 : -1
-  let ax = ux + nx * vs * 0.9, az = uz + nz * vs * 0.9
+  let ax = ux, az = uz
   const l = Math.hypot(ax, az)
   ax /= l; az /= l
   const v0 = bachVersatz(s0)

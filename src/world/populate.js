@@ -4,7 +4,7 @@ import { createLandscapeDetails, FALL_SPOT } from './landscape-details.js'
 import { BroadcastFeed } from '../stations/broadcast.js'
 import { LINKS } from '../stations/links.js'
 import { CONNECTIONS } from './paths.js'
-import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
+import { createWayfinding, arrow, PANORAMA, WEGWEISER } from './wayfinding.js'
 import { WORLD, CAMERA } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
@@ -355,6 +355,19 @@ export function populate(world, sky, registry, stationOptions = {}) {
     }
   }
   placements.push(...groveTrees)
+  // Kein Baum in den Tafeln der Wegweiser: sie ragen 3,4 m zur Seite, und
+  // seit sich der Wald mit dem Gelaende an der Klamm neu verteilt hat, stand
+  // einer mit seinen unteren Zweigen in WERKSTATT (04.10.). Beide Seiten,
+  // auf welche die Tafeln zeigen, entscheidet erst createWayfinding.
+  for (const { at: [sx, sz] } of WEGWEISER) {
+    const rx = Math.cos(CAMERA.azimuth), rz = -Math.sin(CAMERA.azimuth)
+    for (let i = placements.length - 1; i >= 0; i--) {
+      const p = placements[i]
+      const entlang = (p.x - sx) * rx + (p.z - sz) * rz
+      const quer = Math.abs(-(p.x - sx) * rz + (p.z - sz) * rx)
+      if (Math.abs(entlang) < 4.2 && quer < 2.6) placements.splice(i, 1)
+    }
+  }
   createForest(world, placements)
   const landscape = createLandscapeDetails(world, groveTrees)
   animatedProps.push((t, dt) => landscape.update(dt, skierRef.current))

@@ -27,6 +27,19 @@ export { arrow }
 // Durchgang zwischen Tafel und TOOLS-Schild war zu schmal.
 export const PANORAMA = { x: -7.65, z: 20.65 }
 
+// Die Wegweiser an den drei Kreuzungen. Exportiert, damit populate.js die
+// Baeume vor ihren Tafeln wegnimmt.
+export const WEGWEISER = [
+  // side 1 fest: nach links gekehrt ragten die Tafeln ueber den
+  // Kontaktposten und verdeckten ihn.
+  { at: [6, -6], side: 1, rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color, '↓'], ['STARTPLATZ', [1, 8], INK]] },
+  // Stand bei (33, 15) mitten im Kinderland neben dem Zauberteppich und
+  // brach dort dessen Farben. Jetzt links unten am Karriereweg, noch vor
+  // dem Kinderland – dort, wo man sich entscheidet.
+  { at: [27.5, 23], rows: [['KONTAKT · LIFT', [29, 9], INK, '↑'], ['STARTPLATZ', [20, 23], INK]] },
+  { at: [-67, -59], rows: [['AUSSICHT', [-61, -63], INK], ['TALABFAHRT', [-44, -52], TRAILS.sport.color]] },
+]
+
 export function createWayfinding(world, { registry, trees = [], lift = null, skierRef = { current: null } } = {}) {
   const federn = []
   // Drei Entscheidungen statt Beschriftung an jedem Gegenstand. Die Tafeln
@@ -34,17 +47,7 @@ export function createWayfinding(world, { registry, trees = [], lift = null, ski
   // GIPFELBAHN/TOOLS an der Talstation und HÜTTE/PARK an der Terrasse sind
   // weg: beide zeigten auf etwas, das man von dort schon sieht. ZUM SEE /
   // TOOLS · LIFT an der Rohrpost ebenso – See und Weg liegen dort im Bild.
-  const junctions = [
-    // side 1 fest: nach links gekehrt ragten die Tafeln ueber den
-    // Kontaktposten und verdeckten ihn.
-    { at: [6, -6], side: 1, rows: [['LIFT', [-9, -4], INK], ['WERKSTATT', [22, 0], TRAILS.career.color, '↓'], ['STARTPLATZ', [1, 8], INK]] },
-    // Stand bei (33, 15) mitten im Kinderland neben dem Zauberteppich und
-    // brach dort dessen Farben. Jetzt links unten am Karriereweg, noch vor
-    // dem Kinderland – dort, wo man sich entscheidet.
-    { at: [27.5, 23], rows: [['KONTAKT · LIFT', [29, 9], INK, '↑'], ['STARTPLATZ', [20, 23], INK]] },
-    { at: [-67, -59], rows: [['AUSSICHT', [-61, -63], INK], ['TALABFAHRT', [-44, -52], TRAILS.sport.color]] },
-  ]
-  for (const { at: [x, z], rows, side } of junctions) {
+  for (const { at: [x, z], rows, side } of WEGWEISER) {
     // Alle Tafeln an einem Mast ragen zur selben Seite – die, in die die
     // Mehrheit zeigt. Gemischt stand der Mast wie ein Kreuz im Schnee.
     // Ein fester Pfeil (vierter Eintrag) geht vor: gerechnet wird nur zum

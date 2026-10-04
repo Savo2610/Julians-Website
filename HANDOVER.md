@@ -1468,6 +1468,18 @@ spannender.
   720 am großen, 540 am kleinen sauber. Rodelbahn und Nordabfahrt mit
   Autopilot über 840 Bilder bitgleich. Ob 7,4 m Scheitel zu viel Schweben
   ist, steht noch zur Entscheidung (15 statt 13 ist gemessen).
+- **Zweite Runde (04.10.)**: die zweite Box liegt 3,8 m tiefer und 0,8 m
+  weiter vom kleinen Kicker weg (Achse parallel zu ihm): zwischen den Boxen
+  2,75 m Schnee statt 0,76 m Überlappung. Der kleine Kicker ist 1,5 m hoch
+  statt 1,1 (Länge 5,5): bei Tempo 13 1,45 s ohne Taste, 1,75 s mit Pop,
+  Scheitel 5,3 m, gelandet wird weiter vor dem Knick (12,6 von 14,1 m). Die
+  Leuchtstrecke bleibt dabei unverändert (gemessen 0,000 m). Die blauen
+  Klötze an den Kanten sind einer blauen Linie quer über die Kante
+  gewichen (`createLipLine`), die Polsterpfosten Beachflags auf Federfüßen
+  (`createBeachFlag` + `springMount`): man fährt sie um, sie schwingen
+  zurück. Die Holzplatten der Boxen folgen dem Dach ihrer Aufschüttung
+  (`boden` in `createParkBox`): das Band wird unten flacher, und das gerade
+  Brett steckte oben 15 cm im Schnee.
 - **Offen**: der Landehang der kleinen Schanze hebt das oberste Ende der
   Leuchtstrecke um bis zu 0,7 m. Eine Kombo-Zählung ist nicht gebaut.
 

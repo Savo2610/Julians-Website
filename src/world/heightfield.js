@@ -790,9 +790,9 @@ export const PARK_FEATURES = [
   { kind: 'rollers', x: 12.59, z: -38.84, dx: 0.496, dz: 0.868, count: 3, spacing: 3.2, height: 0.7, width: 5 },
   { kind: 'kicker', x: 16.74, z: -48.70, dx: 0.496, dz: 0.868, length: 5.5, width: 7.0, height: 1.8, landing: 16, dip: 0.4, knuckle: 0.88 },
   { kind: 'box', x: 17.65, z: -31.79, dx: 0.394, dz: 0.919, length: 7.4, width: 1.5, height: 0.42, ramp: 1.2 },
-  { kind: 'box', x: 20.56, z: -24.73, dx: 0.336, dz: 0.942, length: 9.4, width: 2.0, height: 0.60, ramp: 1.5 },
+  { kind: 'box', x: 21.03, z: -21.15, dx: 0.270, dz: 0.963, length: 9.4, width: 2.0, height: 0.60, ramp: 1.5 },
   { kind: 'ledge', x: 34.49, z: -30.34, dx: 0.336, dz: 0.942, length: 12, width: 2.6, height: 0.85, ramp: 2.2 },
-  { kind: 'kicker', x: 25.72, z: -31.98, dx: 0.200, dz: 0.980, length: 5.0, width: 7.0, height: 1.1, landing: 16, dip: 0.4, knuckle: 0.88 },
+  { kind: 'kicker', x: 25.72, z: -31.98, dx: 0.200, dz: 0.980, length: 5.5, width: 7.0, height: 1.5, landing: 16, dip: 0.4, knuckle: 0.88 },
 ]
 
 // Ist der Punkt im Funpark? Gemessen wird am Band selbst, nicht an einem

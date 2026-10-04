@@ -3,8 +3,8 @@ import { assemble, vertexColorMaterial, labelTexture } from '../../core/geometry
 
 // Aufbauten im Funpark. Die Schanzen und Wellen selbst sind Gelaende – hier
 // stehen nur die Dinge, die aus Metall und Holz sind: das Rail auf der
-// Schneekante, das Eingangsschild und die gepolsterten Marker, die die Bahn
-// einfassen.
+// Schneekante, das Eingangsschild, die Beachflags, die die Figuren einfassen,
+// und die blauen Linien an den Absprungkanten.
 
 const STEEL = 0x9aa4ae
 const STEEL_DARK = 0x5d666f
@@ -60,7 +60,13 @@ export function createRail({ length = 8, height = 0.52 } = {}) {
 // Die Schneeform darunter kommt aus dem Hoehenfeld; hier liegt nur die
 // Oberflaeche. Deshalb sitzt die Platte knapp ueber Null und nicht auf
 // Stuetzen: sie deckt die Kante ab, statt darueber zu schweben.
-export function createParkBox({ length = 7, width = 1.5, color = PAD_A } = {}) {
+//
+// `boden(x, z)` (lokal, Mitte = 0) gibt an, wie hoch das Dach der
+// Aufschuettung dort gegen die Mitte liegt. Das Band darunter ist nicht
+// gerade – am unteren Ende des Parks wird es flacher –, und ein gerades Brett
+// steckte dort mit dem oberen Ende 15 cm im Schnee. Mit `boden` folgt jede
+// Bohle und jede Stahlkante dem Dach.
+export function createParkBox({ length = 7, width = 1.5, color = PAD_A, boden = null } = {}) {
   const group = new THREE.Group()
   const parts = []
 
@@ -77,7 +83,7 @@ export function createParkBox({ length = 7, width = 1.5, color = PAD_A } = {}) {
   // Stahlkanten laengs: sie machen aus dem Holzsteg eine Box.
   for (const sx of [-1, 1]) {
     parts.push({
-      geo: new THREE.BoxGeometry(0.09, 0.15, length),
+      geo: new THREE.BoxGeometry(0.09, 0.15, length, 1, 1, Math.max(1, Math.round(length / 0.5))),
       color: STEEL,
       position: [sx * (width / 2 + 0.02), 0.06, 0],
     })
@@ -92,39 +98,77 @@ export function createParkBox({ length = 7, width = 1.5, color = PAD_A } = {}) {
     })
   }
 
-  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.6 }))
+  const geo = assemble(parts)
+  if (boden) {
+    const p = geo.attributes.position
+    for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) + boden(p.getX(i), p.getZ(i)))
+    geo.computeVertexNormals()
+  }
+  const mesh = new THREE.Mesh(geo, vertexColorMaterial({ roughness: 0.6 }))
   mesh.castShadow = true
   mesh.receiveShadow = true
   group.add(mesh)
   return group
 }
 
-// Kantenmarkierung an der Absprungkante einer Schanze: zwei kurze, kraeftige
-// Klotze links und rechts genau auf der Kante. Sie sind der Grund, warum man
-// eine Schanze im weissen Gelaende ueberhaupt sieht – Schnee auf Schnee wirft
-// bei diesem Sonnenstand kaum Schatten.
-export function createLipMarker(color = PAD_A) {
-  const group = new THREE.Group()
+// Die Absprungkante als blaue Linie quer ueber die Schanze, wie die Kante
+// beim Weitsprung. Vorher standen dort zwei blaue Kloetze an den Enden; sie
+// sagten, wie breit die Kante ist, aber nicht, wo genau sie liegt – und sie
+// sahen aus wie Kisten. `punkte` sind Weltpunkte [x, y, z] auf dem Schnee
+// quer ueber die Kante, die Linie liegt in kurzen Stuecken darauf.
+export function createLipLine(punkte, color = PAD_B) {
   const parts = []
-  parts.push({ geo: new THREE.BoxGeometry(0.34, 0.5, 0.34), color, position: [0, 0.25, 0] })
-  parts.push({ geo: new THREE.BoxGeometry(0.4, 0.12, 0.4), color: 0xf2f6fb, position: [0, 0.44, 0] })
-  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.65 }))
-  mesh.castShadow = true
-  group.add(mesh)
-  return group
+  for (let i = 1; i < punkte.length; i++) {
+    const [ax, ay, az] = punkte[i - 1]
+    const [bx, by, bz] = punkte[i]
+    const len = Math.hypot(bx - ax, by - ay, bz - az)
+    const geo = new THREE.BoxGeometry(len + 0.02, 0.04, 0.28)
+    geo.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.atan2(by - ay, Math.hypot(bx - ax, bz - az))))
+    geo.applyMatrix4(new THREE.Matrix4().makeRotationY(Math.atan2(-(bz - az), bx - ax)))
+    parts.push({ geo, color, position: [(ax + bx) / 2, (ay + by) / 2, (az + bz) / 2] })
+  }
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
+  mesh.receiveShadow = true
+  return mesh
 }
 
-export function createPadMarker(variant = 0) {
+// Beachflag: eine geschwungene Fahne an einer biegsamen Stange, wie sie an
+// jedem Kicker im Park stehen. Sie ersetzt die gepolsterten Pfosten – die
+// waren aus 33 Metern Kloetze und gaben beim Dagegenfahren nicht nach. Die
+// Flagge steht auf einem Federfuss (springMount in signpost.js) und legt
+// sich um, wenn man sie trifft. Ursprung am Fuss, die Flaeche zeigt nach +z.
+export function createBeachFlag(variant = 0) {
   const group = new THREE.Group()
-  const parts = []
   const color = variant % 2 ? PAD_B : PAD_A
-
-  parts.push({ geo: new THREE.CylinderGeometry(0.05, 0.05, 1.1, 6), color: STEEL_DARK, position: [0, 0.55, 0] })
-  parts.push({ geo: new THREE.CylinderGeometry(0.15, 0.16, 0.78, 9), color, position: [0, 0.5, 0] })
-  parts.push({ geo: new THREE.CylinderGeometry(0.155, 0.155, 0.12, 9), color: 0xf4f8fc, position: [0, 0.66, 0] })
-  parts.push({ geo: new THREE.CylinderGeometry(0.24, 0.28, 0.06, 9), color: 0xf7fbff, position: [0, 0.03, 0] })
-
-  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.75 }))
+  const parts = []
+  parts.push({ geo: new THREE.CylinderGeometry(0.025, 0.035, 2.75, 6), color: 0x30383b, position: [0, 1.375, 0] })
+  // Fuss: ein Kreuz aus zwei flachen Leisten mit Schnee darauf.
+  for (const r of [0, Math.PI / 2]) {
+    parts.push({ geo: new THREE.BoxGeometry(0.62, 0.05, 0.08), color: 0x30383b, position: [0, 0.03, 0], rotation: [0, r, 0] })
+  }
+  parts.push({ geo: new THREE.CylinderGeometry(0.16, 0.2, 0.05, 8), color: 0xf7fbff, position: [0, 0.06, 0] })
+  // Das Tuch: eine Feder, unten schmal, oben rund, an der Stange entlang.
+  const tuch = new THREE.Shape()
+  tuch.moveTo(0, 0.55)
+  tuch.quadraticCurveTo(0.42, 0.62, 0.55, 1.3)
+  tuch.quadraticCurveTo(0.66, 2.2, 0.32, 2.62)
+  tuch.quadraticCurveTo(0.16, 2.78, 0, 2.74)
+  tuch.lineTo(0, 0.55)
+  const geo = new THREE.ExtrudeGeometry(tuch, { depth: 0.015, bevelEnabled: false, curveSegments: 6 })
+  geo.translate(0.03, 0, -0.0075)
+  parts.push({ geo, color })
+  // Ein heller Streifen laengs, damit die Form von weitem liest.
+  const streifen = new THREE.Shape()
+  streifen.moveTo(0.06, 1.0)
+  streifen.quadraticCurveTo(0.3, 1.1, 0.36, 1.6)
+  streifen.quadraticCurveTo(0.42, 2.1, 0.24, 2.4)
+  streifen.lineTo(0.18, 2.36)
+  streifen.quadraticCurveTo(0.3, 2.05, 0.26, 1.62)
+  streifen.quadraticCurveTo(0.22, 1.2, 0.06, 1.12)
+  const sg = new THREE.ExtrudeGeometry(streifen, { depth: 0.02, bevelEnabled: false, curveSegments: 5 })
+  sg.translate(0.03, 0, -0.01)
+  parts.push({ geo: sg, color: 0xf4f8fc })
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7, side: THREE.DoubleSide }))
   mesh.castShadow = true
   group.add(mesh)
   return group

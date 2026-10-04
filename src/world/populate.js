@@ -27,7 +27,7 @@ import { DragLift } from './attractions/drag-lift.js'
 import { RaceCourse } from './attractions/race.js'
 import { RailRide } from './attractions/rail-ride.js'
 import { SpeedCheck } from './attractions/speed-check.js'
-import { createRail, createPadMarker, createParkSign, createParkBox, createLipMarker } from './props/funpark.js'
+import { createRail, createParkSign, createParkBox, createLipLine, createBeachFlag } from './props/funpark.js'
 import { APRES, houseWorld } from './areas/apres-layout.js'
 import { createApresTerrace } from './areas/apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
@@ -931,50 +931,62 @@ export function populate(world, sky, registry, stationOptions = {}) {
       // Nur so lang wie das flache Dach der Aufschuettung. Ein Deck, das
       // ueber die Anrampung hinausragt, haengt an den Enden in der Luft –
       // die Schneeform faellt dort ab, das Brett bleibt gerade.
+      // Die Platte folgt dem Dach der Aufschuettung (boden), statt gerade
+      // und nach der Mitte geneigt darauf zu liegen. Gemessen wird auf dem
+      // flachen Dach; an den Enden und Kanten nicht weiter, sonst hinge das
+      // Holz in die Anrampung hinunter.
+      const flach = f.length * 0.5 - f.ramp
+      const mitte = terrainHeight(f.x, f.z)
       const box = createParkBox({
         length: f.length - 2 * f.ramp + 0.4,
         width: f.width + 0.4,
         color: i % 2 ? 0x2f6bd8 : 0xe0662f,
+        boden: (lx, lz) => {
+          const u = Math.max(-flach, Math.min(flach, lz))
+          const q = Math.max(-f.width * 0.5, Math.min(f.width * 0.5, lx))
+          return terrainHeight(f.x + q * f.dz + u * f.dx, f.z - q * f.dx + u * f.dz) - mitte
+        },
       })
-      world.place(box, f.x, f.z, {
-        rotation: Math.atan2(f.dx, f.dz),
-        align: 1,
-      })
+      world.place(box, f.x, f.z, { rotation: Math.atan2(f.dx, f.dz) })
     }
 
     // --- Die Absprungkanten ------------------------------------------------
-    // Die Farbe im Schnee ist wieder weg. Seit die Schanzen einen Landehang
-    // haben, sind sie als Form lesbar: eine Rampe mit einer Mulde dahinter
-    // wirft aus jedem Winkel Schatten, ein aufgemalter Balken war dagegen nur
-    // laut. Was bleibt, sind zwei Kloetze an den Enden der Kante – sie sagen,
-    // wie breit die Kante ist, und man sieht sie im Anfahren.
+    // Die Farbe im Schnee ist wieder da, aber als Linie: blau quer ueber die
+    // Kante wie beim Weitsprung (Wunsch 04.10.). Der erste aufgemalte Balken
+    // war breit und laut; die Kloetze an den Enden danach sahen aus wie
+    // Kisten. Eine schmale Linie sagt, wo man abspringt, und sonst nichts.
     for (const f of PARK_FEATURES) {
       if (f.kind !== 'kicker') continue
-      const half = f.width * 0.5
-      for (const side of [-1, 1]) {
-        const mx = f.x - f.dz * side * (half + 0.5)
-        const mz = f.z + f.dx * side * (half + 0.5)
-        const lip = createLipMarker(0x2f6bd8)
-        world.place(lip, mx, mz, { rotation: Math.atan2(f.dx, f.dz) })
+      const half = f.width * 0.5 + 0.4
+      const punkte = []
+      for (let v = -half; v <= half + 0.01; v += 0.5) {
+        // Zehn Zentimeter vor der Kante: dort ist die Rampe noch ganz da.
+        const x = f.x - f.dx * 0.1 - f.dz * v
+        const z = f.z - f.dz * 0.1 + f.dx * v
+        punkte.push([x, terrainHeight(x, z) + 0.025, z])
       }
+      world.scene.add(createLipLine(punkte))
     }
 
-    // Gepolsterte Marker links und rechts der Figuren – sie machen aus der
-    // Schneeflaeche einen Park. Die Schanzen bekommen keine mehr: sie haben
-    // seit neuestem ihre Kloetze auf der Kante, und beides zusammen waere
-    // ein Slalom aus Polstern.
+    // Beachflags links und rechts der Figuren – sie machen aus der
+    // Schneeflaeche einen Park. Die Schanzen bekommen keine: sie haben ihre
+    // Linie auf der Kante, und beides zusammen waere ein Slalom aus Fahnen.
+    // Die Flaggen stehen auf Federfuessen: wer dagegen faehrt, legt sie um,
+    // und sie schwingen hinter ihm zurueck.
     let variant = 0
     for (const f of PARK_FEATURES) {
       if (f.kind === 'kicker') continue
       const half = (f.width ?? 8) * 0.5 + 2.2
       // Die Wellen liegen seit 04.10. am linken Rand neben dem Landehang
-      // der grossen Schanze; ein Polster auf ihrer Innenseite stuende
-      // mitten in dessen Flanke. Sie bekommen nur das aeussere.
+      // der grossen Schanze; eine Fahne auf ihrer Innenseite stuende
+      // mitten in dessen Flanke. Sie bekommen nur die aeussere.
       for (const side of f.kind === 'rollers' ? [-1] : [-1, 1]) {
         const mx = f.x + f.dz * side * half
         const mz = f.z - f.dx * side * half
-        const marker = createPadMarker(variant++)
-        world.place(marker, mx, mz, { rotation: rng() * Math.PI * 2 })
+        const flagge = createBeachFlag(variant++)
+        world.place(flagge, mx, mz, { rotation: Math.PI * 0.25 })
+        const feder = springMount(world, flagge, mx, mz, Math.PI * 0.25)
+        animatedProps.push((t, dt) => feder(dt, skierRef.current))
       }
     }
   }

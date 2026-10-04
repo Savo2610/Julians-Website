@@ -80,10 +80,11 @@ test('Druck an der Kante springt hoeher als durchfahren oder zu frueh', () => {
 })
 
 test('Der grosse Kicker traegt einen 720, der kleine einen 540', () => {
-  // Gemessen bei Tempo 13 mit Pop: gross 2,13 s, klein 1,53 s. Fuer einen
-  // 720 braucht es gut 1,75 s Luft, fuer einen 540 gut 1,4 s.
+  // Gemessen bei Tempo 13 mit Pop: gross 2,13 s, klein 1,75 s (seit dem
+  // 04.10. 1,5 m hoch statt 1,1 – vorher 1,53 s). Fuer einen 720 braucht es
+  // gut 1,75 s Luft, fuer einen 540 gut 1,4 s.
   assert.ok(kicker(anDerKante).flug > 1.9)
-  assert.ok(kicker(anDerKante, { welcher: KLEIN }).flug > 1.4)
+  assert.ok(kicker(anDerKante, { welcher: KLEIN }).flug > 1.65)
   const dreh = (welcher, dauer) => kicker((u, luft, t) =>
     luft ? (t < dauer ? ['right'] : []) : anDerKante(u, luft), { welcher }).tricks
   assert.deepEqual(dreh(GROSS, 1.4), ['720° · PERFEKT'])

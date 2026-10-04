@@ -457,7 +457,9 @@ Panoramatafel): einmal je Einfahrt gewürfelt, Stufe 1 bis 5 mit 1 / 6 / 20 /
 50 / 85 %. Ausgelöst wird zwischen Meter 8 und 30, ab 5 m/s. Es reißt am
 Südhang 16 m neben der Bahnmitte an (dort 3–4 m höher; bei 22 m lag die
 Kante aus der festen Kamera links außerhalb des Bildes), mit dunkler
-Anrisskante und einem Staubstoß, zerbricht nach 4–7 m von Schollen in
+Anrisskante – ein flaches Band mit niedriger Bruchstufe, gerade quer im
+Rahmen der Bahn bei s (dicke Balken je Bahnstelle ergaben eine blaue
+Treppe mit Gabelung) – und einem Staubstoß, zerbricht nach 4–7 m von Schollen in
 Klumpen und kommt 2–7,5 m hinter der Mitte, vor dem Gratrücken, zum Stehen.
 Die Bahn ist **geführt** (quer zur Piste), nicht das Gefälle: so wie das
 Gelände fällt, rutschten die Schollen gemessen in drei von vier Fällen
@@ -466,7 +468,9 @@ eine halbe Sekunde hinter dem Fahrer über die Bahn geht (Front nach knapp
 2,9 s in der Mitte, Anriss 2,3 s × Tempo voraus): mit Gas kommt man durch,
 wer bremst, wird erwischt (gemessen nach 2,6 s bei 2,6 m/s). Erwischt heißt:
 Wolke, nach 0,55 s hinter der Blende zurück an den Start der Nordabfahrt
-(`main.js`, `onErwischt`). Die Brocken sind Aufbau ohne Kollision und
+(`main.js`, `onErwischt`). An Fels, Zaun und Kreuzen bleiben Schollen hängen und stauen sich (ab
+Meter 28 stehen davon viele im Streifen); dort hat die Kante eine Lücke.
+Die Brocken sind Aufbau ohne Kollision und
 bleiben 45 s liegen, weg erst außer Bild; die Bahn stempelt aufgewühlten
 Schnee in die Spurkarte (höchstens sechs Stempel je Bild, Stärke 0,3 –
 mit 0,55 lag nach drei Lawinen ein Leopardenmuster am Hang). Eigener

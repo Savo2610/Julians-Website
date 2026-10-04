@@ -52,8 +52,9 @@ function bahn(s) {
 }
 
 export class Schneebrett {
-  constructor({ scene, northRun, stufe, camera, trail = null }) {
+  constructor({ scene, northRun, stufe, camera, trail = null, world = null }) {
     this.scene = scene
+    this.world = world
     this.trail = trail
     this._stempel = 0
     this.northRun = northRun
@@ -119,21 +120,33 @@ export class Schneebrett {
     this._erwischt = false
     this.abgegangen++
 
-    // Die Anrisskante, quer zum Hang: ein Stueck oberhalb der obersten Scholle.
-    const kante = []
-    for (let u = -BREITE - 0.5; u <= BREITE + 0.5; u += 1) {
-      const b = bahn(s + u)
-      const x = b.x - b.nx * (ABSTAND + 0.8)
-      const z = b.z - b.nz * (ABSTAND + 0.8)
-      kante.push([x, terrainHeight(x, z), z, Math.atan2(b.tx, b.tz) + Math.PI / 2])
+    // Die Anrisskante, quer zum Hang: ein Stueck oberhalb der obersten
+    // Scholle, als gerade Linie in einem einzigen Rahmen (der Bahn bei s).
+    // Jeder Punkt mit der Normale seiner eigenen Bahnstelle versetzt lief
+    // auf der Innenseite der Kurve zusammen und gabelte sich zu einem Y.
+    const b0 = bahn(s)
+    // An Felsen, Zaun und Pfosten hat die Kante eine Luecke: dort haelt
+    // das Brett, und ein Band mitten durch den Fels sah aus wie ein Fehler.
+    const kanten = [[]]
+    for (let u = -BREITE - 0.5; u <= BREITE + 0.5; u += 0.5) {
+      const x = b0.x + b0.tx * u - b0.nx * (ABSTAND + 0.8)
+      const z = b0.z + b0.tz * u - b0.nz * (ABSTAND + 0.8)
+      if (this._hindernis(x, z, 0.4)) { if (kanten.at(-1).length) kanten.push([]); continue }
+      kanten.at(-1).push([x, terrainHeight(x, z), z])
     }
-    this.kante = anriss(kante)
+    const kante = kanten.flat()
+    this.kante = new THREE.Group()
+    for (const k of kanten) if (k.length > 1) this.kante.add(anriss(k, { x: b0.nx, z: b0.nz }))
     this.scene.add(this.kante)
 
     // Zwei Reihen Schollen, die sieben Meter zu jeder Seite reichen.
     for (let reihe = 0; reihe < 2; reihe++) {
       for (let u = -BREITE + 0.9; u <= BREITE - 0.9; u += 2.1) {
         const uu = u + zufall(-0.4, 0.4) + reihe * 1.05
+        // Wo schon ein Fels oder Pfosten steht, liegt keine Scholle.
+        const bs = bahn(s + uu)
+        const d0 = -ABSTAND + reihe * 1.9
+        if (this._hindernis(bs.x + bs.nx * d0, bs.z + bs.nz * d0, 1)) continue
         const breit = zufall(1.4, 2.1)
         const lang = zufall(1.2, 1.8)
         const mesh = scholle(breit, lang, zufall(0.22, 0.3), Math.random)
@@ -155,7 +168,7 @@ export class Schneebrett {
       }
     }
     // Wumm: entlang der Kante staubt es auf, bevor sich etwas bewegt.
-    for (const [x, y, z] of kante) this._stauben(x, y, z, 0, 0, 4, 2.2)
+    for (const [x, y, z] of kante.filter((_, i) => i % 2 === 0)) this._stauben(x, y, z, 0, 0, 4, 2.2)
   }
 
   _rutschen(st, dt, skier) {
@@ -170,7 +183,15 @@ export class Schneebrett {
       st.v = Math.min(st.vmax, st.v + BESCHL * dt)
       // Ab der Bahnmitte gebremst, so dass es bei `ende` steht.
       if (st.d > -2) st.v = Math.min(st.v, Math.sqrt(2 * BREMS * Math.max(0, st.ende - st.d)) + 0.15)
-      st.d = Math.min(st.ende, st.d + st.v * dt)
+      const neu = Math.min(st.ende, st.d + st.v * dt)
+      // Vor einem Hindernis bleibt es haengen, die naechsten stauen sich
+      // dahinter. Ohne das rutschten die Schollen hinter Meter 28 durch
+      // Zaun, Felsen und Gefahrkreuze an der Klamm hindurch.
+      const b = bahn(st.s)
+      if (this._hindernis(b.x + b.nx * neu, b.z + b.nz * neu, st.r + 0.5)) {
+        st.ende = st.d
+        st.v = 0
+      } else st.d = neu
     } else st.v = 0
     const bewegt = st.v > 0.05 || vorher > 0.05
 
@@ -264,6 +285,13 @@ export class Schneebrett {
     }
   }
 
+  // Steht hier etwas mit Kollision – Fels, Zaunpfosten, Baum, Kreuz?
+  _hindernis(x, z, rand) {
+    if (!this.world) return false
+    for (const c of this.world.nearby(x, z)) if (Math.hypot(c.x - x, c.z - z) < c.r + rand) return true
+    return false
+  }
+
   _imBild() {
     for (const st of this.stuecke) {
       if (!st.mesh) continue
@@ -282,7 +310,10 @@ export class Schneebrett {
     this.stuecke = []
     if (this.kante) {
       this.scene.remove(this.kante)
-      this.kante.geometry.dispose()
+      for (const m of this.kante.children) {
+        m.geometry.dispose()
+        m.material.dispose()
+      }
       this.kante = null
     }
     this.laeuft = false

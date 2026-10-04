@@ -196,7 +196,7 @@ const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.tr
 // sagt (world/attractions/schneebrett.js). Wer verschuettet wird, steht
 // hinter der Blende wieder am Start der Abfahrt – eine halbe Sekunde
 // spaeter, damit man die Wolke noch sieht.
-const schneebrett = new Schneebrett({ scene, northRun: props.northRun, stufe: lawinenstufe(), camera, trail })
+const schneebrett = new Schneebrett({ scene, northRun: props.northRun, stufe: lawinenstufe(), camera, trail, world })
 schneebrett.onErwischt = () => {
   setTimeout(() => {
     const a = NORTH_LANE.segments[0]

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
+import { terrainHeight } from '../heightfield.js'
 
 // Was man vom Schneebrett sieht: die Anrisskante, die Schollen, in die das
 // Brett zerbricht, und die Brocken, die am Ende auf der Piste liegen. Alles
@@ -48,16 +49,35 @@ export function brocken(r) {
   return mesh
 }
 
-// Die Anrisskante: eine Kette kurzer Balken quer zum Hang, jeder auf dem
-// Gelaende abgelegt. `punkte` sind [x, y, z, gier].
-export function anriss(punkte) {
-  const teile = punkte.map(([x, y, z, gier]) => ({
-    geo: new THREE.BoxGeometry(1.15, 0.45, 0.5),
-    color: KANTE,
-    position: [x, y + 0.1, z],
-    rotation: [0, gier, 0],
-  }))
-  const mesh = new THREE.Mesh(assemble(teile), kantenMaterial())
+// Die Anrisskante: ein schmales dunkles Band, das dem Gelaende folgt, und
+// talseitig davon die niedrige Bruchstufe, an der das Brett abgerissen ist.
+// `punkte` sind [x, y, z] entlang der Kante, `tal` die waagerechte Richtung
+// hangab. Vorher waren es 0,45 m hohe Balken mit fester Hoehe: am Hang
+// ergaben sie eine blaue Treppe, die 45 Sekunden lang dort stand.
+export function anriss(punkte, tal) {
+  const pos = []
+  const index = []
+  const BAND = 0.32
+  const STUFE = 0.22
+  for (const [x, y, z] of punkte) {
+    const ox = x + tal.x * BAND
+    const oz = z + tal.z * BAND
+    // oben am Band, unten am Band (auf dem Gelaende), Fuss der Stufe
+    pos.push(x, terrainHeight(x, z) + 0.05, z)
+    pos.push(ox, terrainHeight(ox, oz) + 0.05, oz)
+    pos.push(ox + tal.x * 0.05, terrainHeight(ox, oz) - STUFE, oz + tal.z * 0.05)
+  }
+  for (let i = 0; i < punkte.length - 1; i++) {
+    const a = i * 3
+    const b = a + 3
+    index.push(a, b, a + 1, a + 1, b, b + 1)          // Band
+    index.push(a + 1, b + 1, a + 2, a + 2, b + 1, b + 2) // Stufe
+  }
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  geo.setIndex(index)
+  geo.computeVertexNormals()
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: KANTE, roughness: 0.92, side: THREE.DoubleSide }))
   mesh.receiveShadow = true
   return mesh
 }
@@ -69,10 +89,7 @@ let _material = null
 function material() {
   return (_material ||= vertexColorMaterial({ roughness: 0.92, emissive: 0x4a5566, emissiveIntensity: 0.55 }))
 }
-let _kante = null
-function kantenMaterial() {
-  return (_kante ||= vertexColorMaterial({ roughness: 0.92 }))
-}
+
 
 // Die Lawinenbahn in der Spurkarte: aufgewuehlter Schnee, Buckel und Mulden
 // durcheinander. Dieselbe Kanalsprache wie die Tierspuren (tiere/werkzeug.js):

@@ -95,8 +95,9 @@ export class Wildnis {
   // Ruft ein Tier sofort herbei, wenn es einen Platz findet. Aus der
   // Konsole: __ski.tiere.rufen('hase' | 'hasenfamilie' | 'huehner' |
   // 'fuchs' | 'eichhoernchen' | 'dohle' | 'steinbock'). Die mit festem Ort
-  // kommen nur, wenn man hoechstens 70 m davon ist und der Ort nicht im
-  // Bild liegt.
+  // kommen, wenn ihr Ort nicht im Bild liegt – auch von weit weg, damit man
+  // sie aus der Konsole holen kann. Von selbst kommen sie nur in 70 m Naehe:
+  // das prueft _inDerNaehe vor dem Aufruf, nicht der Platz.
   rufen(art, skier = window.__ski?.skier) {
     if (!skier) return false
     if (this.tier) this.tier.entfernen()
@@ -169,7 +170,7 @@ export class Wildnis {
     const h = this.ctx.huette
     if (!h) return null
     const d = Math.hypot(h.position.x - skier.position.x, h.position.z - skier.position.z)
-    if (d < 20 || d > NAH) return null
+    if (d < 20) return null
     h.updateMatrixWorld(true)
     const dach = h.userData.dach
     const v = new THREE.Vector3()
@@ -185,7 +186,7 @@ export class Wildnis {
     const p = skier.position
     const frei = this.sitze.filter((s) => {
       const d = Math.hypot(s.x - p.x, s.z - p.z)
-      return d > 20 && d < NAH && this._versteckt(skier, s.x, s.y, s.z)
+      return d > 20 && this._versteckt(skier, s.x, s.y, s.z)
     })
     if (!frei.length) return null
     return { sitze: this.sitze, start: frei[Math.floor(Math.random() * frei.length)] }
@@ -195,7 +196,7 @@ export class Wildnis {
     const p = skier.position
     const frei = this.felsen.filter((f) => {
       const d = Math.hypot(f.x - p.x, f.z - p.z)
-      return d > 24 && d < NAH && this._versteckt(skier, f.x, f.top + 0.8, f.z)
+      return d > 24 && this._versteckt(skier, f.x, f.top + 0.8, f.z)
     })
     if (!frei.length) return null
     const fels = frei[Math.floor(Math.random() * frei.length)]

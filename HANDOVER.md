@@ -1448,8 +1448,8 @@ gleichzeitig kommen, gibt es seither etwas weniger Hasen.
 
 Zum Prüfen: `__ski.tiere.rufen('hase' | 'hasenfamilie' | 'huehner' |
 'fuchs' | 'eichhoernchen' | 'dohle' | 'steinbock')` ruft sofort eins
-herbei (die Hühner nur in Gipfelnähe, die mit festem Ort nur in dessen
-Nähe und wenn er außer Bild ist), `__ski.tiere.tier` ist das
+herbei (die Hühner nur in Gipfelnähe, die mit festem Ort von überall,
+solange ihr Ort außer Bild ist; von selbst nur in 70 m Nähe), `__ski.tiere.tier` ist das
 laufende (`zustand`, `x`, `z`), `__ski.tiere.gesichtet` zählt, was im Bild
 war. Nicht im Pistenpass – ein geheimes Abzeichen dafür wäre denkbar
 (etwa: dem Hasen auf 6 m nahekommen, ohne dass er flieht), aber erst

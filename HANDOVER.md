@@ -1426,11 +1426,8 @@ Nordabfahrt hinauf (3,4 m zum Grat versetzt), oberhalb der Klamm bis Meter
 36 hinunter (Mitte) und 3,4 m zur anderen Seite wieder hinauf – das Hin und
 Her liegt ganz über der Brücke, **über die Brücke fährt sie genau zweimal**,
 hin und zurück (Ansage Julian; vorher dreimal hin und her). Oben durch die
-Mitte des Startbogens (quer hinüber streifte sie einen Pfosten), östlich am
-Gipfelkreuz vorbei, 2,9 m innen an der Bande der Rodelbahn entlang – die
-beginnt seit dem 05.10. am rechten Pfosten des Startbogens (`anschluss` in
-`createSledFence`), vorher 5,4 m davor, und durch die Lücke fuhr die Raupe
-mitten durch den ersten Pfosten – und **nach links bis an den Lift**: 2,6 m neben der Trasse
+Mitte des Startbogens (quer hinüber streifte sie einen Pfosten), unter dem
+Gipfelkreuz durch und **nach links bis an den Lift**: 2,6 m neben der Trasse
 hinunter, 7 m daneben wieder hinauf, auf der Seite zur freien Abfahrt (auf
 der Trasse stehen die Stützen, bei 4,8 m ein Pistenpfahl). Dann die
 Nordabfahrt hinunter und vorwärts durchs Tor hinein, Tor zu. Unterhalb der
@@ -1439,7 +1436,10 @@ schwenkt jede Spur auf die Achse der Brücke ein (sie liegt 4,7 m neben der
 Bahnmitte, weil sich die Bahn in Steg und Schanze gabelt), und dort trägt
 das Deck (`stegDeck`), nicht das Gelände. Geprüft gegen die ganze
 Kollisionsliste, nicht `world.nearby()` (das liefert nur die eigene
-Rasterzelle): überall mindestens 1,86 m Luft. Ein automatisches Ausweichen
+Rasterzelle): überall mindestens 1,86 m Luft. Die Bande der Rodelbahn
+läuft seit dem 05.10. vom rechten Pfosten des Startbogens gerade zur Ecke am
+Fels (`anschluss` in `createSledFence`); vorher stand ihr erster Pfosten
+mitten auf dem Gipfelplatz, und die Raupe fuhr hindurch – jetzt 5 m Luft. Ein automatisches Ausweichen
 wurde versucht und verworfen: zwischen den Felsgruppen der Klamm schob es
 die Spur bis 13 m weit.
 

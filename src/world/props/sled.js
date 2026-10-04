@@ -17,9 +17,9 @@ const WOOD = 0x8a6a44
 const WOOD_DARK = 0x6b4f31
 const SNOW = 0xf4f9ff
 
-// `anschluss` ({ side, x, z }) laesst eine Seite an einem fremden Pfosten
-// beginnen: von dort laufen Pfosten im Bandenabstand bis zum ersten eigenen,
-// am Anschluss selbst nur die Bretter.
+// `anschluss` ({ side, x, z, bis }) laesst eine Seite an einem fremden
+// Pfosten beginnen: von dort laeuft sie gerade bis zu ihrem Pfosten Nummer
+// `bis`, die davor entfallen. Am Anschluss selbst nur die Bretter.
 export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.92, anschluss = null } = {}) {
   const parts = []
   const segs = lane.segments
@@ -81,7 +81,7 @@ export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.9
     }
 
     if (anschluss && anschluss.side === side) {
-      const f = posts.findIndex((q) => q.ok)
+      const f = anschluss.bis ?? posts.findIndex((q) => q.ok)
       const ziel = posts[f]
       const weg = Math.hypot(ziel.x - anschluss.x, ziel.z - anschluss.z)
       const n = Math.ceil(weg / spacing)

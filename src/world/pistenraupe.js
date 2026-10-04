@@ -89,11 +89,8 @@ function liftFahrt(versatz, hinauf) {
 // wird auf der Bruecke, wo ohnehin jede Spur auf der Achse liegt.
 const unten = (s, tal, berg) => (s > 52 ? tal : berg)
 
-// Ueber den Gipfel zum Lift: aus dem Startbogen schraeg hinunter, oestlich
-// am Gipfelkreuz vorbei (2 m) und innen an der Bande der Rodelbahn entlang
-// (3 m), dann nach links. Vorher fuhr sie bei (−52, −66) mitten durch den
-// ersten Bandenpfosten.
-const OBEN = [{ x: -55.5, z: -67.5 }, { x: -53.5, z: -62 }, { x: -53, z: -58 }]
+// Ueber den Gipfel zum Lift: unter dem Gipfelkreuz durch, dann nach links.
+const OBEN = [{ x: -57.5, z: -68 }, { x: -52, z: -66 }, { x: -53, z: -58 }]
 
 // Die ganze Runde als Linienzug. Ueber die Bruecke (Bahnmeter 45 bis 60)
 // faehrt sie genau zweimal, hin und zurueck; das Hin und Her liegt ganz

@@ -899,10 +899,11 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // im Schnee, nicht in den Stangen.
   const race = new RaceCourse(world, { lane: SLED_LANE, gates: true })
   // Die Bergseite der Bande beginnt am rechten Pfosten des Startbogens der
-  // Nordabfahrt. Vorher endete sie 5,4 m davor, und durch die Luecke fuhr
-  // die Pistenraupe mitten durch den ersten Pfosten.
+  // Nordabfahrt und laeuft von dort gerade zur Ecke am Fels (ihr zweiter
+  // Pfosten). Vorher stand ihr erster Pfosten mitten auf dem Gipfelplatz,
+  // und die Pistenraupe fuhr durch ihn hindurch; jetzt bleibt sie 5 m davor.
   const [ax, az] = torPfostenRechts
-  world.scene.add(createSledFence(SLED_LANE, { anschluss: { side: -1, x: ax, z: az } }))
+  world.scene.add(createSledFence(SLED_LANE, { anschluss: { side: -1, x: ax, z: az, bis: 1 } }))
 
   {
     const lane = PARK_LANE

@@ -35,6 +35,9 @@ Das Wichtigste in Kürze:
   deckelt `kantenSprung()` den Absprung. Über eine Lücke (Klammschanze der
   Nordabfahrt) fliegt man nur, wo `freiFlug()` es sagt – sonst sinkt der
   Fahrer im Flug mit dem Boden darunter mit.
+  Einzige Ausnahme mit zwei Flächen: das Deck der Brücke über die Klamm
+  (`stegDeck()`), das nur der Fahrer liest (`Skier._boden`); darunter läuft
+  die Klamm durch.
 - Kommentare und Commits auf **Deutsch**, und sie erklären das *Warum*, meist
   mit einer gemessenen Zahl.
 - Klein und dicht — ein Spielzeugtal. Im Zweifel schrumpfen.

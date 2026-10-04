@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
-import { terrainHeight, KLAMM, BRUECKE, klammAt, bachVersatz } from '../heightfield.js'
+import { terrainHeight, KLAMM, klammAt, bachVersatz } from '../heightfield.js'
 
 // Ein zugefrorener Bach in der Sohle der Klamm.
 //
@@ -17,10 +17,15 @@ import { terrainHeight, KLAMM, BRUECKE, klammAt, bachVersatz } from '../heightfi
 // Bettes schneidet, ist das Ufer: unregelmaessig, weil es aus dem Gelaende
 // kommt und nicht aus einer Breite. Dazu ein paar Steine am Ufer.
 //
-// Unter der Bruecke liegt er nicht – dort traegt ein Damm aus Gelaende das
-// Deck (BRUECKE in heightfield.js), und Eis auf einem Damm waere eine Pfuetze
-// auf der Fahrbahn. Er laeuft bis in die Mauern hinein; im Durchlass liegt
-// das Eis der Bruecke selbst (gorge-bridge.js).
+// Er laeuft unter der Bruecke durch: seit 04.10. traegt sie selbst (stegDeck
+// in heightfield.js), und die Klamm ist darunter offen. Davor stand dort ein
+// Damm, an dem der Bach aufhoerte.
+//
+// Gegen das Aufgemalte hilft am meisten, was Schatten wirft: das Bett ist
+// 45 Zentimeter tief mit steiler Boeschung (KLAMM.bach), und an beiden
+// Ufern liegt eine Schneelippe, die ein Stueck ueber das Eis haengt. Ihr
+// Schatten auf dem Eis ist aus 33 Metern die Kante, an der man sieht, dass
+// der Bach tiefer liegt als der Schnee.
 
 const EIS = new THREE.Color(0x9fd8e4)
 const EIS_TIEF = new THREE.Color(0x6fb3c9)
@@ -31,7 +36,7 @@ const SCHNEE = 0xf7fbff
 
 // Wie hoch das Eis ueber der tiefsten Stelle des Bettes steht. Es schwankt
 // laengs ein wenig – dadurch wird der Bach mal breiter, mal schmaler.
-const pegel = (s) => 0.11 + 0.035 * Math.sin(s * 0.73) + 0.02 * Math.sin(s * 1.9 + 0.4)
+const pegel = (s) => 0.1 + 0.04 * Math.sin(s * 0.73) + 0.02 * Math.sin(s * 1.9 + 0.4)
 
 export function createKlammEis(world, { schritt = 0.5 } = {}) {
   const ax = KLAMM.bis.x - KLAMM.von.x
@@ -41,8 +46,6 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
   const uz = az / la
   const nx = -uz
   const nz = ux
-  const brueckeBei = (BRUECKE.x - KLAMM.von.x) * ux + (BRUECKE.z - KLAMM.von.z) * uz
-  const frei = BRUECKE.halb + BRUECKE.saum + 0.25
   const halb = KLAMM.bach.breite
 
   const pos = []
@@ -55,9 +58,9 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
     const v = bachVersatz(s)
     const mx = KLAMM.von.x + ux * s + nx * v
     const mz = KLAMM.von.z + uz * s + nz * v
-    // Nur, wo die Rinne wirklich tief ist und nicht unter dem Damm.
+    // Nur, wo die Rinne wirklich tief ist.
     const tief = -klammAt(mx, mz)
-    if (tief < 1.2 || Math.abs(s - brueckeBei) < frei) { offen = false; continue }
+    if (tief < 1.2) { offen = false; continue }
     const y = terrainHeight(mx, mz) + pegel(s)
     for (let i = 0; i < quer; i++) {
       const o = (i / (quer - 1) - 0.5) * 2 * halb
@@ -90,13 +93,53 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
   mesh.receiveShadow = true
   world.scene.add(mesh)
 
-  // Steine am Ufer, abwechselnd links und rechts, mit Schneekappe. Nicht an
-  // der Bruecke und nur, wo die Rinne schon tief ist.
+  // Die Schneelippen an beiden Ufern: ein flacher Wulst auf der Oberkante
+  // der Boeschung, zehn Zentimeter ueber sie hinaus zum Eis hin. Je Ufer ein
+  // Rohr, solange die Rinne tief ist.
+  // Gebaut als halber flacher Wulst (oben rund, unten offen im Schnee),
+  // Querschnitt 32 auf 9 Zentimeter.
+  const lp = [], li = []
+  const RING = 7
+  for (const seite of [-1, 1]) {
+    let reihe = 0
+    for (let s = 0; s <= la; s += 0.5) {
+      const o = bachVersatz(s) + seite * (KLAMM.bach.breite - 0.62 + 0.08 * Math.sin(s * 1.3 + seite))
+      const x = KLAMM.von.x + ux * s + nx * o
+      const z = KLAMM.von.z + uz * s + nz * o
+      if (-klammAt(x, z) < 1.5) { reihe = 0; continue }
+      // Auf die Hoehe der Oberkante, nicht des Punktes: der liegt schon in
+      // der Boeschung.
+      const y = terrainHeight(x + nx * seite * 0.5, z + nz * seite * 0.5) - 0.03
+      const basis = lp.length / 3
+      for (let j = 0; j < RING; j++) {
+        const a = Math.PI * j / (RING - 1)
+        const q = Math.cos(a) * 0.32
+        lp.push(x + nx * q, y + Math.sin(a) * 0.09, z + nz * q)
+      }
+      if (reihe > 0) {
+        const vor = basis - RING
+        for (let j = 0; j < RING - 1; j++) li.push(vor + j, basis + j, vor + j + 1, vor + j + 1, basis + j, basis + j + 1)
+      }
+      reihe++
+    }
+  }
+  if (li.length) {
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3))
+    geo.setIndex(li)
+    geo.computeVertexNormals()
+    const lippe = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: SCHNEE, roughness: 0.95, side: THREE.DoubleSide }))
+    lippe.castShadow = true
+    lippe.receiveShadow = true
+    world.scene.add(lippe)
+  }
+
+  // Steine am Ufer, abwechselnd links und rechts, mit Schneekappe. Nur, wo
+  // die Rinne schon tief ist.
   const steine = []
   let k = 0
   for (let s = 6; s < la - 6; s += 3.2 + ((k * 7) % 5) * 0.6) {
     k++
-    if (Math.abs(s - brueckeBei) < frei + 2) continue
     const seite = k % 2 ? 1 : -1
     const o = bachVersatz(s) + seite * (halb * 0.85 + ((k * 3) % 4) * 0.12)
     const x = KLAMM.von.x + ux * s + nx * o

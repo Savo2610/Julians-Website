@@ -8,7 +8,7 @@ import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
 import { WORLD, CAMERA } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, SCHANZE, klammAt, bachVersatz, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE, BADESTEG } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, SCHANZE, stegLage, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE, BADESTEG } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -27,7 +27,7 @@ import { DragLift } from './attractions/drag-lift.js'
 import { RaceCourse } from './attractions/race.js'
 import { RailRide } from './attractions/rail-ride.js'
 import { SpeedCheck } from './attractions/speed-check.js'
-import { createRail, createParkSign, createParkBox, createLipLine, createBeachFlag } from './props/funpark.js'
+import { createRail, createParkSign, createParkBox, createLipLine, createBeachFlag, createPadMarker } from './props/funpark.js'
 import { APRES, houseWorld } from './areas/apres-layout.js'
 import { createApresTerrace } from './areas/apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
@@ -665,48 +665,25 @@ export function populate(world, sky, registry, stationOptions = {}) {
       // nicht das sonst uebliche atan2(dx, dz).
       const dreh = Math.atan2(-(nach.z - vor.z), nach.x - vor.x)
 
-      // Neigung und Hoehe nimmt der Steg vom Gelaende ab, nicht von den
-      // Stuetzpunkten der Bahn: was der Fahrer befaehrt, ist das Hoehenfeld,
-      // und nur dessen Sehne durch die beiden Stegenden zaehlt. Waagerecht
-      // hingelegt steckte er oben einen Meter im Hang und schwebte unten einen
-      // Meter darueber – der Fahrer fuhr sichtbar durch das Holz.
+      // Neigung und Hoehe nimmt die Bruecke vom Deck (stegLage in
+      // heightfield.js), auf dem der Fahrer faehrt. Bis 04.10. kamen sie aus
+      // einer Ausgleichsgeraden durch das Gelaende – das trug damals selbst,
+      // jetzt laeuft darunter die Klamm durch.
       const laenge = 15
       const ll = Math.hypot(nach.x - vor.x, nach.z - vor.z)
       const ux = (nach.x - vor.x) / ll
       const uz = (nach.z - vor.z) / ll
-      // Ausgleichsgerade durch fuenfzehn Proben und nicht Sehne durch die
-      // beiden Enden: das Gelaende haengt gegen so eine Sehne um bis zu acht
-      // Zentimeter durch, und die Ausgleichsgerade verteilt den Rest von selbst
-      // auf beide Seiten. Uebrig bleiben gut fuenf Zentimeter – bei einem Ski
-      // von fuenf Zentimetern Dicke und dreiunddreissig Metern Kamerahoehe
-      // nicht mehr zu sehen.
-      const N = 15
-      let summeH = 0, summeOH = 0, summeOO = 0
-      for (let i = 0; i < N; i++) {
-        const o = (i / (N - 1) - 0.5) * laenge
-        const h = terrainHeight(BRUECKE.x + ux * o, BRUECKE.z + uz * o)
-        summeH += h
-        summeOH += o * h
-        summeOO += o * o
-      }
-      const neigung = Math.atan(-summeOH / summeOO)
-      const hoehe = summeH / N - terrainHeight(BRUECKE.x, BRUECKE.z)
+      const deckY = (o) => stegLage(BRUECKE.x + ux * o, BRUECKE.z + uz * o).y
+      const neigung = Math.atan((deckY(-5) - deckY(5)) / 10)
+      const mitteY = deckY(0)
+      const hoehe = mitteY - terrainHeight(BRUECKE.x, BRUECKE.z)
 
-      // Fuer die Mauern: der Grund neben dem Damm in den lokalen Koordinaten
-      // der Bruecke, und wo die Mittellinie der Klamm sie kreuzt (der Bach).
+      // Fuer die Widerlager: der Grund in den lokalen Koordinaten der
+      // Bruecke, gemessen von der Deckmitte aus.
       const c = Math.cos(dreh), sn = Math.sin(dreh)
-      const nullY = terrainHeight(BRUECKE.x, BRUECKE.z) + hoehe
-      const grund = (lx, lz) => terrainHeight(BRUECKE.x + lx * c + lz * sn, BRUECKE.z - lx * sn + lz * c) - nullY
-      const kx = KLAMM.bis.x - KLAMM.von.x
-      const kz = KLAMM.bis.z - KLAMM.von.z
-      const kl = Math.hypot(kx, kz)
-      const quer = (x, z) => ((x - KLAMM.von.x) * -kz + (z - KLAMM.von.z) * kx) / kl
-      // Der Bach windet sich (bachVersatz); das Gewoelbe sitzt dort, wo er
-      // unter der Bruecke wirklich laeuft, nicht auf der Achse der Klamm.
-      const laengs = ((BRUECKE.x - KLAMM.von.x) * kx + (BRUECKE.z - KLAMM.von.z) * kz) / kl
-      const bachX = (bachVersatz(laengs) - quer(BRUECKE.x, BRUECKE.z)) / (quer(BRUECKE.x + c, BRUECKE.z - sn) - quer(BRUECKE.x, BRUECKE.z))
+      const grund = (lx, lz) => terrainHeight(BRUECKE.x + lx * c + lz * sn, BRUECKE.z - lx * sn + lz * c) - mitteY
 
-      const bruecke = createGorgeBridge({ laenge, neigung, grund, bachX })
+      const bruecke = createGorgeBridge({ laenge, neigung, grund })
       world.place(bruecke, BRUECKE.x, BRUECKE.z, { rotation: dreh, yOffset: hoehe })
     }
 
@@ -968,25 +945,37 @@ export function populate(world, sky, registry, stationOptions = {}) {
       world.scene.add(createLipLine(punkte))
     }
 
-    // Beachflags links und rechts der Figuren – sie machen aus der
-    // Schneeflaeche einen Park. Die Schanzen bekommen keine: sie haben ihre
-    // Linie auf der Kante, und beides zusammen waere ein Slalom aus Fahnen.
-    // Die Flaggen stehen auf Federfuessen: wer dagegen faehrt, legt sie um,
-    // und sie schwingen hinter ihm zurueck.
+    // Beachflags links und rechts der Absprungkanten, wo vorher die Kloetze
+    // standen: im Anfahren sieht man daran, wo gesprungen wird. Sie stehen
+    // auf Federfuessen: wer dagegen faehrt, legt sie um, und sie schwingen
+    // hinter ihm zurueck.
     let variant = 0
     for (const f of PARK_FEATURES) {
-      if (f.kind === 'kicker') continue
-      const half = (f.width ?? 8) * 0.5 + 2.2
-      // Die Wellen liegen seit 04.10. am linken Rand neben dem Landehang
-      // der grossen Schanze; eine Fahne auf ihrer Innenseite stuende
-      // mitten in dessen Flanke. Sie bekommen nur die aeussere.
-      for (const side of f.kind === 'rollers' ? [-1] : [-1, 1]) {
-        const mx = f.x + f.dz * side * half
-        const mz = f.z - f.dx * side * half
+      if (f.kind !== 'kicker') continue
+      const half = f.width * 0.5 + 0.7
+      for (const side of [-1, 1]) {
+        const mx = f.x - f.dz * side * half
+        const mz = f.z + f.dx * side * half
         const flagge = createBeachFlag(variant++)
         world.place(flagge, mx, mz, { rotation: Math.PI * 0.25 })
         const feder = springMount(world, flagge, mx, mz, Math.PI * 0.25)
         animatedProps.push((t, dt) => feder(dt, skierRef.current))
+      }
+    }
+
+    // Gepolsterte Pfosten links und rechts der Figuren – sie machen aus der
+    // Schneeflaeche einen Park.
+    for (const f of PARK_FEATURES) {
+      if (f.kind === 'kicker') continue
+      const half = (f.width ?? 8) * 0.5 + 2.2
+      // Die Wellen liegen seit 04.10. am linken Rand neben dem Landehang
+      // der grossen Schanze; ein Polster auf ihrer Innenseite stuende
+      // mitten in dessen Flanke. Sie bekommen nur das aeussere.
+      for (const side of f.kind === 'rollers' ? [-1] : [-1, 1]) {
+        const mx = f.x + f.dz * side * half
+        const mz = f.z - f.dx * side * half
+        const marker = createPadMarker(variant++)
+        world.place(marker, mx, mz, { rotation: rng() * Math.PI * 2 })
       }
     }
   }

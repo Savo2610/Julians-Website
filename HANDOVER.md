@@ -354,19 +354,24 @@ rechnet `areas/umstossen.js` ohne three.js (Tests in `tests/umstossen.test.js`):
 - **Skiständer** rechts vorn an der Kante: fünf Paar Ski (breiter) und zwei
   Snowboards, Bindungen zur Kamera, Holm auf 1,45 m. Wer hineinfährt, stößt
   ein Brett an, und die Reihe fällt wie Dominosteine (erstes nach 0,68 s,
-  letztes nach 1,48 s), frontal getroffen nach beiden Seiten. Die Kollision
-  des Holms liegt 25 cm dahinter, sonst käme man nicht an die Füße heran.
+  letztes nach 1,48 s), frontal getroffen nach beiden Seiten. Seit der
+  dritten Runde (04.10.) hat der Ständer keine Kollision mehr: man fährt von
+  vorn wie von hinten durch und nimmt die Reihe mit (gemessen am Wegstück
+  eines Bildes, sonst rutschte man bei 15 m/s zwischen zwei Brettern durch).
   Nach 9 s und ≥ 6 m Abstand stehen sie wieder.
 - **Becher**: drei Maßkrüge je Tisch (eine InstancedMesh). Wird der Tisch
   getroffen, fliegen sie, springen auf und bleiben auf der Seite liegen
-  (spätestens nach 4 s, auch am Hang). Sie stehen wieder auf dem Tisch,
+  (spätestens nach 4 s, auch am Hang). Liegende Krüge räumt man noch einmal
+  ab: wer durchfährt (0,5 m), schießt sie weiter. Sie stehen wieder auf dem Tisch,
   wenn er zu Hause ist und der Fahrer ≥ 7 m weg.
 - **Schirme** sind eigene Teile (`schirmGeometry`), durch die Tischmitte
   gesteckt. Ein Tischtreffer gibt ihnen einen eigenen, schwächeren Stoß;
   sie kippen langsamer und lehnen sich an die Hauswand, statt durch sie zu
   fallen. Nichts Bewegliches rutscht mehr ins Haus (`imHaus`).
 - Gekippt wird im eigenen Rahmen jedes Möbels; vorher fiel alles um seine
-  Drehung (gut 45°) schräg zur Fahrtrichtung. Der See hat eine eigene Bucht in `WORLD.basins`, damit
+  Drehung (gut 45°) schräg zur Fahrtrichtung.
+- Die **Masten der Lichterketten** haben keine Kollision mehr (Wunsch 04.10.):
+  zwölf Zentimeter Stange am Rand der Durchfahrt hielten nur auf. Der See hat eine eigene Bucht in `WORLD.basins`, damit
 das ganze Eis befahrbar ist; `lakeRadius()` teilt die Uferkontur zwischen Mesh
 und Höhenfeld. **Weiße Spuren auf Eis und Holz** kamen vom Spurstempel, dessen
 Rand durch den nur 1,2 cm höheren Belag ragte — `surfaces.js` sperrt jetzt
@@ -559,16 +564,27 @@ Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
   Luft warf. Jetzt mischen Abschnitte bis 4 m weiter mit
   (`RUECKEN_MISCHUNG`). Pisten unverändert (höchstens 1 mm), sonst bis
   0,6 m nur in den Knicken von Schulter und Grat.
-- **Brücke nach unten zu**: eine Höhe je Punkt, also kann man nicht darunter
-  durch. Stattdessen Bruchsteinmauern unter beiden Deckrändern bis auf den
-  Grund der Klamm, mit gewölbtem Durchlass für den Bach (dunkle Röhre,
-  Eiszunge). Die Bohlen liegen 4 cm über der Fahrfläche – darunter
-  verschwanden sie unter dem Schnee des Geländes, und das Deck war ein
-  weißes Rechteck. `BRUECKE.ebene.laenge` 18 statt 14,5, damit sich oben
-  kein Schnee über die Bohlen hebt.
-- **Bach**: ein 22 cm tiefes, gewundenes Bett (`KLAMM.bach`,
-  `bachVersatz()`), das Eis ist eine ebene Fläche darin – das Ufer ergibt
-  sich, wo sie die Böschung schneidet. Dazu Steine am Ufer.
+- **Brücke mit offener Klamm darunter** (dritte Runde): erst stand unter dem
+  Deck ein Damm aus Gelände, dann zwei Mauern mit Durchlass davor – sah
+  hingesetzt aus, schnitt den Bach ab, und wer in der Klamm an die Flanke
+  des Damms fuhr (4,5 m auf 0,7 m), flog. Jetzt schneidet `klammAt` auch
+  unter der Brücke, und das Deck ist die **einzige zweite Fläche im Tal**:
+  `stegDeck()`/`stegLage()`/`DECK` in `heightfield.js`, gelesen nur von
+  `Skier._boden()` – Deck, wenn der Fahrer von oben kommt (höchstens 0,6 m
+  darunter), sonst Gelände. Gefälle auf dem Deck aus der Ebene
+  (`_gefaelle`), das Geländer hält (`DECK.halbQ` 2,65), unten in der Klamm
+  wirft nichts ab (`ohneAbwurf`). Tests: über die Brücke, ans Geländer,
+  unten durch, in der Klamm auf die Brücke zu (`tests/klammschanze.test.js`).
+  Pistenpass „Klamm“ zählt nicht auf dem Deck (`aufDeck`). Optik: Stirnwände
+  aus Bruchstein an beiden Enden bis auf den Hang, Querträger, dunkle Lage
+  unter den Bohlen (sonst Schnee in den Fugen), Schneewehen mit welligem
+  Umriss am Geländer. Auf dem Deck keine Spur (`isSnowSurface`) – der
+  Spurwall hob vorher den Schnee darunter als weiße Flecken durch die Bohlen.
+- **Bach**: ein gewundenes Bett (`KLAMM.bach`, `bachVersatz()`), seit der
+  dritten Runde 45 cm tief mit flachem Grund und steiler Böschung, dazu an
+  beiden Ufern eine Schneelippe, die über das Eis hängt und Schatten wirft
+  (`klamm-eis.js`). Er läuft unter der Brücke durch. Das Eis ist eine ebene
+  Fläche im Bett, dazu Steine am Ufer.
 - **Weitentafel** rechts außerhalb der Stangen, nicht mehr in der Auslauflinie.
   Gemessen wird nur, was an der Klammschanze abhebt (`klammFlug`); vorher
   zählte jeder Kicker im Funpark mit.
@@ -1518,9 +1534,10 @@ spannender.
   Scheitel 5,3 m, gelandet wird weiter vor dem Knick (12,6 von 14,1 m). Die
   Leuchtstrecke bleibt dabei unverändert (gemessen 0,000 m). Die blauen
   Klötze an den Kanten sind einer blauen Linie quer über die Kante
-  gewichen (`createLipLine`), die Polsterpfosten Beachflags auf Federfüßen
-  (`createBeachFlag` + `springMount`): man fährt sie um, sie schwingen
-  zurück. Die Holzplatten der Boxen folgen dem Dach ihrer Aufschüttung
+  gewichen (`createLipLine`), mit je einer Beachflag auf Federfuß an beiden
+  Enden (`createBeachFlag` + `springMount`): man fährt sie um, sie schwingen
+  zurück. An Boxen, Rail und Wellen stehen wieder die Polster
+  (`createPadMarker`) – Flaggen dort sahen nach Absprung aus. Die Holzplatten der Boxen folgen dem Dach ihrer Aufschüttung
   (`boden` in `createParkBox`): das Band wird unten flacher, und das gerade
   Brett steckte oben 15 cm im Schnee.
 - **Offen**: der Landehang der kleinen Schanze hebt das oberste Ende der

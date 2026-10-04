@@ -202,7 +202,8 @@ export function createApresTerrace(world) {
     const [x, y, z] = at(u, w)
     fixtures.push({ geo: new THREE.CylinderGeometry(0.055, 0.085, MAST, 7), color: DARK, position: [x, y + MAST / 2, z] })
     fixtures.push({ geo: new THREE.CylinderGeometry(0.1, 0.1, 0.1, 7), color: SNOW, position: [x, y + MAST + 0.05, z] })
-    world.addCollider(x, z, 0.12)
+    // Kein Hindernis: zwoelf Zentimeter Stange am Rand der Durchfahrt hielten
+    // nur auf, ohne dass man sah, woran man haengen blieb (Wunsch 04.10.).
     return [x, y + MAST - 0.05, z]
   })
   const H = APRES.house, eave = H.height + 2.0, run = H.width / 2 + 0.4
@@ -334,14 +335,10 @@ export function createApresTerrace(world) {
     tube([[unten[0].x, ya + 0.32, unten[0].z], [unten[1].x, yb + 0.32, unten[1].z]], 0.04, DARK, 4)
     const mitte = welt(L / 2, VOR + 0.06)
     fixtures.push({ geo: new THREE.BoxGeometry(L, 0.08, 0.2), color: WOOD, position: [mitte.x, (ya + yb) / 2 + 0.04, mitte.z], rotation: [0, yaw, 0] })
-    // Der Holm ist ein Hindernis, aber die Bretter davor nicht: die Kette
-    // liegt einen Viertelmeter hinter ihm. So kommt man von vorn bis an die
-    // Fuesse heran (Mitte bei 0,48 gegen 0,29 m) und raeumt die Reihe ab;
-    // von hinten faehrt man nicht durch.
-    for (let s = 0; s <= L + 0.01; s += 0.45) {
-      const q = welt(s, -0.25)
-      world.addCollider(q.x, q.z, 0.18)
-    }
+    // Kein Hindernis: vorher hielt eine Kette hinter dem Holm alle auf, die
+    // von hinten kamen, und man blieb am Staender haengen statt ihn
+    // abzuraeumen. Jetzt faehrt man durch und nimmt die Reihe mit, von
+    // beiden Seiten (Wunsch 04.10.).
 
     const ARTEN = ['ski', 'ski', 'board', 'ski', 'ski', 'board', 'ski']
     const teile = ARTEN.map((art, i) => {
@@ -537,6 +534,22 @@ export function createApresTerrace(world) {
       let becherBewegt = false
       for (const k of becher) {
         if (!k.weg) { becherBewegt ||= k.tisch.hold > 0 || k.tisch.lastMove; continue }
+        // Was am Boden liegt, raeumt man noch einmal ab: wie beim Dosenwerfen
+        // fliegt ein liegender Krug weiter, wenn man durchfaehrt. Vorher lag
+        // er nach dem ersten Treffer still und war fuer Ski nur Luft.
+        if (!k.teil.fliegt && faehrt) {
+          const q = k.teil
+          const f = length2 ? THREE.MathUtils.clamp(((q.x - old.x) * dx + (q.z - old.z) * dz) / length2, 0, 1) : 0
+          if (Math.hypot(q.x - old.x - dx * f, q.z - old.z - dz * f) < 0.5 && Math.abs(current.y - q.y) < 1) {
+            const wucht = Math.min(9, 1.5 + skier.speed * 0.6)
+            const streu = (Math.random() - 0.5) * 2
+            q.werfen(q.x, q.y + 0.05, q.z,
+              skier.forward.x * wucht + skier.forward.z * streu,
+              1.6 + Math.random() * 1.8,
+              skier.forward.z * wucht - skier.forward.x * streu,
+              (Math.random() - 0.5) * 3)
+          }
+        }
         if (k.teil.fliegt) {
           const { x, z } = k.teil
           k.teil.update(dt, boden)
@@ -557,14 +570,17 @@ export function createApresTerrace(world) {
       if (becherBewegt) becherZeichnen()
 
       // Skistaender: wer an einem Brett vorbeifaehrt, stoesst es laengs der
-      // Reihe an – in Fahrtrichtung, oder von der Seite weg, wenn man frontal
-      // kommt.
+      // Reihe an – in Fahrtrichtung, oder von der Seite weg, wenn man quer
+      // durch kommt. Von vorn oder hinten ist gleich: gemessen wird am
+      // Wegstueck dieses Frames, sonst rutschte man mit 15 m/s (25 cm je
+      // Frame) zwischen zwei Brettern durch.
       const st = staender
       if (faehrt) {
         st.teile.forEach((t, i) => {
           const r = st.reihe.teile[i]
           if (Math.abs(r.winkel) > 0.3) return
-          if (Math.hypot(current.x - t.x, current.z - t.z) > 0.75 || Math.abs(current.y - t.y) > 1.5) return
+          const k = length2 ? THREE.MathUtils.clamp(((t.x - old.x) * dx + (t.z - old.z) * dz) / length2, 0, 1) : 0
+          if (Math.hypot(t.x - old.x - dx * k, t.z - old.z - dz * k) > 0.6 || Math.abs(current.y - t.y) > 1.5) return
           const laengs = skier.forward.x * st.rx + skier.forward.z * st.rz
           const seite = (t.x - current.x) * st.rx + (t.z - current.z) * st.rz
           const richtung = Math.abs(laengs) > 0.25 ? Math.sign(laengs) : (Math.sign(seite) || 1)

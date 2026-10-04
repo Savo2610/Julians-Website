@@ -109,6 +109,6 @@ export class PassRegeln {
     if (this.props.landscape.bench.broken) p.erreiche('bankrott')
 
     // In der Klamm: am Grund, nicht im Flug darueber.
-    if (!s.airborne && klammAt(x, z) < -3) p.erreiche('klamm')
+    if (!s.airborne && !s.aufDeck && klammAt(x, z) < -3) p.erreiche('klamm')
   }
 }

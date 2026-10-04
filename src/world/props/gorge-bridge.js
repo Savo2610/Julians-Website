@@ -4,40 +4,22 @@ import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 // Die Bogenbruecke ueber die Klamm auf der Nordabfahrt – der ruhige Weg
 // neben der Schanze.
 //
-// Sie traegt nichts. Getragen wird der Fahrer vom Hoehenfeld: dort ist der
-// Streifen, auf dem er faehrt, schlicht nicht ausgeschnitten, und genau darauf
-// liegt dieses Holz (BRUECKE in heightfield.js). Was man befaehrt, ist
-// Gelaende, was man sieht, ist Aufbau.
+// Sie traegt wirklich: unter ihr laeuft die Klamm mit dem Bach durch, und
+// der Fahrer faehrt auf dem Deck (stegDeck in heightfield.js, die einzige
+// zweite Flaeche im Tal). Bis 04.10. stand darunter ein Damm aus Gelaende,
+// erst als weisser Block, dann hinter zwei Mauern mit Durchlass – beides
+// sah hingesetzt aus und schnitt den Bach ab.
 //
 // Der erste Steg war ein Brett mit zwei Randbohlen; von oben las er sich als
 // Schneespur zwischen zwei Strichen, und die Klamm darunter sah man kaum.
 // Diese Bruecke zeigt, *dass* sie traegt: zwei Holzboegen spannen ueber das
 // Deck von Widerlager zu Widerlager, das Deck haengt an ihnen, an beiden Enden
-// liegt sie auf gemauerten Steinen. Aus der festen Kamera sind die Boegen das
-// Erste, was man von ihr sieht.
+// liegt sie auf Steinen, die an die Wand der Klamm gemauert sind. Aus der
+// festen Kamera sind die Boegen das Erste, was man von ihr sieht.
 //
-// Unter dem Deck steht der Damm aus Gelaende, der den Fahrer traegt – eine
-// Hoehe je Punkt, also kann man nicht unter der Bruecke hindurch. Zuerst sah
-// man den Damm als weissen Block in der Klamm, an dem der Bach aufhoerte.
-// Jetzt schliessen zwei Mauern die Bruecke bis auf den Grund nach unten ab,
-// und der Bach laeuft durch einen gewoelbten Durchlass: man sieht, dass er
-// hindurch kann und man selbst nicht.
-//
-// Drei Dinge vom alten Steg gelten weiter, weil sie einmal falsch waren:
-//
-// 1. Die Fahrflaeche liegt auf der lokalen Hoehe **null**. Die Ski liegen auf
-//    der Gelaendehoehe, und die ist im tragenden Streifen genau diese Ebene.
-//    Die Bohlen liegen vier Zentimeter darueber: darunter verschwanden sie
-//    unter dem Schnee des Gelaendes, und das Deck las sich als weisses
-//    Rechteck. Vier Zentimeter Holz ueber den Ski sieht aus 33 Metern niemand.
-// 2. Die Bruecke wird **geneigt** gebaut (`neigung`, aus einer
-//    Ausgleichsgeraden in populate.js): die Bahn faellt hier mit 9,4 Grad.
-// 3. Das Deck ist **breiter als der Damm, der traegt** – 6,2 Meter gegen vier
-//    Meter Streifen und 0,7 Meter Saum je Seite. Im Streifen liegt das
-//    Gelaende auf Deckhoehe, und jedes Brett dort zerschnitte sich mit dem
-//    Schnee zu Fetzen; aussen steht das Holz frei. Und nur ausserhalb des
-//    Damms sieht man die Boegen: beim ersten Versuch mit 5,4 Metern Deck und
-//    1,5 Metern Saum steckten sie ganz im Schnee.
+// Die Fahrflaeche liegt auf der lokalen Hoehe **null**, die Bohlen vier
+// Zentimeter darueber, und die Bruecke wird **geneigt** gebaut (`neigung`):
+// die Bahn faellt hier mit 9,4 Grad.
 
 const HOLZ = 0x6a4830
 const HOLZ_HELL = 0x8a6340
@@ -46,10 +28,6 @@ const STEIN = 0x7b8089
 const STEIN_HELL = 0x959aa3
 const SCHNEE = 0xf7fbff
 const LATERNE = 0xffc874
-const FUGE = 0x5d626b
-const DUNKEL = 0x20262e
-const EIS_DUNKEL = 0x4d8ea3
-const EIS = 0x82c3d3
 
 // Ein Balken von a nach b (jeweils [x, y, z]) als Quader.
 function balken(parts, a, b, dick, color) {
@@ -72,11 +50,9 @@ export function createGorgeBridge({
   stich = 2.4,        // so hoch stehen die Boegen in der Mitte ueber dem Deck
   gelaender = 1.0,
   neigung = 0,        // rad, positiv = das vordere Ende liegt tiefer
-  // Lokale Hoehe des Grundes neben dem Damm (lx, lz) → y, ohne Neigung. Ohne
-  // sie gibt es keine Mauern (Tests, Vorschau).
+  // Lokale Hoehe des Grundes (lx, lz) → y, ohne Neigung. Ohne sie gibt es
+  // keine Widerlager (Tests, Vorschau).
   grund = null,
-  bachX = 0,          // wo der Bach unter der Bruecke durchlaeuft, lokal
-  durchlass = 1.15,   // Radius des Gewoelbes; das Eis ist 2,6 Meter breit
 } = {}) {
   const group = new THREE.Group()
   const parts = []
@@ -97,28 +73,59 @@ export function createGorgeBridge({
       position: [x, -0.02, 0],
     })
   }
+  // Darunter eine dunkle Lage: durch die Fugen sah man an den Enden den
+  // Schnee des Hangs als weisse Striche, ueber der Klamm ihren Grund.
+  parts.push({ geo: new THREE.BoxGeometry(laenge, 0.02, breite - 0.1), color: HOLZ_DUNKEL, position: [0, 0.012, 0] })
   // Zwei Laengstraeger unter den Raendern, auf denen die Bohlen liegen.
   for (const sz of [-1, 1]) {
     parts.push({ geo: new THREE.BoxGeometry(laenge, 0.36, 0.3), color: HOLZ_DUNKEL, position: [0, -0.36, sz * (hb - 0.3)] })
   }
-  // Schnee bleibt nur am Rand liegen, an den Pfosten angeweht, in Stuecken
-  // ungleicher Laenge. Ein durchgehender Streifen war wieder ein Rechteck.
+  // Unter dem Deck: Quertraeger an jedem Haenger. Seit die Klamm darunter
+  // offen ist, sieht man von oben am Rand hinunter, und Bohlen ohne
+  // Unterbau sahen aus wie ein Teppich.
+  for (const x of [-4.95, -3.3, -1.65, 0, 1.65, 3.3, 4.95]) {
+    parts.push({ geo: new THREE.BoxGeometry(0.22, 0.24, breite + 0.3), color: HOLZ_DUNKEL, position: [x, -0.3, 0] })
+  }
+  // Schnee bleibt am Rand liegen, an Pfosten und Gelaender angeweht: flache
+  // Wehen mit welligem Umriss, unterschiedlich lang. Rechteckige Streifen
+  // lasen sich als Bauteil, und ein Deck ganz ohne Schnee sah nach Sommer aus.
+  const wehe = (x0, x1, tief, sz, k) => {
+    const sh = new THREE.Shape()
+    const n = 10
+    sh.moveTo(x0, 0)
+    for (let i = 0; i <= n; i++) {
+      const t = i / n
+      const x = x0 + (x1 - x0) * t
+      const w = tief * Math.sin(Math.PI * t) ** 0.6 * (0.75 + 0.25 * Math.sin(t * 9 + k * 2.1))
+      sh.lineTo(x, w)
+    }
+    sh.lineTo(x1, 0)
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.03, bevelSegments: 1, curveSegments: 2 })
+    // Die Form liegt in x/y; gekippt auf das Deck waechst die Wehe vom Rand
+    // nach innen und die Dicke nach oben. Fuer den anderen Rand gedreht,
+    // nicht gespiegelt – gespiegelt zeigten die Flaechen nach innen.
+    geo.rotateX(-Math.PI / 2)
+    if (sz < 0) geo.rotateY(Math.PI)
+    parts.push({ geo, color: SCHNEE, position: [0, 0.02, sz * (hb - 0.2)] })
+  }
   for (const sz of [-1, 1]) {
-    let x = -laenge / 2 + 0.4
+    let x = -laenge / 2 + 0.3
     let k = sz > 0 ? 0 : 3
-    while (x < laenge / 2 - 0.6) {
-      const l = 0.9 + ((k * 53) % 7) * 0.28
-      const b = 0.32 + ((k * 31) % 5) * 0.07
-      if (k % 4 !== 2) {
-        parts.push({
-          geo: new THREE.BoxGeometry(Math.min(l, laenge / 2 - 0.4 - x), 0.07, b),
-          color: SCHNEE,
-          position: [x + Math.min(l, laenge / 2 - 0.4 - x) / 2, 0.075, sz * (hb - 0.25 - b / 2)],
-        })
-      }
-      x += l + 0.25
+    while (x < laenge / 2 - 0.8) {
+      const l = 1.1 + ((k * 53) % 7) * 0.32
+      const x1 = Math.min(x + l, laenge / 2 - 0.3)
+      if (k % 4 !== 2) wehe(x, x1, 0.32 + ((k * 31) % 5) * 0.09, sz, k)
+      x = x1 + 0.2 + ((k * 17) % 3) * 0.25
       k++
     }
+  }
+  // Und an beiden Enden, wo das Deck an den Hang stoesst, ein Keil Schnee
+  // quer ueber die erste Bohle: dort schiebt jeder Fahrer etwas mit hinauf.
+  for (const sx of [-1, 1]) {
+    const geo = new THREE.CylinderGeometry(0.35, 0.35, breite - 0.6, 10, 1, false, 0, Math.PI)
+    geo.rotateX(Math.PI / 2)
+    geo.scale(1, 0.22, 1)
+    parts.push({ geo, color: SCHNEE, position: [sx * (laenge / 2 - 0.05), 0.04, 0] })
   }
 
   // --- Boegen ---------------------------------------------------------------
@@ -149,22 +156,45 @@ export function createGorgeBridge({
     }
   }
 
+  const steine = []
   // --- Widerlager -----------------------------------------------------------
-  // Gemauert aus ungleich grossen Steinen, an beiden Enden ueber die Kante
-  // gesetzt. Sie geben der Klamm ihre Kante: Schnee auf Schnee hat aus der
-  // festen Kamera keine.
-  for (const sx of [-1, 1]) {
-    const x = sx * (hs + 0.2)
+  // An beiden Enden eine gemauerte Stirnwand unter dem Deck, senkrecht bis
+  // auf den Hang der Klamm: dort, wo er gut anderthalb Meter unter dem Deck
+  // liegt. So sieht man, worauf die Bruecke aufliegt, und die Klamm hat an
+  // ihr eine Kante – Schnee auf Schnee hat aus der festen Kamera keine. Eine
+  // Treppe aus Lagen, die jede weiter vorstand, las sich als Stufen.
+  if (grund) {
+    const deckY = (x) => -Math.tan(neigung) * x
+    const LAGE = 0.48
     let k = 0
-    for (let lage = 0; lage < 4; lage++) {
-      const y = -0.62 - lage * 0.62
-      for (const sz of [-1, 0, 1]) {
-        const w = 0.9 + ((k * 37) % 5) * 0.08
-        parts.push({
-          geo: new THREE.BoxGeometry(w, 0.58, breite / 3 + 0.12),
-          color: (k++ + lage) % 3 ? STEIN : STEIN_HELL,
-          position: [x + sx * ((lage % 2) * 0.12), y, sz * (breite / 3)],
-        })
+    for (const sx of [-1, 1]) {
+      // Die Stirn: von aussen nach innen, bis der Hang 1,6 Meter tief ist.
+      let stirn = sx * (hs + 0.6)
+      while (Math.abs(stirn) > 4.5 && grund(stirn, 0) > deckY(stirn) - 1.6) stirn -= sx * 0.1
+      // Hinten bleibt sie unter dem Deck: am unteren Ende stand sie sonst
+      // mit der Neigung einen halben Meter aus dem Hang.
+      const aussen = sx * (laenge / 2 - 0.4)
+      const x0 = Math.min(stirn, aussen), x1 = Math.max(stirn, aussen)
+      const krone = Math.min(deckY(stirn), deckY(aussen)) - 0.5
+      for (let lage = 0; lage < 6; lage++) {
+        const oben = krone - lage * LAGE
+        const unten = oben - LAGE + 0.05
+        let tiefster = Infinity
+        for (const z of [-hb, 0, hb]) tiefster = Math.min(tiefster, grund(stirn, z))
+        if (oben < tiefster - 0.2) break
+        // Drei bis vier Steine je Lage, jede zweite um einen halben versetzt.
+        const n = 4 + (lage % 2)
+        for (let i = 0; i < n; i++) {
+          const za = -hb - 0.1 + (breite + 0.2) * Math.max(0, (i - (lage % 2) * 0.5) / (n - (lage % 2) * 0.5))
+          const zb = -hb - 0.1 + (breite + 0.2) * Math.min(1, (i + 1 - (lage % 2) * 0.5) / (n - (lage % 2) * 0.5))
+          if (zb - za < 0.2) continue
+          const vor = ((k * 7) % 3) * 0.04
+          steine.push({
+            geo: new THREE.BoxGeometry(x1 - x0 + vor, oben - unten, zb - za - 0.06),
+            color: (k++ + lage) % 3 ? STEIN : STEIN_HELL,
+            position: [(x0 + x1) / 2 - sx * vor / 2, (oben + unten) / 2, (za + zb) / 2],
+          })
+        }
       }
     }
   }
@@ -201,9 +231,16 @@ export function createGorgeBridge({
   const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.88 }))
   mesh.castShadow = true
   mesh.receiveShadow = true
-  if (grund) group.add(...mauern({ grund, laenge, hb, neigung, bachX, durchlass }))
   // Die Neigung sitzt in einer eigenen Gruppe darunter, damit world.place()
   // weiterhin nur die Drehung um die Hochachse setzen muss.
+  // Die Widerlager stehen im Gelaende, nicht auf dem geneigten Deck: sie
+  // sind ohne Neigung gerechnet und haengen direkt an der Gruppe.
+  if (steine.length) {
+    const fels = new THREE.Mesh(assemble(steine), vertexColorMaterial({ roughness: 0.95 }))
+    fels.castShadow = true
+    fels.receiveShadow = true
+    group.add(fels)
+  }
   const deck = new THREE.Group()
   deck.rotation.z = -neigung
   deck.add(mesh)
@@ -212,112 +249,4 @@ export function createGorgeBridge({
   group.userData.halbeBreite = hb
   group.userData.laenge = laenge
   return group
-}
-
-// --- Mauern bis auf den Grund ---------------------------------------------
-// Je eine Bruchsteinmauer unter jedem Deckrand, von den Laengstraegern bis in
-// den Grund der Klamm. Sie stehen ausserhalb des Damms (der traegt 2,7 Meter
-// zur Seite, die Mauer steht bei 3,0 bis 3,4) und verdecken seine
-// Boeschung. Dahinter eine Fugenschicht in schmalen Streifen, davor Steine
-// mit Luft dazwischen – so liest sie sich als Mauerwerk und nicht als Wand.
-//
-// Gebaut ohne Neigung, in der Gruppe selbst: der Grund kommt als lokale Hoehe
-// aus dem Hoehenfeld, und das Deck faellt hier mit `neigung`.
-function mauern({ grund, laenge, hb, neigung, bachX, durchlass: r }) {
-  const parts = []
-  const deckY = (x) => -Math.tan(neigung) * x - 0.5
-  const halbL = laenge / 2 - 0.3
-  const dicke = 0.4
-  const zw = hb + 0.1
-
-  // Der Bach liegt in der Sohle; das Gewoelbe sitzt auf dem tiefsten Punkt
-  // unter ihm, sonst stuende es auf einer Seite in der Luft.
-  let sohle = Infinity
-  for (const sz of [-1, 1]) {
-    for (let dx = -r; dx <= r + 0.01; dx += r / 4) sohle = Math.min(sohle, grund(bachX + dx, sz * zw))
-  }
-  const imBogen = (x, y, rand = 0) => {
-    const dy = y - sohle
-    return Math.hypot(x - bachX, Math.max(0, dy)) < r + rand && dy < r + rand
-  }
-
-  for (const sz of [-1, 1]) {
-    const z = sz * zw
-    // Fugen: Streifen von 25 Zentimetern, im Gewoelbe nur oberhalb des Bogens.
-    for (let x = -halbL; x < halbL; x += 0.25) {
-      const xm = x + 0.125
-      const oben = deckY(xm)
-      let unten = Math.min(grund(x, z), grund(x + 0.25, z)) - 0.25
-      if (Math.abs(xm - bachX) < r) unten = Math.max(unten, sohle + Math.sqrt(r * r - (xm - bachX) ** 2))
-      if (oben - unten < 0.05) continue
-      parts.push({ geo: new THREE.BoxGeometry(0.26, oben - unten, dicke - 0.08), color: FUGE, position: [xm, (oben + unten) / 2, z] })
-    }
-    // Steine in waagerechten Lagen, jede zweite um einen halben Stein
-    // versetzt. Lagen, die dem Gefaelle des Decks folgten, sahen aus wie
-    // Fischgraet. Oben schneidet die Unterkante des Decks sie ab.
-    const kopf = deckY(-halbL)
-    let k = sz > 0 ? 0 : 5
-    for (let lage = 0; lage < 14; lage++) {
-      let x = -halbL - (lage % 2) * 0.4
-      while (x < halbL) {
-        const w = 0.62 + ((k * 37) % 5) * 0.09
-        const h = 0.46 + ((k * 13) % 3) * 0.05
-        const x0 = Math.max(x, -halbL)
-        const x1 = Math.min(x + w, halbL)
-        k++
-        x += w + 0.06
-        if (x1 - x0 < 0.2) continue
-        const xm = (x0 + x1) / 2
-        const y1 = Math.min(kopf - 0.03 - lage * 0.56, deckY(x1) - 0.03)
-        const y0 = Math.min(y1, kopf - 0.03 - lage * 0.56) - h
-        const g = Math.min(grund(x0, z), grund(x1, z))
-        if (y1 < g - 0.1 || y1 - y0 < 0.12) continue
-        if (imBogen(x0, y0, 0.42) || imBogen(x1, y0, 0.42) || imBogen(xm, y0, 0.42)) continue
-        const unten = Math.max(y0, g - 0.3)
-        parts.push({
-          geo: new THREE.BoxGeometry(x1 - x0, y1 - unten, dicke),
-          color: (k + lage) % 3 ? STEIN : STEIN_HELL,
-          position: [xm, (y1 + unten) / 2, z],
-        })
-      }
-    }
-    // Das Gewoelbe: neun Keilsteine im Halbkreis, eine Spur vorstehend.
-    const n = 9
-    for (let i = 0; i < n; i++) {
-      const a = Math.PI * (i + 0.5) / n
-      const rr = r + 0.21
-      const geo = new THREE.BoxGeometry(0.42, (Math.PI * rr) / n - 0.05, dicke + 0.1)
-      geo.rotateZ(a)
-      parts.push({ geo, color: i % 2 ? STEIN_HELL : STEIN, position: [bachX + Math.cos(a) * rr, sohle + Math.sin(a) * rr, z] })
-    }
-  }
-  const mauer = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.95 }))
-  mauer.castShadow = true
-  mauer.receiveShadow = true
-
-  // Im Durchlass ist es dunkel, und unten liegt das Eis weiter: eine halbe
-  // Roehre von Mauer zu Mauer, von innen gezeichnet.
-  const roehre = new THREE.CylinderGeometry(r, r, zw * 2, 14, 1, true, Math.PI / 2, Math.PI)
-  roehre.rotateX(Math.PI / 2)
-  roehre.translate(bachX, sohle, 0)
-  const boden = new THREE.BoxGeometry(r * 2, 0.04, zw * 2)
-  boden.translate(bachX, sohle + 0.03, 0)
-  // Die Roehre steckt fast ganz im Damm. Sichtbar ist nur ihr Mund, und
-  // hinter ihm stiege sonst gleich die Boeschung des Damms als Schnee auf.
-  // Eine dunkle Scheibe schliesst ihn, dreissig Zentimeter tief in der Mauer:
-  // am Fuss der Boeschung lag sie hinter dem Gelaende-Mesh, das auf einem
-  // halben Meter Raster die Boeschung um gut so viel nach aussen verschmiert.
-  const innen = [{ geo: roehre, color: DUNKEL }, { geo: boden, color: EIS_DUNKEL }]
-  for (const sz of [-1, 1]) {
-    // Eine Eiszunge aus dem Mund heraus: ueber ihr stach sonst der Schnee
-    // des Gelaendes zackig ins Gewoelbe.
-    const zunge = new THREE.BoxGeometry(r * 2 - 0.1, 0.3, 0.9)
-    zunge.translate(bachX, sohle + 0.02, sz * (zw + 0.1))
-    innen.push({ geo: zunge, color: EIS })
-    const scheibe = new THREE.CircleGeometry(r, 14, 0, Math.PI)
-    scheibe.translate(bachX, sohle, sz * (zw - 0.1))
-    innen.push({ geo: scheibe, color: DUNKEL })
-  }
-  const mund = new THREE.Mesh(assemble(innen), vertexColorMaterial({ roughness: 1, side: THREE.DoubleSide }))
-  return [mauer, mund]
 }

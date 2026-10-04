@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, SPRUNG } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeLage, schanzeAnlauf, aufSteg, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeLage, schanzeAnlauf, aufSteg, stegDeck, stegLage, DECK, BRUECKE, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 import { landeStufe } from '../core/landung.js'
 
@@ -76,6 +76,7 @@ export class Skier {
     // Welt liest ihn nur.
     this.snowed = 0
     this.snowBurst = 0
+    this.aufDeck = false
     this._buildSnowCaps()
 
     this.forward = new THREE.Vector3(0, 0, -1)
@@ -224,7 +225,7 @@ export class Skier {
     // --- Tempo ---------------------------------------------------------
     // Konstantes Grundtempo, nur vom Gefaelle moduliert. Ohne Eingabe rollt
     // man aus und bleibt stehen – man soll sich Dinge ansehen koennen.
-    this.slope = slopeAlong(this.position.x, this.position.z, this.forward.x, this.forward.z)
+    this.slope = this._gefaelle(this.forward.x, this.forward.z)
     let target = 0
     if (wantsMove) {
       target = SKIER.cruiseSpeed
@@ -300,6 +301,22 @@ export class Skier {
       this.speed *= 0.9
     }
 
+    // Auf der Bruecke haelt das Gelaender: wer quer gegen es faehrt, schrammt
+    // daran entlang wie an einem Baum und faellt nicht in die Klamm.
+    if (this.aufDeck) {
+      const l = stegLage(nx, nz)
+      const ueber = Math.abs(l.quer) - DECK.halbQ
+      if (ueber > 0 && Math.abs(l.laengs) < DECK.halbL) {
+        const e = BRUECKE.ebene
+        const qx = -e.uz * Math.sign(l.quer), qz = e.ux * Math.sign(l.quer)
+        nx -= qx * ueber
+        nz -= qz * ueber
+        const frontal = Math.max(0, this.forward.x * qx + this.forward.z * qz)
+        this.speed *= 1 - frontal * frontal * 0.8
+        this.impact = Math.max(this.impact || 0, frontal)
+      }
+    }
+
     this.position.x = nx
     this.position.z = nz
 
@@ -324,7 +341,7 @@ export class Skier {
     const park = inFunpark(nx, nz) || klammFlug(nx, nz)
     const parkRegeln = parkFlug(nx, nz)
     const G = this.airborne && this._luftY != null ? this._g : parkRegeln ? SPRUNG.schwerkraft : 18
-    const groundY = terrainHeight(nx, nz)
+    const groundY = this._boden(nx, nz)
     // Wie schnell der Boden den Fahrer gerade anhebt. Auf einer Schanze ist
     // das die Steiggeschwindigkeit, mit der er ueber die Kante geht.
     const climb = dt > 0 ? (groundY - this._prevGroundY) / dt : 0
@@ -475,7 +492,7 @@ export class Skier {
     // es keinen Hang, dann richtet sich der Fahrer wieder gerade.
     const cross = this.airborne
       ? 0
-      : slopeAlong(this.position.x, this.position.z, Math.cos(this.facing), -Math.sin(this.facing))
+      : this._gefaelle(Math.cos(this.facing), -Math.sin(this.facing))
     this.cross += (THREE.MathUtils.clamp(cross, -0.8, 0.8) - this.cross) * damp(5, dt)
 
     // Wie deutlich die Hanghaltung gezeigt wird. Bergauf und im Kriechtempo
@@ -942,6 +959,24 @@ export class Skier {
   }
 
   // Setzt den Fahrer an einen anderen Ort (Schnellreise, Pruefwerkzeug).
+  // Der Boden unter dem Fahrer: das Gelaende, nur auf der Bruecke das Deck
+  // (stegDeck in heightfield.js) – wenn er von oben kommt. Wer unten in der
+  // Klamm faehrt, ist viereinhalb Meter tiefer und faehrt darunter durch.
+  _boden(x, z) {
+    const t = terrainHeight(x, z)
+    const d = stegDeck(x, z)
+    this.aufDeck = !!d && d.y > t + 0.05 && this.position.y > d.y - 0.6
+    return this.aufDeck ? d.y : t
+  }
+
+  // Gefaelle in Fahrtrichtung (wie slopeAlong), auf dem Deck das des Decks:
+  // darunter laege die Klamm, und ihre Waende waeren ein Hang von 35 Grad.
+  _gefaelle(dx, dz) {
+    if (!this.aufDeck) return slopeAlong(this.position.x, this.position.z, dx, dz)
+    const e = BRUECKE.ebene
+    return -e.gefaelle * (dx * e.ux + dz * e.uz)
+  }
+
   // Drei Dinge muessen mit zurueck: die Spurkette, sonst zieht er eine Linie
   // quer durchs Tal; _prevGroundY und _rise, sonst haelt er den Hoehensprung
   // fuer eine Schanze (einmal 94 Bilder Scheinflug gemessen). _prevGroundY
@@ -949,6 +984,7 @@ export class Skier {
   // 15 Reisezielen hob der Fahrer nach der Ankunft ab.
   versetzen(x, z, heading = this.heading) {
     this.position.set(x, this.world.heightAt(x, z), z)
+    this.aufDeck = false
     this.speed = 0
     this.airborne = false
     this.vy = 0

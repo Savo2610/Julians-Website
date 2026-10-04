@@ -252,10 +252,13 @@ export const KLAMM = {
   tiefe: [[0.00, 0.0], [0.20, 2.2], [0.38, 4.5], [0.62, 4.5], [0.85, 2.4], [1.00, 0.0]],
   weite: 6.4,     // halbe Breite an der Oberkante
   sohle: 1.5,     // halbe Breite des flachen Grundes
-  // Das Bachbett in der Sohle: eine flache Rinne, die sich leicht windet.
-  // Das Eis lag erst buendig auf dem Grund und sah aus wie aufgemalt; zwanzig
-  // Zentimeter Rinne geben ihm Ufer, an denen Licht und Schatten brechen.
-  bach: { tiefe: 0.22, breite: 1.5 },
+  // Das Bachbett in der Sohle: eine Rinne, die sich leicht windet. Das Eis
+  // lag erst buendig auf dem Grund und sah aus wie aufgemalt; zwanzig
+  // Zentimeter weich auslaufende Rinne halfen nicht (aus 33 Metern Schnee
+  // auf Schnee). Jetzt ein flacher Grund (halb `grund` breit) und eine
+  // Boeschung von 45 Zentimetern auf 70 – steil genug, dass sie im
+  // Streiflicht eine Schattenseite hat.
+  bach: { tiefe: 0.45, breite: 1.45, grund: 0.75 },
 }
 
 // Seitlicher Versatz der Bachmitte gegen die Achse der Klamm, s in Metern
@@ -265,14 +268,13 @@ export function bachVersatz(s) {
   return 0.45 * Math.sin(s * 0.21) + 0.22 * Math.sin(s * 0.57 + 1.3)
 }
 
-// Der Steg. Er liegt auf der Bahnmitte und ist knapp sechs Meter breit – schmal
+// Der Steg. Er liegt auf der Bahnmitte und ist gut sechs Meter breit – schmal
 // genug, dass man ihn als Bauwerk wahrnimmt, breit genug, dass man nicht zielen
-// muss. Der Saum daneben ist kein Abbruch, sondern eine kurze Schraege: eine
-// senkrechte Kante im Hoehenfeld gibt kaputte Normalen und einen Fahrer, der
-// daran haengenbleibt.
+// muss. Getragen wird der Fahrer seit 04.10. vom Deck (stegDeck, weiter
+// unten); im Gelaende bleibt der Streifen nur an beiden Enden, wo das Deck
+// auf dem Hang aufliegt.
 //
-// Im tragenden Streifen liegt das Gelaende exakt auf der Ebene des Stegs
-// (`ebene`). Vorher war es dort nur "nicht ausgeschnitten", und das darunter
+// Dort liegt das Gelaende exakt auf der Ebene des Stegs (`ebene`). Vorher war es dort nur "nicht ausgeschnitten", und das darunter
 // liegende Band ist quer nicht eben: gegen die Deckflaeche wich es um -13 bis
 // +16 Zentimeter ab. Wo es tiefer lag, stand der Fahrer bis ueber die Ski im
 // Schneebelag des Stegs. Die Zahlen sind die Ausgleichsebene, auf der der
@@ -405,17 +407,44 @@ export function klammAt(x, z) {
   const quer = ((x - px) * -az + (z - pz) * ax) / la
   const db = Math.abs(quer - bachVersatz(u * la))
   if (db < KLAMM.bach.breite) {
-    schnitt += KLAMM.bach.tiefe * (1 - smooth(db / KLAMM.bach.breite)) * smooth(Math.min(1, tief / 1.5))
+    const b = KLAMM.bach
+    schnitt += b.tiefe * (1 - smooth(Math.max(0, db - b.grund) / (b.breite - b.grund))) * smooth(Math.min(1, tief / 1.5))
   }
 
-  // Wo der Steg liegt, wird nicht geschnitten. Gemessen wird der Abstand quer
-  // zur Rinne, also entlang der Bahn – der Steg ist ein Streifen und kein Kreis.
-  const bd = Math.abs((x - BRUECKE.x) * (ax / Math.sqrt(len2)) + (z - BRUECKE.z) * (az / Math.sqrt(len2)))
-  const steg = bd <= BRUECKE.halb ? 1
-    : bd >= BRUECKE.halb + BRUECKE.saum ? 0
-    : 1 - smooth((bd - BRUECKE.halb) / BRUECKE.saum)
+  // Unter der Bruecke wird geschnitten wie ueberall: die Klamm und der Bach
+  // laufen unter ihr durch (stegDeck). Bis 04.10. stand hier ein Damm aus
+  // Gelaende, der das Deck trug; zugemauert sah er kuenstlich aus, schnitt
+  // den Bach ab, und wer in der Klamm an seine Flanke fuhr (4,5 m auf 0,7 m),
+  // wurde ueber die Kante geworfen.
+  return -schnitt
+}
 
-  return -schnitt * (1 - steg)
+// --- Das Deck der Bruecke -----------------------------------------------------
+// Die einzige Stelle im Tal mit zwei Flaechen uebereinander: unten die Klamm,
+// oben das Deck. terrainHeight bleibt die Hoehe des Gelaendes; das Deck
+// liest nur der Fahrer (Skier._boden), und nur, solange er von oben kommt.
+// Alles andere – Mesh, Spur, Tiere, Kamera – sieht darunter die Klamm.
+//
+// Das Deck ist die Ebene, auf der der Steg vorher lag (BRUECKE.ebene). An
+// beiden Enden liegt das Gelaende genau darauf (stegEbene), dort faehrt man
+// ohne Stufe auf und ab.
+export const DECK = {
+  halbL: 7.5,     // die Bruecke ist 15 Meter lang
+  halbQ: 2.65,    // bis an das Gelaender (2,98) abzueglich des Fahrers
+}
+
+export function stegLage(x, z) {
+  const e = BRUECKE.ebene
+  const rx = x - BRUECKE.x
+  const rz = z - BRUECKE.z
+  const laengs = rx * e.ux + rz * e.uz
+  return { laengs, quer: -rx * e.uz + rz * e.ux, y: e.y + e.gefaelle * laengs }
+}
+
+// Die Hoehe des Decks, wo es eines gibt, sonst null.
+export function stegDeck(x, z) {
+  const l = stegLage(x, z)
+  return Math.abs(l.laengs) <= DECK.halbL && Math.abs(l.quer) <= DECK.halbQ + 0.2 ? l : null
 }
 
 // --- Pistenbaender ----------------------------------------------------------
@@ -902,6 +931,9 @@ export function ueberBox(x, z) {
 // einer Welle die Leertaste drueckt, bekommt ihren Schwung als Pop dazu.
 export function ohneAbwurf(x, z) {
   if (ueberBox(x, z)) return true
+  // Unten in der Klamm wirft nichts ab: wer laengs faehrt, quert die Ufer
+  // des Bachs (45 Zentimeter auf 70), und das hob bei Tempo 10 ab.
+  if (klammAt(x, z) < -1.2) return true
   for (const f of PARK_FEATURES) {
     if (f.kind !== 'rollers') continue
     const { u, v } = local(x, z, f)

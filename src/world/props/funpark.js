@@ -3,8 +3,8 @@ import { assemble, vertexColorMaterial, labelTexture } from '../../core/geometry
 
 // Aufbauten im Funpark. Die Schanzen und Wellen selbst sind Gelaende – hier
 // stehen nur die Dinge, die aus Metall und Holz sind: das Rail auf der
-// Schneekante, das Eingangsschild, die Beachflags, die die Figuren einfassen,
-// und die blauen Linien an den Absprungkanten.
+// Schneekante, das Eingangsschild, die Polster an den Figuren und an den
+// Absprungkanten die blauen Linien mit je zwei Beachflags.
 
 const STEEL = 0x9aa4ae
 const STEEL_DARK = 0x5d666f
@@ -133,10 +133,11 @@ export function createLipLine(punkte, color = PAD_B) {
 }
 
 // Beachflag: eine geschwungene Fahne an einer biegsamen Stange, wie sie an
-// jedem Kicker im Park stehen. Sie ersetzt die gepolsterten Pfosten – die
-// waren aus 33 Metern Kloetze und gaben beim Dagegenfahren nicht nach. Die
-// Flagge steht auf einem Federfuss (springMount in signpost.js) und legt
-// sich um, wenn man sie trifft. Ursprung am Fuss, die Flaeche zeigt nach +z.
+// jedem Kicker im Park stehen. Je eine links und rechts der Absprungkante,
+// dort wo vorher die blauen Kloetze standen: sie sagen schon im Anfahren,
+// wo gesprungen wird. Die Flagge steht auf einem Federfuss (springMount in
+// signpost.js) und legt sich um, wenn man sie trifft. Ursprung am Fuss, die
+// Flaeche zeigt nach +z.
 export function createBeachFlag(variant = 0) {
   const group = new THREE.Group()
   const color = variant % 2 ? PAD_B : PAD_A
@@ -169,6 +170,25 @@ export function createBeachFlag(variant = 0) {
   sg.translate(0.03, 0, -0.01)
   parts.push({ geo: sg, color: 0xf4f8fc })
   const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7, side: THREE.DoubleSide }))
+  mesh.castShadow = true
+  group.add(mesh)
+  return group
+}
+
+// Gepolsterte Pfosten an Boxen, Rail und Wellen. Die Beachflags gehoeren
+// an die Schanzen (Wunsch 04.10.); an den Boxen sahen sie aus, als waere
+// dort der Absprung.
+export function createPadMarker(variant = 0) {
+  const group = new THREE.Group()
+  const parts = []
+  const color = variant % 2 ? PAD_B : PAD_A
+
+  parts.push({ geo: new THREE.CylinderGeometry(0.05, 0.05, 1.1, 6), color: STEEL_DARK, position: [0, 0.55, 0] })
+  parts.push({ geo: new THREE.CylinderGeometry(0.15, 0.16, 0.78, 9), color, position: [0, 0.5, 0] })
+  parts.push({ geo: new THREE.CylinderGeometry(0.155, 0.155, 0.12, 9), color: 0xf4f8fc, position: [0, 0.66, 0] })
+  parts.push({ geo: new THREE.CylinderGeometry(0.24, 0.28, 0.06, 9), color: 0xf7fbff, position: [0, 0.03, 0] })
+
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.75 }))
   mesh.castShadow = true
   group.add(mesh)
   return group

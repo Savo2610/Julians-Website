@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Skier } from '../src/player/skier.js'
-import { terrainHeight, SCHANZE, schanzeLage, klammAt, BRUECKE } from '../src/world/heightfield.js'
+import { terrainHeight, SCHANZE, schanzeLage, klammAt, BRUECKE, KLAMM, DECK, stegLage, stegDeck } from '../src/world/heightfield.js'
 
 // Die Schanze ueber die Klamm auf der Nordabfahrt (04.10.). Gefahren wird ohne
 // Szene und ohne Hindernisse, nur auf dem Gelaende – wie in sprung.test.js.
@@ -61,12 +61,74 @@ test('wer ausrollt, landet in der Klamm', () => {
   assert.ok(r.klamm < -0.4, `in der Rinne (${r.klamm.toFixed(2)})`)
 })
 
-test('der Steg traegt: auf seiner Mittellinie schneidet die Klamm nicht', () => {
+// Seit 04.10. traegt die Bruecke selbst: die Klamm laeuft unter ihr durch,
+// und der Fahrer faehrt oben auf dem Deck (stegDeck).
+function fahre(x, z, heading, bilder, pruefe) {
+  const s = new Skier(welt)
+  s.versetzen(x, z, heading)
+  s.speed = 10
+  const inp = eingabe()
+  for (let i = 0; i < bilder; i++) {
+    inp.setze(['forward'])
+    s.update(1 / 60, inp, null)
+    pruefe(s, i)
+  }
+  return s
+}
+
+test('ueber die Bruecke: auf dem Deck, ohne Sprung und ohne Absturz', () => {
   const e = BRUECKE.ebene
-  for (let o = -e.laenge / 2; o <= e.laenge / 2; o += 0.5) {
-    const x = BRUECKE.x + e.ux * o
-    const z = BRUECKE.z + e.uz * o
-    assert.ok(Math.abs(klammAt(x, z)) < 1e-9, `bei ${o} m geschnitten`)
+  let drauf = 0
+  fahre(BRUECKE.x - e.ux * 12, BRUECKE.z - e.uz * 12, Math.atan2(e.ux, e.uz), 150, (s) => {
+    assert.ok(!s.airborne, 'hebt nicht ab')
+    const l = stegLage(s.position.x, s.position.z)
+    if (Math.abs(l.laengs) < DECK.halbL - 0.5) {
+      drauf++
+      assert.ok(Math.abs(s.position.y - l.y) < 0.02, `bei ${l.laengs.toFixed(1)} m ${(s.position.y - l.y).toFixed(2)} neben dem Deck`)
+    }
+  })
+  assert.ok(drauf > 40, `${drauf} Bilder auf dem Deck`)
+})
+
+test('am Gelaender der Bruecke faellt man nicht in die Klamm', () => {
+  const e = BRUECKE.ebene
+  // Schraeg auf das Gelaender zu, 40 Grad gegen die Laengsachse.
+  const a = Math.atan2(e.ux, e.uz) + 0.7
+  fahre(BRUECKE.x - e.ux * 9, BRUECKE.z - e.uz * 9, a, 120, (s) => {
+    const l = stegLage(s.position.x, s.position.z)
+    if (Math.abs(l.laengs) < DECK.halbL - 0.3) {
+      assert.ok(Math.abs(l.quer) <= DECK.halbQ + 0.01, `quer ${l.quer.toFixed(2)}`)
+      assert.ok(Math.abs(s.position.y - l.y) < 0.02, 'bleibt oben')
+    }
+  })
+})
+
+test('unten in der Klamm faehrt man unter der Bruecke durch', () => {
+  const ax = KLAMM.bis.x - KLAMM.von.x, az = KLAMM.bis.z - KLAMM.von.z, la = Math.hypot(ax, az)
+  const ux = ax / la, uz = az / la
+  // Auf Hoehe der Bruecke laengs der Rinne, zehn Meter davor los.
+  const t = (BRUECKE.x - KLAMM.von.x) * ux + (BRUECKE.z - KLAMM.von.z) * uz
+  const x0 = KLAMM.von.x + ux * (t - 10), z0 = KLAMM.von.z + uz * (t - 10)
+  let drunter = 0
+  fahre(x0, z0, Math.atan2(ux, uz), 150, (s) => {
+    assert.ok(!s.airborne, 'hebt nicht ab')
+    assert.ok(Math.abs(s.position.y - terrainHeight(s.position.x, s.position.z)) < 0.02, 'auf dem Grund')
+    if (stegDeck(s.position.x, s.position.z)) drunter++
+  })
+  assert.ok(drunter > 10, `${drunter} Bilder unter dem Deck`)
+})
+
+test('wer in der Klamm quer an die Bruecke faehrt, fliegt nicht (04.10.)', () => {
+  const ax = KLAMM.bis.x - KLAMM.von.x, az = KLAMM.bis.z - KLAMM.von.z, la = Math.hypot(ax, az)
+  const ux = ax / la, uz = az / la
+  const t = (BRUECKE.x - KLAMM.von.x) * ux + (BRUECKE.z - KLAMM.von.z) * uz
+  for (const seite of [-1, 1]) {
+    const x0 = KLAMM.von.x + ux * (t + seite * 9), z0 = KLAMM.von.z + uz * (t + seite * 9)
+    let hoch = 0
+    fahre(x0, z0, Math.atan2(-seite * ux, -seite * uz), 150, (s) => {
+      hoch = Math.max(hoch, s.position.y - terrainHeight(s.position.x, s.position.z))
+    })
+    assert.ok(hoch < 0.3, `von ${seite > 0 ? 'unten' : 'oben'}: ${hoch.toFixed(2)} m ueber dem Grund`)
   }
 })
 

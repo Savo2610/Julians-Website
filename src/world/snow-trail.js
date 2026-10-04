@@ -105,6 +105,22 @@ const decalFrag = /* glsl */ `
   }
 `
 
+// Die Fraese der Pistenraupe: ein Rechteck, das Rille und Wall darunter
+// wieder zu glattem Schnee macht. Multipliziert statt Max-Blending – mit
+// Max wird nie etwas weniger. Blau (Schrift) bleibt, wie es ist; zu den
+// Seiten laeuft das Glaetten weich aus, damit keine Kante stehen bleibt.
+const glattFrag = /* glsl */ `
+  precision highp float;
+  varying vec2 vUv;
+
+  void main() {
+    float quer = abs(vUv.x - 0.5) * 2.0;
+    float laengs = abs(vUv.y - 0.5) * 2.0;
+    float m = (1.0 - smoothstep(0.8, 1.0, quer)) * (1.0 - smoothstep(0.6, 1.0, laengs));
+    gl_FragColor = vec4(1.0 - m, 1.0 - m, 1.0, 1.0);
+  }
+`
+
 export class SnowTrail {
   constructor(renderer) {
     this.renderer = renderer
@@ -183,7 +199,50 @@ export class SnowTrail {
     this.decalScene = new THREE.Scene()
     this.decalScene.add(this.decalMesh)
 
+    this.glattMaterial = new THREE.ShaderMaterial({
+      vertexShader: decalVert,
+      fragmentShader: glattFrag,
+      depthTest: false,
+      depthWrite: false,
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.ZeroFactor,
+      blendDst: THREE.SrcColorFactor,
+      blendEquationAlpha: THREE.AddEquation,
+      blendSrcAlpha: THREE.ZeroFactor,
+      blendDstAlpha: THREE.OneFactor,
+      uniforms: {
+        uCenter: { value: new THREE.Vector2() },
+        uSize: { value: new THREE.Vector2(1, 1) },
+        uRotation: { value: 0 },
+        uWorldSize: { value: WORLD.size },
+      },
+    })
+    this.glattMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.glattMaterial)
+    this.glattMesh.frustumCulled = false
+    this.glattScene = new THREE.Scene()
+    this.glattScene.add(this.glattMesh)
+
     this.clearTarget()
+  }
+
+  // Walzt ein Rechteck glatt: Spuren darunter verschwinden. width quer,
+  // height laengs, in Welteinheiten.
+  glaetten(x, z, width, height, rotation = 0) {
+    const u = this.glattMaterial.uniforms
+    u.uCenter.value.set(x, z)
+    // Die Ebene reicht von −0,5 bis 0,5: mal width ist sie width breit.
+    u.uSize.value.set(width, height)
+    u.uRotation.value = rotation
+    // Erst die vorgemerkten Spuren dieses Frames, sonst liegen sie obenauf.
+    this.flush()
+    const prevTarget = this.renderer.getRenderTarget()
+    const prevAutoClear = this.renderer.autoClear
+    this.renderer.autoClear = false
+    this.renderer.setRenderTarget(this.target)
+    this.renderer.render(this.glattScene, this.camera)
+    this.renderer.setRenderTarget(prevTarget)
+    this.renderer.autoClear = prevAutoClear
   }
 
   // Zeichnet eine Textur einmalig in den Schnee. width/height in Welteinheiten.

@@ -11,11 +11,12 @@ import { terrainHeight, terrainNormal, NORTH_LANE, BRUECKE, DECK, stegLage, steg
 //
 // Sie wohnt im Schuppen am Ende der Nordabfahrt (props/schuppen.js). Das Tor
 // faehrt hoch, sie rueckt aus und walzt eine feste Runde: ueber die Bruecke
-// die Nordabfahrt hinauf, hinunter und noch einmal hinauf, jedes Mal
-// versetzt, bis die ganze Breite gewalzt ist; hinueber zur freien Abfahrt
-// neben dem Lift, dort hinunter und daneben wieder hinauf; dann die
-// Nordabfahrt hinunter zurueck in den Schuppen, und das Tor geht zu. Dabei
-// legt sie feinen Cord in den Schnee. Steht jemand vor ihr, haelt sie an.
+// die Nordabfahrt hinauf, oberhalb der Klamm hinunter und versetzt wieder
+// hinauf, bis die ganze Breite gewalzt ist; oben nach links hinueber und
+// gleich neben dem Lift hinunter und daneben wieder hinauf; dann die
+// Nordabfahrt hinunter und ein zweites Mal ueber die Bruecke zurueck in den
+// Schuppen, und das Tor geht zu. Hinter ihr ist der Schnee wieder glatt, als
+// waere nie jemand gefahren. Steht jemand vor ihr, haelt sie an.
 
 const TEMPO = 3.5        // m/s – eine echte faehrt beim Walzen 10 bis 15 km/h
 const WENDEN = 0.8       // rad/s auf der Stelle, Ketten gegenlaeufig
@@ -57,46 +58,44 @@ function nordPunkt(s, versatz) {
   return { x, z }
 }
 
+// `versatz` ist eine Zahl oder (s) => Zahl.
 function nordFahrt(von, bis, versatz) {
   const pts = []
   const schritt = von < bis ? 2 : -2
-  for (let s = von; schritt > 0 ? s <= bis : s >= bis; s += schritt) pts.push(nordPunkt(s, versatz))
+  const vs = typeof versatz === 'function' ? versatz : () => versatz
+  for (let s = von; schritt > 0 ? s <= bis : s >= bis; s += schritt) pts.push(nordPunkt(s, vs(s)))
   return pts
 }
 
-// Die freie Abfahrt aus populate.js, oben bis auf die Gipfelschulter
-// verlaengert, unten bis vor die Talstation. Bei Meter 23 lief die erste
-// Fassung mitten durch die Schneekanone (−35,1, −36,3); jetzt westlich
-// daran vorbei.
-const FREI = [
-  [-46, -57], [-44, -52], [-41, -46], [-38, -40], [-38.9, -36.5],
-  [-36, -31.5], [-31.5, -28.3], [-28.5, -22], [-27, -14], [-26, -9],
-]
-function freiFahrt(versatz, hinauf) {
-  const pts = FREI.map(([x, z], i) => {
-    const a = FREI[Math.max(0, i - 1)]
-    const b = FREI[Math.min(FREI.length - 1, i + 1)]
-    const dx = b[0] - a[0]
-    const dz = b[1] - a[1]
-    const l = Math.hypot(dx, dz)
-    return { x: x + (dz / l) * versatz, z: z - (dx / l) * versatz }
-  })
-  // Alle zwei Meter ein Punkt wie auf der Nordabfahrt: mit den sechs Metern
-  // der Vorlage lief die Spur zwischen zwei ausgewichenen Punkten wieder
-  // ueber Kanone und Pfosten.
-  const dicht = []
-  for (let i = 0; i < pts.length - 1; i++) {
-    const a = pts[i]
-    const b = pts[i + 1]
-    const k = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.z - a.z) / 2))
-    for (let j = 0; j < k; j++) dicht.push({ x: a.x + (b.x - a.x) * j / k, z: a.z + (b.z - a.z) * j / k })
-  }
-  dicht.push(pts[pts.length - 1])
-  return hinauf ? dicht.reverse() : dicht
+// Neben dem Lift: Spuren parallel zur Trasse, im Abstand `versatz` auf der
+// Seite zur freien Abfahrt (positiv, auf dem Bild rechts). Auf der Trasse
+// selbst stehen die Stuetzen (Radius 0,5), bei 4,8 m ein Pistenpfahl; mit
+// 2,6 und 7 m bleiben zu beiden mindestens 1,9 m. Unten endet sie 6 m vor
+// der Talstation, oben 5 m unter der Bergstation.
+const LIFT_BASE = { x: -34, z: -8 }
+const LIFT_TOP = { x: -63, z: -55 }
+function liftFahrt(versatz, hinauf) {
+  const L = Math.hypot(LIFT_TOP.x - LIFT_BASE.x, LIFT_TOP.z - LIFT_BASE.z)
+  const ux = (LIFT_TOP.x - LIFT_BASE.x) / L
+  const uz = (LIFT_TOP.z - LIFT_BASE.z) / L
+  const pts = []
+  for (let a = L - 5; a >= 6; a -= 2) pts.push({ x: LIFT_BASE.x + ux * a - uz * versatz, z: LIFT_BASE.z + uz * a + ux * versatz })
+  return hinauf ? pts.reverse() : pts
 }
 
-// Die ganze Runde als Linienzug. `cord: false` heisst: hier wird nicht
-// gewalzt (im Schuppen und auf den Bohlen der Bruecke).
+// Unterhalb der Bruecke gibt es nur Hin- und Rueckweg; die beiden liegen
+// dort symmetrisch bei ±2,4 m, damit die 6,4 m der Fraese die Mitte und
+// beide Seiten erreichen. Oben bleibt Platz fuer drei Spuren. Gewechselt
+// wird auf der Bruecke, wo ohnehin jede Spur auf der Achse liegt.
+const unten = (s, tal, berg) => (s > 52 ? tal : berg)
+
+// Ueber den Gipfel zum Lift: unter dem Gipfelkreuz durch, dann nach links.
+const OBEN = [{ x: -57.5, z: -68 }, { x: -52, z: -66 }, { x: -53, z: -58 }]
+
+// Die ganze Runde als Linienzug. Ueber die Bruecke (Bahnmeter 45 bis 60)
+// faehrt sie genau zweimal, hin und zurueck; das Hin und Her liegt ganz
+// oberhalb, wo die Spuren noch nicht auf die Brueckenachse einschwenken
+// (ab Meter 38).
 export function runde() {
   const S = SCHUPPEN
   // Das Tor liegt hinten und oeffnet direkt auf den Auslauf der Nordabfahrt.
@@ -105,18 +104,16 @@ export function runde() {
   const vorTor = schuppenWelt(0, -S.halbT - 4)
   const pts = [
     innen, tor, vorTor,
-    ...nordFahrt(78, 5, 3.4),
-    ...nordFahrt(5, 78, -3.4),
-    ...nordFahrt(78, 5, 0),
+    ...nordFahrt(78, 5, (s) => unten(s, 2.4, 3.4)),
+    ...nordFahrt(5, 36, 0),
+    ...nordFahrt(36, 5, -3.4),
     // Oben durch die Mitte des Startbogens (quer hinueber streifte sie den
-    // oestlichen Pfosten) und unter dem Gipfelkreuz durch zur freien Abfahrt.
-    nordPunkt(0, 0), { x: -57.5, z: -68 }, { x: -52, z: -66 },
-    // Hinunter 2,4 m westlich, hinauf in der Mitte: Schneekanone und
-    // Pfosten stehen beide oestlich der Spur, mit +2,2 fuhr sie hinein.
-    ...freiFahrt(-2.4, false),
-    ...freiFahrt(0, true),
-    { x: -52, z: -66 }, { x: -57.5, z: -68 }, nordPunkt(0, 0),
-    ...nordFahrt(2, 78, 0),
+    // oestlichen Pfosten).
+    nordPunkt(0, 0), ...OBEN,
+    ...liftFahrt(2.6, false),
+    ...liftFahrt(7, true),
+    ...[...OBEN].reverse(), nordPunkt(0, 0),
+    ...nordFahrt(2, 78, (s) => unten(s, -2.4, -1.6)),
     vorTor, tor, innen,
   ]
   return pts
@@ -155,7 +152,7 @@ function bauen() {
   // Das Schild vorn: breiter als die Ketten, leicht schraeg.
   p(new THREE.BoxGeometry(3.4, 0.75, 0.14), GRAU, [0, 0.5, 2.25], [0.15, 0, 0])
   for (const s of [-1, 1]) p(new THREE.BoxGeometry(0.12, 0.12, 0.9), STEG, [s * 0.5, 0.65, 1.8])
-  // Die Fraese hinten mit dem Finisher, der den Cord zieht.
+  // Die Fraese hinten mit dem Finisher, der den Schnee glattzieht.
   p(new THREE.BoxGeometry(3.1, 0.4, 0.6), GRAU, [0, 0.38, -2.1])
   p(new THREE.BoxGeometry(3.1, 0.05, 0.5), KETTE, [0, 0.12, -2.55], [-0.25, 0, 0])
   for (const s of [-1, 1]) p(new THREE.BoxGeometry(0.12, 0.12, 0.7), STEG, [s * 0.5, 0.65, -1.75])
@@ -225,30 +222,6 @@ function bauen() {
   return { group, leuchte, blitz, kegel }
 }
 
-// Cord in der Spurkarte: feine Rillen laengs, wie hinter dem Finisher.
-let _cord = null
-function cordTextur() {
-  if (_cord) return _cord
-  const c = document.createElement('canvas')
-  c.width = 128
-  c.height = 64
-  const ctx = c.getContext('2d')
-  ctx.fillStyle = '#000'
-  ctx.fillRect(0, 0, 128, 64)
-  for (let i = 0; i < 16; i++) {
-    const x = 4 + i * 7.6
-    ctx.fillStyle = '#00ff00'
-    ctx.fillRect(x - 1.5, 0, 5, 64)
-    ctx.fillStyle = '#ffff00'
-    ctx.fillRect(x, 0, 2, 64)
-  }
-  const tex = new THREE.CanvasTexture(c)
-  tex.colorSpace = THREE.NoColorSpace
-  tex.minFilter = THREE.LinearFilter
-  tex.generateMipmaps = false
-  return (_cord = tex)
-}
-
 // --- Fahren ------------------------------------------------------------------
 const n = new THREE.Vector3()
 const v = new THREE.Vector3()
@@ -286,7 +259,7 @@ export class Pistenraupe {
     this.s = 0
     this.gier = this.abschnitte[0].gier
     this.wenden = false
-    this.cordWeg = 0
+    this.glattWeg = 0
     this.zeit = 0
     this.torZeit = 0
     this.wartet = false
@@ -389,19 +362,15 @@ export class Pistenraupe {
     }
   }
 
-  // Cord hinter der Fraese, alle 0,8 Meter – nicht im Schuppen und nicht
-  // auf den Bohlen.
+  // Hinter der Fraese alle 0,8 Meter ein Stueck glatter Schnee, 6,4 m breit
+  // wie bei einer echten: mit 5,6 m blieb zwischen zwei Spuren im Abstand
+  // von 5,2 m ein Streifen Rillen stehen, nur zu einem Drittel geglaettet.
   _walzen(weg) {
-    this.cordWeg += weg
-    if (!this.trail || this.cordWeg < 0.8) return
-    this.cordWeg = 0
+    this.glattWeg += weg
+    if (!this.trail?.glaetten || this.glattWeg < 0.8) return
+    this.glattWeg = 0
     const g = this.m.group.position
-    const bx = g.x - Math.sin(this.gier) * 2.4
-    const bz = g.z - Math.cos(this.gier) * 2.4
-    if (stegDeck(bx, bz)) return
-    const l = schuppenLokal(bx, bz)
-    if (Math.abs(l.lx) < SCHUPPEN.halbB + 0.5 && l.lz < SCHUPPEN.halbT + 0.5 && l.lz > -SCHUPPEN.halbT - 0.5) return
-    this.trail.stampDecal(cordTextur(), bx, bz, 3.0, 1.2, -this.gier, 0.45, 0.5)
+    this.trail.glaetten(g.x - Math.sin(this.gier) * 2.4, g.z - Math.cos(this.gier) * 2.4, 6.4, 1.6, -this.gier)
   }
 
   _leuchte() {

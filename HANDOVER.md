@@ -1421,27 +1421,37 @@ Der Boden darunter ist Gelände: `SCHUPPEN` im Höhenfeld zieht ihn innen und
 2,5 m vor dem Tor auf 10,25 m eben (vorher 9,4 bis 11,0) und läuft über
 2,5 m aus. Kollision für Wände und Giebel, nicht fürs Tor.
 
-**Die Runde** (504 m, gut 2:40 min): Tor auf, die Nordabfahrt hinauf (3,4 m
-zum Grat versetzt), hinunter (3,4 m zur anderen Seite), noch einmal hinauf
-in der Mitte, oben durch die Mitte des Startbogens (quer hinüber streifte
-sie einen Pfosten) zur freien Abfahrt, dort 2,4 m westlich hinunter und in
-der Mitte wieder hinauf (Schneekanone und ein Pfosten stehen östlich – mit
-+2,2 fuhr sie hinein), dann die Nordabfahrt hinunter und vorwärts durchs
-Tor hinein, Tor zu. **Über die Klamm** schwenkt jede Spur auf
-die Achse der Brücke ein (sie liegt 4,7 m neben der Bahnmitte, weil sich die
-Bahn in Steg und Schanze gabelt), und dort trägt das Deck (`stegDeck`),
-nicht das Gelände – gemessen 4 × 15 m auf den Bohlen, Höhe glatt von 16,9 auf
-13,9. Geprüft gegen die ganze Kollisionsliste, nicht `world.nearby()` (das
-liefert nur die eigene Rasterzelle): überall mindestens 1,8 m Luft, 5,2 m
-zum Funparkzaun, 15 m zur nächsten Figur. Ein automatisches Ausweichen
+**Die Runde** (zweite Fassung 05.10., 398 m, gut 2:40 min): Tor auf, die
+Nordabfahrt hinauf (3,4 m zum Grat versetzt), oberhalb der Klamm bis Meter
+36 hinunter (Mitte) und 3,4 m zur anderen Seite wieder hinauf – das Hin und
+Her liegt ganz über der Brücke, **über die Brücke fährt sie genau zweimal**,
+hin und zurück (Ansage Julian; vorher dreimal hin und her). Oben durch die
+Mitte des Startbogens (quer hinüber streifte sie einen Pfosten), unter dem
+Gipfelkreuz durch und **nach links bis an den Lift**: 2,6 m neben der Trasse
+hinunter, 7 m daneben wieder hinauf, auf der Seite zur freien Abfahrt (auf
+der Trasse stehen die Stützen, bei 4,8 m ein Pistenpfahl). Dann die
+Nordabfahrt hinunter und vorwärts durchs Tor hinein, Tor zu. Unterhalb der
+Brücke liegen Hin- und Rückweg symmetrisch bei ±2,4 m. **Über die Klamm**
+schwenkt jede Spur auf die Achse der Brücke ein (sie liegt 4,7 m neben der
+Bahnmitte, weil sich die Bahn in Steg und Schanze gabelt), und dort trägt
+das Deck (`stegDeck`), nicht das Gelände. Geprüft gegen die ganze
+Kollisionsliste, nicht `world.nearby()` (das liefert nur die eigene
+Rasterzelle): überall mindestens 1,86 m Luft. Ein automatisches Ausweichen
 wurde versucht und verworfen: zwischen den Felsgruppen der Klamm schob es
 die Spur bis 13 m weit.
+
+**Hinter ihr ist der Schnee glatt**, als wäre nie jemand gefahren (Ansage
+Julian; vorher Cord). `SnowTrail.glaetten()` multipliziert Rille und Wall
+in der Spurkarte weg – mit Max-Blending wird nie etwas weniger – und lässt
+Blau (Schrift) stehen. 6,4 m breit wie die Fräse einer echten, zu den
+Seiten weich auslaufend; mit 5,6 m blieb zwischen Spuren im Abstand von
+5,2 m ein Streifen zu zwei Dritteln stehen. Gemessen an 41 Probepunkten auf
+Nordabfahrt und Liftseite: danach überall unter 8 %.
 
 Große Knicke (über 0,6 rad) wendet sie im Stand, kleine im Fahren; am
 Schuppen fährt sie mit 45 % Tempo. Steht jemand bis 7 m vor ihr, wartet
 sie; näher als 2,3 m kommt keiner (hinausgeschoben wie an einem Baum).
-Hinter der Fräse stempelt sie Cord in die Spurkarte, nicht auf den Bohlen
-und nicht im Schuppen. Zum Prüfen: `?raupe` oder `__ski.raupe.losfahren()`,
+Zum Prüfen: `?raupe` oder `__ski.raupe.losfahren()`,
 auch am Tag; `__ski.raupe.zustand` ist parkt / tor_auf / faehrt / tor_zu.
 
 ## 4b. Handymodus

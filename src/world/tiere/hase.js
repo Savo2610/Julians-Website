@@ -24,7 +24,7 @@ const BLEIBT = [100, 180] // s, so lange sitzt er, wenn niemand kommt –
 const zufall = (a, b) => a + Math.random() * (b - a)
 
 export class Hase {
-  constructor({ scene, trail, spray, camera, world, wald }, { von, ziel, ausgang }) {
+  constructor({ scene, trail, spray, camera, world, wald }, { von, ziel, ausgang }, { jung = false } = {}) {
     this.scene = scene
     this.trail = trail
     this.spray = spray
@@ -34,6 +34,10 @@ export class Hase {
 
     this.m = createHase()
     scene.add(this.m.root)
+    // Ein Junges ist gut halb so gross und entscheidet nichts selbst: wann
+    // umgezogen und wann gegangen wird, sagt die Mutter (Hasenfamilie).
+    this.jung = jung
+    if (jung) this.m.root.scale.setScalar(0.6)
 
     this.x = von.x
     this.z = von.z
@@ -46,7 +50,8 @@ export class Hase {
     this.ausgang = ausgang
     this.zustand = 'kommen'
     this.zeit = 0
-    this.bleibt = zufall(...BLEIBT)
+    this.bleibt = jung ? Infinity : zufall(...BLEIBT)
+    if (jung) this.umzug = Infinity
     this.sprung = null
     this.pause = 0
     this.tun = null          // Beschaeftigung im Sitzen
@@ -156,7 +161,7 @@ export class Hase {
         this.spurWeg += Math.hypot(s.nach.x - s.von.x, s.nach.z - s.von.z)
         if (this.spurWeg > 1.1) {
           this.spurWeg = 0
-          abdruck(this.trail, 'hase', this.x, this.z, s.gier, s.ruhig ? 0.45 : 0.6)
+          abdruck(this.trail, this.jung ? 'hoernchen' : 'hase', this.x, this.z, s.gier, s.ruhig ? 0.45 : 0.6)
         }
         if (!s.ruhig) stauben(this.spray, this.x, terrainHeight(this.x, this.z), this.z, 4, 0.9)
       } else {
@@ -436,5 +441,73 @@ export class Hase {
     m.ohren.forEach((o, i) => o.rotation.set(p.ohrX[i], 0, p.ohrZ[i]))
     for (const h of m.hinten) h.rotation.x = p.hinten
     for (const v of m.vorn) v.rotation.x = p.vorn
+  }
+}
+
+// --- Hasenfamilie --------------------------------------------------------------
+// Jeder vierte Hase kommt nicht allein: hinter der Mutter hoppeln zwei
+// Junge. Sie sitzen dicht bei ihr, ziehen mit, wenn sie umzieht, und
+// fliehen, wenn sie flieht – jedes fuer sich, mit eigenen Haken, sodass die
+// Familie auseinanderstiebt. Fuer die Wildnis ist sie ein einziges Tier:
+// nie zusammen mit einem anderen.
+export class Hasenfamilie {
+  constructor(ctx, platz) {
+    this.mutter = new Hase(ctx, platz)
+    this.junge = [0, 1].map((i) => {
+      const a = Math.random() * Math.PI * 2
+      const versatz = { x: Math.sin(a) * 0.9, z: Math.cos(a) * 0.9 }
+      const p = {
+        von: { x: platz.von.x + versatz.x * 1.5, z: platz.von.z + versatz.z * 1.5 },
+        ziel: { x: platz.ziel.x + versatz.x, z: platz.ziel.z + versatz.z },
+        ausgang: platz.ausgang,
+      }
+      const h = new Hase(ctx, p, { jung: true })
+      h.platz = versatz
+      // Ein Augenblick spaeter los als die Mutter, damit sie nicht im
+      // Gleichschritt kommen.
+      h.pause = 0.4 + i * 0.5
+      return h
+    })
+  }
+
+  get alle() { return [this.mutter, ...this.junge] }
+  get gesehen() { return this.alle.some((h) => h.gesehen) }
+  get zustand() { return this.mutter.zustand }
+  get x() { return this.mutter.x }
+  get z() { return this.mutter.z }
+
+  update(dt, skier) {
+    const m = this.mutter
+    if (m.lebt) m.update(dt, skier)
+    for (const j of this.junge) {
+      if (!j.lebt) continue
+      // Die Mutter flieht: alle fliehen. Sie geht: alle gehen, demselben
+      // Ausgang nach.
+      if (m.zustand === 'flucht' || !m.lebt) {
+        if (j.zustand !== 'flucht' && j.zustand !== 'gehen') j._fliehen(skier)
+      } else if (m.zustand === 'gehen') {
+        if (j.zustand !== 'gehen' && j.zustand !== 'flucht') {
+          j.ausgang = m.ausgang
+          j._wechsel('gehen')
+        }
+      } else if (j.zustand === 'sitzen') {
+        // Bleibt die Mutter nicht am Platz, hinterher.
+        const sx = m.ziel.x + j.platz.x
+        const sz = m.ziel.z + j.platz.z
+        if (Math.hypot(sx - j.x, sz - j.z) > 1.6) {
+          j.ziel = { x: sx, z: sz }
+          j.heim = j.ziel
+          j._wechsel('kommen')
+        }
+      }
+      j.update(dt, skier)
+    }
+    return this.lebt
+  }
+
+  get lebt() { return this.alle.some((h) => h.lebt) }
+
+  entfernen() {
+    for (const h of this.alle) h.entfernen()
   }
 }

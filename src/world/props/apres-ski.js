@@ -178,6 +178,17 @@ export function createApresSki() {
   group.add(createSign(WALL))
   // Lokale Lage der abbrechbaren Eiszapfen (Oberkante, Laenge).
   group.userData.zapfen = zapfen
+  // Wo Eichhoernchen und Dohle sitzen (world/tiere/): oben auf dem Schnee
+  // des Firsts, laengs von -halb bis +halb, und die Schneeflaeche der rechten
+  // Dachseite in Abhaengigkeit von x (0 am First bis `run` an der Traufe).
+  // 0,51 m ueber dem Brett ist die Oberseite der Auflage (0,44 entlang der
+  // Normalen, durch cos 0,52).
+  group.userData.dach = {
+    first: WALL + rise + 0.51,
+    halb: len / 2 - 0.15,
+    run,
+    hoehe: (x) => WALL + rise + 0.51 - Math.abs(x) * Math.tan(PITCH),
+  }
 
   const smoke = createSmoke({ scale: 0.8, rate: 0.4 })
   smoke.position.set(chimney[0], roofAt + 1.5, chimney[1])

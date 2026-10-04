@@ -65,6 +65,8 @@ export function createRocks(world, placements, seed = 4711) {
       // dem Boden: die meisten Steine ragen 0,3 bis 0,9 m auf und lassen sich
       // mit der Leertaste ueberspringen (Scheitel 1,14 m).
       world.addCollider(p.x, p.z, s * 1.02 * (p.stretch || 1), null, Math.max(0.2, topY * s * 0.86 - s * 0.46))
+      // Die Kuppe in Weltkoordinaten: darauf stellt sich der Steinbock.
+      p.top = world.heightAt(p.x, p.z) - s * 0.46 + topY * s * 0.86
     })
     mesh.instanceMatrix.needsUpdate = true
     meshes.push(mesh)

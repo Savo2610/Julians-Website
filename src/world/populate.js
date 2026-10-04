@@ -263,7 +263,9 @@ export function populate(world, sky, registry, stationOptions = {}) {
     return 1 - n.y
   }
 
-  let apresTerrace, eiszapfen
+  let apresTerrace, eiszapfen, huette
+  // Felsen der Rueckseite, auf deren Kuppe der Steinbock stehen kann.
+  const felsen = []
 
   // --- Wald ------------------------------------------------------------
   // Dichter Guertel aussen, lockere Gruppen innen: der Wald ist die weiche
@@ -825,6 +827,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
         }
       }
       createRocks(world, klammFelsen, 30515)
+      felsen.push(...klammFelsen)
       createKlammEis(world)
     }
 
@@ -858,6 +861,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
       })
     }
     createRocks(world, gratFelsen, 8821)
+    felsen.push(...gratFelsen)
   }
 
   // Der Rueckweg traegt dieselbe Farbe wie die freie Abfahrt: von unten
@@ -922,6 +926,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
     // apres-layout.js). Nur das Sonnendeck liegt neben der Verbindung
     // zwischen Nordabfahrt und Park, auf deren Hoehe.
     const apres = createApresSki()
+    huette = apres
     world.place(apres, APRES.house.x, APRES.house.z, { rotation: APRES.house.yaw + APRES.house.turn })
     // Drei Kreise statt einem: einer mit 2,4 m sperrte bei 5 m Hausbreite
     // entweder die Ecken nicht oder reichte 0,6 m vor die Tuer.
@@ -1126,5 +1131,5 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Der Badesteg: von hier in den Sommer, siehe src/sommer/.
   const badesteg = createBadesteg(world)
 
-  return { trees: placements, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
+  return { trees: placements, huette, kreuz: cross, felsen, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
 }

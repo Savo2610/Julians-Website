@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { terrainNormal } from '../heightfield.js'
 import { isSnowSurface } from '../surfaces.js'
 
-// Was alle drei Tiere brauchen: wissen, ob die Kamera sie sieht, wo der Wald
+// Was alle Tiere brauchen: wissen, ob die Kamera sie sieht, wo der Wald
 // ist, wie man am Hang steht, und wie ein Abdruck in den Schnee kommt.
 
 export const glatt = (rate, dt) => 1 - Math.exp(-rate * dt)
@@ -95,6 +95,17 @@ export class Waldkarte {
       if (d < bd) { bd = d; best = b }
     }
     return best ? Math.sqrt(bd) : Infinity
+  }
+
+  // Der naechste Baum selbst (mit Lage und Groesse), oder null.
+  naechsterBaum(x, z, r) {
+    let best = null
+    let bd = r * r
+    for (const b of this.um(x, z, r)) {
+      const d = (b.x - x) ** 2 + (b.z - z) ** 2
+      if (d < bd) { bd = d; best = b }
+    }
+    return best
   }
 
   // Richtung zum Schwerpunkt der Baeume im Umkreis, gewichtet nach Naehe.
@@ -199,6 +210,8 @@ function lochTextur() {
 // unsichtbar; erst ab gut 15 cm je Abdruck liest man die Form.
 const ABDRUCK = {
   hase: { textur: haseTextur, breite: 0.75, laenge: 1.2 },
+  // Das Eichhoernchen huepft wie der Hase – dasselbe Y, nur halb so gross.
+  hoernchen: { textur: haseTextur, breite: 0.4, laenge: 0.62 },
   fuchs: { textur: fuchsTextur, breite: 0.32, laenge: 1.0 },
   fluegel: { textur: fluegelTextur, breite: 1.5, laenge: 0.75 },
   loch: { textur: lochTextur, breite: 0.5, laenge: 0.58 },

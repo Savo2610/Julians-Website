@@ -50,7 +50,7 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
   let reihe = 0
   let offen = false
   // Das Eis beginnt an der Muendung des Rohrs (createRohr).
-  const ab = rohrLage()?.s0 ?? 0
+  const ab = (rohrLage()?.s0 ?? -0.3) + 0.3
   for (let s = ab; s <= la; s += schritt) {
     const v = bachVersatz(s)
     const mx = KLAMM.von.x + ux * s + nx * v
@@ -126,8 +126,9 @@ export function createKlammEis(world, { schritt = 0.5 } = {}) {
     world.scene.add(fels)
   }
   // Wo der Bach anfaengt, kommt er aus einem Rohr (Wunsch 04.10.): vorher
-  // begann das Eis einfach mitten im Hang. Ein Wellblechrohr in einer
-  // Stirnmauer, das Eis laeuft als gefrorene Zunge heraus.
+  // begann das Eis einfach mitten im Hang. Ein Betonrohr; das Eis beginnt
+  // dreissig Zentimeter vor seiner Muendung. Eine Zunge aus dem Rohr lag
+  // doppelt ueber dem Eis und ist wieder weg.
   createRohr(world)
   return mesh
 }
@@ -222,15 +223,6 @@ function createRohr(world) {
     teile.push({ geo: hut, color: SCHNEE, position: [p[0], y + r * 0.62, p[2]], rotation: [0, q * 2, 0] })
   }
 
-  // Die gefrorene Zunge: aus dem Rohr hinunter aufs Eis.
-  const a = welt(0, yc - RI + 0.04, -0.6)
-  const b = welt(0, bettY + 0.1, 1.4)
-  b[1] = terrainHeight(b[0], b[2]) + 0.11
-  const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])
-  const zunge = new THREE.BoxGeometry(RI * 1.5, 0.1, len)
-  zunge.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.atan2(a[1] - b[1], Math.hypot(b[0] - a[0], b[2] - a[2]))))
-  zunge.rotateY(dreh)
-  teile.push({ geo: zunge, color: 0x9fd8e4, position: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2] })
   // Eiszapfen am oberen Rand der Oeffnung.
   for (let i = 0; i < 9; i++) {
     const w = -1.0 + i * 0.25

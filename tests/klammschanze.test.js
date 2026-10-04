@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Skier } from '../src/player/skier.js'
-import { terrainHeight, SCHANZE, schanzeLage, klammAt, BRUECKE, KLAMM, DECK, stegLage, stegDeck } from '../src/world/heightfield.js'
+import { terrainHeight, SCHANZE, schanzeLage, klammAt, BRUECKE, KLAMM, DECK, stegLage, stegDeck, bachVersatz, LAKE } from '../src/world/heightfield.js'
 
 // Die Schanze ueber die Klamm auf der Nordabfahrt (04.10.). Gefahren wird ohne
 // Szene und ohne Hindernisse, nur auf dem Gelaende – wie in sprung.test.js.
@@ -112,7 +112,8 @@ test('unten in der Klamm faehrt man unter der Bruecke durch', () => {
   let drunter = 0
   fahre(x0, z0, Math.atan2(ux, uz), 150, (s) => {
     assert.ok(!s.airborne, 'hebt nicht ab')
-    assert.ok(Math.abs(s.position.y - terrainHeight(s.position.x, s.position.z)) < 0.02, 'auf dem Grund')
+    // Im Bach sinkt man ein (Skier._einsinken), sonst steht man auf dem Grund.
+    assert.ok(Math.abs(s.position.y + s._einsinken - terrainHeight(s.position.x, s.position.z)) < 0.02, 'auf dem Grund')
     if (stegDeck(s.position.x, s.position.z)) drunter++
   })
   assert.ok(drunter > 10, `${drunter} Bilder unter dem Deck`)
@@ -164,6 +165,34 @@ test('rueckwaerts kommt man nicht ueber die Schanze: aus der Klamm ist sie eine 
     assert.ok(!flog, `Tempo ${tempo}: hebt ab`)
     assert.ok(schanzeLage(s.position.x, s.position.z).u > 0.3, `Tempo ${tempo}: steht bei u ${schanzeLage(s.position.x, s.position.z).u.toFixed(1)}`)
   }
+})
+
+test('im Bach sinkt man ein und wird langsam (04.10.)', () => {
+  const ax = KLAMM.bis.x - KLAMM.von.x, az = KLAMM.bis.z - KLAMM.von.z, la = Math.hypot(ax, az)
+  const ux = ax / la, uz = az / la
+  const t = la * 0.6
+  const v = bachVersatz(t)
+  const s = fahre(KLAMM.von.x + ux * t - uz * v, KLAMM.von.z + uz * t + ux * v, Math.atan2(ux, uz), 40, () => {}, 12)
+  assert.ok(s.speed < 4.5, `Tempo ${s.speed.toFixed(1)}`)
+  assert.ok(s._einsinken > 0.15, `eingesunken ${s._einsinken.toFixed(2)}`)
+})
+
+test('auf dem See rutscht man: die Fahrt folgt dem Ski nur langsam (04.10.)', () => {
+  const lenken = (x, z) => {
+    const s = new Skier(welt)
+    s.versetzen(x, z, 0)
+    s.speed = 10
+    const inp = eingabe()
+    inp.setze(['forward'])
+    // Den Ski um 60 Grad drehen und eine Zehntelsekunde fahren.
+    s.heading = s.facing = Math.PI / 3
+    s.update(1 / 10, inp, null)
+    return Math.atan2(s._fahrt.x, s._fahrt.z)
+  }
+  const see = lenken(LAKE.x, LAKE.z)
+  const schnee = lenken(LAKE.x, LAKE.z - 30)
+  assert.ok(see < 0.5, `See ${see.toFixed(2)} rad`)
+  assert.ok(schnee > 0.9, `Schnee ${schnee.toFixed(2)} rad`)
 })
 
 test('der Absprung genau an der Kante traegt am weitesten (04.10.)', () => {

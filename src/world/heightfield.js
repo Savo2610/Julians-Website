@@ -420,6 +420,39 @@ export function klammAt(x, z) {
   return -schnitt
 }
 
+// --- Eis zum Fahren ----------------------------------------------------------
+// Auf dem See rutscht man (Skier: die Fahrtrichtung folgt dem Ski nur
+// langsam), im Bach sinkt man ein und wird langsam (Wunsch 04.10.).
+
+// Auf dem Eis des Sees, nicht auf dem Badesteg darueber.
+export function aufSee(x, z) {
+  const dx = x - LAKE.x, dz = z - LAKE.z
+  if (Math.hypot(dx, dz) > lakeRadius(Math.atan2(dz, dx))) return false
+  const { laengs, quer } = badestegLage(x, z)
+  return !(quer <= BADESTEG.breite && laengs >= -0.3 && laengs <= BADESTEG_LAENGE)
+}
+
+// Im Bach: wo das Eis liegt (props/klamm-eis.js) – ab dem Rohr, also wo die
+// Rinne zum ersten Mal zwei Meter tief ist, und innerhalb des Betts.
+let bachAb = null
+export function imBach(x, z) {
+  const kx = KLAMM.bis.x - KLAMM.von.x
+  const kz = KLAMM.bis.z - KLAMM.von.z
+  const la = Math.hypot(kx, kz)
+  const s = ((x - KLAMM.von.x) * kx + (z - KLAMM.von.z) * kz) / la
+  if (s < 0 || s > la || klammAt(x, z) > -1.2) return false
+  if (bachAb === null) {
+    bachAb = la
+    for (let t = 0; t <= la; t += 0.25) {
+      const v = bachVersatz(t)
+      if (klammAt(KLAMM.von.x + (kx * t - kz * v) / la, KLAMM.von.z + (kz * t + kx * v) / la) <= -2) { bachAb = t; break }
+    }
+  }
+  if (s < bachAb) return false
+  const quer = ((x - KLAMM.von.x) * -kz + (z - KLAMM.von.z) * kx) / la
+  return Math.abs(quer - bachVersatz(s)) < KLAMM.bach.breite * 0.8
+}
+
 // --- Das Deck der Bruecke -----------------------------------------------------
 // Die einzige Stelle im Tal mit zwei Flaechen uebereinander: unten die Klamm,
 // oben das Deck. terrainHeight bleibt die Hoehe des Gelaendes; das Deck

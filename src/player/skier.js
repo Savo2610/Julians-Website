@@ -1,11 +1,19 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, SPRUNG } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeLage, SCHANZE, schanzeAnlauf, aufSteg, stegDeck, stegLage, DECK, BRUECKE, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeLage, SCHANZE, schanzeAnlauf, aufSteg, aufSee, imBach, stegDeck, stegLage, DECK, BRUECKE, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 import { landeStufe } from '../core/landung.js'
 
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
+
+// Eis: auf dem See folgt die Fahrt dem Ski mit dieser Rate (1/s) – eine
+// Kurve braucht so gut eine halbe Sekunde, bis sie greift, und man
+// driftet nach aussen. Im Bach sinkt man 18 cm ein und kommt hoechstens
+// mit 4 m/s voran.
+const RUTSCHEN = 2.2
+const BACH_TIEFE = 0.18
+const BACH_TEMPO = 4
 
 // Welche der vier Richtungen gerade gedrueckt sind – Tasten oder Daumenstick.
 function richtungen(input) {
@@ -78,6 +86,8 @@ export class Skier {
     this.snowBurst = 0
     this.aufDeck = false
     this._ueberKlamm = false
+    this._fahrt = { x: this.forward?.x ?? 0, z: this.forward?.z ?? -1 }
+    this._einsinken = 0
     this._buildSnowCaps()
 
     this.forward = new THREE.Vector3(0, 0, -1)
@@ -214,6 +224,20 @@ export class Skier {
     this.facing = this.heading + this.swing
     this.forward.set(Math.sin(this.facing), 0, Math.cos(this.facing))
 
+    // Auf dem Eis des Sees rutscht man: die Fahrt folgt dem Ski nur
+    // langsam (Wunsch 04.10.). Sonst ist sie die Richtung des Skis.
+    if (aufSee(this.position.x, this.position.z) && !this.airborne && this.speed > 1) {
+      const k = damp(RUTSCHEN, dt)
+      this._fahrt.x += (this.forward.x - this._fahrt.x) * k
+      this._fahrt.z += (this.forward.z - this._fahrt.z) * k
+      const l = Math.hypot(this._fahrt.x, this._fahrt.z) || 1
+      this._fahrt.x /= l
+      this._fahrt.z /= l
+    } else if (!this.airborne) {
+      this._fahrt.x = this.forward.x
+      this._fahrt.z = this.forward.z
+    }
+
     // Tatsaechliche Drehrate aus der Aenderung der Fahrtrichtung ableiten –
     // sie enthaelt Lenken und Schwung gleichermassen und treibt Neigung,
     // Spurbreite und Schneestaub.
@@ -247,6 +271,11 @@ export class Skier {
       SKIER.boostSpeed + 8,
     )
 
+    // Im Bach bricht man ein: das Eis traegt nicht, der Fahrer steht bis
+    // ueber die Schuhe im Wasser und kommt nur langsam voran.
+    const nass = !this.airborne && !this.aufDeck && imBach(this.position.x, this.position.z)
+    if (nass) target = Math.min(target, BACH_TEMPO)
+
     const accelRate = target > this.speed
       ? SKIER.accel
       : input.braking
@@ -262,11 +291,15 @@ export class Skier {
         this.speed += (target - this.speed) * damp(this.airborne ? 0.5 : accelRate, dt)
       }
     }
+    // Hart gebremst (14 m/s²) bis auf 4 m/s und dort gehalten: weich
+    // gedaempft schob das Gas den Fahrer gleich wieder auf 6 bis 7 m/s.
+    if (nass) this.speed = Math.min(this.speed, Math.max(BACH_TEMPO, this.speed - 14 * dt))
+    this._einsinken += ((nass ? BACH_TIEFE : 0) - this._einsinken) * damp(nass ? 6 : 10, dt)
     if (this.speed < 0.06) this.speed = 0
 
     // --- Bewegung ------------------------------------------------------
-    const stepX = this.forward.x * this.speed * dt
-    const stepZ = this.forward.z * this.speed * dt
+    const stepX = this._fahrt.x * this.speed * dt
+    const stepZ = this._fahrt.z * this.speed * dt
     let nx = this.position.x + stepX
     let nz = this.position.z + stepZ
 
@@ -469,7 +502,7 @@ export class Skier {
     // nichts mehr vor.
     this._rise = this.airborne ? 0 : Math.min(Math.max(0, climb), 24)
     this._prevGroundY = groundY
-    this.position.y = groundY + this.height
+    this.position.y = groundY + this.height - this._einsinken
 
     this._updateTrick(dt, input)
     if (!this.airborne) this._aufBox(input)
@@ -1053,6 +1086,9 @@ export class Skier {
     this._prevFacing = heading
     this.swing = 0
     this.forward.set(Math.sin(heading), 0, Math.cos(heading))
+    this._fahrt.x = this.forward.x
+    this._fahrt.z = this.forward.z
+    this._einsinken = 0
     this._prevGroundY = this.position.y
     this._rise = 0
     this._trailInit = false

@@ -611,7 +611,13 @@ Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
   ±4,2 × 2,6 m um jeden Wegweiser (`WEGWEISER` in `wayfinding.js`). Seit
   sich der Wald mit dem Gelände an der Klamm neu verteilt hat (die Streuung
   hängt am Gelände), stand einer in der Tafel WERKSTATT. Es sitzt, wo die Rinne 2 m tief
-  ist; dort beginnt auch das Eis, als Zunge aus dem Rohr. Wellblech in einer
+  ist; 30 cm vor der Mündung beginnt das Eis (eine Zunge aus dem Rohr
+  lag doppelt darüber und ist weg).
+- **Eis zum Fahren** (`aufSee()`, `imBach()` in `heightfield.js`): auf dem
+  See rutscht man – die Fahrtrichtung (`Skier._fahrt`) folgt dem Ski nur
+  mit 2,2/s, eine Kurve greift erst nach gut einer halben Sekunde. Im Bach
+  bricht man ein: 18 cm tiefer (`_einsinken`, nur Darstellung und Höhe)
+  und höchstens 4 m/s. Nicht auf Badesteg und Brückendeck. Wellblech in einer
   Mauer und seitlich aus der hinteren Wand waren die Vorversuche. Bäume
   davor nimmt `populate.js` nach dem Streuen heraus.
 - **Schanze nur vorwärts**: aus der Klamm ist ihre Stirn eine Wand

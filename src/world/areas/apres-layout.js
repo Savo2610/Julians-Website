@@ -8,7 +8,7 @@
 // stand; bei +0,22 rad kommt er hinter dem Haus vorbei. Die Front zeigt
 // dabei noch zu 98 % zur Kamera (cos 0,22).
 export const APRES = {
-  house: { x: 24, z: -65.5, height: 11.9, yaw: Math.PI / 4, turn: 0.22, width: 5, depth: 3.8 },
+  house: { x: 24, z: -65.5, height: 11.9, yaw: Math.PI / 4, turn: -0.95, width: 5, depth: 3.8 },
   // Kanten der Bohlen. Hinter der Hausfront liegt die Kontur unter dem Haus,
   // damit kein Schneestreifen zwischen Wand und Holz bleibt. Der linke Fluegel
   // endet gut fuenf Meter vor dem Einstieg des Funparks (10, −60,4) und

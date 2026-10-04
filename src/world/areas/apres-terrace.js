@@ -1,12 +1,70 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 import { terrainHeight } from '../heightfield.js'
-import { APRES, terraceWorld, terraceDistance, houseWorld } from './apres-layout.js'
+import { APRES, terraceWorld, terraceDistance, houseWorld, houseLocal } from './apres-layout.js'
+import { Kippreihe, Wurfteil } from './umstossen.js'
 
 const WOOD = 0x98734e, DARK = 0x574638, SNOW = 0xf7fbff
 const BULBS = [0xffd27a, 0xff5a4e, 0x59d98e, 0x5aa8ff, 0xffe066]
 const FLAGS = [0xc4302b, 0xf1ede4, 0x2f6b4a, 0xf2c230, 0x2c5f9e]
 const SKIS = [0xd9412f, 0x1f6fd1, 0xf2c230, 0x2fae7a, 0xf06292, 0x7b4fd6, 0xff8a1f]
+
+// Der Sonnenschirm steht fuer sich, durch die Tischmitte gesteckt: wer ihn
+// trifft, wirft ihn um, und der Tisch bleibt stehen – oder umgekehrt. Als Teil
+// des Tisches fiel er immer mit ihm. Ursprung am Fuss der Stange.
+function schirmGeometry() {
+  const parts = [{ geo: new THREE.CylinderGeometry(0.035, 0.035, 2.5, 6), color: 0xf1ede4, position: [0, 1.25, 0] }]
+  for (let i = 0; i < 8; i++) {
+    const wedge = new THREE.ConeGeometry(1.3, 0.5, 1, 1, true, i * Math.PI / 4, Math.PI / 4)
+    parts.push({ geo: wedge, color: i % 2 ? 0xf6efe4 : 0xc4302b, position: [0, 2.45, 0] })
+  }
+  parts.push({ geo: new THREE.SphereGeometry(0.06, 6, 4), color: 0xf1ede4, position: [0, 2.72, 0] })
+  parts.push({ geo: new THREE.CylinderGeometry(0.22, 0.26, 0.08, 10), color: DARK, position: [0, 0.04, 0] })
+  const geometry = assemble(parts)
+  geometry.computeBoundingBox()
+  return geometry
+}
+
+// Ein Masskrug: Glas mit Bier, Schaumkrone, Henkel. Ursprung am Boden.
+function becherGeometry() {
+  const henkel = new THREE.TorusGeometry(0.045, 0.014, 4, 8, Math.PI)
+  henkel.rotateZ(-Math.PI / 2)
+  return assemble([
+    { geo: new THREE.CylinderGeometry(0.062, 0.058, 0.17, 8), color: 0xf0b030, position: [0, 0.085, 0] },
+    { geo: new THREE.CylinderGeometry(0.066, 0.064, 0.05, 8), color: 0xfbf6ea, position: [0, 0.19, 0] },
+    { geo: henkel, color: 0xe8e2d0, position: [0.065, 0.09, 0] },
+  ])
+}
+
+// Ski und Boards im Staender, stehend, Ursprung am Fuss, Bindungen nach +z
+// (zur Kamera – der Belag ist nur eine Flaeche). Die Farbe kommt je Instanz
+// dazu; was dunkel bleiben soll (Bindungen), ist es auch eingefaerbt.
+function skiGeometry() {
+  const parts = []
+  for (const sx of [-0.075, 0.075]) {
+    parts.push({ geo: new THREE.BoxGeometry(0.115, 1.62, 0.035), color: 0xffffff, position: [sx, 0.81, 0] })
+    // Die Schaufel biegt sich nach vorn.
+    parts.push({ geo: new THREE.BoxGeometry(0.115, 0.16, 0.035), color: 0xffffff, position: [sx, 1.68, 0.035], rotation: [0.5, 0, 0] })
+    parts.push({ geo: new THREE.BoxGeometry(0.06, 1.3, 0.04), color: 0xd8d8d8, position: [sx, 0.85, 0.004] })
+    parts.push({ geo: new THREE.BoxGeometry(0.1, 0.09, 0.07), color: 0x222222, position: [sx, 0.62, 0.04] })
+    parts.push({ geo: new THREE.BoxGeometry(0.1, 0.12, 0.07), color: 0x222222, position: [sx, 0.93, 0.04] })
+  }
+  return assemble(parts)
+}
+function boardGeometry() {
+  const parts = [{ geo: new THREE.BoxGeometry(0.29, 1.2, 0.03), color: 0xffffff, position: [0, 0.75, 0] }]
+  for (const y of [0.15, 1.35]) {
+    const ende = new THREE.CylinderGeometry(0.145, 0.145, 0.03, 12, 1, false, y < 1 ? Math.PI / 2 : -Math.PI / 2, Math.PI)
+    ende.rotateX(Math.PI / 2)
+    parts.push({ geo: ende, color: 0xffffff, position: [0, y, 0] })
+  }
+  parts.push({ geo: new THREE.BoxGeometry(0.2, 0.5, 0.032), color: 0xf4f4f4, position: [0, 0.75, 0.002] })
+  for (const y of [0.52, 0.98]) {
+    parts.push({ geo: new THREE.BoxGeometry(0.24, 0.13, 0.08), color: 0x1d1d1d, position: [0, y, 0.05] })
+    parts.push({ geo: new THREE.BoxGeometry(0.27, 0.035, 0.1), color: 0x3a3a3a, position: [0, y + 0.04, 0.06] })
+  }
+  return assemble(parts)
+}
 
 function furnitureGeometry(kind) {
   const parts = []
@@ -21,17 +79,6 @@ function furnitureGeometry(kind) {
   for (const x of [-length * 0.35, length * 0.35]) {
     for (const z of [-width * 0.3, width * 0.3]) parts.push({ geo: new THREE.BoxGeometry(0.1, height - 0.1, 0.1), color: DARK, position: [x, (height - 0.1) / 2, z] })
     parts.push({ geo: new THREE.BoxGeometry(0.13, 0.1, width * 0.9), color: DARK, position: [x, 0.15, 0] })
-  }
-  if (kind === 'parasol') {
-    // Rot-weisser Schirm durch die Tischmitte. Er gehoert zum Tisch und
-    // faellt mit ihm um; die Stuetzrechnung in place() laesst den Tisch
-    // dann auf der Schirmkante liegen, wie er es wirklich taete.
-    parts.push({ geo: new THREE.CylinderGeometry(0.035, 0.035, 2.5, 6), color: 0xf1ede4, position: [0, 1.25, 0] })
-    for (let i = 0; i < 8; i++) {
-      const wedge = new THREE.ConeGeometry(1.3, 0.5, 1, 1, true, i * Math.PI / 4, Math.PI / 4)
-      parts.push({ geo: wedge, color: i % 2 ? 0xf6efe4 : 0xc4302b, position: [0, 2.45, 0] })
-    }
-    parts.push({ geo: new THREE.SphereGeometry(0.06, 6, 4), color: 0xf1ede4, position: [0, 2.72, 0] })
   }
   const geometry = assemble(parts)
   geometry.translate(0, -height / 2, 0)
@@ -101,28 +148,47 @@ export function createApresTerrace(world) {
   floor.receiveShadow = true
   world.scene.add(floor)
 
-  // Zwei Gruppen oben vor dem Haus, eine auf dem Sonnendeck. Vor der Tuer
-  // und zwischen den Ebenen bleiben gut zwei Meter frei.
-  const layouts = [[-1.2, 4.6, 0, 'parasol'], [2.3, 5.4, 0.08, 'table'], [-7.4, -1.8, Math.PI / 2 - 0.06, 'parasol']].map(([u, v, angle, kind]) => {
+  // Zwei Gruppen oben neben dem Haus, eine auf dem Sonnendeck. Seit die
+  // Huette mit der Tuer zur Piste steht, liegt ihre rechte Flanke dort, wo
+  // vorher die Front war; die Gruppen sind davon weggerueckt, vor der Tuer
+  // bleiben gut zwei Meter frei.
+  const layouts = [[-1.9, 5.2, 0, 'parasol'], [2.4, 5.0, 0.08, 'table'], [-7.4, -1.8, Math.PI / 2 - 0.06, 'parasol']].map(([u, v, angle, kind]) => {
     const { x, z } = terraceWorld(u, v)
     return [x, z, APRES.house.yaw + angle, kind]
   })
   const material = vertexColorMaterial({ roughness: 0.85 })
-  const geometries = { table: furnitureGeometry('table'), parasol: furnitureGeometry('parasol'), bench: furnitureGeometry('bench') }
+  const geometries = { table: furnitureGeometry('table'), bench: furnitureGeometry('bench'), schirm: schirmGeometry() }
   const bodies = []
   const v = new THREE.Vector3()
-  for (const [x, z, yaw, table] of layouts) for (const offset of [0, -1.15, 1.15]) {
-    const kind = offset ? 'bench' : table
+  const neu = (kind, home, radius) => {
     const mesh = new THREE.Mesh(geometries[kind], material)
     mesh.castShadow = true
     mesh.receiveShadow = true
     mesh.name = `terrasse-${kind}`
-    const home = { x: x + Math.sin(yaw) * offset, z: z + Math.cos(yaw) * offset, yaw }
-    const body = { mesh, kind, home, x: home.x, z: home.z, yaw, tiltX: 0, tiltZ: 0, targetX: 0, targetZ: 0, vx: 0, vz: 0, spin: 0, hold: 0, cooldown: 0, radius: kind === 'bench' ? 0.7 : 0.82 }
+    const body = { mesh, kind, home, x: home.x, z: home.z, yaw: home.yaw, tiltX: 0, tiltZ: 0, targetX: 0, targetZ: 0, vx: 0, vz: 0, spin: 0, hold: 0, cooldown: 0, radius }
     bodies.push(body)
     world.scene.add(mesh)
     place(body)
+    return body
   }
+  // Auf jedem Tisch drei Kruege, wie beim Dosenwerfen: wer den Tisch trifft,
+  // raeumt sie ab.
+  const AUF_TISCH = [[-0.5, 0.18], [0.12, -0.22], [0.56, 0.12]]
+  const becher = []
+  for (const [x, z, yaw, art] of layouts) {
+    let tisch = null
+    for (const offset of [0, -1.15, 1.15]) {
+      const home = { x: x + Math.sin(yaw) * offset, z: z + Math.cos(yaw) * offset, yaw }
+      const body = neu(offset ? 'bench' : 'table', home, offset ? 0.7 : 0.82)
+      if (!offset) tisch = body
+    }
+    if (art === 'parasol') tisch.schirm = neu('schirm', { x, z, yaw }, 0.3)
+    for (const [bx, bz] of AUF_TISCH) becher.push({ tisch, bx, bz, teil: new Wurfteil(), weg: false })
+  }
+  const becherMesh = new THREE.InstancedMesh(becherGeometry(), material, becher.length)
+  becherMesh.castShadow = true
+  becherMesh.name = 'terrasse-becher'
+  world.scene.add(becherMesh)
 
   const fixtures = [], bulbs = []
   const tube = (points, radius, color, segments = points.length * 2) =>
@@ -231,29 +297,90 @@ export function createApresTerrace(world) {
     }
   }
 
-  // Skistaender vorn an der Kante: sieben bunte Paare, angelehnt, die
-  // Belaege zur Kamera. Aus 33 m die bunteste Stelle. An der Rueckkante des
-  // Sonnendecks stand er genau in der Linie von der Nordabfahrt nach Osten –
-  // dort blieb ein Fahrer bei (14,9, −65,3) haengen.
-  {
-    const from = -1.4, to = 0.9, w = 7.15
-    const a = terraceWorld(from, w), b = terraceWorld(to, w)
-    const ya = terrainHeight(a.x, a.z), yb = terrainHeight(b.x, b.z)
-    tube([[a.x, ya + 1.2, a.z], [b.x, yb + 1.2, b.z]], 0.05, DARK, 4)
-    tube([[a.x, ya + 1.28, a.z], [b.x, yb + 1.28, b.z]], 0.05, SNOW, 4)
-    for (const p of [a, b]) {
-      fixtures.push({ geo: new THREE.BoxGeometry(0.12, 1.25, 0.12), color: DARK, position: [p.x, terrainHeight(p.x, p.z) + 0.62, p.z] })
-    }
-    for (let i = 0; i < 7; i++) {
-      const u = from + 0.25 + i * (to - from - 0.5) / 6
-      const [x, y, z] = at(u, w + 0.3)
-      for (const d of [-0.06, 0.06]) {
-        const q = terraceWorld(u + d, w + 0.3)
-        fixtures.push({ geo: new THREE.BoxGeometry(0.09, 1.7, 0.03), color: SKIS[i % SKIS.length], position: [q.x, y + 0.82, q.z], rotation: [-0.18, APRES.house.yaw, 0] })
+  // Skistaender vorn an der rechten Kante, schraeg mit ihr: fuenf Paar Ski
+  // und zwei Boards, angelehnt, die Belaege zur Kamera. Aus 33 m die bunteste
+  // Stelle – und eine Reihe Dominosteine (umstossen.js). An der Rueckkante
+  // des Sonnendecks stand er genau in der Linie von der Nordabfahrt nach
+  // Osten; dort blieb ein Fahrer bei (14,9, −65,3) haengen.
+  const staender = (() => {
+    let A = terraceWorld(0.7, 7.6), B = terraceWorld(3.3, 6.55)
+    // Lokal +z soll nach aussen zeigen, zur Kamera: dort stehen die Bretter
+    // vor dem Holm, Bindungen nach vorn.
+    const aussen = terraceWorld(0, 1)
+    const ox = aussen.x - APRES.house.x, oz = aussen.z - APRES.house.z
+    if (-(B.z - A.z) * ox + (B.x - A.x) * oz < 0) [A, B] = [B, A]
+    const lx = B.x - A.x, lz = B.z - A.z, L = Math.hypot(lx, lz)
+    const rx = lx / L, rz = lz / L
+    const yaw = Math.atan2(-rz, rx)
+    const fx = Math.sin(yaw), fz = Math.cos(yaw)
+    const welt = (s, f) => ({ x: A.x + rx * s + fx * f, z: A.z + rz * s + fz * f })
+    // Der Holm sitzt so hoch, dass nur die Spitzen darueber lehnen; bei 1,22 m
+    // standen die oberen Drittel dahinter, und der Holm las sich als davor.
+    const BAR = 1.45, LEHNE = 0.2, VOR = BAR * Math.tan(LEHNE)
+    // Gestell: zwei Pfosten mit Kappe, Holm oben (mit Schnee), Querlatte
+    // unten mit Kerben fuer die Enden, ein Brett als Fussleiste.
+    const ya = terrainHeight(A.x, A.z), yb = terrainHeight(B.x, B.z)
+    for (const [p, y] of [[A, ya], [B, yb]]) {
+      fixtures.push({ geo: new THREE.BoxGeometry(0.13, BAR + 0.12, 0.13), color: DARK, position: [p.x, y + (BAR + 0.12) / 2, p.z], rotation: [0, yaw, 0] })
+      fixtures.push({ geo: new THREE.BoxGeometry(0.19, 0.06, 0.19), color: SNOW, position: [p.x, y + BAR + 0.15, p.z], rotation: [0, yaw, 0] })
+      for (const f of [-0.28, 0.28]) {
+        const q = welt(p === A ? 0 : L, f)
+        fixtures.push({ geo: new THREE.BoxGeometry(0.1, 0.08, 0.6), color: DARK, position: [q.x, y + 0.04, q.z], rotation: [0, yaw, 0] })
       }
-      if (i % 2 === 0) world.addCollider(x, z, 0.3)
     }
-  }
+    tube([[A.x, ya + BAR, A.z], [B.x, yb + BAR, B.z]], 0.055, WOOD, 4)
+    tube([[A.x, ya + BAR + 0.08, A.z], [B.x, yb + BAR + 0.08, B.z]], 0.05, SNOW, 4)
+    const unten = [welt(0, VOR * 0.55), welt(L, VOR * 0.55)]
+    tube([[unten[0].x, ya + 0.32, unten[0].z], [unten[1].x, yb + 0.32, unten[1].z]], 0.04, DARK, 4)
+    const mitte = welt(L / 2, VOR + 0.06)
+    fixtures.push({ geo: new THREE.BoxGeometry(L, 0.08, 0.2), color: WOOD, position: [mitte.x, (ya + yb) / 2 + 0.04, mitte.z], rotation: [0, yaw, 0] })
+    // Der Holm ist ein Hindernis, aber die Bretter davor nicht: die Kette
+    // liegt einen Viertelmeter hinter ihm. So kommt man von vorn bis an die
+    // Fuesse heran (Mitte bei 0,48 gegen 0,29 m) und raeumt die Reihe ab;
+    // von hinten faehrt man nicht durch.
+    for (let s = 0; s <= L + 0.01; s += 0.45) {
+      const q = welt(s, -0.25)
+      world.addCollider(q.x, q.z, 0.18)
+    }
+
+    const ARTEN = ['ski', 'ski', 'board', 'ski', 'ski', 'board', 'ski']
+    const teile = ARTEN.map((art, i) => {
+      const s = 0.3 + i * (L - 0.6) / (ARTEN.length - 1)
+      const p = welt(s, VOR)
+      return { art, s, x: p.x, z: p.z, y: terrainHeight(p.x, p.z) + 0.03 }
+    })
+    const reihe = new Kippreihe(teile.length, { abstand: (L - 0.6) / (ARTEN.length - 1) })
+    const meshes = {}
+    for (const [art, geo] of [['ski', skiGeometry()], ['board', boardGeometry()]]) {
+      const n = teile.filter((t) => t.art === art).length
+      const m = new THREE.InstancedMesh(geo, material, n)
+      m.castShadow = true
+      m.name = `terrasse-${art}`
+      world.scene.add(m)
+      meshes[art] = m
+    }
+    const FARBEN = { ski: [0xd9412f, 0x1f6fd1, 0xf2c230, 0x2fae7a, 0xf06292], board: [0x7b4fd6, 0xff8a1f] }
+    const zaehler = { ski: 0, board: 0 }
+    for (const t of teile) {
+      t.slot = zaehler[t.art]++
+      meshes[t.art].setColorAt(t.slot, new THREE.Color(FARBEN[t.art][t.slot % FARBEN[t.art].length]))
+    }
+    const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), e = new THREE.Euler(), one = new THREE.Vector3(1, 1, 1), pos = new THREE.Vector3()
+    const zeichnen = () => {
+      teile.forEach((t, i) => {
+        const w = reihe.teile[i].winkel
+        // Beim Kippen loest es sich vom Holm: die Lehne geht mit dem Winkel weg.
+        const lehne = LEHNE * Math.max(0, 1 - Math.abs(w) / 0.6)
+        e.set(-lehne, yaw, -w, 'YZX')
+        q4.setFromEuler(e)
+        m4.compose(pos.set(t.x, t.y, t.z), q4, one)
+        meshes[t.art].setMatrixAt(t.slot, m4)
+      })
+      for (const m of Object.values(meshes)) m.instanceMatrix.needsUpdate = true
+    }
+    zeichnen()
+    return { teile, reihe, zeichnen, rx, rz, ruhig: true }
+  })()
 
   const frame = new THREE.Mesh(assemble(fixtures), material)
   frame.castShadow = true
@@ -281,9 +408,76 @@ export function createApresTerrace(world) {
     mesh.position.set(body.x, support + 0.02, body.z)
   }
 
+  // Becher folgen dem Tisch, bis er getroffen wird; dann fliegen sie selbst.
+  const bm = new THREE.Matrix4(), bq = new THREE.Quaternion(), be = new THREE.Euler(), bp = new THREE.Vector3(), bs = new THREE.Vector3(1, 1, 1)
+  function becherZeichnen() {
+    becher.forEach((b, i) => {
+      if (b.weg) {
+        const t = b.teil
+        be.set(t.kipp, t.dreh, 0, 'YXZ')
+        bq.setFromEuler(be)
+        bm.compose(bp.set(t.x, t.y, t.z), bq, bs)
+      } else {
+        b.tisch.mesh.updateMatrixWorld()
+        bm.makeTranslation(b.bx, 0.44, b.bz).premultiply(b.tisch.mesh.matrixWorld)
+      }
+      becherMesh.setMatrixAt(i, bm)
+    })
+    becherMesh.instanceMatrix.needsUpdate = true
+  }
+  becherZeichnen()
+  const boden = (x, z) => terrainHeight(x, z)
+  // Das Haus ist fuer alles, was umfaellt, eine Wand. Vorher hielt nur der
+  // Terrassenrand die Moebel auf, und ein getroffener Tisch rutschte durch
+  // die Blockwand hinein.
+  const imHaus = (x, z, rand = 0) => {
+    const { hx, hz } = houseLocal(x, z)
+    return Math.abs(hx) < APRES.house.width / 2 + 0.45 + rand && Math.abs(hz) < APRES.house.depth / 2 + 0.45 + rand
+  }
+
   let previous = null, hits = 0
+  // Ein Treffer: Moebel rutscht und kippt in Fahrtrichtung. Am Tisch fliegen
+  // die Becher, und der Schirm darin bekommt seinen eigenen Stoss – er kippt
+  // langsamer und weiter, weil oben das Gewicht sitzt.
+  function treffen(b, skier, current, faktor = 1) {
+    const force = Math.min(8.5, 1.5 + skier.speed * 0.5) * faktor
+    b.vx = skier.forward.x * force
+    b.vz = skier.forward.z * force
+    b.spin = ((b.x - current.x) * skier.forward.z - (b.z - current.z) * skier.forward.x) * faktor
+    // Gekippt wird im eigenen Rahmen des Moebels (die Neigungen liegen in
+    // place() hinter der Drehung). In Weltkoordinaten gerechnet fiel alles
+    // um seine eigene Drehung schraeg zur Fahrtrichtung, hier gut 45 Grad.
+    const kipp = b.kind === 'schirm' ? 1.5 : 1.35
+    const c = Math.cos(b.yaw), sn = Math.sin(b.yaw)
+    const lx = skier.forward.x * c - skier.forward.z * sn
+    const lz = skier.forward.x * sn + skier.forward.z * c
+    b.targetX = lz * kipp
+    b.targetZ = -lx * kipp
+    b.hold = 10
+    b.cooldown = 0.6
+    hits++
+    if (b.kind !== 'table') return
+    for (const k of becher) {
+      if (k.tisch !== b || k.weg) continue
+      b.mesh.updateMatrixWorld()
+      bp.set(k.bx, 0.44, k.bz).applyMatrix4(b.mesh.matrixWorld)
+      const streu = (Math.random() - 0.5) * 2.4
+      k.teil.werfen(bp.x, bp.y, bp.z,
+        skier.forward.x * force * 0.8 + skier.forward.z * streu,
+        2.2 + Math.random() * 1.6,
+        skier.forward.z * force * 0.8 - skier.forward.x * streu,
+        (Math.random() - 0.5) * 2)
+      k.weg = true
+    }
+    if (b.schirm && b.schirm.cooldown === 0 && Math.hypot(b.schirm.x - b.home.x, b.schirm.z - b.home.z) < 0.6) {
+      treffen(b.schirm, skier, current, 0.55)
+    }
+  }
+
   return {
     bodies,
+    becher,
+    staender,
     get hits() { return hits },
     update(dt, skier) {
       if (!skier || dt <= 0) return
@@ -291,33 +485,43 @@ export function createApresTerrace(world) {
       const old = previous && previous.distanceTo(current) < 4 ? previous : current
       const dx = current.x - old.x, dz = current.z - old.z
       const length2 = dx * dx + dz * dz
+      const faehrt = skier.speed > 1.2 && !skier.tow
       for (const b of bodies) {
         b.cooldown = Math.max(0, b.cooldown - dt)
         const t = length2 ? THREE.MathUtils.clamp(((b.x - old.x) * dx + (b.z - old.z) * dz) / length2, 0, 1) : 0
         const distance = Math.hypot(b.x - old.x - dx * t, b.z - old.z - dz * t)
         const near = Math.hypot(current.x - b.x, current.z - b.z)
-        if (distance < b.radius + 0.55 && Math.abs(current.y - terrainHeight(b.x, b.z)) < 1.35 && skier.speed > 1.2 && !skier.tow && b.cooldown === 0) {
-          const force = Math.min(8.5, 1.5 + skier.speed * 0.5)
-          b.vx = skier.forward.x * force
-          b.vz = skier.forward.z * force
-          b.spin = (b.x - current.x) * skier.forward.z - (b.z - current.z) * skier.forward.x
-          b.targetX = THREE.MathUtils.clamp(skier.forward.z * 1.35, -1.35, 1.35)
-          b.targetZ = THREE.MathUtils.clamp(-skier.forward.x * 1.35, -1.35, 1.35)
-          b.hold = 10
-          b.cooldown = 0.6
-          hits++
+        if (distance < b.radius + 0.55 && Math.abs(current.y - terrainHeight(b.x, b.z)) < 1.35 && faehrt && b.cooldown === 0) {
+          treffen(b, skier, current)
         }
         if (b.hold > 0) {
           b.hold = Math.max(0, b.hold - dt)
-          b.tiltX += (b.targetX - b.tiltX) * (1 - Math.exp(-12 * dt))
-          b.tiltZ += (b.targetZ - b.tiltZ) * (1 - Math.exp(-12 * dt))
+          const k = b.kind === 'schirm' ? 5 : 12
+          b.tiltX += (b.targetX - b.tiltX) * (1 - Math.exp(-k * dt))
+          b.tiltZ += (b.targetZ - b.tiltZ) * (1 - Math.exp(-k * dt))
           b.x += b.vx * dt; b.z += b.vz * dt; b.yaw += b.spin * dt
           const drag = Math.exp(-2.2 * dt)
           b.vx *= drag; b.vz *= drag; b.spin *= drag
-          // Moebel bleiben im Vorplatz, statt in die Park-Landungen zu driften.
-          if (terraceDistance(b.x, b.z) > -0.6) {
+          // Moebel bleiben im Vorplatz, statt in die Park-Landungen zu driften,
+          // und draussen vor der Hauswand.
+          if (terraceDistance(b.x, b.z) > -0.6 || imHaus(b.x, b.z, b.kind === 'schirm' ? 0 : 0.35)) {
             b.x -= b.vx * dt; b.z -= b.vz * dt
             b.vx *= -0.25; b.vz *= -0.25
+          }
+          // Der Schirm lehnt sich an die Wand, statt mit dem Dach durch sie
+          // hindurch zu kippen: so weit, wie Platz bis zur Wand ist.
+          if (b.kind === 'schirm') {
+            const tilt = Math.hypot(b.targetX, b.targetZ)
+            if (tilt > 0) {
+              // Kipprichtung zurueck in die Welt, wie in treffen().
+              const lx = -b.targetZ / tilt, lz = b.targetX / tilt
+              const c = Math.cos(b.yaw), sn = Math.sin(b.yaw)
+              const dx = lx * c + lz * sn, dz = -lx * sn + lz * c
+              let frei = 2.6
+              for (let d = 0.2; d <= 2.6; d += 0.1) if (imHaus(b.x + dx * d, b.z + dz * d, -0.2)) { frei = d; break }
+              const grenze = Math.asin(Math.min(1, frei / 2.5))
+              if (tilt > grenze) { b.targetX *= grenze / tilt; b.targetZ *= grenze / tilt }
+            }
           }
         } else if (near > 7 && Math.hypot(current.x - b.home.x, current.z - b.home.z) > 7) {
           const blend = 1 - Math.exp(-2.5 * dt)
@@ -327,6 +531,51 @@ export function createApresTerrace(world) {
         }
         place(b)
       }
+
+      // Becher: fliegen, liegen, und wenn ihr Tisch wieder steht und keiner
+      // hinschaut, stehen sie wieder darauf.
+      let becherBewegt = false
+      for (const k of becher) {
+        if (!k.weg) { becherBewegt ||= k.tisch.hold > 0 || k.tisch.lastMove; continue }
+        if (k.teil.fliegt) {
+          const { x, z } = k.teil
+          k.teil.update(dt, boden)
+          if (imHaus(k.teil.x, k.teil.z, -0.3) && k.teil.y < APRES.house.height + 2.6) {
+            k.teil.x = x; k.teil.z = z
+            k.teil.vx *= -0.4; k.teil.vz *= -0.4
+          }
+          becherBewegt = true
+        }
+        const t = k.tisch
+        if (t.hold === 0 && Math.hypot(t.x - t.home.x, t.z - t.home.z) < 0.05 && Math.hypot(current.x - t.home.x, current.z - t.home.z) > 7) {
+          k.weg = false
+          k.teil.liegt = false
+          becherBewegt = true
+        }
+      }
+      for (const b of bodies) if (b.kind === 'table') b.lastMove = b.hold > 0 || Math.hypot(b.x - b.home.x, b.z - b.home.z) > 0.001
+      if (becherBewegt) becherZeichnen()
+
+      // Skistaender: wer an einem Brett vorbeifaehrt, stoesst es laengs der
+      // Reihe an – in Fahrtrichtung, oder von der Seite weg, wenn man frontal
+      // kommt.
+      const st = staender
+      if (faehrt) {
+        st.teile.forEach((t, i) => {
+          const r = st.reihe.teile[i]
+          if (Math.abs(r.winkel) > 0.3) return
+          if (Math.hypot(current.x - t.x, current.z - t.z) > 0.75 || Math.abs(current.y - t.y) > 1.5) return
+          const laengs = skier.forward.x * st.rx + skier.forward.z * st.rz
+          const seite = (t.x - current.x) * st.rx + (t.z - current.z) * st.rz
+          const richtung = Math.abs(laengs) > 0.25 ? Math.sign(laengs) : (Math.sign(seite) || 1)
+          st.reihe.stoss(i, richtung, 1.4 + skier.speed * 0.22)
+        })
+      }
+      const fern = st.teile.every((t) => Math.hypot(current.x - t.x, current.z - t.z) > 6)
+      const vorher = st.reihe.steht
+      st.reihe.update(dt, { aufstellen: fern })
+      if (!vorher || !st.reihe.steht) st.zeichnen()
+
       if (!previous) previous = current.clone()
       else previous.copy(current)
     },

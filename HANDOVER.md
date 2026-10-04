@@ -341,11 +341,32 @@ sobald der Fahrer ≥ 14 m weg ist. Die Kollision ist solange aus (`c.off` in
 „Gipfelstube“: Blockhaus auf Steinsockel, Giebel mit Schild „APRÈS-SKI“ zur
 Kamera – die Traufe hätte bei 36° Schild und Tür verdeckt –, grüne Läden mit
 Geranien, Kamin, Lichterketten, Wimpel, Schirme, Skiständer, stumme Boxen)
-steht rechts bei (24, −65,5), um 0,22 rad gegen die Kameraachse gedreht.
+steht rechts bei (24, −65,5). Seit dem 04.10. (zweite Runde) zeigt sie mit
+Tür und Boxen zur Piste: um −0,95 rad gegen die Kameraachse gedreht
+(`APRES.house.turn`), so weit, dass „APRÈS-SKI“ aus der Spielkamera gerade
+noch lesbar ist. Wer von der Nordabfahrt nach Osten hält, fährt jetzt
+zwischen z −68 und −63 auf die Hauswand; das ist ein Haus, keine Falle.
 Die Terrasse hat zwei Ebenen: das Sonnendeck links zur Piste liegt 40 cm
 tiefer, eine Rampe (2,6 m, höchstens 13°) verbindet sie, keine Stufe. Drei
 Sitzgruppen mit umwerfbaren Möbeln (`areas/apres-terrace.js`; stehen nach
-10 s wieder auf, wenn der Fahrer ≥ 7 m weg ist), Schirme kippen mit. Der See hat eine eigene Bucht in `WORLD.basins`, damit
+10 s wieder auf, wenn der Fahrer ≥ 7 m weg ist). Was sonst noch umfällt,
+rechnet `areas/umstossen.js` ohne three.js (Tests in `tests/umstossen.test.js`):
+- **Skiständer** rechts vorn an der Kante: fünf Paar Ski (breiter) und zwei
+  Snowboards, Bindungen zur Kamera, Holm auf 1,45 m. Wer hineinfährt, stößt
+  ein Brett an, und die Reihe fällt wie Dominosteine (erstes nach 0,68 s,
+  letztes nach 1,48 s), frontal getroffen nach beiden Seiten. Die Kollision
+  des Holms liegt 25 cm dahinter, sonst käme man nicht an die Füße heran.
+  Nach 9 s und ≥ 6 m Abstand stehen sie wieder.
+- **Becher**: drei Maßkrüge je Tisch (eine InstancedMesh). Wird der Tisch
+  getroffen, fliegen sie, springen auf und bleiben auf der Seite liegen
+  (spätestens nach 4 s, auch am Hang). Sie stehen wieder auf dem Tisch,
+  wenn er zu Hause ist und der Fahrer ≥ 7 m weg.
+- **Schirme** sind eigene Teile (`schirmGeometry`), durch die Tischmitte
+  gesteckt. Ein Tischtreffer gibt ihnen einen eigenen, schwächeren Stoß;
+  sie kippen langsamer und lehnen sich an die Hauswand, statt durch sie zu
+  fallen. Nichts Bewegliches rutscht mehr ins Haus (`imHaus`).
+- Gekippt wird im eigenen Rahmen jedes Möbels; vorher fiel alles um seine
+  Drehung (gut 45°) schräg zur Fahrtrichtung. Der See hat eine eigene Bucht in `WORLD.basins`, damit
 das ganze Eis befahrbar ist; `lakeRadius()` teilt die Uferkontur zwischen Mesh
 und Höhenfeld. **Weiße Spuren auf Eis und Holz** kamen vom Spurstempel, dessen
 Rand durch den nur 1,2 cm höheren Belag ragte — `surfaces.js` sperrt jetzt

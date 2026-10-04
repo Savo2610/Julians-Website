@@ -8,7 +8,7 @@ import { createWayfinding, arrow, PANORAMA } from './wayfinding.js'
 import { WORLD, CAMERA } from '../config.js'
 import { makeRng } from '../core/rng.js'
 import { fbm } from '../core/noise.js'
-import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, SCHANZE, klammAt, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE, BADESTEG } from './heightfield.js'
+import { terrainHeight, terrainNormal, LAKE, PLATEAU, SUMMIT, playAreaDistance, SLED_LANE, NORTH_LANE, GRAT, BRUECKE, KLAMM, SCHANZE, klammAt, bachVersatz, PARK_LANE, PARK_FEATURES, KINDER_LANE, SHOOT_LANE, BADESTEG } from './heightfield.js'
 import { createForest, createFallenTree } from './props/trees.js'
 import { createRocks, createBoulder } from './props/rocks.js'
 import { createLake } from './props/lake.js'
@@ -692,7 +692,21 @@ export function populate(world, sky, registry, stationOptions = {}) {
       const neigung = Math.atan(-summeOH / summeOO)
       const hoehe = summeH / N - terrainHeight(BRUECKE.x, BRUECKE.z)
 
-      const bruecke = createGorgeBridge({ laenge, neigung })
+      // Fuer die Mauern: der Grund neben dem Damm in den lokalen Koordinaten
+      // der Bruecke, und wo die Mittellinie der Klamm sie kreuzt (der Bach).
+      const c = Math.cos(dreh), sn = Math.sin(dreh)
+      const nullY = terrainHeight(BRUECKE.x, BRUECKE.z) + hoehe
+      const grund = (lx, lz) => terrainHeight(BRUECKE.x + lx * c + lz * sn, BRUECKE.z - lx * sn + lz * c) - nullY
+      const kx = KLAMM.bis.x - KLAMM.von.x
+      const kz = KLAMM.bis.z - KLAMM.von.z
+      const kl = Math.hypot(kx, kz)
+      const quer = (x, z) => ((x - KLAMM.von.x) * -kz + (z - KLAMM.von.z) * kx) / kl
+      // Der Bach windet sich (bachVersatz); das Gewoelbe sitzt dort, wo er
+      // unter der Bruecke wirklich laeuft, nicht auf der Achse der Klamm.
+      const laengs = ((BRUECKE.x - KLAMM.von.x) * kx + (BRUECKE.z - KLAMM.von.z) * kz) / kl
+      const bachX = (bachVersatz(laengs) - quer(BRUECKE.x, BRUECKE.z)) / (quer(BRUECKE.x + c, BRUECKE.z - sn) - quer(BRUECKE.x, BRUECKE.z))
+
+      const bruecke = createGorgeBridge({ laenge, neigung, grund, bachX })
       world.place(bruecke, BRUECKE.x, BRUECKE.z, { rotation: dreh, yOffset: hoehe })
     }
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, SPRUNG } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeAnlauf, aufSteg, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeLage, schanzeAnlauf, aufSteg, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 import { landeStufe } from '../core/landung.js'
 
@@ -349,6 +349,13 @@ export class Skier {
         // genauso hoch bleibt (1,14 m Scheitel) und nicht ueber den Kicker traegt.
         const hopser = parkRegeln ? SPRUNG.parkHopser : SPRUNG.hopser
         this.vy = park ? Math.min(Math.max(hopser, this._rise + SPRUNG.pop), 14) : SPRUNG.hopser
+        // An der Klammschanze: wer auf dem letzten knappen Meter drueckt,
+        // trifft die Kante. Die Wertung liest die Weitenmessung.
+        if (klammFlug(nx, nz)) {
+          const perfekt = schanzeLage(nx, nz).u > -SPRUNG.kantenFenster
+          if (perfekt) this.vy = Math.min(Math.max(hopser, this._rise + SPRUNG.pop) + SPRUNG.kantenBonus, SPRUNG.kantenDeckel)
+          this.absprung = { art: perfekt ? 'perfekt' : 'frueh', tempo: this.speed }
+        }
       } else if (this._rise > 3.2 && free > groundY + 0.03 && !ohneAbwurf(nx, nz)) {
         // Faellt der Boden hinter der Kante schneller weg, als die Schwerkraft
         // den Fahrer holt, hebt er ab. Kein Sprungknopf noetig – die Schanze
@@ -359,6 +366,10 @@ export class Skier {
         this.airborne = true
         this._nachsicht = park ? SPRUNG.nachsicht : 0
         this._nachPop = SPRUNG.pop
+        this._klammKante = klammFlug(nx, nz)
+        // Wer zu frueh gedrueckt hat, hopste auf der Rampe und hebt jetzt
+        // erst an der Kante ab – die Wertung bleibt "zu frueh".
+        if (this._klammKante && this.absprung?.art !== 'frueh') this.absprung = { art: 'ohne', tempo: this.speed }
         // Nach oben begrenzt: eine Kante, die der Fahrer mit ueberhoehtem
         // Tempo trifft, soll ihn abheben lassen und nicht abschiessen. Der
         // Deckel liegt bei vierzehn – knapp sechs Meter Scheitelhoehe und
@@ -372,6 +383,13 @@ export class Skier {
       this._nachsicht -= dt
       if (druck) {
         this.vy = Math.min(this.vy + this._nachPop, 14)
+        // Kurz nach der Kante zaehlt an der Klamm noch als perfekt – sonst
+        // waere der Moment bei 13 m/s nur zwei Bilder lang.
+        if (this._klammKante) {
+          const perfekt = SPRUNG.nachsicht - this._nachsicht <= SPRUNG.kantenNachsicht
+          if (perfekt) this.vy = Math.min(this.vy + SPRUNG.kantenBonus, SPRUNG.kantenDeckel)
+          this.absprung = { art: perfekt ? 'perfekt' : 'spaet', tempo: this.absprung?.tempo ?? this.speed }
+        }
         this._nachsicht = 0
         if (this._abTempo != null) this.speed = this._steil(this._abTempo, this.vy)
       }
@@ -415,6 +433,7 @@ export class Skier {
         }
         this.vy = 0
         this._luftY = null
+        this._klammKante = false
       }
     } else {
       this.landImpact = (this.landImpact || 0) * (1 - damp(6, dt))
@@ -943,6 +962,8 @@ export class Skier {
     this._parkSprung = false
     this._box = null
     this._abTempo = null
+    this._klammKante = false
+    this.absprung = null
     this.heading = heading
     this.facing = heading
     this._prevFacing = heading

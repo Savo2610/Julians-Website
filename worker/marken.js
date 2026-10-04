@@ -40,6 +40,16 @@ export async function pruefen(env, marke) {
   }
 }
 
+// Steht ein gesperrtes Wort in freiem Text (Gipfelbuch)? Dieselbe Liste
+// und Glaettung wie bei Namen, aber ohne die Luecken herauszunehmen: ueber
+// Wortgrenzen hinweg findet man sonst in jedem dritten Satz etwas. Die
+// Eintraege werden ohnehin erst nach dem Lesen freigegeben.
+export function gesperrt(text) {
+  const flach = text.toLowerCase()
+    .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's').replace(/@/g, 'a')
+  return SPERRE.some((w) => flach.includes(w))
+}
+
 // --- Namen -------------------------------------------------------------------
 
 export function nameGlaetten(roh) {

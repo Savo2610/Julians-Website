@@ -45,6 +45,7 @@ const GLYPHS = {
   welle: '<svg viewBox="0 0 24 24"><path d="M3 15.5c1.5 0 1.5-1.4 3-1.4s1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4M3 19.5c1.5 0 1.5-1.4 3-1.4s1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4 1.5-1.4 3-1.4 1.5 1.4 3 1.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M19.5 3.5 10 11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 10.2l3.6 3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
   // Zwei Gipfel mit Schneekappe, fuer das Gipfelbuch.
   berg: '<svg viewBox="0 0 24 24"><path d="M2.5 19.5 9 8l3.6 6.2L15.5 10l6 9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7.2 11.2 9 8l1.8 3.2-1.8 1z" fill="currentColor"/></svg>',
+  buch: '<svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.6 3.5 5v13c3.5-.4 6.5 0 8.5 1.5 2-1.5 5-1.9 8.5-1.5V5c-3.5-.4-6.5 0-8.5 1.5zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
   solana: '<svg viewBox="0 0 24 24"><path d="M6.5 6h13l-2 2.6h-13zM4.5 10.7h13l2 2.6h-13zM6.5 15.4h13l-2 2.6h-13z" fill="currentColor"/></svg>',
 }
 

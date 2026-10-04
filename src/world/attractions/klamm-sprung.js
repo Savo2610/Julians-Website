@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 import { CAMERA } from '../../config.js'
-import { terrainHeight, schanzeLage, freiFlug, klammAt, SCHANZE } from '../heightfield.js'
+import { terrainHeight, schanzeLage, klammFlug, klammAt, SCHANZE } from '../heightfield.js'
 
 // Die Weitenmessung an der Klammschanze.
 //
@@ -35,6 +35,21 @@ function speichereBest(best) {
 
 const meter = (w) => `${w.toFixed(1).replace('.', ',')} m`
 
+// Was man beim Anfahren beeinflusst, steht unter der Weite: wie der Absprung
+// war und wie schnell man an der Kante war. Ohne das sah man nur eine Zahl
+// und wusste nicht, was beim naechsten Mal anders zu machen ist.
+const ABSPRUNG = {
+  perfekt: 'Absprung perfekt',
+  frueh: 'Absprung zu früh',
+  spaet: 'Absprung zu spät',
+  ohne: 'Ohne Absprung',
+}
+const kmh = (v) => `${Math.round(v * 3.6)} km/h`
+function wertung(absprung) {
+  if (!absprung) return ''
+  return `${ABSPRUNG[absprung.art]} · ${kmh(absprung.tempo)}`
+}
+
 export class KlammSprung {
   constructor(world) {
     this.world = world
@@ -59,11 +74,12 @@ export class KlammSprung {
     this.noteEl = el.querySelector('.race-note')
   }
 
-  // Die Tafel steht am Fuss des Landehuegels auf der Kameraseite: wer
-  // gelandet ist, faehrt genau darauf zu.
+  // Die Tafel steht rechts neben dem Landehuegel am Pistenrand. Erst stand
+  // sie an seinem Fuss in der Mitte: lesbar, aber genau dort, wo man nach
+  // der Landung hinfaehrt, und man fuhr dagegen.
   _buildTafel() {
-    const u = SCHANZE.drueben + SCHANZE.landung + 1
-    const v = SCHANZE.halb + 3.2
+    const u = SCHANZE.drueben + SCHANZE.landung - 6
+    const v = -(SCHANZE.halb + 5)
     const x = SCHANZE.x + SCHANZE.dx * u - SCHANZE.dz * v
     const z = SCHANZE.z + SCHANZE.dz * u + SCHANZE.dx * v
     const parts = []
@@ -112,11 +128,11 @@ export class KlammSprung {
     ctx.fillStyle = '#7f8fa2'
     ctx.font = '700 44px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
     ctx.fillText('m', 400, 164)
-    if (this.best > 0) {
-      ctx.fillStyle = '#6d7c8e'
-      ctx.font = '600 30px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
-      ctx.fillText(`BESTE ${this.best.toFixed(1).replace('.', ',')}`, 256, 222)
-    }
+    ctx.fillStyle = '#6d7c8e'
+    ctx.font = `600 ${this.best > 0 ? 30 : 25}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`
+    // Solange noch niemand gesprungen ist, steht hier, worauf es ankommt.
+    if (this.best > 0) ctx.fillText(`BESTE ${this.best.toFixed(1).replace('.', ',')}`, 256, 222)
+    else ctx.fillText('AN DER ROTEN KANTE ABSPRINGEN', 256, 222)
     this.tex.needsUpdate = true
   }
 
@@ -136,9 +152,10 @@ export class KlammSprung {
     const { x, z } = skier.position
 
     if (!this.flug) {
-      // Gemessen wird nur, was an der Schanze abhebt. Ein Hopser irgendwo
-      // daneben ist kein Sprung ueber die Klamm.
-      if (skier.airborne && !skier.tow && freiFlug(x, z)) this.flug = { start: schanzeLage(x, z).u }
+      // Gemessen wird nur, was an der Kante der Klammschanze abhebt. Erst
+      // fragte das freiFlug() – und das sagt auch im Funpark ja, also stand
+      // nach jedem Kicker dort eine Weite auf der Tafel.
+      if (skier.airborne && !skier.tow && klammFlug(x, z)) this.flug = { start: schanzeLage(x, z).u }
       return
     }
     if (skier.airborne) return
@@ -148,11 +165,18 @@ export class KlammSprung {
     this.flug = null
     if (skier.tow || flug.start < -2) return
     const { u } = schanzeLage(x, z)
+    // Zurueck auf der Rampe: ein Hopser vor der Kante, kein Sprung. Gemessen
+    // wird erst der Flug, der an der Kante abhebt.
+    if (u < 0.5) return
     if (klammAt(x, z) < -0.4 || u < SCHANZE.drueben - 1) {
-      this._zeige('Zu kurz', 'Unten in der Klamm', 'warn')
+      const wie = wertung(skier.absprung)
+      skier.absprung = null
+      this._zeige('Zu kurz', wie || 'Unten in der Klamm', 'warn')
       return
     }
     const weite = Math.round(u * 10) / 10
+    const wie = wertung(skier.absprung)
+    skier.absprung = null
     this.letzte = weite
     const neu = weite > this.best
     const vorher = this.best
@@ -161,8 +185,9 @@ export class KlammSprung {
       speichereBest(weite)
     }
     this._draw()
-    if (neu && vorher > 0) this._zeige(meter(weite), 'Neue Bestweite', 'good')
-    else if (neu) this._zeige(meter(weite), '', 'good')
-    else this._zeige(meter(weite), `Bestweite ${meter(this.best)}`, '')
+    const zeile = (a, b) => [a, b].filter(Boolean).join(' · ')
+    if (neu && vorher > 0) this._zeige(meter(weite), zeile('Neue Bestweite', wie), 'good')
+    else if (neu) this._zeige(meter(weite), wie, 'good')
+    else this._zeige(meter(weite), zeile(wie, `Beste ${meter(this.best)}`), '')
   }
 }

@@ -87,6 +87,18 @@ export const SPRUNG = {
   // ein Hopser, genug fuer einen 360 vom Ende der langen Box.
   boxAbwurf: 1.5,
   boxPop: 4.5,
+  // Die Klammschanze belohnt den Absprung genau an der Kante. Gedrueckt
+  // wird ohnehin schon (Pop: 21 bis 23 statt 17 bis 20 Meter), aber wann
+  // genau, sah man nicht und zahlte sich kaum aus. Jetzt gibt es oben eine
+  // Wertung, und wer den Moment trifft, bekommt Schwung obendrauf – erst
+  // damit erreicht man die 25-Meter-Linie.
+  kantenFenster: 0.6,     // m vor der Kante, ab denen ein Druck perfekt ist
+  kantenNachsicht: 0.06,  // s nach der Kante, bis zu denen er es noch ist
+  kantenBonus: 3.0,       // m/s mehr Steigen beim perfekten Absprung
+  // Der Pop ist sonst bei 14 m/s gedeckelt, und an der Klammkante liegt man
+  // mit Rampe und Pop schon fast dort – der Bonus verpuffte (gemessen: aus
+  // 1,6 m/s wurde ein Meter Weite).
+  kantenDeckel: 16.5,
 }
 
 // Tricks gibt es nur im Funpark, gesteuert wie am Kabelsee: in der Luft

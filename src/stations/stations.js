@@ -11,6 +11,7 @@ import { createWorkbench } from '../world/props/workbench.js'
 import { createTicketBooth } from '../world/props/ticket-booth.js'
 import { createTimeClock } from '../world/props/time-clock.js'
 import { createGipfelbuch } from '../world/props/gipfelbuch.js'
+import { gipfelbuchOeffnen } from '../menu/gipfelbuch.js'
 import { CAMERA } from '../config.js'
 import { TOUCH } from '../core/device.js'
 import { findFlatSpot } from '../world/heightfield.js'
@@ -458,9 +459,9 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
   })
 
   // --- Abseits: das Gipfelbuch -------------------------------------------
-  // Komoot hatte bisher keinen Platz im Tal und stand nur in der Uebersicht.
-  // Touren gehoeren in ein Gipfelbuch, und das steht oben am Berg, wo man
-  // es findet, wenn man sich umschaut.
+  // Ein echtes Gipfelbuch zum Hineinschreiben, und daneben Komoot – Touren
+  // gehoeren in ein Gipfelbuch, und das steht oben am Berg, wo man es
+  // findet, wenn man sich umschaut.
   const buch = createGipfelbuch({ blick: Math.PI * 0.75 })
   place(buch, STATION_SPOTS.gipfelbuch, { rotation: FACING, collider: 0.3 })
   // Steinmann und Bank sind feste Hindernisse; die Bank ist niedrig genug,
@@ -482,8 +483,11 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     labelHeight: world.heightAt(STATION_SPOTS.gipfelbuch.x, STATION_SPOTS.gipfelbuch.z) + 2.4,
     object: buch,
     focus: { abstand: 6, hoehe: 1.2, vor: 0.6 },
+    // Eintragen heisst jetzt wirklich eintragen (menu/gipfelbuch.js). Vorher
+    // stand der Hinweis da, und dahinter oeffnete sich nur Komoot.
     choices: [
-      { label: 'Komoot', sub: 'Wandern & Radfahren', glyph: 'berg', url: LINKS.komoot, color: '#6aa127' },
+      { label: 'Eintragen', sub: 'Lesen & schreiben', glyph: 'buch', color: '#c8402e', action: gipfelbuchOeffnen },
+      { label: 'Komoot', sub: 'Julians Touren', glyph: 'berg', url: LINKS.komoot, color: '#6aa127' },
     ],
   })
 

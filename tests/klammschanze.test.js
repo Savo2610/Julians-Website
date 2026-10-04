@@ -23,22 +23,25 @@ function eingabe() {
 }
 
 // Faehrt 14 m vor der Kante los, gerade auf die Schanze zu. `druck`: ab
-// welchem Abstand zur Kante die Leertaste liegt (null = nie).
-function springe({ tempo = 13, gas = true, druck = null } = {}) {
+// welchem Abstand zur Kante die Leertaste liegt (null = nie). `nach`: so
+// viele Bilder nach dem Abheben wird gedrueckt.
+function springe({ tempo = 13, gas = true, druck = null, nach = null } = {}) {
   const s = new Skier(welt)
   s.versetzen(SCHANZE.x - SCHANZE.dx * 14, SCHANZE.z - SCHANZE.dz * 14, Math.atan2(SCHANZE.dx, SCHANZE.dz))
   s.speed = tempo
   const inp = eingabe()
   let flog = false
+  let luft = 0
   for (let i = 0; i < 900; i++) {
     const { u } = schanzeLage(s.position.x, s.position.z)
     const tasten = gas ? ['forward'] : []
     if (druck !== null && u >= druck && u < druck + 3) tasten.push('jump')
+    if (nach !== null && luft === nach) tasten.push('jump')
     inp.setze(tasten)
     s.update(1 / 60, inp, null)
-    if (s.airborne) flog = true
+    if (s.airborne) { flog = true; luft++ }
     if (flog && !s.airborne) {
-      return { weite: schanzeLage(s.position.x, s.position.z).u, klamm: klammAt(s.position.x, s.position.z) }
+      return { weite: schanzeLage(s.position.x, s.position.z).u, klamm: klammAt(s.position.x, s.position.z), art: s.absprung?.art }
     }
   }
   return null
@@ -65,4 +68,21 @@ test('der Steg traegt: auf seiner Mittellinie schneidet die Klamm nicht', () => 
     const z = BRUECKE.z + e.uz * o
     assert.ok(Math.abs(klammAt(x, z)) < 1e-9, `bei ${o} m geschnitten`)
   }
+})
+
+test('der Absprung genau an der Kante traegt am weitesten (04.10.)', () => {
+  const ohne = springe()
+  const perfekt = springe({ druck: -0.5 })
+  const spaet = springe({ nach: 5 })
+  const frueh = springe({ druck: -1.5 })
+  assert.equal(ohne.art, 'ohne')
+  assert.equal(perfekt.art, 'perfekt')
+  assert.equal(spaet.art, 'spaet')
+  assert.equal(frueh.art, 'frueh')
+  // Gemessen: ohne 17,3 · zu spaet 20,4 · perfekt 24,6 Meter.
+  assert.ok(perfekt.weite > spaet.weite + 2, `perfekt ${perfekt.weite.toFixed(1)} gegen spaet ${spaet.weite.toFixed(1)}`)
+  assert.ok(spaet.weite > ohne.weite + 2, `spaet ${spaet.weite.toFixed(1)} gegen ohne ${ohne.weite.toFixed(1)}`)
+  assert.ok(perfekt.weite < SCHANZE.drueben + SCHANZE.landung - 2, 'perfekt landet noch im Landehang')
+  // Wer zu frueh drueckt, hopst auf der Rampe und verschenkt die Kante.
+  assert.ok(frueh.weite < ohne.weite, `zu frueh ${frueh.weite.toFixed(1)}`)
 })

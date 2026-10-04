@@ -32,10 +32,20 @@ function bump(x, z, cx, cz, radius, amp) {
 // wieder auslaufen. Zwischen zwei Punkten wird die Hoehe linear entlang des
 // Abschnitts gemischt, nicht ueber den Punktindex: sonst haengt das Ergebnis
 // davon ab, wie eng man die Stuetzpunkte setzt.
+const RUECKEN_MISCHUNG = 4
 function ridgeAlong(x, z, pts, radius) {
-  let bestD2 = Infinity
-  let bestAmp = 0
-  for (let i = 0; i < pts.length - 1; i++) {
+  // Erst der kleinste Abstand, dann die Hoehe aus allen Abschnitten, die
+  // beinahe ebenso nah liegen. Nahm nur der naechste seine Hoehe mit, sprang
+  // sie innen in einem Knick auf der Winkelhalbierenden von einem Abschnitt
+  // zum anderen: neben dem Slalomstart (-44, -74,5) stand so eine Stufe von
+  // 0,73 Metern auf 25 Zentimetern im Hang, die jeden in die Luft warf.
+  // Abschnitte, die bis zu vier Meter weiter weg liegen, mischen jetzt weich
+  // mit; wo einer klar am naechsten ist, bleibt alles wie vorher.
+  const n = pts.length - 1
+  const ds = new Array(n)
+  const amps = new Array(n)
+  let bestD = Infinity
+  for (let i = 0; i < n; i++) {
     const a = pts[i]
     const b = pts[i + 1]
     const ax = b[0] - a[0]
@@ -45,16 +55,21 @@ function ridgeAlong(x, z, pts, radius) {
     t = t < 0 ? 0 : t > 1 ? 1 : t
     const dx = x - (a[0] + ax * t)
     const dz = z - (a[1] + az * t)
-    const d2 = dx * dx + dz * dz
-    if (d2 < bestD2) {
-      bestD2 = d2
-      bestAmp = a[2] + (b[2] - a[2]) * t
-    }
+    ds[i] = Math.sqrt(dx * dx + dz * dz)
+    amps[i] = a[2] + (b[2] - a[2]) * t
+    if (ds[i] < bestD) bestD = ds[i]
   }
-  const d2 = bestD2 / (radius * radius)
-  if (d2 >= 1) return 0
+  if (bestD >= radius) return 0
+  let sumW = 0
+  let sumA = 0
+  for (let i = 0; i < n; i++) {
+    const w = 1 - smooth(Math.min(1, (ds[i] - bestD) / RUECKEN_MISCHUNG))
+    sumW += w
+    sumA += w * amps[i]
+  }
+  const d2 = (bestD * bestD) / (radius * radius)
   const f = 1 - d2
-  return bestAmp * f * f
+  return (sumA / sumW) * f * f
 }
 
 // Eine gemeinsame Uferkontur fuer Hoehenfeld und Eis verhindert, dass die
@@ -237,6 +252,17 @@ export const KLAMM = {
   tiefe: [[0.00, 0.0], [0.20, 2.2], [0.38, 4.5], [0.62, 4.5], [0.85, 2.4], [1.00, 0.0]],
   weite: 6.4,     // halbe Breite an der Oberkante
   sohle: 1.5,     // halbe Breite des flachen Grundes
+  // Das Bachbett in der Sohle: eine flache Rinne, die sich leicht windet.
+  // Das Eis lag erst buendig auf dem Grund und sah aus wie aufgemalt; zwanzig
+  // Zentimeter Rinne geben ihm Ufer, an denen Licht und Schatten brechen.
+  bach: { tiefe: 0.22, breite: 1.5 },
+}
+
+// Seitlicher Versatz der Bachmitte gegen die Achse der Klamm, s in Metern
+// laengs. Zwei Sinus, damit sich die Windungen nicht wiederholen; gross genug,
+// dass man sie sieht, klein genug, dass der Bach in der Sohle (1,5) bleibt.
+export function bachVersatz(s) {
+  return 0.45 * Math.sin(s * 0.21) + 0.22 * Math.sin(s * 0.57 + 1.3)
 }
 
 // Der Steg. Er liegt auf der Bahnmitte und ist knapp sechs Meter breit – schmal
@@ -254,7 +280,10 @@ export const KLAMM = {
 // wandert; populate.js misst sie ohnehin vom Gelaende nach.
 export const BRUECKE = {
   x: -19.25, z: -74.2, halb: 2.0, saum: 0.7,
-  ebene: { y: 15.3933, ux: 0.92848, uz: 0.37139, gefaelle: -0.16509, laenge: 14.5 },
+  // laenge 18 statt 14,5: die Ebene reicht jetzt ueber beide Deckenden
+  // hinaus. Vorher lief sie anderthalb Meter vor den Enden ins Gelaende aus,
+  // und oben hob sich der Schnee bis zu 0,4 Meter ueber die Bohlen.
+  ebene: { y: 15.3933, ux: 0.92848, uz: 0.37139, gefaelle: -0.16509, laenge: 18 },
 }
 
 // Zieht das Gelaende unter dem Steg auf seine Ebene. Quer blendet es mit
@@ -370,7 +399,14 @@ export function klammAt(x, z) {
   // Querprofil: flache Sohle, dann die Wand hoch. Quadriert statt linear,
   // damit die Oberkante gerundet ist und die Sohle breit bleibt.
   const q = Math.max(0, (d - KLAMM.sohle) / (KLAMM.weite - KLAMM.sohle))
-  const schnitt = tief * (1 - smooth(q))
+  let schnitt = tief * (1 - smooth(q))
+  // Das Bachbett, nur wo die Klamm tief genug ist, dass es eine Sohle gibt.
+  const la = Math.sqrt(len2)
+  const quer = ((x - px) * -az + (z - pz) * ax) / la
+  const db = Math.abs(quer - bachVersatz(u * la))
+  if (db < KLAMM.bach.breite) {
+    schnitt += KLAMM.bach.tiefe * (1 - smooth(db / KLAMM.bach.breite)) * smooth(Math.min(1, tief / 1.5))
+  }
 
   // Wo der Steg liegt, wird nicht geschnitten. Gemessen wird der Abstand quer
   // zur Rinne, also entlang der Bahn – der Steg ist ein Streifen und kein Kreis.

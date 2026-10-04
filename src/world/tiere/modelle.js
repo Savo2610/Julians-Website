@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
 
-// Die drei Tiere des Tals: Schneehase, Alpenschneehuhn, Fuchs.
+// Die Tiere des Tals: Schneehase, Alpenschneehuhn, Fuchs, Eichhoernchen,
+// Alpendohle und Steinbock.
 //
 // Gebaut wie alles hier – aus Primitiven, flach schattiert, Farbe in den
 // Ecken. Anders als ein Baum bewegt sich aber jedes Glied einzeln, deshalb
@@ -251,4 +252,232 @@ export function createFuchs() {
   ], m)
 
   return { root, rumpf, kopf, ohren, beine, schwanz }
+}
+
+// --- Eichhoernchen --------------------------------------------------------------
+// Rot mit cremeweissem Bauch und den Pinselohren des Winterfells. Von oben
+// ist es ein rostroter Punkt auf dem verschneiten Dach – das reicht, wenn
+// der buschige Schwanz dazukommt, der als Fragezeichen ueber dem Ruecken
+// steht. Echt ist es zwanzig Zentimeter lang; hier fast doppelt so gross,
+// sonst waere es aus 33 Metern ein einzelnes Pixel.
+const HOERNCHEN = {
+  rot: 0xb04a26,
+  dunkel: 0x7e3419,
+  creme: 0xf2e6d1,
+  pinsel: 0x4f2414,
+  auge: 0x140f0e,
+}
+
+export function createEichhoernchen() {
+  const m = fell()
+  const root = new THREE.Group()
+  root.name = 'eichhoernchen'
+  const koerper = new THREE.Group()
+  koerper.scale.setScalar(1.9)
+  root.add(koerper)
+
+  // Wie beim Hasen dreht der Rumpf um die Huefte: aufrecht sitzen ist
+  // dieselbe Drehung, die im Sprung streckt.
+  const HUEFTE = [0, 0.07, -0.05]
+  const rumpf = gelenk(koerper, HUEFTE, [
+    { geo: ei(0.062, 0.06, 0.1), color: HOERNCHEN.rot, position: [0, 0.095, 0] },
+    { geo: ei(0.045, 0.04, 0.075), color: HOERNCHEN.creme, position: [0, 0.07, 0.03] },
+    { geo: ei(0.046, 0.052, 0.05), color: HOERNCHEN.creme, position: [0, 0.105, 0.08] },
+    { geo: ei(0.04, 0.03, 0.08), color: HOERNCHEN.dunkel, position: [0, 0.135, -0.01] },
+  ], m)
+
+  const KOPF = [0, 0.13, 0.1]
+  const kopf = unter(rumpf, HUEFTE, KOPF, [
+    { geo: ei(0.047, 0.045, 0.055), color: HOERNCHEN.rot, position: [0, 0.155, 0.13] },
+    { geo: ei(0.03, 0.026, 0.032), color: HOERNCHEN.creme, position: [0, 0.14, 0.175] },
+    { geo: ei(0.009, 0.008, 0.007, 0), color: HOERNCHEN.auge, position: [0, 0.147, 0.205] },
+    { geo: ei(0.012, 0.014, 0.01, 0), color: HOERNCHEN.auge, position: [0.036, 0.165, 0.155] },
+    { geo: ei(0.012, 0.014, 0.01, 0), color: HOERNCHEN.auge, position: [-0.036, 0.165, 0.155] },
+    // Ohren mit Pinseln: das, woran man ein Wintereichhoernchen erkennt.
+    { geo: new THREE.ConeGeometry(0.015, 0.045, 4), color: HOERNCHEN.rot, position: [0.026, 0.205, 0.12] },
+    { geo: new THREE.ConeGeometry(0.015, 0.045, 4), color: HOERNCHEN.rot, position: [-0.026, 0.205, 0.12] },
+    { geo: ei(0.008, 0.026, 0.008, 0), color: HOERNCHEN.pinsel, position: [0.027, 0.24, 0.118] },
+    { geo: ei(0.008, 0.026, 0.008, 0), color: HOERNCHEN.pinsel, position: [-0.027, 0.24, 0.118] },
+  ], m)
+
+  // Der Schwanz in zwei Gliedern: unten waagerecht nach hinten, oben der
+  // Bogen ueber den Ruecken. Beide schlagen getrennt – das Zucken des
+  // Schwanzes ist beim Eichhoernchen die halbe Sprache.
+  const WURZEL = [0, 0.085, -0.095]
+  const schwanz = unter(rumpf, HUEFTE, WURZEL, [
+    { geo: ei(0.042, 0.042, 0.075), color: HOERNCHEN.rot, position: [0, 0.1, -0.155] },
+  ], m)
+  const BOGEN = [0, 0.12, -0.2]
+  const spitze = unter(schwanz, WURZEL, BOGEN, [
+    { geo: ei(0.058, 0.095, 0.058), color: HOERNCHEN.rot, position: [0, 0.21, -0.2] },
+    { geo: ei(0.05, 0.05, 0.065), color: HOERNCHEN.dunkel, position: [0, 0.3, -0.15] },
+  ], m)
+
+  const hinten = [1, -1].map((s) => unter(rumpf, HUEFTE, [s * 0.045, 0.08, -0.04], [
+    { geo: ei(0.035, 0.048, 0.055), color: HOERNCHEN.rot, position: [s * 0.048, 0.06, -0.035] },
+    { geo: ei(0.018, 0.011, 0.048, 0), color: HOERNCHEN.dunkel, position: [s * 0.045, 0.011, 0.0] },
+  ], m))
+  const vorn = [1, -1].map((s) => unter(rumpf, HUEFTE, [s * 0.03, 0.08, 0.08], [
+    { geo: ei(0.014, 0.04, 0.015), color: HOERNCHEN.rot, position: [s * 0.03, 0.045, 0.085] },
+    { geo: ei(0.013, 0.009, 0.02, 0), color: HOERNCHEN.dunkel, position: [s * 0.03, 0.009, 0.092] },
+  ], m))
+
+  // Ein Zapfen zum Knabbern, zwischen den Vorderpfoten; nur im Sitzen da.
+  const zapfen = new THREE.Mesh(assemble([
+    { geo: ei(0.018, 0.03, 0.018, 0), color: 0x6b4426, position: [0, 0, 0] },
+  ]), m)
+  zapfen.position.set(0, 0.04, 0.17)
+  zapfen.visible = false
+  rumpf.add(zapfen)
+
+  return { root, rumpf, kopf, schwanz, spitze, hinten, vorn, zapfen }
+}
+
+// --- Alpendohle -----------------------------------------------------------------
+// Ganz schwarz, mit gelbem Schnabel und roten Beinen. Auf Schnee ist sie das
+// Dunkelste im Bild und deshalb von weitem zu finden – anders als Hase und
+// Huhn, die man suchen muss. Die Fluegel sind wie beim Schneehuhn zweimal
+// eingehaengt: aussen das Anlegen, innen der Schlag.
+const DOHLE = {
+  schwarz: 0x1b1b21,
+  glanz: 0x2a2b34,
+  schnabel: 0xf0c52e,
+  bein: 0xd23b2b,
+}
+
+export function createDohle() {
+  const m = vertexColorMaterial({ roughness: 0.5 })
+  const root = new THREE.Group()
+  root.name = 'alpendohle'
+  const koerper = new THREE.Group()
+  koerper.scale.setScalar(1.5)
+  root.add(koerper)
+
+  const MITTE = [0, 0.12, 0]
+  const rumpf = gelenk(koerper, MITTE, [
+    { geo: ei(0.07, 0.072, 0.145), color: DOHLE.schwarz, position: [0, 0.14, 0] },
+    { geo: ei(0.05, 0.03, 0.1), color: DOHLE.glanz, position: [0, 0.19, -0.02] },
+  ], m)
+
+  const kopf = unter(rumpf, MITTE, [0, 0.19, 0.1], [
+    { geo: ei(0.052, 0.052, 0.058), color: DOHLE.schwarz, position: [0, 0.225, 0.14] },
+    { geo: new THREE.ConeGeometry(0.016, 0.06, 5), color: DOHLE.schnabel, position: [0, 0.218, 0.215], rotation: [Math.PI / 2, 0, 0] },
+  ], m)
+
+  const schwanz = unter(rumpf, MITTE, [0, 0.15, -0.13], [
+    { geo: ei(0.048, 0.012, 0.115), color: DOHLE.schwarz, position: [0, 0.15, -0.24] },
+  ], m)
+
+  // Rote Beine, ein Stueck vorgestellt – sie stehen aufrecht wie Kraehen.
+  const beine = [1, -1].map((s) => unter(rumpf, MITTE, [s * 0.03, 0.08, 0.02], [
+    { geo: new THREE.CylinderGeometry(0.007, 0.007, 0.08, 4), color: DOHLE.bein, position: [s * 0.03, 0.04, 0.02] },
+    { geo: ei(0.014, 0.006, 0.03, 0), color: DOHLE.bein, position: [s * 0.03, 0.004, 0.035] },
+  ], m))
+
+  const fluegel = [1, -1].map((s) => {
+    const anlegen = new THREE.Group()
+    // Relativ zum Rumpfgelenk (0,12 hoch): an der Flanke, nicht obenauf –
+    // bei 0,165 lagen die angelegten Fluegel 15 cm ueber dem Ruecken.
+    anlegen.position.set(s * 0.06, 0.055, 0.03)
+    rumpf.add(anlegen)
+    // Lang und schmal, mit gespreizten Handschwingen an der Spitze: die
+    // Dohle segelt mehr, als dass sie schlaegt.
+    const schlag = gelenk(anlegen, [0, 0, 0], [
+      { geo: ei(0.13, 0.014, 0.075), color: DOHLE.schwarz, position: [s * 0.12, 0, -0.02] },
+      ...[0, 1, 2, 3].map((i) => ({
+        geo: ei(0.07, 0.008, 0.018, 0), color: DOHLE.glanz,
+        position: [s * (0.27 + i * 0.008), 0, 0.02 - i * 0.032], rotation: [0, -s * (0.1 + i * 0.12), 0],
+      })),
+    ], m)
+    anlegen.userData.seite = s
+    return { anlegen, schlag }
+  })
+
+  return { root, rumpf, kopf, schwanz, beine, fluegel }
+}
+
+// --- Steinbock ------------------------------------------------------------------
+// Gedrungen und graubraun, mit dem dunklen Aalstrich und dem Kinnbart, und
+// vor allem mit den Hoernern: zwei lange Boegen nach hinten, vorn mit
+// Knoten besetzt. Sie sind das, was ihn aus jeder Entfernung zum Steinbock
+// macht, deshalb kraeftiger als die Masse sonst. Er ist das einzige Tier
+// ohne Uebergroesse – ein Bock ist ohnehin so lang wie der Fahrer.
+const BOCK = {
+  fell: 0x7b6b58,
+  dunkel: 0x52463a,
+  hell: 0xc9baa3,
+  lauf: 0x463b31,
+  huf: 0x26201c,
+  horn: 0x8e7d63,
+  knoten: 0xa2906f,
+  auge: 0x16120f,
+}
+
+// Ein Horn als Kreisbogen in der Seitenebene (y, z): beginnt an der Stirn,
+// steigt und laeuft nach hinten aus. `ab` ist der Startwinkel, `bogen` die
+// Laenge in rad. Gibt die Teile so verschoben zurueck, dass der Anfang an
+// `fuss` liegt.
+function horn([fx, fy, fz], R, ab, bogen) {
+  const teile = []
+  const g = new THREE.TorusGeometry(R, 0.052, 5, 14, bogen)
+  g.rotateZ(ab)
+  g.rotateY(-Math.PI / 2)
+  const by = R * Math.sin(ab)
+  const bz = R * Math.cos(ab)
+  teile.push({ geo: g, color: BOCK.horn, position: [fx, fy - by, fz - bz] })
+  // Die Knoten sitzen auf der Vorderseite des Bogens, also aussen.
+  for (let i = 1; i <= 6; i++) {
+    const t = ab + bogen * (i / 7.5)
+    const y = fy - by + (R + 0.03) * Math.sin(t)
+    const z = fz - bz + (R + 0.03) * Math.cos(t)
+    teile.push({ geo: ei(0.05, 0.022, 0.05, 0), color: BOCK.knoten, position: [fx, y, z], rotation: [Math.PI / 2 - t, 0, 0] })
+  }
+  return teile
+}
+
+export function createSteinbock() {
+  const m = fell()
+  const root = new THREE.Group()
+  root.name = 'steinbock'
+
+  const MITTE = [0, 0.62, 0]
+  const rumpf = gelenk(root, MITTE, [
+    { geo: ei(0.2, 0.23, 0.4), color: BOCK.fell, position: [0, 0.68, -0.02] },
+    { geo: ei(0.18, 0.22, 0.19), color: BOCK.fell, position: [0, 0.74, 0.24] },
+    { geo: ei(0.17, 0.2, 0.17), color: BOCK.fell, position: [0, 0.7, -0.29] },
+    { geo: ei(0.15, 0.11, 0.3), color: BOCK.hell, position: [0, 0.55, 0] },
+    // Aalstrich: der dunkle Streif auf dem Ruecken, von oben gut zu sehen.
+    // 0,3 statt 0,42 lang: laenger stach er hinten als Stachel aus dem Rumpf.
+    { geo: ei(0.055, 0.03, 0.3), color: BOCK.dunkel, position: [0, 0.895, -0.02] },
+    { geo: ei(0.04, 0.05, 0.04, 0), color: BOCK.dunkel, position: [0, 0.78, -0.45] },
+    // Hals, kraeftig und schraeg nach vorn oben.
+    { geo: ei(0.11, 0.17, 0.12), color: BOCK.fell, position: [0, 0.86, 0.38], rotation: [-0.5, 0, 0] },
+  ], m)
+
+  const KOPF = [0, 0.98, 0.44]
+  const kopf = unter(rumpf, MITTE, KOPF, [
+    { geo: ei(0.085, 0.095, 0.15), color: BOCK.fell, position: [0, 1.0, 0.52], rotation: [0.45, 0, 0] },
+    { geo: ei(0.06, 0.06, 0.07), color: BOCK.dunkel, position: [0, 0.935, 0.62] },
+    { geo: ei(0.03, 0.022, 0.02, 0), color: BOCK.huf, position: [0, 0.94, 0.685] },
+    // Der Bart unter dem Kinn.
+    { geo: ei(0.032, 0.075, 0.032), color: BOCK.dunkel, position: [0, 0.85, 0.585] },
+    { geo: ei(0.02, 0.022, 0.016, 0), color: BOCK.auge, position: [0.075, 1.03, 0.55] },
+    { geo: ei(0.02, 0.022, 0.016, 0), color: BOCK.auge, position: [-0.075, 1.03, 0.55] },
+    { geo: ei(0.07, 0.022, 0.03), color: BOCK.fell, position: [0.11, 1.08, 0.46], rotation: [0, 0, -0.5] },
+    { geo: ei(0.07, 0.022, 0.03), color: BOCK.fell, position: [-0.11, 1.08, 0.46], rotation: [0, 0, 0.5] },
+    // Steiler angesetzt (1,25 rad) und weiter (0,42): mit 1,05 und 0,36
+    // lag das Horn als flacher Haken auf dem Kopf.
+    ...horn([0.05, 1.09, 0.5], 0.42, 1.25, 1.9),
+    ...horn([-0.05, 1.09, 0.5], 0.42, 1.25, 1.9),
+  ], m)
+
+  // Vier Laeufe, oben im Fellton, unten dunkel. 0/1 vorn, 2/3 hinten.
+  const lauf = (x, z) => unter(rumpf, MITTE, [x, 0.6, z], [
+    { geo: ei(0.065, 0.15, 0.08), color: BOCK.fell, position: [x, 0.5, z] },
+    { geo: new THREE.CylinderGeometry(0.032, 0.038, 0.38, 5), color: BOCK.lauf, position: [x, 0.22, z] },
+    { geo: ei(0.042, 0.03, 0.055, 0), color: BOCK.huf, position: [x, 0.025, z + 0.01] },
+  ], m)
+  const beine = [lauf(0.11, 0.26), lauf(-0.11, 0.26), lauf(0.12, -0.28), lauf(-0.12, -0.28)]
+
+  return { root, rumpf, kopf, beine }
 }

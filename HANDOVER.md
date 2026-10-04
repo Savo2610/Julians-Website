@@ -128,7 +128,8 @@ src/
     attractions/     Was den Fahrer übernimmt oder misst: drag-lift.js,
                      magic-carpet.js, rail-ride.js, race.js (Zeitnahme,
                      Slalom), speed-check.js, light-run.js, north-run.js
-    tiere/           Schneehase, Schneehühner, Fuchs (4a⁷): modelle.js,
+    tiere/           Hase (auch als Familie), Schneehühner, Fuchs,
+                     Eichhörnchen, Dohle, Steinbock (4a⁷): modelle.js,
                      je Tier ein Verhalten, wildnis.js entscheidet wann
     areas/           Ensembles: kinderland.js, apres-layout.js und
                      apres-terrace.js (Hütte mit umwerfbaren Möbeln)
@@ -1320,7 +1321,7 @@ unter `__ski.sommer.see` (`rider`, `session`, `step` gibt es dort als
 `advance`). Für Bilder im verdeckten Fenster `requestAnimationFrame` leer
 setzen, sonst läuft die Schleife zwischen den Aufnahmen weiter.
 
-## 4a⁷. Tiere: Schneehase, Schneehühner, Fuchs
+## 4a⁷. Tiere: Schneehase, Schneehühner, Fuchs, Eichhörnchen, Dohle, Steinbock
 
 (02.10., seit `b2c6d69` in `main`, zusammengeführt mit `--no-ff`:
 `git revert -m 1 b2c6d69` nimmt sie wieder ab.) Auf Wunsch „ein paar süße
@@ -1394,8 +1395,61 @@ Hoppeln nur, wenn wieder 1,1 m Platz ist.
 
 Gemessen mit Hase im Bild: 376 Draw Calls, 883 k Dreiecke.
 
-Zum Prüfen: `__ski.tiere.rufen('hase' | 'huehner' | 'fuchs')` ruft sofort
-eins herbei (die Hühner nur in Gipfelnähe), `__ski.tiere.tier` ist das
+### Zweite Runde (04.10., Branch `tiere-zwei`)
+
+Auf Wunsch dazu: Eichhörnchen am Hüttendach (so selten wie der Hase),
+Steinbock (so selten wie der Fuchs), Dohle (immer nur eine, nie mit dem
+Eichhörnchen – die Regel „nie zwei Tiere“ deckt das), Hasenfamilie.
+Diese drei haben **feste Orte**, und ihre Uhren laufen nur, wenn man
+höchstens 70 m davon ist – sonst fände sich dort nie ein Platz außer Sicht.
+Der Ort selbst muss außer Bild und außerhalb des Kegels vor dem Fahrer
+liegen (mit Rand 1,2 statt 1,15, weil Dach und Fels höher aufragen).
+
+- **Eichhörnchen** (`eichhoernchen.js`): auf dem First der Après-Ski-Hütte,
+  gerechnet in Hüttenkoordinaten (`apres-ski.js` gibt `userData.dach` mit
+  Firsthöhe, Länge und Dachhöhe je x). Knabbert aufrecht an einem Zapfen,
+  schaut, zuckt mit dem Schwanz, flitzt den First entlang. Ab
+  4,5 m + 0,6 je m/s flieht es: den First entlang zum hinteren Giebel
+  (das Haus steht dann zwischen ihm und der Kamera), Sprung auf den Hang
+  hinter der Hütte – gesucht wird von 1,5 bis 4 m die höchste Stelle unter
+  dem First, sonst sprang es 4,4 m tief in die Kehle hinter der Rückwand –,
+  Spurt zum nächsten Baum (`Waldkarte.naechsterBaum`), den Stamm hinauf;
+  über 1,1 m × Baumgröße ist es in den Zweigen und weg. Gemessen: 3,4 s
+  vom Aufschrecken bis verschwunden. Fast doppelt so groß wie echt (1,9×).
+  Der Schwanz hat zwei Gelenke; positiv kippt die Spitze nach vorn. Beim
+  Aufrichten kippt der Rumpf um 1,05 nach hinten, die Wurzel dreht das
+  zurück – vorher hing der Schwanz dabei nach unten.
+- **Dohle** (`dohle.js`): sitzt auf dem First (drei Plätze, längs
+  beweglich) oder auf dem Gipfelkreuz (Enden des Querbalkens, Stammkopf).
+  Aufgescheucht (5 m + 0,55 je m/s) kreist sie 20–40 s über dem Platz,
+  Radius 7–11 m, 7–10 m hoch, mit Schräglage, meist segelnd. Danach landet
+  sie auf einem Platz mindestens 20 m vom Fahrer (zu 70 % die Hütte) oder
+  zieht davon; außer Sicht setzt sie sich dann zur Hälfte noch einmal auf
+  die Hütte. Den Himmel zeigt die Kamera nicht – man sieht sie über dem
+  Schnee. Gemessen: Kreis um (20, −70), gelandet nach 26 s auf dem First.
+- **Steinbock** (`steinbock.js`): auf einer Felskuppe an Grat oder Klamm
+  (`createRocks` setzt jetzt `top`; nur Felsen ab Größe 1,5, die 0,45 m
+  aus dem Schnee ragen – 15 Stück). Steht **quer zur Kamera**, damit die
+  Hörner als Bogen lesen. Kaut, schaut, kratzt sich mit dem Horn, tritt
+  um. Am wenigsten schreckhaft (7 m + 0,5 je m/s, davor äugt er). Flucht:
+  Satz über den Felsrand und in Sätzen bergauf; die Richtung wird laufend
+  nachgelenkt (weg vom Fahrer, hangauf) – nur zu Beginn gerechnet lief er
+  über den Grat und drüben 22 m tief bis vor die Kulisse. Hörner als
+  Kreisbogen ab 1,25 rad, Radius 0,42 – mit 1,05 und 0,36 lag das Horn als
+  flacher Haken auf dem Kopf.
+- **Hasenfamilie** (`Hasenfamilie` in `hase.js`): jeder vierte Hase bringt
+  zwei Junge (0,6×) mit. Sie folgen der Mutter, fliehen mit ihr, jedes mit
+  eigenen Haken; ihre Spur ist der kleine Abdruck. Für die Wildnis ein Tier.
+
+Zwanzig Minuten Simulation an wechselnden Orten, dreimal: je sechs bis
+sieben Auftritte (Hühner, Dohle, Hase, Eichhörnchen, Fuchs; einmal eine
+Familie), kein Steinbock – er braucht die Rückseite. Weil nie zwei Tiere
+gleichzeitig kommen, gibt es seither etwas weniger Hasen.
+
+Zum Prüfen: `__ski.tiere.rufen('hase' | 'hasenfamilie' | 'huehner' |
+'fuchs' | 'eichhoernchen' | 'dohle' | 'steinbock')` ruft sofort eins
+herbei (die Hühner nur in Gipfelnähe, die mit festem Ort nur in dessen
+Nähe und wenn er außer Bild ist), `__ski.tiere.tier` ist das
 laufende (`zustand`, `x`, `z`), `__ski.tiere.gesichtet` zählt, was im Bild
 war. Nicht im Pistenpass – ein geheimes Abzeichen dafür wäre denkbar
 (etwa: dem Hasen auf 6 m nahekommen, ohne dass er flieht), aber erst

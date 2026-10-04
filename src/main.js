@@ -186,9 +186,10 @@ canvas.addEventListener('pointerdown', () => {
   interaction.leave()
 })
 
-// Seltene Tiere: Schneehase, Schneehuehner, Fuchs (world/tiere/). Sie
-// stauben mit dem Schnee der Ski und stempeln in dieselbe Spurkarte.
-const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.trees, stationen: stations })
+// Seltene Tiere: Hase, Schneehuehner, Fuchs, Eichhoernchen, Dohle, Steinbock
+// (world/tiere/). Sie stauben mit dem Schnee der Ski und stempeln in
+// dieselbe Spurkarte.
+const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.trees, stationen: stations, huette: props.huette, kreuz: props.kreuz, felsen: props.felsen })
 
 const snowfall = createSnowfall()
 scene.add(snowfall)

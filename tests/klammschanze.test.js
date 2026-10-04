@@ -63,10 +63,10 @@ test('wer ausrollt, landet in der Klamm', () => {
 
 // Seit 04.10. traegt die Bruecke selbst: die Klamm laeuft unter ihr durch,
 // und der Fahrer faehrt oben auf dem Deck (stegDeck).
-function fahre(x, z, heading, bilder, pruefe) {
+function fahre(x, z, heading, bilder, pruefe, tempo = 10) {
   const s = new Skier(welt)
   s.versetzen(x, z, heading)
-  s.speed = 10
+  s.speed = tempo
   const inp = eingabe()
   for (let i = 0; i < bilder; i++) {
     inp.setze(['forward'])
@@ -129,6 +129,29 @@ test('wer in der Klamm quer an die Bruecke faehrt, fliegt nicht (04.10.)', () =>
       hoch = Math.max(hoch, s.position.y - terrainHeight(s.position.x, s.position.z))
     })
     assert.ok(hoch < 0.3, `von ${seite > 0 ? 'unten' : 'oben'}: ${hoch.toFixed(2)} m ueber dem Grund`)
+  }
+})
+
+test('auf und ueber die Bruecke wirft nichts ab, auch am Rand und bergauf (dritte Runde)', () => {
+  const e = BRUECKE.ebene
+  const H = Math.atan2(e.ux, e.uz)
+  for (const dir of [1, -1]) for (const q of [-2.4, -1.2, 0, 1.2, 2.4]) for (const v of [8, 14]) {
+    const x = BRUECKE.x - dir * e.ux * 13 - e.uz * q
+    const z = BRUECKE.z - dir * e.uz * 13 + e.ux * q
+    fahre(x, z, H + (dir < 0 ? Math.PI : 0), 150, (s) => {
+      assert.ok(!s.airborne, `abgehoben bei Richtung ${dir}, quer ${q}, Tempo ${v}`)
+    }, v)
+  }
+})
+
+test('unter der Bruecke hinauf: an der Stirnwand ist Schluss, kein Wurf aufs Deck', () => {
+  const e = BRUECKE.ebene
+  const H = Math.atan2(e.ux, e.uz)
+  for (const dir of [1, -1]) {
+    fahre(BRUECKE.x, BRUECKE.z, H + (dir < 0 ? Math.PI : 0), 200, (s) => {
+      assert.ok(!s.airborne, 'hebt nicht ab')
+      assert.ok(!s.aufDeck, 'kommt nicht von unten aufs Deck')
+    })
   }
 })
 

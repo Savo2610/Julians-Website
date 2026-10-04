@@ -252,13 +252,11 @@ export const KLAMM = {
   tiefe: [[0.00, 0.0], [0.20, 2.2], [0.38, 4.5], [0.62, 4.5], [0.85, 2.4], [1.00, 0.0]],
   weite: 6.4,     // halbe Breite an der Oberkante
   sohle: 1.5,     // halbe Breite des flachen Grundes
-  // Das Bachbett in der Sohle: eine Rinne, die sich leicht windet. Das Eis
-  // lag erst buendig auf dem Grund und sah aus wie aufgemalt; zwanzig
-  // Zentimeter weich auslaufende Rinne halfen nicht (aus 33 Metern Schnee
-  // auf Schnee). Jetzt ein flacher Grund (halb `grund` breit) und eine
-  // Boeschung von 45 Zentimetern auf 70 – steil genug, dass sie im
-  // Streiflicht eine Schattenseite hat.
-  bach: { tiefe: 0.45, breite: 1.45, grund: 0.75 },
+  // Das Bachbett in der Sohle: eine flache Rinne, die sich leicht windet.
+  // Das Eis lag erst buendig auf dem Grund und sah aus wie aufgemalt; zwanzig
+  // Zentimeter Rinne geben ihm Ufer, an denen Licht und Schatten brechen.
+  // (45 cm mit steiler Boeschung und Schneelippen war schlechter: 04.10.)
+  bach: { tiefe: 0.22, breite: 1.5 },
 }
 
 // Seitlicher Versatz der Bachmitte gegen die Achse der Klamm, s in Metern
@@ -288,19 +286,23 @@ export const BRUECKE = {
   ebene: { y: 15.3933, ux: 0.92848, uz: 0.37139, gefaelle: -0.16509, laenge: 18 },
 }
 
-// Zieht das Gelaende unter dem Steg auf seine Ebene. Quer blendet es mit
-// demselben Saum aus wie der Schnitt der Klamm, laengs anderthalb Meter vor
-// den Stegenden, wo er auf festem Grund aufliegt.
+// Zieht das Gelaende an beiden Enden der Bruecke auf die Ebene des Decks,
+// damit man ohne Kante auf- und abfaehrt. Quer ueber die ganze Deckbreite
+// (3,2 m) und dann 1,5 m Saum, laengs bis an die Deckenden und dann fuenf
+// Meter Auslauf. Vorher endete der Streifen bei 2,0 m quer und lief laengs
+// auf 1,5 m aus: das Gelaende lag dahinter 0,3 m neben der Ebene, und der
+// Knick warf bei Tempo 14 bis 0,5 m hoch (dritte Runde, 04.10.).
+const STEG_AUSLAUF = 5
 function stegEbene(x, z, h) {
   const e = BRUECKE.ebene
   const rx = x - BRUECKE.x
   const rz = z - BRUECKE.z
   const laengs = rx * e.ux + rz * e.uz
   const quer = Math.abs(-rx * e.uz + rz * e.ux)
-  const halbL = e.laenge / 2
-  if (Math.abs(laengs) >= halbL || quer >= BRUECKE.halb + BRUECKE.saum) return h
-  const wq = quer <= BRUECKE.halb ? 1 : 1 - smooth((quer - BRUECKE.halb) / BRUECKE.saum)
-  const wl = 1 - smooth(Math.max(0, (Math.abs(laengs) - (halbL - 1.5)) / 1.5))
+  const voll = DECK.halbL + 0.2
+  if (Math.abs(laengs) >= voll + STEG_AUSLAUF || quer >= 3.2 + 1.5) return h
+  const wq = quer <= 3.2 ? 1 : 1 - smooth((quer - 3.2) / 1.5)
+  const wl = 1 - smooth(Math.max(0, (Math.abs(laengs) - voll) / STEG_AUSLAUF))
   const w = wq * wl
   return h + (e.y + e.gefaelle * laengs - h) * w
 }
@@ -407,8 +409,7 @@ export function klammAt(x, z) {
   const quer = ((x - px) * -az + (z - pz) * ax) / la
   const db = Math.abs(quer - bachVersatz(u * la))
   if (db < KLAMM.bach.breite) {
-    const b = KLAMM.bach
-    schnitt += b.tiefe * (1 - smooth(Math.max(0, db - b.grund) / (b.breite - b.grund))) * smooth(Math.min(1, tief / 1.5))
+    schnitt += KLAMM.bach.tiefe * (1 - smooth(db / KLAMM.bach.breite)) * smooth(Math.min(1, tief / 1.5))
   }
 
   // Unter der Bruecke wird geschnitten wie ueberall: die Klamm und der Bach
@@ -931,9 +932,15 @@ export function ueberBox(x, z) {
 // einer Welle die Leertaste drueckt, bekommt ihren Schwung als Pop dazu.
 export function ohneAbwurf(x, z) {
   if (ueberBox(x, z)) return true
-  // Unten in der Klamm wirft nichts ab: wer laengs faehrt, quert die Ufer
-  // des Bachs (45 Zentimeter auf 70), und das hob bei Tempo 10 ab.
-  if (klammAt(x, z) < -1.2) return true
+  // In der Klamm wirft nichts ab: wer an ihrer Wand hinauffaehrt, flog an
+  // der Oberkante bis 5,7 m hoch. Nur die Kante der Klammschanze, die genau
+  // dort liegt, soll werfen.
+  if (klammAt(x, z) < -0.05 && !klammFlug(x, z)) return true
+  // Eine Bruecke ist keine Schanze: weder auf dem Deck noch an seinen Enden.
+  {
+    const l = stegLage(x, z)
+    if (Math.abs(l.laengs) < DECK.halbL + STEG_AUSLAUF && Math.abs(l.quer) < 4) return true
+  }
   for (const f of PARK_FEATURES) {
     if (f.kind !== 'rollers') continue
     const { u, v } = local(x, z, f)

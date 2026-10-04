@@ -77,6 +77,7 @@ export class Skier {
     this.snowed = 0
     this.snowBurst = 0
     this.aufDeck = false
+    this._ueberKlamm = false
     this._buildSnowCaps()
 
     this.forward = new THREE.Vector3(0, 0, -1)
@@ -299,6 +300,14 @@ export class Skier {
       nx -= (gx / len) * push
       nz -= (gz / len) * push
       this.speed *= 0.9
+    }
+
+    if (this._unterDeck(nx, nz)) {
+      // Wie gegen eine Wand: stehen bleiben, frontal fast alles Tempo weg.
+      nx = this.position.x
+      nz = this.position.z
+      this.speed *= 0.3
+      this.impact = Math.max(this.impact || 0, 0.8)
     }
 
     // Auf der Bruecke haelt das Gelaender: wer quer gegen es faehrt, schrammt
@@ -962,17 +971,34 @@ export class Skier {
   // Der Boden unter dem Fahrer: das Gelaende, nur auf der Bruecke das Deck
   // (stegDeck in heightfield.js) – wenn er von oben kommt. Wer unten in der
   // Klamm faehrt, ist viereinhalb Meter tiefer und faehrt darunter durch.
+  // Das hoehere von beiden, damit an den Enden, wo Deck und Hang sich
+  // treffen, kein Zentimeter Stufe bleibt; und beim Wechsel zaehlt die
+  // Steigrate nicht, sonst hielt das Fahrmodell den Wechsel fuer eine
+  // Schanze (gemessen 4,1 m/s an einer Stufe von 5 Zentimetern).
   _boden(x, z) {
     const t = terrainHeight(x, z)
     const d = stegDeck(x, z)
-    this.aufDeck = !!d && d.y > t + 0.05 && this.position.y > d.y - 0.6
-    return this.aufDeck ? d.y : t
+    const vorher = this.aufDeck
+    this.aufDeck = !!d && this.position.y > d.y - 0.6
+    this._ueberKlamm = this.aufDeck && d.y > t + 0.05
+    const y = this.aufDeck ? Math.max(t, d.y) : t
+    if (vorher !== this.aufDeck) this._prevGroundY = y
+    return y
+  }
+
+  // Unter dem Deck kommt man an den Enden nicht hindurch: wo der Hang
+  // naeher als 1,7 m an das Deck kommt, steht die Stirnwand. Vorher fuhr man
+  // dort durch das Holz und wurde oben auf das Deck geworfen.
+  _unterDeck(x, z) {
+    if (this.aufDeck) return false
+    const d = stegDeck(x, z)
+    return !!d && this.position.y < d.y - 0.6 && d.y - terrainHeight(x, z) < 1.7
   }
 
   // Gefaelle in Fahrtrichtung (wie slopeAlong), auf dem Deck das des Decks:
   // darunter laege die Klamm, und ihre Waende waeren ein Hang von 35 Grad.
   _gefaelle(dx, dz) {
-    if (!this.aufDeck) return slopeAlong(this.position.x, this.position.z, dx, dz)
+    if (!this._ueberKlamm) return slopeAlong(this.position.x, this.position.z, dx, dz)
     const e = BRUECKE.ebene
     return -e.gefaelle * (dx * e.ux + dz * e.uz)
   }

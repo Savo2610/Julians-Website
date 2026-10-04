@@ -18,7 +18,7 @@ import { createFence, createPisteMarkers } from './props/fence.js'
 import { createBreakableFence } from './props/park-fence.js'
 import { createAvalancheBarrier } from './props/avalanche-barrier.js'
 import { createSnowCannon } from './props/snow-cannon.js'
-import { createMarkerSign, springMount } from './props/signpost.js'
+import { createMarkerSign, springMount, createGefahrKreuz } from './props/signpost.js'
 import { populateStations, STATION_SPOTS, TRAILS } from '../stations/stations.js'
 import { createMarker } from '../stations/marker.js'
 import { createTorch } from './props/torch.js'
@@ -31,6 +31,7 @@ import { createRail, createParkSign, createParkBox, createLipLine, createBeachFl
 import { APRES, houseWorld } from './areas/apres-layout.js'
 import { createApresTerrace } from './areas/apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
+import { createEiszapfen } from './props/eiszapfen.js'
 import { createSledFence } from './props/sled.js'
 import { Kinderland } from './areas/kinderland.js'
 import { NorthRun } from './attractions/north-run.js'
@@ -262,7 +263,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
     return 1 - n.y
   }
 
-  let apresTerrace
+  let apresTerrace, eiszapfen
 
   // --- Wald ------------------------------------------------------------
   // Dichter Guertel aussen, lockere Gruppen innen: der Wald ist die weiche
@@ -728,6 +729,19 @@ export function populate(world, sky, registry, stationOptions = {}) {
       }
       markerRows.push(createPisteMarkers(world, lippe, { seed: 77, color: 0x2f6bd8 }))
 
+      // Gelbe Kreuze an der Kante, wo es in die Klamm hinuntergeht: zwischen
+      // Bruecke und Schanze und auf der anderen Seite der Bruecke (Wunsch
+      // 04.10.). Die blauen Stangen allein sagten nur, wo die Bahn endet.
+      const kreuzDreh = Math.atan2(-laengs.z, laengs.x)
+      for (const s of [(BRUECKE.halb + 0.6 + schanzeBei - SCHANZE.halb - 0.7) / 2, -BRUECKE.halb - 1.6]) {
+        const kx = BRUECKE.x + quer.x * bergauf + laengs.x * s
+        const kz = BRUECKE.z + quer.z * bergauf + laengs.z * s
+        const kreuz = createGefahrKreuz()
+        world.place(kreuz, kx, kz, { rotation: kreuzDreh })
+        const feder = springMount(world, kreuz, kx, kz, kreuzDreh)
+        animatedProps.push((t, dt) => feder(dt, skierRef.current))
+      }
+
       // Die Trennlinie zwischen beiden Wegen, in Fahrtrichtung der Schanze
       // zurueck bis dorthin, wo die Bahn breiter wird.
       const mitte = (BRUECKE.halb + 0.6 + schanzeBei - SCHANZE.halb - 0.7) / 2
@@ -879,12 +893,20 @@ export function populate(world, sky, registry, stationOptions = {}) {
     world.place(apres, APRES.house.x, APRES.house.z, { rotation: APRES.house.yaw + APRES.house.turn })
     // Drei Kreise statt einem: einer mit 2,4 m sperrte bei 5 m Hausbreite
     // entweder die Ecken nicht oder reichte 0,6 m vor die Tuer.
-    for (const [x, z, r] of [[-1.3, 0, 1.95], [0, 0, 1.95], [1.3, 0, 1.95], [-2.95, 2.1, 0.4], [2.95, 2.1, 0.4], [-2.95, -0.6, 0.45]]) {
+    for (const [x, z, r] of [[-1.3, 0, 1.95], [0, 0, 1.95], [1.3, 0, 1.95], [-3.1, 2.2, 0.6], [3.1, 2.2, 0.6], [-2.95, -0.6, 0.45]]) {
       const p = houseWorld(x, z)
       world.addCollider(p.x, p.z, r)
     }
     apresTerrace = createApresTerrace(world)
     animatedProps.push(apres.userData.animate)
+    // Eiszapfen an der rechten Traufe, zum Abbrechen (props/eiszapfen.js).
+    apres.updateMatrixWorld(true)
+    const zapfen = createEiszapfen(world.scene, apres.userData.zapfen.map((z) => {
+      const w = apres.localToWorld(new THREE.Vector3(z.x, z.y, z.z))
+      return { x: w.x, y: w.y, z: w.z, l: z.l }
+    }))
+    eiszapfen = zapfen
+    animatedProps.push((t, dt) => zapfen.update(dt, skierRef.current))
     animatedProps.push((t, dt) => apresTerrace.update(dt, skierRef.current))
 
     // Das Rail liegt auf der Schneekante und laeuft mit ihr. Es ist jetzt
@@ -1072,5 +1094,5 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Der Badesteg: von hier in den Sommer, siehe src/sommer/.
   const badesteg = createBadesteg(world)
 
-  return { trees: placements, apresTerrace, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
+  return { trees: placements, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
 }

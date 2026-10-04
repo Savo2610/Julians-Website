@@ -23,7 +23,7 @@ const WHITE = 0xf1ede4, SHUTTER = 0x2f6b4a, GERANIUM = [0xd7263d, 0xe8452c, 0xf2
 // getrennt gesetzt, damit keine grosse Kollisionsscheibe den Zugang sperrt.
 export function createApresSki() {
   const group = new THREE.Group()
-  const parts = [], glow = [], cones = []
+  const parts = [], glow = [], cones = [], zapfen = []
   const { width: W, depth: D } = APRES.house
   const WALL = 2.3, PITCH = 0.52, FRONT = D / 2 + 0.17
 
@@ -72,6 +72,15 @@ export function createApresSki() {
     // Wechte an der Traufe und Eiszapfen darunter.
     const ex = sx * run * 0.98, ey = WALL + rise - run * 0.98 * Math.tan(PITCH)
     parts.push({ geo: new THREE.CylinderGeometry(0.17, 0.17, len - 0.1, 8), color: SNOW, position: [ex + nx * 0.2, ey + ny * 0.2, 0], rotation: [Math.PI / 2, 0, 0] })
+    // Auf der rechten Seite, die man sieht, haengen sie fuer sich
+    // (props/eiszapfen.js): wer an der Wand entlangfaehrt, bricht sie ab.
+    if (sx > 0) {
+      for (let i = 0; i < 16; i++) {
+        if (i % 5 === 3) continue
+        zapfen.push({ x: ex, y: ey + 0.02, z: -len / 2 + 0.2 + i * (len - 0.4) / 15, l: 0.28 + ((i * 37) % 11) / 22 })
+      }
+      continue
+    }
     for (let i = 0; i < 13; i++) {
       if ((i * 7 + (sx > 0 ? 3 : 0)) % 5 === 0) continue
       const l = 0.18 + ((i * 37) % 11) / 30
@@ -131,15 +140,27 @@ export function createApresSki() {
   parts.push({ geo: new THREE.BoxGeometry(0.7, 0.07, 1.15), color: SNOW, position: [-W / 2 - 0.42, 0.98, -0.6] })
 
   // Zwei Boxen an den vorderen Ecken. Sie pumpen sachte – zu hoeren ist
-  // nichts, das Tal bleibt still.
+  // nichts, das Tal bleibt still. Seit 04.10. groesser (0,9 × 1,7 statt
+  // 0,62 × 1,15) und mit leuchtendem Ring um den Bass: aus 33 m waren sie
+  // zwei dunkle Kisten neben der Tuer.
+  const BOX = { w: 0.9, h: 1.7, d: 0.7 }
+  const boxZ = D / 2 + 0.2 + BOX.d / 2 - 0.25
   for (const sx of [-1, 1]) {
-    const x = sx * (W / 2 + 0.45)
-    parts.push({ geo: new THREE.BoxGeometry(0.62, 1.15, 0.5), color: 0x30383b, position: [x, 0.3 + 0.575, D / 2 + 0.2] })
-    parts.push({ geo: new THREE.BoxGeometry(0.64, 0.06, 0.52), color: SNOW, position: [x, 0.3 + 1.18, D / 2 + 0.2] })
-    for (const [y, r] of [[0.66, 0.21], [1.17, 0.11]]) {
-      parts.push({ geo: new THREE.CylinderGeometry(r + 0.03, r + 0.03, 0.04, 14), color: 0x616c70, position: [x, y, D / 2 + 0.46], rotation: [Math.PI / 2, 0, 0] })
-      cones.push({ geo: new THREE.CylinderGeometry(r, r * 0.45, 0.08, 14), color: 0x11191d, position: [x, y, 0.04], rotation: [Math.PI / 2, 0, 0] })
+    const x = sx * (W / 2 + 0.6)
+    parts.push({ geo: new THREE.BoxGeometry(BOX.w, BOX.h, BOX.d), color: 0x262c2f, position: [x, 0.3 + BOX.h / 2, boxZ] })
+    // Kanten in Metall, damit die Kiste von oben eine Form hat.
+    for (const y of [0.3 + 0.03, 0.3 + BOX.h - 0.03]) {
+      parts.push({ geo: new THREE.BoxGeometry(BOX.w + 0.04, 0.06, BOX.d + 0.04), color: 0x8c979c, position: [x, y, boxZ] })
     }
+    parts.push({ geo: new THREE.BoxGeometry(BOX.w + 0.02, 0.08, BOX.d + 0.02), color: SNOW, position: [x, 0.3 + BOX.h + 0.07, boxZ] })
+    for (const [y, r] of [[0.3 + 0.55, 0.32], [0.3 + 1.28, 0.15]]) {
+      parts.push({ geo: new THREE.CylinderGeometry(r + 0.04, r + 0.04, 0.04, 18), color: 0x616c70, position: [x, y, boxZ + BOX.d / 2 + 0.01], rotation: [Math.PI / 2, 0, 0] })
+      cones.push({ geo: new THREE.CylinderGeometry(r, r * 0.45, 0.08, 18), color: 0x11191d, position: [x, y, 0.04], rotation: [Math.PI / 2, 0, 0] })
+    }
+    // Leuchtring um den Bass und ein Streifen oben – die Farbe der Lichterkette.
+    const ring = new THREE.TorusGeometry(0.39, 0.035, 6, 24)
+    glow.push({ geo: ring, color: sx > 0 ? 0xff4fa3 : 0x3fd6ff, position: [x, 0.3 + 0.55, boxZ + BOX.d / 2 + 0.03] })
+    glow.push({ geo: new THREE.BoxGeometry(BOX.w - 0.16, 0.05, 0.02), color: sx > 0 ? 0xff4fa3 : 0x3fd6ff, position: [x, 0.3 + BOX.h - 0.15, boxZ + BOX.d / 2 + 0.01] })
   }
 
   const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.8 }))
@@ -151,10 +172,12 @@ export function createApresSki() {
   // Die Membranen liegen ab z = 0 ihres eigenen Meshes, damit ein Skalieren
   // in z sie aus der Schallwand drueckt, ohne sie zu verschieben.
   const membranes = new THREE.Mesh(assemble(cones), vertexColorMaterial({ roughness: 0.6 }))
-  membranes.position.z = D / 2 + 0.43
+  membranes.position.z = boxZ + BOX.d / 2 - 0.02
   group.add(membranes)
 
   group.add(createSign(WALL))
+  // Lokale Lage der abbrechbaren Eiszapfen (Oberkante, Laenge).
+  group.userData.zapfen = zapfen
 
   const smoke = createSmoke({ scale: 0.8, rate: 0.4 })
   smoke.position.set(chimney[0], roofAt + 1.5, chimney[1])

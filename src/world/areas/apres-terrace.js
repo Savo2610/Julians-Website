@@ -277,26 +277,15 @@ export function createApresTerrace(world) {
   }
 
   // Die Stosskante zwischen den Ebenen: ein dunkler Balken quer ueber die
-  // Rampe, hinten zwei Blumenkaesten mit Geranien. Sie lassen vorn gut sechs
-  // Meter frei, dort faehrt man von einer Ebene auf die andere.
+  // Rampe. Hinten standen bis 04.10. zwei Blumenkaesten mit Geranien; aus
+  // 33 m waren sie rote Kugeln auf einer Kiste, und ihre Kollision stand
+  // oben am Rand der Terrasse im Weg.
   const seam = []
   for (let w = -7; w < 8.5; w += 0.25) {
     const { x, z } = terraceWorld(APRES.split, w)
     if (terraceDistance(x, z) < -0.05) seam.push([x, terrainHeight(x, z) + 0.03, z])
   }
   if (seam.length > 1) tube(seam, 0.05, 0x46301f)
-  for (const w of [-5.2, -3.4]) {
-    const [x, y, z] = at(APRES.split, w)
-    fixtures.push({ geo: new THREE.BoxGeometry(0.5, 0.45, 1.5), color: WOOD, position: [x, y + 0.22, z], rotation: [0, APRES.house.yaw, 0] })
-    for (let i = 0; i < 5; i++) {
-      const [fx, fy, fz] = at(APRES.split + (i % 2 ? 0.1 : -0.1), w - 0.6 + i * 0.3)
-      fixtures.push({ geo: new THREE.SphereGeometry(0.13, 6, 4), color: i % 2 ? 0xd7263d : 0xe8452c, position: [fx, Math.max(fy, y) + 0.52, fz] })
-    }
-    for (const d of [-0.5, 0, 0.5]) {
-      const p = terraceWorld(APRES.split, w + d)
-      world.addCollider(p.x, p.z, 0.32)
-    }
-  }
 
   // Skistaender vorn an der rechten Kante, schraeg mit ihr: fuenf Paar Ski
   // und zwei Boards, angelehnt, die Belaege zur Kamera. Aus 33 m die bunteste

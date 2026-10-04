@@ -271,3 +271,29 @@ export function springMount(world, sign, x, z, yaw) {
     sign.quaternion.copy(qTilt).multiply(qYaw)
   }
 }
+
+// Ein Kreuz aus zwei gelben Stangen: Achtung, hier geht es hinunter. So
+// sperrt man auf Pisten Kanten ab, und es liest sich anders als jede
+// Pistenstange daneben – die sagt, wo man fahren soll, das Kreuz, wo nicht.
+// Ursprung am Fuss, die Flaeche des Kreuzes zeigt nach +z. Gedacht fuer
+// springMount: wer dagegen faehrt, legt es um.
+export function createGefahrKreuz() {
+  const parts = []
+  const LANG = 2.0, NEIGUNG = 0.55
+  for (const s of [-1, 1]) {
+    const stange = new THREE.CylinderGeometry(0.04, 0.045, LANG, 7)
+    // Schwarze Spitzen oben, wie an den Pistenstangen.
+    const spitze = new THREE.CylinderGeometry(0.046, 0.046, 0.28, 7)
+    spitze.translate(0, LANG / 2 - 0.14, 0)
+    for (const [geo, color] of [[stange, 0xf2c230], [spitze, 0x1d1d1d]]) {
+      geo.rotateZ(s * NEIGUNG)
+      parts.push({ geo, color, position: [0, Math.cos(NEIGUNG) * LANG / 2, s * 0.03] })
+    }
+  }
+  parts.push({ geo: new THREE.CylinderGeometry(0.16, 0.2, 0.06, 8), color: 0xf7fbff, position: [0, 0.03, 0] })
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.6 }))
+  mesh.castShadow = true
+  const group = new THREE.Group()
+  group.add(mesh)
+  return group
+}

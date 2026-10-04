@@ -1401,6 +1401,26 @@ war. Nicht im Pistenpass – ein geheimes Abzeichen dafür wäre denkbar
 (etwa: dem Hasen auf 6 m nahekommen, ohne dass er flieht), aber erst
 nach Rückfrage.
 
+## 4a⁹. Die Pistenraupe der Nachtschicht (04.10., Branch `pistenraupe`)
+
+`world/pistenraupe.js`. Fährt nur nach der **echten Uhr** des Besuchers
+zwischen 22 und 6 Uhr, und auch dann nur in jeder zweiten Sitzung, einmal,
+60–300 s nach dem Ankommen – fast niemand soll sie sehen. Das Tal bleibt
+hell (eine echte Nacht wäre ein Umbau an Licht und Himmel); die Nachtschicht
+erkennt man an Scheinwerfern, einem weichen Lichtkegel (eigener Shader,
+nach vorn und zu den Rändern auslaufend – mit fester Deckkraft war er ein
+harter weißer Fächer) und der orangen Rundumleuchte.
+
+Sie walzt vier Minuten lang die freie Abfahrt hinauf und hinunter (54 m,
+3 m/s, an den Enden auf der Stelle gewendet, die Knicke im Fahren), beginnt
+am Ende, das nicht im Bild ist, und verschwindet nach der Schicht an einem
+Ende außer Bild. Die Route geht westlich an der Schneekanone vorbei (vorher
+mitten hindurch) und hält mindestens 1,85 m Abstand zu jeder Kollision.
+Steht jemand bis 7 m vor ihr, wartet sie; näher als 2,3 m an ihre Mitte
+kommt keiner (hinausgeschoben wie an einem Baum). Hinter der Fräse
+stempelt sie Cord in die Spurkarte, alle 0,8 m. Zum Prüfen: `?raupe` oder
+`__ski.raupe.losfahren()`, auch am Tag.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/

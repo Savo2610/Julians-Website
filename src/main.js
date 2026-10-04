@@ -33,6 +33,7 @@ import { Spray } from './player/spray.js'
 import { RohrpostNetz } from './world/rohrpost-netz.js'
 import { Sommer } from './sommer/sommer.js'
 import { Wildnis } from './world/tiere/wildnis.js'
+import { Pistenraupe } from './world/pistenraupe.js'
 
 const canvas = document.getElementById('scene')
 
@@ -189,6 +190,9 @@ canvas.addEventListener('pointerdown', () => {
 // Seltene Tiere: Schneehase, Schneehuehner, Fuchs (world/tiere/). Sie
 // stauben mit dem Schnee der Ski und stempeln in dieselbe Spurkarte.
 const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.trees, stationen: stations })
+// Die Pistenraupe der Nachtschicht: nur zwischen 22 und 6 Uhr nach der Uhr
+// des Besuchers, und auch dann selten (world/pistenraupe.js). ?raupe ruft sie.
+const raupe = new Pistenraupe({ scene, camera, trail })
 
 const snowfall = createSnowfall()
 scene.add(snowfall)
@@ -381,6 +385,7 @@ function advance(dt) {
   rohrpost.update(dt)
   // Neue Tiere nur beim freien Fahren; wer schon da ist, lebt weiter.
   tiere.update(dt, skier, !flight.active && !interaction.focus && !mapMenu.open && !sommer.aktiv)
+  raupe.update(dt, skier, !flight.active && !sommer.aktiv)
   sommer.update(dt)
   hints.update(dt)
   regeln.update(dt)
@@ -414,7 +419,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer, tiere,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer, tiere, raupe,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

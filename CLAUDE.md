@@ -73,6 +73,11 @@ Das Wichtigste in Kürze:
   schüchtern, nie zwei auf einmal; sie kommen und gehen nur außerhalb des
   Bildes. Herbeirufen: `__ski.tiere.rufen('hase')`.
 
+- **Pistenraupe** (`src/world/pistenraupe.js`, HANDOVER 4a⁹): nur nach
+  echter Uhr zwischen 22 und 6 Uhr und auch dann selten. Das Tal bleibt hell.
+  Wohnt im Schuppen am Ende der Nordabfahrt (`SCHUPPEN` im Höhenfeld) und
+  fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
+
 `npm run dev` startet (Tal auf `/`, Kabelsee auf `/kabelsee/`),
 `npm run dev:api` den Worker dazu (Bestenlisten, Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas
 fertig ist. Zum Prüfen im Browser: `window.__ski` und `S.step(frames, dt)`; am See

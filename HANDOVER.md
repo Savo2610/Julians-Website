@@ -451,7 +451,7 @@ die Verfolgerkamera zu rutschen (gemessen: zurück auf die feste Kamera, eine
 Dreiviertelsekunde später bei 77 von 80 Metern wieder hinter den Fahrer). Erst
 fünfzehn Meter zurück bergauf zählt als „nochmal".
 
-**Das Schneebrett** (04.10., Branch `schneebrett`;
+**Das Schneebrett** (04.10., seit 05.10. auf `main`;
 `world/attractions/schneebrett.js`, Aufbau in `props/schneebrett.js`). Wie
 oft es abgeht, hängt an der Lawinenwarnstufe des Tages (`lawinenstufe()`,
 Panoramatafel): einmal je Einfahrt gewürfelt, Stufe 1 bis 5 mit 1 / 6 / 20 /
@@ -1424,7 +1424,7 @@ Hoppeln nur, wenn wieder 1,1 m Platz ist.
 
 Gemessen mit Hase im Bild: 376 Draw Calls, 883 k Dreiecke.
 
-### Zweite Runde (04.10., Branch `tiere-zwei`)
+### Zweite Runde (04.10., seit 05.10. auf `main`)
 
 Auf Wunsch dazu: Eichhörnchen am Hüttendach (so selten wie der Hase),
 Steinbock (so selten wie der Fuchs), Dohle (immer nur eine, nie mit dem
@@ -1484,7 +1484,63 @@ war. Nicht im Pistenpass – ein geheimes Abzeichen dafür wäre denkbar
 (etwa: dem Hasen auf 6 m nahekommen, ohne dass er flieht), aber erst
 nach Rückfrage.
 
-## 4a¹⁰. Murmeltiere am Kabelsee (04.10., Branch `murmeltiere`)
+## 4a⁹. Die Pistenraupe der Nachtschicht (04.10., seit 05.10. auf `main`)
+
+`world/pistenraupe.js`, Schuppen in `props/schuppen.js`. Fährt nur nach der
+**echten Uhr** des Besuchers zwischen 22 und 6 Uhr, und auch dann nur in
+jeder zweiten Sitzung, einmal, 60–300 s nach dem Ankommen – fast niemand
+soll sie sehen. Das Tal bleibt hell; die Nachtschicht erkennt man an
+Scheinwerfern, einem weichen Lichtkegel (eigener Shader, nach vorn und zu
+den Rändern auslaufend – mit fester Deckkraft war er ein harter weißer
+Fächer) und der orangen Rundumleuchte, beide nur, solange sie ausgerückt ist.
+
+**Der Schuppen** steht am Ende der Nordabfahrt bei (3, −56), zwischen
+Bahnende und Funparkzaun. Neben der Hütte war kein Platz (Terrasse, Park,
+Wald; gesucht mit 7 × 8 m Grundfläche). Zur Kamera zeigt die lange Wand mit
+Schild „PISTENDIENST“ und zwei Fenstern, das **Rolltor liegt hinten** und
+öffnet direkt auf den Auslauf der Nordabfahrt. Mit dem Tor zur Kamera musste
+die Raupe ums Haus herum, an den Kickern des Funparks und am Zaun vorbei.
+Der Boden darunter ist Gelände: `SCHUPPEN` im Höhenfeld zieht ihn innen und
+2,5 m vor dem Tor auf 10,25 m eben (vorher 9,4 bis 11,0) und läuft über
+2,5 m aus. Kollision für Wände und Giebel, nicht fürs Tor.
+
+**Die Runde** (zweite Fassung 05.10., 398 m, gut 2:40 min): Tor auf, die
+Nordabfahrt hinauf (3,4 m zum Grat versetzt), oberhalb der Klamm bis Meter
+36 hinunter (Mitte) und 3,4 m zur anderen Seite wieder hinauf – das Hin und
+Her liegt ganz über der Brücke, **über die Brücke fährt sie genau zweimal**,
+hin und zurück (Ansage Julian; vorher dreimal hin und her). Oben durch die
+Mitte des Startbogens (quer hinüber streifte sie einen Pfosten), unter dem
+Gipfelkreuz durch und **nach links bis an den Lift**: 2,6 m neben der Trasse
+hinunter, 7 m daneben wieder hinauf, auf der Seite zur freien Abfahrt (auf
+der Trasse stehen die Stützen, bei 4,8 m ein Pistenpfahl). Dann die
+Nordabfahrt hinunter und vorwärts durchs Tor hinein, Tor zu. Unterhalb der
+Brücke liegen Hin- und Rückweg symmetrisch bei ±2,4 m. **Über die Klamm**
+schwenkt jede Spur auf die Achse der Brücke ein (sie liegt 4,7 m neben der
+Bahnmitte, weil sich die Bahn in Steg und Schanze gabelt), und dort trägt
+das Deck (`stegDeck`), nicht das Gelände. Geprüft gegen die ganze
+Kollisionsliste, nicht `world.nearby()` (das liefert nur die eigene
+Rasterzelle): überall mindestens 1,86 m Luft. Die Bande der Rodelbahn
+läuft seit dem 05.10. vom rechten Pfosten des Startbogens gerade zur Ecke am
+Fels (`anschluss` in `createSledFence`); vorher stand ihr erster Pfosten
+mitten auf dem Gipfelplatz, und die Raupe fuhr hindurch – jetzt 5 m Luft. Ein automatisches Ausweichen
+wurde versucht und verworfen: zwischen den Felsgruppen der Klamm schob es
+die Spur bis 13 m weit.
+
+**Hinter ihr ist der Schnee glatt**, als wäre nie jemand gefahren (Ansage
+Julian; vorher Cord). `SnowTrail.glaetten()` multipliziert Rille und Wall
+in der Spurkarte weg – mit Max-Blending wird nie etwas weniger – und lässt
+Blau (Schrift) stehen. 6,4 m breit wie die Fräse einer echten, zu den
+Seiten weich auslaufend; mit 5,6 m blieb zwischen Spuren im Abstand von
+5,2 m ein Streifen zu zwei Dritteln stehen. Gemessen an 41 Probepunkten auf
+Nordabfahrt und Liftseite: danach überall unter 8 %.
+
+Große Knicke (über 0,6 rad) wendet sie im Stand, kleine im Fahren; am
+Schuppen fährt sie mit 45 % Tempo. Steht jemand bis 7 m vor ihr, wartet
+sie; näher als 2,3 m kommt keiner (hinausgeschoben wie an einem Baum).
+Zum Prüfen: `?raupe` oder `__ski.raupe.losfahren()`,
+auch am Tag; `__ski.raupe.zustand` ist parkt / tor_auf / faehrt / tor_zu.
+
+## 4a¹⁰. Murmeltiere am Kabelsee (04.10., seit 05.10. auf `main`)
 
 `src/kabelsee/world/murmeltiere.js`, also in beiden Fällen dabei, allein
 unter `/kabelsee/` und vom Badesteg aus. Im Tal gibt es keine: sie schlafen

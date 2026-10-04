@@ -35,6 +35,8 @@ import { Sommer } from './sommer/sommer.js'
 import { Wildnis } from './world/tiere/wildnis.js'
 import { Schneebrett } from './world/attractions/schneebrett.js'
 import { lawinenstufe } from './world/props/map-board.js'
+import { Pistenraupe } from './world/pistenraupe.js'
+import { createSchuppen } from './world/props/schuppen.js'
 
 const canvas = document.getElementById('scene')
 
@@ -205,6 +207,10 @@ schneebrett.onErwischt = () => {
     mapMenu.travelTo({ x: a.x + (a.dx / l) * 3, z: a.z + (a.dz / l) * 3, heading: Math.atan2(a.dx, a.dz) })
   }, 550)
 }
+// Die Pistenraupe der Nachtschicht: nur zwischen 22 und 6 Uhr nach der Uhr
+// des Besuchers, und auch dann selten (world/pistenraupe.js). ?raupe ruft sie.
+// Sie wohnt im Schuppen am Ende der Nordabfahrt (props/schuppen.js).
+const raupe = new Pistenraupe({ scene, camera, trail, world, schuppen: createSchuppen(world) })
 
 const snowfall = createSnowfall()
 scene.add(snowfall)
@@ -398,6 +404,7 @@ function advance(dt) {
   rohrpost.update(dt)
   // Neue Tiere nur beim freien Fahren; wer schon da ist, lebt weiter.
   tiere.update(dt, skier, !flight.active && !interaction.focus && !mapMenu.open && !sommer.aktiv)
+  raupe.update(dt, skier, !flight.active && !sommer.aktiv)
   sommer.update(dt)
   hints.update(dt)
   regeln.update(dt)
@@ -431,7 +438,7 @@ function tick() {
 
 // Debug-Zugriff aus der Konsole – hilft beim Justieren des Fahrgefuehls.
 window.__ski = {
-  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer, tiere, schneebrett,
+  skier, world, camera, renderer, scene, trail, props, sky, input, chase, stations, interaction, mapMenu, hints, glints, pass, regeln, goldstaub, flight, bestenliste, sommer, tiere, schneebrett, raupe,
   // Erlaubt es, die Welt ohne laufenden rAF-Loop vorzuspulen (Tests, Screenshots).
   step(frames = 1, dt = 1 / 60) {
     for (let i = 0; i < frames; i++) advance(dt)

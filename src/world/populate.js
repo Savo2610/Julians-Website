@@ -643,6 +643,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // das Tor am Anfang und die Stangen an den Raendern – und der Zustand, an
   // dem die Kamera haengt.
   const northRun = new NorthRun()
+  let torPfostenRechts = null
   const klammSprung = new KlammSprung(world)
   {
     const P = NORTH_LANE.points
@@ -664,6 +665,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
     world.place(tor, P[0].x, P[0].z, { rotation: drehung })
     // Kollision nur fuer die beiden Pfosten, nicht fuer das Tor als Ganzes.
     for (const sx of [-1, 1]) world.addCollider(...pfostenOrt(sx), 0.34)
+    torPfostenRechts = pfostenOrt(1)
 
     // Stangen an beiden Raendern. Eine versetzte Linie braucht je Punkt eine
     // Querrichtung; genommen wird die Richtung der beiden Nachbarn, damit an
@@ -900,7 +902,12 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Linie, statt nur zu einer Richtung. Wo es durchgeht, steht in der Farbe
   // im Schnee, nicht in den Stangen.
   const race = new RaceCourse(world, { lane: SLED_LANE, gates: true })
-  world.scene.add(createSledFence(SLED_LANE))
+  // Die Bergseite der Bande beginnt am rechten Pfosten des Startbogens der
+  // Nordabfahrt und laeuft von dort gerade zur Ecke am Fels (ihr zweiter
+  // Pfosten). Vorher stand ihr erster Pfosten mitten auf dem Gipfelplatz,
+  // und die Pistenraupe fuhr durch ihn hindurch; jetzt bleibt sie 5 m davor.
+  const [ax, az] = torPfostenRechts
+  world.scene.add(createSledFence(SLED_LANE, { anschluss: { side: -1, x: ax, z: az, bis: 1 } }))
 
   {
     const lane = PARK_LANE

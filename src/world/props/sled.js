@@ -17,7 +17,10 @@ const WOOD = 0x8a6a44
 const WOOD_DARK = 0x6b4f31
 const SNOW = 0xf4f9ff
 
-export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.92 } = {}) {
+// `anschluss` ({ side, x, z }) laesst eine Seite an einem fremden Pfosten
+// beginnen: von dort laufen Pfosten im Bandenabstand bis zum ersten eigenen,
+// am Anschluss selbst nur die Bretter.
+export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.92, anschluss = null } = {}) {
   const parts = []
   const segs = lane.segments
   const half = lane.width * 0.5 - inset
@@ -77,18 +80,33 @@ export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.9
       if (posts[i].ok && !before && !after) posts[i].ok = false
     }
 
+    if (anschluss && anschluss.side === side) {
+      const f = posts.findIndex((q) => q.ok)
+      const ziel = posts[f]
+      const weg = Math.hypot(ziel.x - anschluss.x, ziel.z - anschluss.z)
+      const n = Math.ceil(weg / spacing)
+      const yaw = Math.atan2(ziel.x - anschluss.x, ziel.z - anschluss.z)
+      const davor = []
+      for (let k = 0; k < n; k++) {
+        const x = anschluss.x + (ziel.x - anschluss.x) * k / n
+        const z = anschluss.z + (ziel.z - anschluss.z) * k / n
+        davor.push({ x, y: terrainHeight(x, z), z, yaw, ok: true, tall: height, dark: k % 4 === 0, fremd: k === 0 })
+      }
+      posts.splice(0, f, ...davor)
+    }
+
     const lean = side * 0.09
     for (let i = 0; i < posts.length; i++) {
       const a = posts[i]
       if (!a.ok) continue
 
-      parts.push({
+      if (!a.fremd) parts.push({
         geo: new THREE.BoxGeometry(0.13, a.tall, 0.13),
         color: a.dark ? WOOD_DARK : WOOD,
         position: [a.x, a.y + a.tall * 0.5 - 0.12, a.z],
         rotation: [0, a.yaw, lean],
       })
-      parts.push({
+      if (!a.fremd) parts.push({
         geo: new THREE.BoxGeometry(0.17, 0.06, 0.17),
         color: SNOW,
         position: [a.x, a.y + a.tall - 0.09, a.z],

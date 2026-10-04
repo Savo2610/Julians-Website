@@ -601,8 +601,21 @@ Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
   Schneelippen an den Ufern sah schlechter aus (Straße mit Bordstein) und
   ist zurückgenommen.
 - **Gelbe Kreuze** (`createGefahrKreuz` in `signpost.js`, auf Federfuß) an
-  der Klammkante zwischen Brücke und Schanze und auf der anderen Seite der
-  Brücke: dort geht es hinunter.
+  der Klammkante zwischen Brücke und Schanze und 5 m links der Brücke: dort
+  geht es hinunter. Die blauen Stangen dazwischen sind weg.
+- **Rohr am Bachanfang** (`rohrLage()`/`createRohr` in `klamm-eis.js`):
+  Wellblechrohr in einer Bruchsteinmauer, seitlich aus der Klammwand, die
+  zur Kamera schaut (bachab zeigend sah man nur die Rückseite der Mauer),
+  das Eis fällt als Zunge ins Bett. Bäume davor nimmt `populate.js` nach dem
+  Streuen heraus, damit der übrige Wald gleich bleibt.
+- **Schanze nur vorwärts**: aus der Klamm ist ihre Stirn eine Wand
+  (`_schanzeVonVorn`: steiler als 1,5 hinauf), und rückwärts wirft sie nicht
+  ab (`_klammRueckwaerts`). Vorher kroch man mit W die Bohlen hoch und flog
+  7 m über die Anlaufbahn.
+- **Linien ohne Spur** (`ohneSpur()` in `surfaces.js`): Weitenmarken, die
+  rot-weiße Kante und die blauen Absprunglinien im Park. Der Spurwall lag
+  sonst nach drei Fahrten darauf; die Spur setzt an jeder Linie gut zwei
+  Meter aus.
 - **Weitentafel** rechts außerhalb der Stangen, nicht mehr in der Auslauflinie.
   Gemessen wird nur, was an der Klammschanze abhebt (`klammFlug`); vorher
   zählte jeder Kicker im Funpark mit.

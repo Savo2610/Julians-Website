@@ -32,6 +32,7 @@ import { APRES, houseWorld } from './areas/apres-layout.js'
 import { createApresTerrace } from './areas/apres-terrace.js'
 import { createApresSki } from './props/apres-ski.js'
 import { createEiszapfen } from './props/eiszapfen.js'
+import { ohneSpur } from './surfaces.js'
 import { createSledFence } from './props/sled.js'
 import { Kinderland } from './areas/kinderland.js'
 import { NorthRun } from './attractions/north-run.js'
@@ -39,7 +40,7 @@ import { KlammSprung } from './attractions/klamm-sprung.js'
 import { createStartGate } from './props/start-gate.js'
 import { createGorgeBridge } from './props/gorge-bridge.js'
 import { createKlammSchanze } from './props/klamm-schanze.js'
-import { createKlammEis } from './props/klamm-eis.js'
+import { createKlammEis, rohrLage } from './props/klamm-eis.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -320,6 +321,19 @@ export function populate(world, sky, registry, stationOptions = {}) {
       shade: rng(),
     }
   })
+  // Vor dem Rohr, aus dem der Bach kommt, steht kein Baum: er verdeckte es
+  // aus der Spielkamera. Herausgenommen wird erst hier, damit der Zufall fuer
+  // alle anderen Baeume derselbe bleibt.
+  {
+    const rohr = rohrLage()
+    if (rohr) {
+      const vor = { x: rohr.mx + 2.5, z: rohr.mz + 2.5 }
+      for (let i = placements.length - 1; i >= 0; i--) {
+        const p = placements[i]
+        if (Math.hypot(p.x - rohr.mx, p.z - rohr.mz) < 4 || Math.hypot(p.x - vor.x, p.z - vor.z) < 3.5) placements.splice(i, 1)
+      }
+    }
+  }
   // Die Baumgruppe um den frueheren LinkedIn-Wegweiser ist mit ihm
   // verschwunden. Sie stand dort, weil das Schild einen Waldrand brauchte und
   // das Rauschfeld an der Stelle zu duenn war; ohne Schild ist sie ein Hain
@@ -722,6 +736,11 @@ export function populate(world, sky, registry, stationOptions = {}) {
       // Wo die Schanze, von der Bruecke aus laengs der Rinne gemessen, liegt.
       const schanzeBei = (SCHANZE.x - BRUECKE.x) * laengs.x + (SCHANZE.z - BRUECKE.z) * laengs.z
       const luecken = [[-BRUECKE.halb - 0.6, BRUECKE.halb + 0.6], [schanzeBei - SCHANZE.halb - 0.7, schanzeBei + SCHANZE.halb + 0.7]]
+      // Wo die gelben Kreuze stehen (weiter unten): zwischen Bruecke und
+      // Schanze und links der Bruecke. Dort und zwischen Kreuz und Bruecke
+      // keine blauen Stangen mehr – das Kreuz sagt es allein.
+      const kreuzBei = [(BRUECKE.halb + 0.6 + schanzeBei - SCHANZE.halb - 0.7) / 2, -BRUECKE.halb - 3.0]
+      luecken.push([BRUECKE.halb, schanzeBei], [kreuzBei[1] - 2, -BRUECKE.halb])
       const lippe = []
       for (let s = -6.6; s <= schanzeBei + 6; s += 1.9) {
         if (luecken.some(([a, b]) => s > a && s < b)) continue
@@ -733,7 +752,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
       // Bruecke und Schanze und auf der anderen Seite der Bruecke (Wunsch
       // 04.10.). Die blauen Stangen allein sagten nur, wo die Bahn endet.
       const kreuzDreh = Math.atan2(-laengs.z, laengs.x)
-      for (const s of [(BRUECKE.halb + 0.6 + schanzeBei - SCHANZE.halb - 0.7) / 2, -BRUECKE.halb - 1.6]) {
+      for (const s of kreuzBei) {
         const kx = BRUECKE.x + quer.x * bergauf + laengs.x * s
         const kz = BRUECKE.z + quer.z * bergauf + laengs.z * s
         const kreuz = createGefahrKreuz()
@@ -965,6 +984,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
         punkte.push([x, terrainHeight(x, z) + 0.025, z])
       }
       world.scene.add(createLipLine(punkte))
+      ohneSpur(punkte.map(([x, , z]) => [x, z]), 0.14)
     }
 
     // Beachflags links und rechts der Absprungkanten, wo vorher die Kloetze

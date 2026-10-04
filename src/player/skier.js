@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { isSnowSurface } from '../world/surfaces.js'
 import { SKIER, TRICK, SPRUNG } from '../config.js'
-import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeLage, schanzeAnlauf, aufSteg, stegDeck, stegLage, DECK, BRUECKE, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
+import { terrainHeight, slopeAlong, PLATEAU, playAreaDistance, onParkRail, inFunpark, kantenSprung, freiFlug, klammFlug, schanzeLage, SCHANZE, schanzeAnlauf, aufSteg, stegDeck, stegLage, DECK, BRUECKE, vorFigur, parkFlug, boxDeck, ueberBox, ohneAbwurf } from '../world/heightfield.js'
 import { createSkierModel, HIP } from './skier-model.js'
 import { landeStufe } from '../core/landung.js'
 
@@ -302,7 +302,7 @@ export class Skier {
       this.speed *= 0.9
     }
 
-    if (this._unterDeck(nx, nz)) {
+    if (this._unterDeck(nx, nz) || this._schanzeVonVorn(nx, nz)) {
       // Wie gegen eine Wand: stehen bleiben, frontal fast alles Tempo weg.
       nx = this.position.x
       nz = this.position.z
@@ -382,7 +382,7 @@ export class Skier {
           if (perfekt) this.vy = Math.min(Math.max(hopser, this._rise + SPRUNG.pop) + SPRUNG.kantenBonus, SPRUNG.kantenDeckel)
           this.absprung = { art: perfekt ? 'perfekt' : 'frueh', tempo: this.speed }
         }
-      } else if (this._rise > 3.2 && free > groundY + 0.03 && !ohneAbwurf(nx, nz)) {
+      } else if (this._rise > 3.2 && free > groundY + 0.03 && !ohneAbwurf(nx, nz) && !this._klammRueckwaerts(nx, nz)) {
         // Faellt der Boden hinter der Kante schneller weg, als die Schwerkraft
         // den Fahrer holt, hebt er ab. Kein Sprungknopf noetig – die Schanze
         // macht die Arbeit, so wie im Gelaende auch. Im Park darf man kurz
@@ -993,6 +993,28 @@ export class Skier {
     if (this.aufDeck) return false
     const d = stegDeck(x, z)
     return !!d && this.position.y < d.y - 0.6 && d.y - terrainHeight(x, z) < 1.7
+  }
+
+  // Die Klammschanze nur in ihrer Richtung: wer aus der Klamm kommt, steht
+  // vor einer Wand aus Bohlen, 2,6 m hoch. Im Hoehenfeld ist sie eine Rampe
+  // von einem halben Meter (sonst rollte man ueber die Kante, statt
+  // abzuheben), und an ihr fuhr man rueckwaerts hinauf und flog 7 m hoch
+  // ueber die Anlaufbahn (gemessen bei Tempo 8 und 14).
+  _schanzeVonVorn(x, z) {
+    if (this.airborne) return false
+    const { u, v } = schanzeLage(x, z)
+    if (u < -0.3 || u > 0.8 || Math.abs(v) > SCHANZE.halb + SCHANZE.flanke) return false
+    // Steiler als 1,5 (56 Grad) hinauf ist Wand. Mit W kroch man sonst in
+    // kleinen Schritten die Bohlen hoch (Mindesttempo am Hang).
+    const weg = Math.hypot(x - this.position.x, z - this.position.z)
+    return weg > 1e-4 && terrainHeight(x, z) - terrainHeight(this.position.x, this.position.z) > weg * 1.5
+  }
+
+  // An der Klammschanze wirft nur, wer in ihrer Richtung faehrt. Wer aus
+  // der Klamm an ihrer Wand hinauffaehrt, haette sonst unter der Kante
+  // abgehoben – ohneAbwurf laesst die Kante dort ja frei.
+  _klammRueckwaerts(x, z) {
+    return klammFlug(x, z) && this.forward.x * SCHANZE.dx + this.forward.z * SCHANZE.dz < 0
   }
 
   // Gefaelle in Fahrtrichtung (wie slopeAlong), auf dem Deck das des Decks:

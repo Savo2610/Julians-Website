@@ -155,6 +155,17 @@ test('unter der Bruecke hinauf: an der Stirnwand ist Schluss, kein Wurf aufs Dec
   }
 })
 
+test('rueckwaerts kommt man nicht ueber die Schanze: aus der Klamm ist sie eine Wand', () => {
+  for (const tempo of [8, 14]) {
+    let flog = false
+    const s = fahre(SCHANZE.x + SCHANZE.dx * 22, SCHANZE.z + SCHANZE.dz * 22, Math.atan2(-SCHANZE.dx, -SCHANZE.dz), 300, (s) => {
+      if (s.airborne) flog = true
+    }, tempo)
+    assert.ok(!flog, `Tempo ${tempo}: hebt ab`)
+    assert.ok(schanzeLage(s.position.x, s.position.z).u > 0.3, `Tempo ${tempo}: steht bei u ${schanzeLage(s.position.x, s.position.z).u.toFixed(1)}`)
+  }
+})
+
 test('der Absprung genau an der Kante traegt am weitesten (04.10.)', () => {
   const ohne = springe()
   const perfekt = springe({ druck: -0.5 })

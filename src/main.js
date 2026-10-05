@@ -9,7 +9,7 @@ import { TOUCH } from './core/device.js'
 import { pointScale } from './core/point-scale.js'
 import { TouchControls } from './core/touch.js'
 import { Antippen } from './stations/antippen.js'
-import { inFunpark, PLATEAU, NORTH_LANE } from './world/heightfield.js'
+import { inFunpark, PLATEAU } from './world/heightfield.js'
 import { SnowTrail } from './world/snow-trail.js'
 import { World } from './world/world.js'
 import { createSky } from './world/sky.js'
@@ -196,19 +196,12 @@ canvas.addEventListener('pointerdown', () => {
 const tiere = new Wildnis({ scene, trail, spray, camera, world, baeume: props.trees, stationen: stations, huette: props.huette, kreuz: props.kreuz, felsen: props.felsen })
 
 // Das Schneebrett auf der Nordabfahrt, so oft, wie die Warnstufe des Tages
-// sagt (world/attractions/schneebrett.js). Wer verschuettet wird, steht
-// hinter der Blende wieder am Start der Abfahrt – eine halbe Sekunde
-// spaeter, damit man die Wolke noch sieht.
+// sagt (world/attractions/schneebrett.js). Wer drin ist, faehrt eingeschneit
+// und abgebremst weiter (Skier.verschuetten) – kein Zuruecksetzen mehr.
 const schneebrett = new Schneebrett({ scene, northRun: props.northRun, stufe: lawinenstufe(), camera, trail, world })
-schneebrett.onErwischt = () => {
-  setTimeout(() => {
-    const a = NORTH_LANE.segments[0]
-    const l = Math.hypot(a.dx, a.dz)
-    mapMenu.travelTo({ x: a.x + (a.dx / l) * 3, z: a.z + (a.dz / l) * 3, heading: Math.atan2(a.dx, a.dz) })
-  }, 550)
-}
+schneebrett.onErwischt = () => skier.verschuetten()
 // Die Pistenraupe der Nachtschicht: nur zwischen 22 und 6 Uhr nach der Uhr
-// des Besuchers, und auch dann selten (world/pistenraupe.js). ?raupe ruft sie.
+// des Besuchers, einmal 1–17 min nach dem Ankommen (world/pistenraupe.js). ?raupe ruft sie.
 // Sie wohnt im Schuppen am Ende der Nordabfahrt (props/schuppen.js).
 const raupe = new Pistenraupe({ scene, camera, trail, world, schuppen: createSchuppen(world) })
 

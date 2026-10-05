@@ -468,8 +468,10 @@ nach Süden in Kar und Klamm. Gelegt wird es so, dass es bei vollem Tempo gut
 eine halbe Sekunde hinter dem Fahrer über die Bahn geht (Front nach knapp
 2,9 s in der Mitte, Anriss 2,3 s × Tempo voraus): mit Gas kommt man durch,
 wer bremst, wird erwischt (gemessen nach 2,6 s bei 2,6 m/s). Erwischt heißt:
-Wolke, nach 0,55 s hinter der Blende zurück an den Start der Nordabfahrt
-(`main.js`, `onErwischt`). An Fels, Zaun und Kreuzen bleiben Schollen hängen und stauen sich (ab
+Wolke, „ERWISCHT“, eingeschneit wie an der Kanone, nur dicker (gut 7 s),
+und das Tempo fällt auf 30 % – man fährt weiter (`Skier.verschuetten`).
+Bis 05.10. ging es hinter der Blende zurück an den Start der Nordabfahrt;
+das war zu viel Strafe. An Fels, Zaun und Kreuzen bleiben Schollen hängen und stauen sich (ab
 Meter 28 stehen davon viele im Streifen); dort hat die Kante eine Lücke.
 Die Brocken sind Aufbau ohne Kollision und
 bleiben 45 s liegen, weg erst außer Bild; die Bahn stempelt aufgewühlten
@@ -576,8 +578,9 @@ Startbogen (−65,6, −79,1), mit Blick ins Nordkar – nicht am Gipfelkreuz, w
 jeder aus dem Lift vorbeikommt (Ansage: man soll es selbst entdecken). Rote
 Blechkassette mit weißem Kreuz auf einem Pfahl, Steinmann, Bank zur Aussicht.
 Herangezoomt klappt der Deckel auf, das Buch hebt sich heraus und blättert,
-beim Öffnen ein Stempel. Nicht auf der Talkarte (`VERSTECKT`), die
-Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
+beim Öffnen ein Stempel. Seit 05.10. auf der Talkarte unter Kontakt &
+Gipfel (vorher `VERSTECKT`; seit man sich eintragen kann, soll man es
+finden), die Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
 
 **Zweite Runde (04.10.)** – Julians Rückmeldung zur Rückseite:
 
@@ -1498,9 +1501,9 @@ nach Rückfrage.
 ## 4a⁹. Die Pistenraupe der Nachtschicht (04.10., seit 05.10. auf `main`)
 
 `world/pistenraupe.js`, Schuppen in `props/schuppen.js`. Fährt nur nach der
-**echten Uhr** des Besuchers zwischen 22 und 6 Uhr, und auch dann nur in
-jeder zweiten Sitzung, einmal, 60–300 s nach dem Ankommen – fast niemand
-soll sie sehen. Das Tal bleibt hell; die Nachtschicht erkennt man an
+**echten Uhr** des Besuchers zwischen 22 und 6 Uhr, dann in jeder Sitzung
+einmal, irgendwann 1–17 min nach dem Ankommen (seit 05.10.; vorher jede
+zweite Sitzung nach 60–300 s) – wer nachts nur kurz schaut, sieht sie selten. Das Tal bleibt hell; die Nachtschicht erkennt man an
 Scheinwerfern, einem weichen Lichtkegel (eigener Shader, nach vorn und zu
 den Rändern auslaufend – mit fester Deckkraft war er ein harter weißer
 Fächer) und der orangen Rundumleuchte, beide nur, solange sie ausgerückt ist.

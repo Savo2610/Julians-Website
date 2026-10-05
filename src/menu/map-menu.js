@@ -33,13 +33,15 @@ import { listeZeichnen } from './bestenliste.js'
 // Reitern: sie liegen abseits, damit man sie findet – auf der alten
 // Kachelseite standen sie auch nicht. Die Kacheln selbst stehen in
 // kacheln.js, weil auch die Linkliste ohne Tal sie braucht.
+// Das Gipfelbuch war auch versteckt; seit man sich eintragen kann, soll man
+// es finden (05.10., auf Ansage) – auf der Karte bei Kontakt & Gipfel.
 
-const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast', 'gipfelbuch'])
+const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast'])
 
 // Welche Station an welchem Weg liegt – fuer die Farbe in der Liste.
 const WEG = {
   werkstatt: 'career',
-  kontakt: 'social', kasse: 'social',
+  kontakt: 'social', kasse: 'social', gipfelbuch: 'social',
   worktime: 'tools', upload: 'tools', shortener: 'tools', packlist: 'tools',
 }
 

@@ -135,6 +135,18 @@ export class Skier {
     }
   }
 
+  // Vom Schneebrett gerufen (world/attractions/schneebrett.js). Frueher ging
+  // es dann hinter der Blende zurueck an den Start der Nordabfahrt – fuer
+  // einen Moment Pech zu viel, der Lauf war weg (05.10., auf Ansage). Jetzt
+  // bremst es nur hart und schneit ein wie die Kanone, nur dicker: 1,6 statt
+  // hoechstens 1 taut bei 0,22/s gut sieben Sekunden statt viereinhalb.
+  verschuetten() {
+    this.snowed = 1.6
+    this.snowBurst = 1
+    this.speed *= 0.3
+    this.trick = { text: 'ERWISCHT', tone: 'bad' }
+  }
+
   // Goldene Ski fuer den vollen Pistenpass: aus Gruen wird Gold, dazu ein
   // Schimmer, der langsam ueber die Bretter laeuft. Die Kanten werden mit
   // vergoldet, sonst bleibt ein dunkler Rand um jedes Brett.

@@ -3,9 +3,10 @@ import { assemble, vertexColorMaterial } from '../core/geometry.js'
 import { terrainHeight, terrainNormal, NORTH_LANE, BRUECKE, DECK, stegLage, stegDeck, schuppenWelt, schuppenLokal, SCHUPPEN } from './heightfield.js'
 
 // Die Pistenraupe. Sie faehrt nur nachts, nach der echten Uhr des Besuchers:
-// zwischen 22 und 6 Uhr, und auch dann nur in jeder zweiten Sitzung, einmal,
-// irgendwann zwischen ein und fuenf Minuten nach dem Ankommen. Fast niemand
-// soll sie je zu Gesicht bekommen. Das Tal selbst bleibt dabei hell – eine
+// zwischen 22 und 6 Uhr, dann in jeder Sitzung einmal, irgendwann zwischen
+// einer und 17 Minuten nach dem Ankommen (05.10., auf Ansage; vorher nur jede
+// zweite Sitzung nach ein bis fuenf Minuten). Wer nachts kurz vorbeischaut,
+// sieht sie selten; wer bleibt, bekommt sie. Das Tal selbst bleibt dabei hell – eine
 // echte Nacht waere ein Umbau an Licht und Himmel; man erkennt die
 // Nachtschicht an den Scheinwerfern und der Rundumleuchte.
 //
@@ -251,9 +252,9 @@ export class Pistenraupe {
       this.laenge += l
     }
 
-    // Kommt sie heute? Nachts in jeder zweiten Sitzung, sonst nie.
-    this.heute = erzwungen || (nachtschicht() && Math.random() < 0.5)
-    this.uhr = erzwungen ? 2 : zufall(60, 300)
+    // Kommt sie heute? Nachts in jeder Sitzung, sonst nie.
+    this.heute = erzwungen || nachtschicht()
+    this.uhr = erzwungen ? 2 : zufall(60, 17 * 60)
     this.zustand = 'parkt'   // tor_auf, faehrt, tor_zu
     this.fertig = false
     this.s = 0

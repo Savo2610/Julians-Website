@@ -17,8 +17,8 @@ import { anriss, bahnTextur, brocken, scholle } from '../props/schneebrett.js'
 //
 // Abgehen laesst es sich nur, waehrend man faehrt, und zwar so, dass es bei
 // vollem Tempo knapp hinter einem ueber die Bahn geht. Wer bremst oder
-// trödelt, ist drin – und wird verschuettet: eine Wolke, dann zurueck an
-// den Start der Nordabfahrt (main.js, onErwischt).
+// trödelt, ist drin – und wird verschuettet: eine Wolke, „ERWISCHT“, und
+// man faehrt eingeschneit und abgebremst weiter (Skier.verschuetten).
 
 const CHANCE = [0, 0.01, 0.06, 0.2, 0.5, 0.85]   // je Warnstufe 1–5
 // 16 m neben der Mitte reisst es an, drei bis vier Meter ueber der Piste.

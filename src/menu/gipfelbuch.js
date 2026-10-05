@@ -15,7 +15,8 @@ import { NAME_KEY, lesen, schreiben, post } from './bestenliste.js'
 //
 // Gelesen wird gleich hier: ein Klick auf „Julian“ im Fuss fragt nach dem
 // Einmalcode aus der Authenticator-App. Angemeldet stehen die wartenden
-// Eintraege oben im Buch, jeder mit Freigeben und Loeschen. Kein Menue
+// Eintraege oben im Buch, jeder mit Freigeben und Loeschen; die
+// freigegebenen darunter lassen sich wieder loeschen. Kein Menue
 // dafuer – fuer alle anderen bleibt das Buch, wie es war.
 
 const API = '/api/gipfelbuch'
@@ -100,6 +101,7 @@ function bauen() {
   textEl.addEventListener('input', rest)
 
   // Ein Eintrag auf der Seite: Text, darunter Name und Tag wie mit der Hand.
+  // pruefen: 'offen' (Freigeben und Loeschen) oder 'frei' (nur Loeschen).
   const eintrag = (e, wartet = false, pruefen = false) => {
     const el = document.createElement('article')
     el.className = 'gb-eintrag' + (wartet ? ' gb-wartet' : '')
@@ -111,7 +113,8 @@ function bauen() {
     if (pruefen) {
       const knoepfe = document.createElement('div')
       knoepfe.className = 'gb-pruefen'
-      for (const [was, wort] of [['freigeben', 'Freigeben'], ['loeschen', 'Löschen']]) {
+      const arten = pruefen === 'offen' ? [['freigeben', 'Freigeben'], ['loeschen', 'Löschen']] : [['loeschen', 'Löschen']]
+      for (const [was, wort] of arten) {
         const b = document.createElement('button')
         b.type = 'button'
         b.className = `gb-knopf gb-${was}`
@@ -140,6 +143,7 @@ function bauen() {
       await post(was, { id: e.id }, API)
       offen = offen.filter((o) => o.id !== e.id)
       if (was === 'freigeben') liste = [e, ...(liste ?? [])].sort((a, b) => b.erstellt - a.erstellt)
+      else liste = (liste ?? []).filter((o) => o.id !== e.id)
       zeichnen(liste)
       status(was === 'freigeben' ? `${e.name} steht jetzt im Buch.` : 'Gelöscht.', 'gut')
     } catch (err) {
@@ -164,9 +168,9 @@ function bauen() {
     // nur, solange es sie dort noch gibt (geloescht heisst: weg).
     const wartend = eigene.filter((e) => !freiIds.has(e.id) && (offen === null || offenIds.has(e.id))).reverse()
     buch.replaceChildren()
-    for (const e of offen ?? []) buch.append(eintrag(e, true, true))
+    for (const e of offen ?? []) buch.append(eintrag(e, true, 'offen'))
     for (const e of offen ? [] : wartend) buch.append(eintrag(e, true))
-    for (const e of oeffentlich ?? []) buch.append(eintrag(e))
+    for (const e of oeffentlich ?? []) buch.append(eintrag(e, false, offen !== null && 'frei'))
     if (!buch.children.length) {
       const leer = document.createElement('p')
       leer.className = 'gb-leer'

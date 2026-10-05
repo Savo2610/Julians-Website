@@ -598,7 +598,7 @@ Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
   - **Freigeben im Buch** (05.10.): ein Klick auf „Julian“ im Fuß des
     Gipfelbuchs fragt nach einem Einmalcode (TOTP, 30 s, 6 Ziffern,
     `worker/totp.js`). Danach stehen die wartenden Einträge oben im Buch mit
-    *Freigeben* und *Löschen*; die Sitzung ist ein HttpOnly-Cookie, 30 Tage,
+    *Freigeben* und *Löschen*, die freigegebenen darunter mit *Löschen*; die Sitzung ist ein HttpOnly-Cookie, 30 Tage,
     signiert mit `GIPFELBUCH_SITZUNG`. Geheimnisse als *Secret* im
     Cloudflare-Dashboard (lokal in `.dev.vars`): `GIPFELBUCH_OTP` (Base32,
     dasselbe wie in der Authenticator-App) und `GIPFELBUCH_SITZUNG`.

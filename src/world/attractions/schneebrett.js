@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { NORTH_LANE, terrainHeight, terrainNormal } from '../heightfield.js'
 import { Spray } from '../../player/spray.js'
-import { anriss, bahnTextur, brocken, scholle } from '../props/schneebrett.js'
+import { bahnTextur, brocken, scholle } from '../props/schneebrett.js'
 
 // Das Schneebrett auf der Nordabfahrt. Wie oft es abgeht, sagt die
 // Lawinenwarnstufe des Tages (props/map-board.js, an der Panoramatafel):
@@ -64,7 +64,6 @@ export class Schneebrett {
     this.staub = new Spray({ max: 1600, color: 0xf2f6fc })
     scene.add(this.staub.points)
     this.stuecke = []
-    this.kante = null
     this.zeit = 0
     this.laeuft = false
     this.liegt = 0
@@ -127,27 +126,16 @@ export class Schneebrett {
     this.abgegangen++
     this.onAbgang?.()
 
-    // Die Anrisskante, quer zum Hang: ein Stueck oberhalb der obersten
-    // Scholle, als gerade Linie in einem einzigen Rahmen (der Bahn bei s).
-    // Jeder Punkt mit der Normale seiner eigenen Bahnstelle versetzt lief
-    // auf der Innenseite der Kurve zusammen und gabelte sich zu einem Y.
+    // Die Anrisslinie, quer zum Hang ein Stueck oberhalb der obersten
+    // Scholle. Zu sehen ist sie nur im Staub beim Abgang: als Band im Schnee
+    // las sie sich wie ein blauer Strich am Hang (05.10., weggelassen).
     const b0 = bahn(s)
-    // An Felsen, Zaun und Pfosten hat die Kante eine Luecke: dort haelt
-    // das Brett, und ein Band mitten durch den Fels sah aus wie ein Fehler.
-    const kanten = [[]]
+    const kante = []
     for (let u = -BREITE - 0.5; u <= BREITE + 0.5; u += 0.5) {
       const x = b0.x + b0.tx * u - b0.nx * (ABSTAND + 0.8)
       const z = b0.z + b0.tz * u - b0.nz * (ABSTAND + 0.8)
-      if (this._hindernis(x, z, 0.4)) { if (kanten.at(-1).length) kanten.push([]); continue }
-      kanten.at(-1).push([x, terrainHeight(x, z), z])
+      if (!this._hindernis(x, z, 0.4)) kante.push([x, terrainHeight(x, z), z])
     }
-    const kante = kanten.flat()
-    // Fuer _imBild: hat die Raupe alle Brocken geraeumt, soll die Kante am
-    // Hang nicht vor den Augen verschwinden.
-    this._kanteMitte = kante.length ? new THREE.Vector3(...kante[kante.length >> 1]) : null
-    this.kante = new THREE.Group()
-    for (const k of kanten) if (k.length > 1) this.kante.add(anriss(k, { x: b0.nx, z: b0.nz }))
-    this.scene.add(this.kante)
 
     // Zwei Reihen Schollen, die sieben Meter zu jeder Seite reichen.
     for (let reihe = 0; reihe < 2; reihe++) {
@@ -330,10 +318,6 @@ export class Schneebrett {
   }
 
   _imBild() {
-    if (this.kante && this._kanteMitte) {
-      v.copy(this._kanteMitte).project(this.camera)
-      if (v.z < 1 && Math.abs(v.x) < 1.2 && Math.abs(v.y) < 1.2) return true
-    }
     for (const st of this.stuecke) {
       if (!st.mesh) continue
       v.copy(st.mesh.position).project(this.camera)
@@ -350,14 +334,6 @@ export class Schneebrett {
     }
     this.stuecke = []
     this._bahnen = []
-    if (this.kante) {
-      this.scene.remove(this.kante)
-      for (const m of this.kante.children) {
-        m.geometry.dispose()
-        m.material.dispose()
-      }
-      this.kante = null
-    }
     this.laeuft = false
   }
 }

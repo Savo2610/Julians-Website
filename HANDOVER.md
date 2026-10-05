@@ -457,10 +457,10 @@ oft es abgeht, hängt an der Lawinenwarnstufe des Tages (`lawinenstufe()`,
 Panoramatafel): einmal je Einfahrt gewürfelt, Stufe 1 bis 5 mit 1 / 6 / 20 /
 50 / 85 %. Ausgelöst wird zwischen Meter 8 und 30, ab 5 m/s. Es reißt am
 Südhang 16 m neben der Bahnmitte an (dort 3–4 m höher; bei 22 m lag die
-Kante aus der festen Kamera links außerhalb des Bildes), mit dunkler
-Anrisskante – ein flaches Band mit niedriger Bruchstufe, gerade quer im
-Rahmen der Bahn bei s (dicke Balken je Bahnstelle ergaben eine blaue
-Treppe mit Gabelung) – und einem Staubstoß, zerbricht nach 4–7 m von Schollen in
+Kante aus der festen Kamera links außerhalb des Bildes), mit einem
+Staubstoß entlang der Anrisslinie. Eine sichtbare Anrisskante gibt es
+seit 05.10. nicht mehr – auch als flaches Band las sie sich wie ein blauer
+Strich am Hang. Es zerbricht nach 4–7 m von Schollen in
 Klumpen und kommt 2–7,5 m hinter der Mitte, vor dem Gratrücken, zum Stehen.
 Die Bahn ist **geführt** (quer zur Piste), nicht das Gefälle: so wie das
 Gelände fällt, rutschten die Schollen gemessen in drei von vier Fällen
@@ -1520,8 +1520,8 @@ einmal), und räumt die Brocken weg: was im Umkreis von 3,8 m um sie liegt,
 verschwindet in einer Staubwolke, die Lawinenbahn darunter wird mitsamt
 Färbung glatt (`Schneebrett.raeumen`). Bis sie kommt, bleibt die Lawine
 liegen (`halten` → `kommtNoch`) statt nach 45 s zu verschwinden; was
-neben ihrer Runde liegt, geht danach wie vorher, wenn niemand hinschaut –
-auch die Anrisskante, die jetzt mit in `_imBild` zählt. Gemessen: von 29
+neben ihrer Runde liegt, geht danach wie vorher, wenn niemand hinschaut.
+Gemessen: von 29
 Brocken räumt sie 27, die zwei abseits gehen danach. Das Tal bleibt hell; die Nachtschicht erkennt man an
 Scheinwerfern, einem weichen Lichtkegel (eigener Shader, nach vorn und zu
 den Rändern auslaufend – mit fester Deckkraft war er ein harter weißer
@@ -1531,7 +1531,10 @@ Fächer) und der orangen Rundumleuchte, beide nur, solange sie ausgerückt ist.
 Bahnende und Funparkzaun. Neben der Hütte war kein Platz (Terrasse, Park,
 Wald; gesucht mit 7 × 8 m Grundfläche). Zur Kamera zeigt die lange Wand mit
 Schild „PISTENDIENST“ und zwei Fenstern, das **Rolltor liegt hinten** und
-öffnet direkt auf den Auslauf der Nordabfahrt. Mit dem Tor zur Kamera musste
+öffnet direkt auf den Auslauf der Nordabfahrt. Östlich vom Tor stand eine
+Kuppe (13,7 m bei 10,3 m Platz), aus der Kamera eine Beule zwischen Schuppen
+und Terrasse; `schuppenAuslauf` trägt seit 05.10. ab, was über einer
+schrägen Ebene vom Platz zum Auslauf liegt (um (10, −65) bis 9 m weit). Mit dem Tor zur Kamera musste
 die Raupe ums Haus herum, an den Kickern des Funparks und am Zaun vorbei.
 Der Boden darunter ist Gelände: `SCHUPPEN` im Höhenfeld zieht ihn innen und
 2,5 m vor dem Tor auf 10,25 m eben (vorher 9,4 bis 11,0) und läuft über

@@ -515,6 +515,23 @@ function schuppenPlatz(x, z, h) {
   return h + (S.h - h) * w
 }
 
+// Hinter dem Schuppen stand oestlich vom Tor eine Kuppe, 13,7 m hoch, wo
+// der Platz bei 10,3 m liegt – die Pistenraupe kroch daneben hinauf, und aus
+// der Kamera las sie sich als Beule zwischen Schuppen und Terrasse (05.10.,
+// auf Ansage geglaettet). Was ueber einer schraegen Ebene liegt, die vom
+// Platz sanft zum Auslauf der Nordabfahrt ansteigt, wird abgetragen; tiefer
+// bleibt alles. Die Ebene geht durch drei gemessene Punkte: Platz hinter dem
+// Tor (5, −61) 10,3, Auslauf (5, −68) 12,8, Hang oestlich (14, −62) 11,6.
+const AUSLAUF = { x: 10, z: -65, voll: 4, rand: 5 }
+function schuppenAuslauf(x, z, h) {
+  const d = Math.hypot(x - AUSLAUF.x, z - AUSLAUF.z)
+  if (d >= AUSLAUF.voll + AUSLAUF.rand) return h
+  const ebene = 10.3 + 0.105 * (x - 5) - 0.357 * (z + 61)
+  if (h <= ebene) return h
+  const w = 1 - smooth(Math.max(0, d - AUSLAUF.voll) / AUSLAUF.rand)
+  return h - (h - ebene) * w
+}
+
 export function stegDeck(x, z) {
   const l = stegLage(x, z)
   return Math.abs(l.laengs) <= DECK.halbL && Math.abs(l.quer) <= DECK.halbQ + 0.2 ? l : null
@@ -1128,6 +1145,7 @@ export function terrainHeight(x, z) {
 
   // Die befahrbare Terrasse gliedert den Uebergang ein. Ihre Ebene kommt
   // nach den Baendern, damit Holz und Ski dieselbe Hoehe bekommen.
+  h = schuppenAuslauf(x, z, h)
   h = apresGround(x, z, h)
   h = schuppenPlatz(x, z, h)
 

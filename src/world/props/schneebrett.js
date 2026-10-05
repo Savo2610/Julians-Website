@@ -1,8 +1,7 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
-import { terrainHeight } from '../heightfield.js'
 
-// Was man vom Schneebrett sieht: die Anrisskante, die Schollen, in die das
+// Was man vom Schneebrett sieht: die Schollen, in die das
 // Brett zerbricht, und die Brocken, die am Ende auf der Piste liegen. Alles
 // Aufbau – befahren wird weiter das Hoehenfeld, die Brocken haben keine
 // Kollision. Wer hineinfaehrt, wird nicht gebremst, sondern verschuettet,
@@ -10,9 +9,6 @@ import { terrainHeight } from '../heightfield.js'
 
 const SCHNEE = 0xf4f8fd
 const SCHATTEN = 0xd9e3ef
-// Die frische Bruchkante liegt im eigenen Schatten. 0x8fa5c2 ging im
-// Hangschatten unter; dunkler und dicker liest man sie aus 33 Metern.
-const KANTE = 0x6a819f
 
 // Eine Scholle: eine flache Platte, oben hell, an den Seiten im Schatten.
 // Die Kanten sind gebrochen, nicht gesaegt – deshalb ein leicht verzogener
@@ -45,39 +41,6 @@ export function brocken(r) {
     material(),
   )
   mesh.castShadow = true
-  mesh.receiveShadow = true
-  return mesh
-}
-
-// Die Anrisskante: ein schmales dunkles Band, das dem Gelaende folgt, und
-// talseitig davon die niedrige Bruchstufe, an der das Brett abgerissen ist.
-// `punkte` sind [x, y, z] entlang der Kante, `tal` die waagerechte Richtung
-// hangab. Vorher waren es 0,45 m hohe Balken mit fester Hoehe: am Hang
-// ergaben sie eine blaue Treppe, die 45 Sekunden lang dort stand.
-export function anriss(punkte, tal) {
-  const pos = []
-  const index = []
-  const BAND = 0.32
-  const STUFE = 0.22
-  for (const [x, y, z] of punkte) {
-    const ox = x + tal.x * BAND
-    const oz = z + tal.z * BAND
-    // oben am Band, unten am Band (auf dem Gelaende), Fuss der Stufe
-    pos.push(x, terrainHeight(x, z) + 0.05, z)
-    pos.push(ox, terrainHeight(ox, oz) + 0.05, oz)
-    pos.push(ox + tal.x * 0.05, terrainHeight(ox, oz) - STUFE, oz + tal.z * 0.05)
-  }
-  for (let i = 0; i < punkte.length - 1; i++) {
-    const a = i * 3
-    const b = a + 3
-    index.push(a, b, a + 1, a + 1, b, b + 1)          // Band
-    index.push(a + 1, b + 1, a + 2, a + 2, b + 1, b + 2) // Stufe
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  geo.setIndex(index)
-  geo.computeVertexNormals()
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: KANTE, roughness: 0.92, side: THREE.DoubleSide }))
   mesh.receiveShadow = true
   return mesh
 }

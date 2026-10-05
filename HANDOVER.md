@@ -118,7 +118,7 @@ src/
     landscape-*.js   Schneerücken, Bodenwellen, Nebenstrecken, Quelle, Schauer
     surfaces.js      Wo Eis und Holz liegen — dort keine Spur, kein Staub
     snow-trail.js    Spurkarte als Render-Target; stampDecal() stempelt hinein
-    snow-writing.js  Schrift und Tasten-/Stickzeichen im Schnee, Wildspuren
+    snow-writing.js  Schrift und Tasten-/Stickzeichen im Schnee
     sky.js, weather.js  Himmel, Sonne, Gegenlicht; Schneefall
     wayfinding.js    Panoramatafel (PANORAMA) und Wegweiser
     trail-glints.js  Leuchtschleier auf den vier Wegen
@@ -680,8 +680,8 @@ finden), die Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass
   ABSPRINGEN“.
 
 **Charakter**: dichter Wald (Dichte-Aufschlag über `nordDist`), Felsriegel auf
-dem Grat, Wildspuren im Schnee (`stampTrack` in `snow-writing.js`, gestempelt in
-`main.js`). Nichts zum Anklicken — das war die ausdrückliche Wahl.
+dem Grat. Die festen Wildspuren sind seit 05.10. weg – Spuren gibt es nur
+noch, wo wirklich ein Tier war (4a⁷). Nichts zum Anklicken — das war die ausdrückliche Wahl.
 
 **Zerbrechliches**: Der **Zaun oben am Funpark** (`props/park-fence.js`)
 bricht ab 5 m/s wie die Seebank, aber nur im Umkreis von 2,6 m um den
@@ -1388,7 +1388,17 @@ wenn das vorige Tier fort ist. Hase zuerst nach 90–180 s, danach
 210–420 s Pause; Schneehühner nur, wenn man höchstens 90 m vom Gipfel ist,
 60–120 / 300–480 s; Fuchs 360–600 / 600–900 s. Zehn Minuten Simulation
 an wechselnden Orten: zwei Hasen, ein Schwarm, kein Fuchs. Am Lift kommt
-kein Hase (man käme nicht hin), die Hühner dürfen.
+kein Hase (man käme nicht hin), die Hühner dürfen. Seit 05.10. sind alle
+Zeiten in `TAKT` um ein Fünftel kürzer („ein Ticken häufiger, aber nicht
+viel“).
+
+**Spuren nur, wo Tiere waren** (05.10.): Die drei fest gestempelten
+Wildspuren an der Nordabfahrt (`stampTrack`) sind weg. Jeder Abdruck eines
+Tiers wird gemerkt (`werkzeug.js`, höchstens 600), und wer darüber fährt –
+Ski am Boden ab 0,5 m/s, nicht im Sprung, oder die Pistenraupe – streicht
+ihn glatt (`spurenVerwischen`). Dazu kann `glaetten()` jetzt auch die
+Einfärbung (Blau) nehmen: Abdrücke färben wie Schrift, und ohne das blieb
+nach der Raupe ein Schatten der Spur liegen.
 
 **Gefunden, nicht vorgeführt** (03.10., auf Ansage). Ein Tier entsteht
 24–55 m vom Fahrer entfernt am Waldrand, **außerhalb des Bildes und nie im

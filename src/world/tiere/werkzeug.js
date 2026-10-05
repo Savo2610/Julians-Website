@@ -217,10 +217,32 @@ const ABDRUCK = {
   loch: { textur: lochTextur, breite: 0.5, laenge: 0.58 },
 }
 
+// Jeder Abdruck wird gemerkt, damit Ski und Pistenraupe ihn wieder
+// verwischen koennen (spurenVerwischen). Die Spurkarte selbst weiss nicht,
+// was darin Tier und was Ski ist.
+const ABDRUECKE = []
+const MERKEN = 600          // eine Hasenrunde stempelt gut 60
+
 export function abdruck(trail, art, x, z, gier, staerke = 0.6) {
   if (!isSnowSurface(x, z, 0.4)) return
   const a = ABDRUCK[art]
   trail.stampDecal(a.textur(), x, z, a.breite, a.laenge, -gier, staerke, 0.55)
+  // stampDecal zieht die Ebene auf breite/2 × laenge/2 auf.
+  ABDRUECKE.push({ x, z, gier, r: Math.hypot(a.breite, a.laenge) / 4, breite: a.breite / 2, laenge: a.laenge / 2 })
+  if (ABDRUECKE.length > MERKEN) ABDRUECKE.shift()
+}
+
+// Wer ueber eine Tierspur faehrt, nimmt sie mit: jeder Abdruck, den der
+// Kreis um (x, z) beruehrt, wird glattgestrichen. Das Rechteck ist 1,6-mal
+// so gross wie der Abdruck, weil glaetten zu den Raendern weich auslaeuft
+// (laengs ab 60 %) – mit genau seiner Groesse blieben die Zehen stehen.
+export function spurenVerwischen(trail, x, z, radius) {
+  for (let i = ABDRUECKE.length - 1; i >= 0; i--) {
+    const a = ABDRUECKE[i]
+    if (Math.hypot(a.x - x, a.z - z) > radius + a.r) continue
+    trail.glaetten(a.x, a.z, a.breite * 1.6, a.laenge * 1.6, -a.gier, true)
+    ABDRUECKE.splice(i, 1)
+  }
 }
 
 // Ein Hauch Schnee beim Aufsetzen oder Abspringen.

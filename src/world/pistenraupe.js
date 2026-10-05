@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../core/geometry.js'
+import { spurenVerwischen } from './tiere/werkzeug.js'
 import { terrainHeight, terrainNormal, NORTH_LANE, BRUECKE, DECK, stegLage, stegDeck, schuppenWelt, schuppenLokal, SCHUPPEN } from './heightfield.js'
 
 // Die Pistenraupe. Sie faehrt nur nachts, nach der echten Uhr des Besuchers:
@@ -371,7 +372,12 @@ export class Pistenraupe {
     if (!this.trail?.glaetten || this.glattWeg < 0.8) return
     this.glattWeg = 0
     const g = this.m.group.position
-    this.trail.glaetten(g.x - Math.sin(this.gier) * 2.4, g.z - Math.cos(this.gier) * 2.4, 6.4, 1.6, -this.gier)
+    const x = g.x - Math.sin(this.gier) * 2.4
+    const z = g.z - Math.cos(this.gier) * 2.4
+    this.trail.glaetten(x, z, 6.4, 1.6, -this.gier)
+    // Das Relief der Tierspuren nimmt die Fraese mit, ihre Farbe nicht
+    // (glaetten laesst Blau fuer die Schrift stehen) – die holt das hier.
+    spurenVerwischen(this.trail, x, z, 3.2)
   }
 
   _leuchte() {

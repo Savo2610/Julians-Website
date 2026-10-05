@@ -109,15 +109,18 @@ const decalFrag = /* glsl */ `
 // wieder zu glattem Schnee macht. Multipliziert statt Max-Blending – mit
 // Max wird nie etwas weniger. Blau (Schrift) bleibt, wie es ist; zu den
 // Seiten laeuft das Glaetten weich aus, damit keine Kante stehen bleibt.
+// Mit uFarbe = 1 geht auch Blau mit: Tierabdruecke faerben wie Schrift
+// (decalFrag), und ohne das blieb nach dem Verwischen ihr Schatten liegen.
 const glattFrag = /* glsl */ `
   precision highp float;
+  uniform float uFarbe;
   varying vec2 vUv;
 
   void main() {
     float quer = abs(vUv.x - 0.5) * 2.0;
     float laengs = abs(vUv.y - 0.5) * 2.0;
     float m = (1.0 - smoothstep(0.8, 1.0, quer)) * (1.0 - smoothstep(0.6, 1.0, laengs));
-    gl_FragColor = vec4(1.0 - m, 1.0 - m, 1.0, 1.0);
+    gl_FragColor = vec4(1.0 - m, 1.0 - m, 1.0 - m * uFarbe, 1.0);
   }
 `
 
@@ -216,6 +219,7 @@ export class SnowTrail {
         uSize: { value: new THREE.Vector2(1, 1) },
         uRotation: { value: 0 },
         uWorldSize: { value: WORLD.size },
+        uFarbe: { value: 0 },
       },
     })
     this.glattMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.glattMaterial)
@@ -227,9 +231,11 @@ export class SnowTrail {
   }
 
   // Walzt ein Rechteck glatt: Spuren darunter verschwinden. width quer,
-  // height laengs, in Welteinheiten.
-  glaetten(x, z, width, height, rotation = 0) {
+  // height laengs, in Welteinheiten. farbe: auch die Einfaerbung (Blau)
+  // nehmen – nur fuer Tierabdruecke, nie dort, wo Schrift liegt.
+  glaetten(x, z, width, height, rotation = 0, farbe = false) {
     const u = this.glattMaterial.uniforms
+    u.uFarbe.value = farbe ? 1 : 0
     u.uCenter.value.set(x, z)
     // Die Ebene reicht von −0,5 bis 0,5: mal width ist sie width breit.
     u.uSize.value.set(width, height)

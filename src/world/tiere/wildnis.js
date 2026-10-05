@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { playAreaDistance, terrainHeight, terrainNormal, SUMMIT } from '../heightfield.js'
 import { isSnowSurface } from '../surfaces.js'
-import { Waldkarte, imBild } from './werkzeug.js'
+import { Waldkarte, imBild, spurenVerwischen } from './werkzeug.js'
 import { Hase, Hasenfamilie } from './hase.js'
 import { Schneehuehner } from './schneehuehner.js'
 import { Fuchs } from './fuchs.js'
@@ -35,14 +35,16 @@ import { Steinbock } from './steinbock.js'
 const zufall = (a, b) => a + Math.random() * (b - a)
 
 // Sekunden freien Fahrens bis zum ersten Auftritt, danach Pause nach dem
-// Abgang. Der Hase ist das Haupttier, der Fuchs das seltene.
+// Abgang. Der Hase ist das Haupttier, der Fuchs das seltene. Seit 05.10.
+// alle Zeiten um ein Fuenftel kuerzer (auf Ansage: „ein Ticken haeufiger,
+// aber nicht viel“) – statt drei Hasen je Viertelstunde eher vier.
 const TAKT = {
-  hase: { erst: [90, 180], dann: [210, 420] },
-  huehner: { erst: [60, 120], dann: [300, 480] },
-  fuchs: { erst: [360, 600], dann: [600, 900] },
-  eichhoernchen: { erst: [90, 180], dann: [210, 420] },
-  dohle: { erst: [70, 150], dann: [240, 480] },
-  steinbock: { erst: [360, 600], dann: [600, 900] },
+  hase: { erst: [72, 144], dann: [168, 336] },
+  huehner: { erst: [48, 96], dann: [240, 384] },
+  fuchs: { erst: [288, 480], dann: [480, 720] },
+  eichhoernchen: { erst: [72, 144], dann: [168, 336] },
+  dohle: { erst: [56, 120], dann: [192, 384] },
+  steinbock: { erst: [288, 480], dann: [480, 720] },
 }
 const FAMILIE = 0.25        // Anteil der Hasen, die mit Jungen kommen
 const NAH = 70              // m: so nah muss man einem festen Ort sein
@@ -64,6 +66,9 @@ export class Wildnis {
   }
 
   update(dt, skier, darf) {
+    // Ueber eine Tierspur gefahren: weg ist sie (werkzeug.js). Im Flug nicht –
+    // wer ueber die Spur springt, laesst sie liegen.
+    if (!skier.airborne && skier.speed > 0.5) spurenVerwischen(this.ctx.trail, skier.position.x, skier.position.z, 0.5)
     if (this.tier) {
       const lebt = this.tier.update(dt, skier)
       if (this.tier.gesehen && !this._gezaehlt) {

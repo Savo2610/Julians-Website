@@ -71,6 +71,11 @@ export class Schneebrett {
     this._warAktiv = false
     this._wurf = false
     this.onErwischt = null
+    // main.js: Abgang meldet sich bei der Pistenraupe, und solange sie noch
+    // kommt (halten), bleibt alles liegen, statt nach LIEGT zu verschwinden.
+    this.onAbgang = null
+    this.halten = () => false
+    this._bahnen = []
     this._erwischt = false
     this.abgegangen = 0
   }
@@ -99,8 +104,9 @@ export class Schneebrett {
     if (this.zeit > 0.35 && !bewegt) {
       this.laeuft = false
       this.liegt += dt
-      // Erst weg, wenn die Zeit um ist und niemand hinschaut.
-      if (this.liegt > LIEGT && !this._imBild()) this._aufraeumen()
+      // Erst weg, wenn die Zeit um ist, niemand hinschaut und keine
+      // Pistenraupe mehr kommt, die es wegraeumen soll.
+      if (this.liegt > LIEGT && !this.halten() && !this._imBild()) this._aufraeumen()
     }
   }
 
@@ -119,6 +125,7 @@ export class Schneebrett {
     this.laeuft = true
     this._erwischt = false
     this.abgegangen++
+    this.onAbgang?.()
 
     // Die Anrisskante, quer zum Hang: ein Stueck oberhalb der obersten
     // Scholle, als gerade Linie in einem einzigen Rahmen (der Bahn bei s).
@@ -135,6 +142,9 @@ export class Schneebrett {
       kanten.at(-1).push([x, terrainHeight(x, z), z])
     }
     const kante = kanten.flat()
+    // Fuer _imBild: hat die Raupe alle Brocken geraeumt, soll die Kante am
+    // Hang nicht vor den Augen verschwinden.
+    this._kanteMitte = kante.length ? new THREE.Vector3(...kante[kante.length >> 1]) : null
     this.kante = new THREE.Group()
     for (const k of kanten) if (k.length > 1) this.kante.add(anriss(k, { x: b0.nx, z: b0.nz }))
     this.scene.add(this.kante)
@@ -214,7 +224,9 @@ export class Schneebrett {
         st.weg = 0
         this._stempel--
         // Schwach: mit 0,55 lag nach drei Lawinen ein Leopardenmuster am Hang.
-        this.trail.stampDecal(bahnTextur(), p.x, p.z, 2, 2, Math.random() * 6.3, 0.3, 0.6)
+        const dreh = Math.random() * 6.3
+        this.trail.stampDecal(bahnTextur(), p.x, p.z, 2, 2, dreh, 0.3, 0.6)
+        this._bahnen.push({ x: p.x, z: p.z, dreh })
       }
       if (!this._erwischt && st.v > 2.5 && Math.hypot(p.x - skier.position.x, p.z - skier.position.z) < GEFAHR + st.r) {
         this._erwischt = true
@@ -285,6 +297,29 @@ export class Schneebrett {
     }
   }
 
+  // Die Pistenraupe raeumt: Brocken und Schollen im Umkreis verschwinden in
+  // einer Staubwolke, die Bahn darunter wird mitsamt ihrer Faerbung glatt
+  // (glaetten nimmt sonst nur das Relief; stampDecal faerbt Blau).
+  raeumen(x, z, radius) {
+    if (this.laeuft) return
+    for (const st of this.stuecke) {
+      if (!st.mesh) continue
+      const p = st.mesh.position
+      if (Math.hypot(p.x - x, p.z - z) > radius) continue
+      this._stauben(p.x, p.y, p.z, 0, 0, 3, 1.6)
+      this.scene.remove(st.mesh)
+      st.mesh.geometry.dispose()
+      st.mesh = null
+    }
+    for (let i = this._bahnen.length - 1; i >= 0; i--) {
+      const b = this._bahnen[i]
+      if (Math.hypot(b.x - x, b.z - z) > radius) continue
+      // stampDecal zieht 2 × 2 auf 1 × 1 auf; 1,6 wegen des weichen Rands.
+      this.trail?.glaetten(b.x, b.z, 1.6, 1.6, b.dreh, true)
+      this._bahnen.splice(i, 1)
+    }
+  }
+
   // Steht hier etwas mit Kollision – Fels, Zaunpfosten, Baum, Kreuz?
   // Die volle Liste, nicht world.nearby(): das liefert nur die eigene
   // Rasterzelle, und ein Fels knapp hinter der Zellgrenze fehlte dann.
@@ -295,6 +330,10 @@ export class Schneebrett {
   }
 
   _imBild() {
+    if (this.kante && this._kanteMitte) {
+      v.copy(this._kanteMitte).project(this.camera)
+      if (v.z < 1 && Math.abs(v.x) < 1.2 && Math.abs(v.y) < 1.2) return true
+    }
     for (const st of this.stuecke) {
       if (!st.mesh) continue
       v.copy(st.mesh.position).project(this.camera)
@@ -310,6 +349,7 @@ export class Schneebrett {
       st.mesh.geometry.dispose()
     }
     this.stuecke = []
+    this._bahnen = []
     if (this.kante) {
       this.scene.remove(this.kante)
       for (const m of this.kante.children) {

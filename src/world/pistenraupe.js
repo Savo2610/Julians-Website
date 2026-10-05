@@ -256,6 +256,9 @@ export class Pistenraupe {
     // Kommt sie heute? Nachts in jeder Sitzung, sonst nie.
     this.heute = erzwungen || nachtschicht()
     this.uhr = erzwungen ? 2 : zufall(60, 17 * 60)
+    this._nochmal = null
+    // Wird von main.js gesetzt: raeumt liegengebliebene Lawinenbrocken weg.
+    this.raeumen = null
     this.zustand = 'parkt'   // tor_auf, faehrt, tor_zu
     this.fertig = false
     this.s = 0
@@ -282,6 +285,24 @@ export class Pistenraupe {
     const t = Math.min(1, (s - g.s0) / g.l)
     return { x: g.a.x + (g.b.x - g.a.x) * t, z: g.a.z + (g.b.z - g.a.z) * t, gier: g.gier }
   }
+
+  // Nach einem Schneebrett kommt sie auch am Tag (05.10., auf Ansage):
+  // irgendwann bis 17 Minuten danach. War sie ohnehin schon bestellt und
+  // kaeme frueher, bleibt es dabei; ist sie gerade unterwegs, faehrt sie
+  // nach der Rueckkehr ein zweites Mal.
+  bestellen() {
+    const uhr = zufall(30, 17 * 60)
+    if (this.zustand !== 'parkt') {
+      this._nochmal = Math.min(this._nochmal ?? Infinity, uhr)
+      return
+    }
+    this.uhr = this.heute && !this.fertig ? Math.min(this.uhr, uhr) : uhr
+    this.heute = true
+    this.fertig = false
+  }
+
+  // Kommt sie noch? Solange laesst das Schneebrett seine Brocken liegen.
+  get kommtNoch() { return (this.heute && !this.fertig) || this._nochmal !== null }
 
   // Aus der Konsole: __ski.raupe.losfahren() – auch am Tag.
   losfahren() {
@@ -310,6 +331,12 @@ export class Pistenraupe {
         else {
           this.zustand = 'parkt'
           this.fertig = true
+          // Waehrend der Runde ging noch eine Lawine ab: gleich noch einmal.
+          if (this._nochmal !== null) {
+            this.fertig = false
+            this.uhr = this._nochmal
+            this._nochmal = null
+          }
         }
       }
       return
@@ -378,6 +405,9 @@ export class Pistenraupe {
     // Das Relief der Tierspuren nimmt die Fraese mit, ihre Farbe nicht
     // (glaetten laesst Blau fuer die Schrift stehen) – die holt das hier.
     spurenVerwischen(this.trail, x, z, 3.2)
+    // Lawinenbrocken verschwinden unter ihr, nicht erst hinter der Fraese:
+    // sonst schoebe sie sich sichtbar durch sie hindurch.
+    this.raeumen?.(g.x, g.z, 3.8)
   }
 
   _leuchte() {

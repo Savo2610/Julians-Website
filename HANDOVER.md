@@ -1513,7 +1513,16 @@ nach Rückfrage.
 `world/pistenraupe.js`, Schuppen in `props/schuppen.js`. Fährt nur nach der
 **echten Uhr** des Besuchers zwischen 22 und 6 Uhr, dann in jeder Sitzung
 einmal, irgendwann 1–17 min nach dem Ankommen (seit 05.10.; vorher jede
-zweite Sitzung nach 60–300 s) – wer nachts nur kurz schaut, sieht sie selten. Das Tal bleibt hell; die Nachtschicht erkennt man an
+zweite Sitzung nach 60–300 s) – wer nachts nur kurz schaut, sieht sie selten.
+**Nach einem Schneebrett** kommt sie auch am Tag, 30 s bis 17 min nach dem
+Abgang (`bestellen()`; ist sie gerade unterwegs, fährt sie danach noch
+einmal), und räumt die Brocken weg: was im Umkreis von 3,8 m um sie liegt,
+verschwindet in einer Staubwolke, die Lawinenbahn darunter wird mitsamt
+Färbung glatt (`Schneebrett.raeumen`). Bis sie kommt, bleibt die Lawine
+liegen (`halten` → `kommtNoch`) statt nach 45 s zu verschwinden; was
+neben ihrer Runde liegt, geht danach wie vorher, wenn niemand hinschaut –
+auch die Anrisskante, die jetzt mit in `_imBild` zählt. Gemessen: von 29
+Brocken räumt sie 27, die zwei abseits gehen danach. Das Tal bleibt hell; die Nachtschicht erkennt man an
 Scheinwerfern, einem weichen Lichtkegel (eigener Shader, nach vorn und zu
 den Rändern auslaufend – mit fester Deckkraft war er ein harter weißer
 Fächer) und der orangen Rundumleuchte, beide nur, solange sie ausgerückt ist.

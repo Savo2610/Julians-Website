@@ -74,7 +74,8 @@ Das Wichtigste in Kürze:
   Bildes. Herbeirufen: `__ski.tiere.rufen('hase')`.
 
 - **Pistenraupe** (`src/world/pistenraupe.js`, HANDOVER 4a⁹): nur nach
-  echter Uhr zwischen 22 und 6 Uhr, dann einmal 1–17 min nach dem Ankommen. Das Tal bleibt hell.
+  echter Uhr zwischen 22 und 6 Uhr, dann einmal 1–17 min nach dem Ankommen,
+  und nach jedem Schneebrett auch am Tag (bis 17 min danach) zum Aufräumen. Das Tal bleibt hell.
   Wohnt im Schuppen am Ende der Nordabfahrt (`SCHUPPEN` im Höhenfeld) und
   fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
 

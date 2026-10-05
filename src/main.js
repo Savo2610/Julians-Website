@@ -204,6 +204,11 @@ schneebrett.onErwischt = () => skier.verschuetten()
 // des Besuchers, einmal 1–17 min nach dem Ankommen (world/pistenraupe.js). ?raupe ruft sie.
 // Sie wohnt im Schuppen am Ende der Nordabfahrt (props/schuppen.js).
 const raupe = new Pistenraupe({ scene, camera, trail, world, schuppen: createSchuppen(world) })
+// Nach einem Schneebrett kommt sie auch am Tag, bis 17 min danach, und
+// raeumt die Brocken weg; bis dahin bleiben sie liegen.
+schneebrett.onAbgang = () => raupe.bestellen()
+schneebrett.halten = () => raupe.kommtNoch
+raupe.raeumen = (x, z, r) => schneebrett.raeumen(x, z, r)
 
 const snowfall = createSnowfall()
 scene.add(snowfall)

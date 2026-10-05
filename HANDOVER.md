@@ -595,6 +595,17 @@ Komoot-Kachel der Übersicht hat keine Station, nicht im Pistenpass.
   - Freigeben: `... --command "UPDATE gipfelbuch SET frei = 1 WHERE id = 7"`,
     löschen mit `DELETE FROM gipfelbuch WHERE id = 7`. Die Liste ist
     30 s gecacht.
+  - **Freigeben im Buch** (05.10.): ein Klick auf „Julian“ im Fuß des
+    Gipfelbuchs fragt nach einem Einmalcode (TOTP, 30 s, 6 Ziffern,
+    `worker/totp.js`). Danach stehen die wartenden Einträge oben im Buch mit
+    *Freigeben* und *Löschen*; die Sitzung ist ein HttpOnly-Cookie, 30 Tage,
+    signiert mit `GIPFELBUCH_SITZUNG`. Geheimnisse als *Secret* im
+    Cloudflare-Dashboard (lokal in `.dev.vars`): `GIPFELBUCH_OTP` (Base32,
+    dasselbe wie in der Authenticator-App) und `GIPFELBUCH_SITZUNG`.
+    Neues Sitzungsgeheimnis meldet alle Geräte ab. Jeder Code gilt einmal;
+    nach 20 Fehlversuchen in 24 h, über alle Adressen, ist zu – dann bleibt
+    wrangler. Die Versuche stehen in `gipfelbuch_anmeldung`, die der Worker
+    selbst anlegt (Workers Builds spielt keine Migrationen ein).
 - **Buckel über dem Fels am Slalomstart** (−44, −74,5): `ridgeAlong` nahm die
   Höhe vom nächsten Abschnitt, und innen im Knick der Schulter sprang sie auf
   der Winkelhalbierenden um 0,73 m auf 25 cm – eine Kante, die jeden in die

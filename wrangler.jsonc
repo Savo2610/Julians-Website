@@ -29,7 +29,8 @@
       "migrations_dir": "worker/migrations"
     }
   ],
-  // Marken-Schluessel: npx wrangler secret put SLALOM_GEHEIM (lokal: .dev.vars)
+  // Marken-Schluessel: npx wrangler secret put SLALOM_GEHEIM (lokal: .dev.vars).
+  // Gipfelbuch: GIPFELBUCH_OTP (TOTP, Base32) und GIPFELBUCH_SITZUNG, ebenso.
   "observability": { "enabled": true },
   "routes": [
     { "pattern": "veerka.mp", "custom_domain": true },

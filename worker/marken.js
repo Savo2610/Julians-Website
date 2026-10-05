@@ -15,25 +15,28 @@ const b64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const unb64 = (text) => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0))
 
-async function schluessel(env) {
-  if (!env.SLALOM_GEHEIM) throw new Error('SLALOM_GEHEIM fehlt')
-  return crypto.subtle.importKey('raw', new TextEncoder().encode(env.SLALOM_GEHEIM),
+// Die Bestenlisten signieren mit SLALOM_GEHEIM, die Sitzung im Gipfelbuch
+// mit GIPFELBUCH_SITZUNG: wer eine Startmarke faelschen kann, soll damit
+// nicht auch Eintraege freigeben koennen.
+async function schluessel(env, name) {
+  if (!env[name]) throw new Error(`${name} fehlt`)
+  return crypto.subtle.importKey('raw', new TextEncoder().encode(env[name]),
     { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify'])
 }
 
-export async function signieren(env, inhalt) {
+export async function signieren(env, inhalt, name = 'SLALOM_GEHEIM') {
   const roh = new TextEncoder().encode(JSON.stringify(inhalt))
-  const sig = await crypto.subtle.sign('HMAC', await schluessel(env), roh)
+  const sig = await crypto.subtle.sign('HMAC', await schluessel(env, name), roh)
   return `${b64(roh)}.${b64(sig)}`
 }
 
-export async function pruefen(env, marke) {
+export async function pruefen(env, marke, name = 'SLALOM_GEHEIM') {
   if (typeof marke !== 'string' || marke.length > 400) return null
   const [teil, sig] = marke.split('.')
   if (!teil || !sig) return null
   try {
     const roh = unb64(teil)
-    const ok = await crypto.subtle.verify('HMAC', await schluessel(env), unb64(sig), roh)
+    const ok = await crypto.subtle.verify('HMAC', await schluessel(env, name), unb64(sig), roh)
     return ok ? JSON.parse(new TextDecoder().decode(roh)) : null
   } catch {
     return null

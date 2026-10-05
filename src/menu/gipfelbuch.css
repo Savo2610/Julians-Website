@@ -59,3 +59,37 @@
 }
 .gb-dialog .gb-form .dialog-los { margin-top: 0.9rem; }
 .gb-dialog .gb-fuss { margin-top: 0.8rem; }
+
+/* Julians Anmeldung und das Lesen (src/menu/gipfelbuch.js). „Julian“ im
+ * Fuss sieht aus wie der Satz drumherum: wer ihn nicht sucht, soll ihn
+ * nicht finden muessen. */
+.gb-dialog .gb-julian {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.gb-dialog .gb-julian:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gb-dialog .gb-ab { text-decoration: underline; }
+.gb-dialog .gb-anmelden { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.8rem; }
+.gb-dialog .gb-anmelden[hidden] { display: none; }
+.gb-dialog .gb-anmelden .kz-feld { flex: 1; min-width: 0; letter-spacing: 0.2em; font-variant-numeric: tabular-nums; }
+.gb-dialog .gb-angemeldet { margin-top: 0.8rem; }
+
+.gb-dialog .gb-knopf {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid rgba(90, 70, 50, 0.3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #2c2a26;
+  cursor: pointer;
+}
+.gb-dialog .gb-knopf:disabled { opacity: 0.5; cursor: default; }
+.gb-dialog .gb-pruefen { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.4rem; }
+.gb-dialog .gb-freigeben { border-color: #2f6bd8; color: #2f6bd8; }
+.gb-dialog .gb-loeschen { border-color: #c8402e; color: #c8402e; }
+.gb-dialog .gb-eintrag:has(.gb-pruefen) { opacity: 1; }

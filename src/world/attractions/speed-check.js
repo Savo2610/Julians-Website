@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { assemble, vertexColorMaterial } from '../../core/geometry.js'
-import { CAMERA } from '../../config.js'
 import { terrainHeight } from '../heightfield.js'
+import { createAnzeigetafel, TAFEL_SCHRIFT } from '../props/anzeigetafel.js'
 
 // Die Radarfalle auf der freien Abfahrt: zwei Pfosten links und rechts der
 // Bahn, auf dem rechten eine kleine Kamera, auf dem linken ihr Reflektor –
@@ -19,17 +19,20 @@ import { terrainHeight } from '../heightfield.js'
 const POST = 0x5d666f
 const BODY = 0x3a424c
 const LENS = 0x8fd3ff
-const BOARD = 0x1b222b
-const FRAME = 0xd8dee6
 
-function displayTexture() {
-  const canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 256
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.colorSpace = THREE.SRGBColorSpace
-  tex.anisotropy = 4
-  return { canvas, tex }
+// Die Bestmarke ueberlebt das Neuladen wie die Bestweite am Klammsprung:
+// ohne sie sagt die Einblendung nur, was man gerade war.
+const STORE = 'skiportfolio.speedcheck'
+function ladeBest() {
+  try {
+    const n = Number(JSON.parse(localStorage.getItem(STORE))?.best)
+    return Number.isFinite(n) ? n : 0
+  } catch {
+    return 0
+  }
+}
+function speichereBest(best) {
+  try { localStorage.setItem(STORE, JSON.stringify({ best })) } catch { /* egal */ }
 }
 
 export class SpeedCheck {
@@ -46,11 +49,12 @@ export class SpeedCheck {
     this.label = label
 
     this.last = null
-    this.best = 0
+    this.best = ladeBest()
     this._prevSide = null
     this._hold = 0
 
     this._build()
+    this._buildHud()
     this._draw()
   }
 
@@ -117,41 +121,31 @@ export class SpeedCheck {
 
   // Das Display steht ein Stueck unterhalb der Linie am Rand: man faehrt
   // durch, schaut nach unten und sieht die Zahl schon stehen.
-  buildDisplay(dx, dz) {
-    const px = dx
-    const pz = dz
-    const parts = []
-    for (const sx of [-1, 1]) {
-      parts.push({
-        geo: new THREE.CylinderGeometry(0.08, 0.1, 1.9, 8),
-        color: POST,
-        position: [sx * 1.05, 0.95, 0],
-      })
-    }
-    parts.push({ geo: new THREE.BoxGeometry(2.6, 1.32, 0.14), color: FRAME, position: [0, 2.0, 0], rotation: [-0.42, 0, 0] })
-    parts.push({ geo: new THREE.BoxGeometry(2.38, 1.12, 0.06), color: BOARD, position: [0, 2.02, 0.09], rotation: [-0.42, 0, 0] })
-    const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.6 }))
-    mesh.castShadow = true
-
-    const { canvas, tex } = displayTexture()
+  buildDisplay(x, z) {
+    const { canvas, tex, group } = createAnzeigetafel(this.world, x, z)
     this.canvas = canvas
     this.tex = tex
-    const plate = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.3, 1.06),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
-    )
-    plate.position.set(0, 2.03, 0.125)
-    plate.rotation.x = -0.42
-
-    const group = new THREE.Group()
-    group.add(mesh, plate)
-    group.position.set(px, terrainHeight(px, pz), pz)
-    // Displays zeigen in dieser Welt immer zur Kamera – sonst liest man sie
-    // von hinten.
-    group.rotation.y = CAMERA.azimuth
-    this.world.scene.add(group)
-    this.world.addCollider(px, pz, 0.6)
     return group
+  }
+
+  _buildHud() {
+    // Dieselbe Frostzeile wie Klammsprung und Zeitnahme: man ist nie an
+    // zweien zugleich.
+    const el = document.createElement('div')
+    el.className = 'frost race-hud'
+    el.innerHTML = '<div class="race-time"></div><div class="race-note"></div>'
+    document.body.appendChild(el)
+    this.hud = el
+    this.wertEl = el.querySelector('.race-time')
+    this.noteEl = el.querySelector('.race-note')
+  }
+
+  _zeige(text, note, tone) {
+    this.wertEl.textContent = text
+    this.noteEl.textContent = note
+    this.hud.dataset.tone = tone || ''
+    this.hud.classList.add('visible')
+    this._hold = 3.2
   }
 
   _draw() {
@@ -161,27 +155,31 @@ export class SpeedCheck {
     ctx.textAlign = 'center'
 
     ctx.fillStyle = '#5c6b7d'
-    ctx.font = '700 34px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+    ctx.font = `700 34px ${TAFEL_SCHRIFT}`
     ctx.fillText(this.label, 256, 46)
 
     const value = this.last === null ? '--' : String(Math.round(this.last))
     ctx.fillStyle = this.last !== null && this.last >= this.best ? '#8ef0b4' : '#f2f7ff'
-    ctx.font = '800 128px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+    ctx.font = `800 128px ${TAFEL_SCHRIFT}`
     ctx.fillText(value, 214, 168)
 
     ctx.fillStyle = '#7f8fa2'
-    ctx.font = '700 40px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+    ctx.font = `700 40px ${TAFEL_SCHRIFT}`
     ctx.fillText('km/h', 388, 168)
 
     if (this.best > 0) {
       ctx.fillStyle = '#6d7c8e'
-      ctx.font = '600 30px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+      ctx.font = `600 30px ${TAFEL_SCHRIFT}`
       ctx.fillText(`BESTE ${Math.round(this.best)}`, 256, 220)
     }
     this.tex.needsUpdate = true
   }
 
   update(dt, skier) {
+    if (this._hold > 0) {
+      this._hold -= dt
+      if (this._hold <= 0) this.hud.classList.remove('visible')
+    }
     if (this.flash.intensity > 0) {
       this.flash.intensity = Math.max(0, this.flash.intensity - dt * 24)
     }
@@ -197,9 +195,20 @@ export class SpeedCheck {
     if (this._prevSide !== null && side !== this._prevSide && side > 0 && across < this.width / 2 + 1) {
       // Einheiten sind Meter, also ist Tempo mal 3,6 Kilometer je Stunde.
       const kmh = skier.speed * 3.6
+      const vorher = this.best
       this.last = kmh
-      if (kmh > this.best) this.best = kmh
+      // Gerundet verglichen, wie es auf der Tafel steht: 61,4 nach 61,2 ist
+      // dort zweimal 61 und keine neue Bestmarke.
+      const neu = Math.round(kmh) > Math.round(vorher)
+      if (kmh > this.best) {
+        this.best = kmh
+        speichereBest(kmh)
+      }
       this._draw()
+      const zahl = `${Math.round(kmh)} km/h`
+      if (neu && vorher > 0) this._zeige(zahl, 'Neue Bestmarke', 'good')
+      else if (neu) this._zeige(zahl, '', 'good')
+      else this._zeige(zahl, `Beste ${Math.round(this.best)} km/h`, '')
       this.flash.intensity = 7
     }
     this._prevSide = side

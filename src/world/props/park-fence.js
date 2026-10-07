@@ -14,12 +14,20 @@ import { makeRng } from '../../core/rng.js'
 // legen sich in den Schnee und bauen sich nach 10 s wieder auf, sobald der
 // Fahrer mindestens 12 m weg ist.
 //
+// Mit `bande` steht statt der Pfostenliste ein fertiger Satz Pfosten
+// ({ x, z, h, fremd }) und gebaut wird im Stil der Slalombande: Kantholz,
+// zwei breite Bretter. So bricht auch der Zaun zwischen Slalom und
+// Nordabfahrt, durch den man vorher ohne Kollision hindurchfuhr. Ein
+// `fremd`er Pfosten gehoert einem anderen Bauteil (dem Starttor) – dort
+// haengen nur die Bretter.
+//
 // Pfosten und Latten sind je eine InstancedMesh: jedes Teil ist nur eine
 // Matrix, der ganze Zaun kostet zwei Draw Calls statt dreissig.
 
 const WOOD = 0x6f5038
 const WOOD_LIGHT = 0x8a6543
 const SNOW = 0xf7fbff
+const BANDE = 0x8a6a44     // wie props/sled.js
 
 const BREAK_SPEED = 5       // wie an der Seebank: bremsend schiebt man sich vorbei
 const BREAK_REACH = 2.6
@@ -30,13 +38,13 @@ const REBUILD = 1.3
 const UP = new THREE.Vector3(0, 1, 0)
 const RIGHT = new THREE.Vector3(1, 0, 0)
 
-export function createBreakableFence(world, points, { spacing = 2.3, height = 1.1, seed = 5 } = {}) {
+export function createBreakableFence(world, points, { spacing = 2.3, height = 1.1, seed = 5, bande = false } = {}) {
   const rng = makeRng(seed)
 
   // Pfostenorte wie in createFence: gleichmaessig den Polygonzug entlang.
-  const spots = []
+  const spots = bande ? points.map((p) => ({ ...p })) : []
   let carry = 0
-  for (let i = 0; i < points.length - 1; i++) {
+  for (let i = 0; !bande && i < points.length - 1; i++) {
     const a = points[i]
     const b = points[i + 1]
     const dx = b.x - a.x
@@ -53,11 +61,17 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
 
   // Einheitsformen, die je Teil skaliert werden. Die Schneehaube sitzt fest
   // auf dem Pfosten und fliegt mit.
-  const postGeo = assemble([
+  const postGeo = assemble(bande ? [
+    { geo: new THREE.BoxGeometry(0.13, 1, 0.13), color: BANDE },
+    { geo: new THREE.BoxGeometry(0.17, 0.065, 0.17), color: SNOW, position: [0, 0.47, 0] },
+  ] : [
     { geo: new THREE.CylinderGeometry(0.06, 0.08, 1, 6), color: WOOD },
     { geo: new THREE.CylinderGeometry(0.075, 0.06, 0.065, 6), color: SNOW, position: [0, 0.5, 0] },
   ])
-  const railGeo = assemble([{ geo: new THREE.BoxGeometry(1, 0.075, 0.05), color: WOOD_LIGHT }])
+  const railGeo = assemble([bande
+    ? { geo: new THREE.BoxGeometry(1, 0.16, 0.05), color: BANDE }
+    : { geo: new THREE.BoxGeometry(1, 0.075, 0.05), color: WOOD_LIGHT }])
+  const latten = bande ? [0.78, 0.42] : [0.72, 0.4]
   const material = vertexColorMaterial({ roughness: 0.9 })
 
   const pieces = []
@@ -73,9 +87,10 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
 
   spots.forEach((p, i) => {
     const ground = terrainHeight(p.x, p.z)
-    const h = height * (0.88 + rng() * 0.24)
+    const h = bande ? p.h : height * (0.88 + rng() * 0.24)
     p.h = h
     p.y = ground
+    if (p.fremd) return
     const next = spots[i + 1]
     const angle = next ? Math.atan2(next.x - p.x, next.z - p.z) : spots[i - 1] ? Math.atan2(p.x - spots[i - 1].x, p.z - spots[i - 1].z) : 0
     const q = new THREE.Quaternion().setFromEuler(_e.set((rng() - 0.5) * 0.16, angle, (rng() - 0.5) * 0.12))
@@ -90,7 +105,7 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
     const pitch = Math.atan2(next.y - p.y, span)
     const q = new THREE.Quaternion().setFromEuler(_e.set(0, Math.atan2(dx, dz) + Math.PI / 2, pitch, 'XYZ'))
     const h = (p.h + next.h) / 2
-    for (const rel of [0.72, 0.4]) {
+    for (const rel of latten) {
       piece('rail', i, new THREE.Vector3((p.x + next.x) / 2, (p.y + next.y) / 2 + h * rel - 0.12, (p.z + next.z) / 2), q,
         new THREE.Vector3(span + 0.1, 1, 1), 0.04)
     }
@@ -117,7 +132,7 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
   }
   write()
 
-  // Kollision: jeder Pfosten und die Mitte jedes Lattenfelds. Nur Pfosten
+  // Kollision: jeder Pfosten und das Innere jedes Lattenfelds. Nur Pfosten
   // liessen zwischen sich 0,4 m Luft, durch die der Fahrer schluepfte.
   let skier = null
   const colliders = []
@@ -126,7 +141,9 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
       // true = zerbrochen: der Fahrer wird dann nicht zurueckgeschoben,
       // sondern faehrt hindurch (siehe World.resolve).
       onHit: () => {
+        // Auch Tiere laufen durch resolve(); bricht nur, wo der Fahrer ist.
         if (c.off || !skier || skier.speed < BREAK_SPEED) return false
+        if (Math.hypot(skier.position.x - x, skier.position.z - z) > 1.5) return false
         smash(x, z, skier)
         return true
       },
@@ -135,9 +152,13 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
     colliders.push(c)
   }
   spots.forEach((p, i) => {
-    addHit(p.x, p.z, i)
+    if (!p.fremd) addHit(p.x, p.z, i)
     const next = spots[i + 1]
-    if (next) addHit((p.x + next.x) / 2, (p.z + next.z) / 2, i)
+    if (!next) return
+    // Alle 1,2 m ein Kreis: am Funpark ist das die Feldmitte, an der Bande
+    // (3,6 m Feld) sind es zwei.
+    const n = Math.max(2, Math.ceil(Math.hypot(next.x - p.x, next.z - p.z) / 1.2))
+    for (let k = 1; k < n; k++) addHit(p.x + (next.x - p.x) * k / n, p.z + (next.z - p.z) * k / n, i)
   })
 
   function smash(x, z, s) {

@@ -1,7 +1,5 @@
-import * as THREE from 'three'
-import { assemble, vertexColorMaterial } from '../../core/geometry.js'
-import { CAMERA } from '../../config.js'
-import { terrainHeight, schanzeLage, klammFlug, klammAt, SCHANZE } from '../heightfield.js'
+import { schanzeLage, klammFlug, klammAt, SCHANZE } from '../heightfield.js'
+import { createAnzeigetafel, TAFEL_SCHRIFT } from '../props/anzeigetafel.js'
 
 // Die Weitenmessung an der Klammschanze.
 //
@@ -16,9 +14,6 @@ import { terrainHeight, schanzeLage, klammFlug, klammAt, SCHANZE } from '../heig
 // Worker wie beim Slalom.
 
 const STORE = 'skiportfolio.klammsprung'
-const POST = 0x5d666f
-const BOARD = 0x1b222b
-const FRAME = 0xd8dee6
 
 function ladeBest() {
   try {
@@ -82,36 +77,9 @@ export class KlammSprung {
     const v = -(SCHANZE.halb + 5)
     const x = SCHANZE.x + SCHANZE.dx * u - SCHANZE.dz * v
     const z = SCHANZE.z + SCHANZE.dz * u + SCHANZE.dx * v
-    const parts = []
-    for (const sx of [-1, 1]) {
-      parts.push({ geo: new THREE.CylinderGeometry(0.08, 0.1, 1.9, 8), color: POST, position: [sx * 1.05, 0.95, 0] })
-    }
-    parts.push({ geo: new THREE.BoxGeometry(2.6, 1.32, 0.14), color: FRAME, position: [0, 2.0, 0], rotation: [-0.42, 0, 0] })
-    parts.push({ geo: new THREE.BoxGeometry(2.38, 1.12, 0.06), color: BOARD, position: [0, 2.02, 0.09], rotation: [-0.42, 0, 0] })
-    const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.6 }))
-    mesh.castShadow = true
-
-    const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 256
-    const tex = new THREE.CanvasTexture(canvas)
-    tex.colorSpace = THREE.SRGBColorSpace
-    tex.anisotropy = 4
+    const { canvas, tex } = createAnzeigetafel(this.world, x, z)
     this.canvas = canvas
     this.tex = tex
-    const plate = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.3, 1.06),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
-    )
-    plate.position.set(0, 2.03, 0.125)
-    plate.rotation.x = -0.42
-
-    const group = new THREE.Group()
-    group.add(mesh, plate)
-    group.position.set(x, terrainHeight(x, z), z)
-    group.rotation.y = CAMERA.azimuth
-    this.world.scene.add(group)
-    this.world.addCollider(x, z, 0.6)
   }
 
   _draw() {
@@ -119,17 +87,17 @@ export class KlammSprung {
     ctx.clearRect(0, 0, 512, 256)
     ctx.textAlign = 'center'
     ctx.fillStyle = '#5c6b7d'
-    ctx.font = '700 34px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+    ctx.font = `700 34px ${TAFEL_SCHRIFT}`
     ctx.fillText('KLAMMSPRUNG', 256, 46)
     const w = this.letzte
     ctx.fillStyle = w !== null && w >= this.best ? '#8ef0b4' : '#f2f7ff'
-    ctx.font = '800 112px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+    ctx.font = `800 112px ${TAFEL_SCHRIFT}`
     ctx.fillText(w === null ? '--' : w.toFixed(1).replace('.', ','), 220, 164)
     ctx.fillStyle = '#7f8fa2'
-    ctx.font = '700 44px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+    ctx.font = `700 44px ${TAFEL_SCHRIFT}`
     ctx.fillText('m', 400, 164)
     ctx.fillStyle = '#6d7c8e'
-    ctx.font = `600 ${this.best > 0 ? 30 : 25}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`
+    ctx.font = `600 ${this.best > 0 ? 30 : 25}px ${TAFEL_SCHRIFT}`
     // Solange noch niemand gesprungen ist, steht hier, worauf es ankommt.
     if (this.best > 0) ctx.fillText(`BESTE ${this.best.toFixed(1).replace('.', ',')}`, 256, 222)
     else ctx.fillText('AN DER ROTEN KANTE ABSPRINGEN', 256, 222)

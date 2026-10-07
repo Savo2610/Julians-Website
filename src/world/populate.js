@@ -907,7 +907,12 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Pfosten). Vorher stand ihr erster Pfosten mitten auf dem Gipfelplatz,
   // und die Pistenraupe fuhr durch ihn hindurch; jetzt bleibt sie 5 m davor.
   const [ax, az] = torPfostenRechts
-  world.scene.add(createSledFence(SLED_LANE, { anschluss: { side: -1, x: ax, z: az, bis: 1 } }))
+  const sledFence = createSledFence(SLED_LANE, { anschluss: { side: -1, x: ax, z: az, bis: 1 } })
+  world.scene.add(sledFence)
+  // Das Stueck vom Starttor der Nordabfahrt bis zur ersten Luecke trennt
+  // Slalom und Nordabfahrt – und bricht wie der Funparkzaun.
+  const slalomZaun = createBreakableFence(world, sledFence.userData.brechbar, { bande: true, seed: 95 })
+  animatedProps.push((t, dt) => slalomZaun.update(dt, skierRef.current))
 
   {
     const lane = PARK_LANE

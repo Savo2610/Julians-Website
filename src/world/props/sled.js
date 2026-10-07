@@ -20,8 +20,14 @@ const SNOW = 0xf4f9ff
 // `anschluss` ({ side, x, z, bis }) laesst eine Seite an einem fremden
 // Pfosten beginnen: von dort laeuft sie gerade bis zu ihrem Pfosten Nummer
 // `bis`, die davor entfallen. Am Anschluss selbst nur die Bretter.
+//
+// Das erste zusammenhaengende Stueck dieser Seite – vom Anschluss bis zur
+// ersten Luecke – ist der Zaun zwischen Slalom und Nordabfahrt. Es wird
+// nicht mitverschmolzen, sondern als Pfostenliste in `mesh.userData.brechbar`
+// zurueckgegeben und zerbrechlich aufgebaut (props/park-fence.js).
 export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.92, anschluss = null } = {}) {
   const parts = []
+  let brechbar = null
   const segs = lane.segments
   const half = lane.width * 0.5 - inset
 
@@ -93,6 +99,12 @@ export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.9
         davor.push({ x, y: terrainHeight(x, z), z, yaw, ok: true, tall: height, dark: k % 4 === 0, fremd: k === 0 })
       }
       posts.splice(0, f, ...davor)
+      brechbar = []
+      for (const q of posts) {
+        if (!q.ok) break
+        brechbar.push({ x: q.x, z: q.z, h: q.tall, dark: q.dark, fremd: q.fremd })
+        q.ok = false
+      }
     }
 
     const lean = side * 0.09
@@ -136,5 +148,6 @@ export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.9
   const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.88 }))
   mesh.castShadow = true
   mesh.receiveShadow = true
+  mesh.userData.brechbar = brechbar
   return mesh
 }

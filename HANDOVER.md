@@ -688,6 +688,16 @@ bricht ab 5 m/s wie die Seebank, aber nur im Umkreis von 2,6 m um den
 Aufprall; Pfosten und Latten sind zwei InstancedMeshes, gebaut wird nach
 10 s, wenn der Fahrer ≥ 12 m weg ist. `onHit` darf `true` zurückgeben – dann
 schiebt `World.resolve` nicht zurück, man fährt hindurch.
+Seit 07.10. bricht genauso der **Zaun zwischen Slalom und Nordabfahrt**
+(Bandenstück vom Starttor bis zur ersten Lücke, `createSledFence` gibt es
+in `userData.brechbar` heraus; `createBreakableFence(…, { bande: true })`).
+Vorher hatte er gar keine Kollision.
+
+**Anzeigetafeln** (`props/anzeigetafel.js`) stehen an Speedcheck,
+Klammsprung und seit 07.10. am Slalom (unten rechts hinter dem Ziel
+zwischen den Tannen, letzte Zeit und Bestzeit). Der Speedcheck blendet wie
+der Klammsprung oben kurz den Wert mit Bestmarke ein; die Bestmarke steht
+in `localStorage` (`skiportfolio.speedcheck`).
 
 **Überspringen**: Kollisionskreise haben eine Höhe (`addCollider(x, z, r,
 data, height)`, Standard unendlich). `resolve` bekommt die Flughöhe des

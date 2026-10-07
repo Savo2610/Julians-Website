@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { terrainHeight, SLED_LANE } from '../heightfield.js'
 import { createSlalomGate, createStartArch, createFinishArch, GATE_WIDTH, readableYaw } from '../props/slalom.js'
 import { createHalo } from '../props/screens.js'
+import { createAnzeigetafel, TAFEL_SCHRIFT } from '../props/anzeigetafel.js'
 import { MEDALS } from './medaillen.js'
 
 // Die Zeitnahme einer Bahn: Start, Ziel, Tore – und die Farbe im Schnee, die
@@ -35,6 +36,10 @@ const GATE_COUNT = 4
 const GATE_OFFSET = 4.6
 const GATE_TOLERANCE = 0.5  // etwas Nachsicht an den Stangen
 const PENALTY = 2           // s je verfehltem Tor
+// Die Bahn ist 17 m breit; 13,5 m aus der Mitte und 2 m hinter dem Ziel
+// steht die Tafel zwischen den Tannen, 2,6 m vom naechsten Stamm. Bei 10 m
+// stand sie frei neben dem Zielbogen, mitten im Auslauf.
+const TAFEL_ABSTAND = 13.5
 
 // Die Medaillen stehen in medaillen.js – ohne three.js, damit Pass und
 // Bestenliste sie holen koennen, ohne die Rennstrecke mitzuladen.
@@ -84,6 +89,7 @@ export class RaceCourse {
 
     this._build()
     this._buildHud()
+    this._buildTafel()
   }
 
   // --- Geometrie ---------------------------------------------------------
@@ -191,6 +197,43 @@ export class RaceCourse {
   }
 
   // --- Anzeige -----------------------------------------------------------
+
+  // Die Tafel steht wie am Speedcheck und am Klammsprung am Rand: unten
+  // rechts hinter dem Ziel im Wald. Dort faehrt niemand hin, und vom Ziel
+  // aus ist sie im Bild. Eine Lichtung braucht sie nicht, die Luecke
+  // zwischen den Tannen ist schon da.
+  _buildTafel() {
+    const p = this.pointAt(Math.min(this.lane.total, this.finishS + 2))
+    const x = p.x + p.dz * TAFEL_ABSTAND
+    const z = p.z - p.dx * TAFEL_ABSTAND
+    const { canvas, tex } = createAnzeigetafel(this.world, x, z)
+    this.tafelOrt = { x, z }
+    this.canvas = canvas
+    this.tex = tex
+    this._drawTafel()
+  }
+
+  _drawTafel() {
+    const ctx = this.canvas.getContext('2d')
+    ctx.clearRect(0, 0, 512, 256)
+    ctx.textAlign = 'center'
+    ctx.fillStyle = '#5c6b7d'
+    ctx.font = `700 34px ${TAFEL_SCHRIFT}`
+    ctx.fillText('SLALOM', 256, 46)
+    const lauf = this.lastRun
+    ctx.fillStyle = lauf?.bestzeit ? '#8ef0b4' : lauf?.missed ? '#ffb38a' : '#f2f7ff'
+    ctx.font = `800 112px ${TAFEL_SCHRIFT}`
+    ctx.fillText(lauf ? lauf.total.toFixed(2) : '--', 226, 164)
+    ctx.fillStyle = '#7f8fa2'
+    ctx.font = `700 44px ${TAFEL_SCHRIFT}`
+    ctx.fillText('s', 420, 164)
+    ctx.fillStyle = '#6d7c8e'
+    ctx.font = `600 30px ${TAFEL_SCHRIFT}`
+    // Ohne eigene Bestzeit steht hier, wofuer es Gold gibt.
+    if (this.best !== null) ctx.fillText(`BESTE ${this.best.toFixed(2)}`, 256, 222)
+    else ctx.fillText(`GOLD UNTER ${MEDALS[0].time.toFixed(2)}`, 256, 222)
+    this.tex.needsUpdate = true
+  }
 
   _buildHud() {
     const el = document.createElement('div')
@@ -343,6 +386,7 @@ export class RaceCourse {
     else if (next) parts.push(`${next.name} unter ${next.time.toFixed(2)}`)
     this._showHud(total.toFixed(2), parts.join(' · '), medal && clean ? 'good' : clean ? '' : 'warn')
     this._hold = 6
+    this._drawTafel()
   }
 
   // Solange die Zeit eingeblendet ist – im Lauf und die sechs Sekunden

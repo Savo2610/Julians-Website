@@ -891,8 +891,9 @@ export function populate(world, sky, registry, stationOptions = {}) {
     { x: -26, z: 47 }, { x: -32, z: 56 }, { x: -42, z: 60 },
   ], { seed: 77 })
   // Der Zaun oben am Funpark gibt nach, siehe props/park-fence.js.
+  const parkFenceEnde = { x: -12, z: -48 }
   const parkFence = createBreakableFence(world, [
-    { x: 14, z: -46 }, { x: 2, z: -50 }, { x: -12, z: -48 },
+    { x: 14, z: -46 }, { x: 2, z: -50 }, parkFenceEnde,
   ], { seed: 93 })
   animatedProps.push((t, dt) => parkFence.update(dt, skierRef.current))
 
@@ -903,14 +904,22 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // im Schnee, nicht in den Stangen.
   const race = new RaceCourse(world, { lane: SLED_LANE, gates: true })
   // Die Bergseite der Bande beginnt am rechten Pfosten des Startbogens der
-  // Nordabfahrt und laeuft von dort gerade zur Ecke am Fels (ihr zweiter
-  // Pfosten). Vorher stand ihr erster Pfosten mitten auf dem Gipfelplatz,
-  // und die Pistenraupe fuhr durch ihn hindurch; jetzt bleibt sie 5 m davor.
+  // Nordabfahrt und laeuft von dort gerade zur ersten Ecke. Vorher stand ihr
+  // erster Pfosten mitten auf dem Gipfelplatz, und die Pistenraupe fuhr durch
+  // ihn hindurch; jetzt bleibt sie davor.
   const [ax, az] = torPfostenRechts
-  const sledFence = createSledFence(SLED_LANE, { anschluss: { side: -1, x: ax, z: az, bis: 1 } })
+  // Auf der anderen Seite laeuft sie durch bis ans Ende des Funparkzauns:
+  // ein Zaun zwischen Slalom und Nordabfahrt, der wie der Funparkzaun
+  // bricht. Felsen (Kreise ab 1,2 m) unterbrechen ihn.
+  const sledFence = createSledFence(SLED_LANE, {
+    brechbar: {
+      side: -1,
+      von: { x: ax, z: az },
+      bis: parkFenceEnde,
+      hindernis: (x, z) => world.nearby(x, z, []).filter((c) => c.r >= 1.2),
+    },
+  })
   world.scene.add(sledFence)
-  // Das Stueck vom Starttor der Nordabfahrt bis zur ersten Luecke trennt
-  // Slalom und Nordabfahrt – und bricht wie der Funparkzaun.
   const slalomZaun = createBreakableFence(world, sledFence.userData.brechbar, { bande: true, seed: 95 })
   animatedProps.push((t, dt) => slalomZaun.update(dt, skierRef.current))
 

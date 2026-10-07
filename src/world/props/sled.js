@@ -17,17 +17,14 @@ const WOOD = 0x8a6a44
 const WOOD_DARK = 0x6b4f31
 const SNOW = 0xf4f9ff
 
-// `anschluss` ({ side, x, z, bis }) laesst eine Seite an einem fremden
-// Pfosten beginnen: von dort laeuft sie gerade bis zu ihrem Pfosten Nummer
-// `bis`, die davor entfallen. Am Anschluss selbst nur die Bretter.
-//
-// Das erste zusammenhaengende Stueck dieser Seite – vom Anschluss bis zur
-// ersten Luecke – ist der Zaun zwischen Slalom und Nordabfahrt. Es wird
-// nicht mitverschmolzen, sondern als Pfostenliste in `mesh.userData.brechbar`
-// zurueckgegeben und zerbrechlich aufgebaut (props/park-fence.js).
-export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.92, anschluss = null } = {}) {
+// `brechbar` ({ side, von, bis, hindernis }) nimmt eine Seite aus dem festen
+// Bau heraus: dort steht der Zaun zwischen Slalom und Nordabfahrt, und der
+// bricht (props/park-fence.js). Er laeuft von einem fremden Pfosten (`von`,
+// Starttor der Nordabfahrt) die Bahn entlang bis zu einem zweiten (`bis`,
+// Ende des Funparkzauns) und wird als Pfostenliste in
+// `mesh.userData.brechbar` zurueckgegeben.
+export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.92, brechbar = null } = {}) {
   const parts = []
-  let brechbar = null
   const segs = lane.segments
   const half = lane.width * 0.5 - inset
 
@@ -50,6 +47,7 @@ export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.9
   const to = lane.total - lane.endFade * 0.8
 
   for (const side of [-1, 1]) {
+    if (brechbar?.side === side) continue
     const posts = []
     let index = 0
     for (let s = from; s <= to; s += spacing) {
@@ -84,27 +82,6 @@ export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.9
       const before = i > 0 && posts[i - 1].ok
       const after = i < posts.length - 1 && posts[i + 1].ok
       if (posts[i].ok && !before && !after) posts[i].ok = false
-    }
-
-    if (anschluss && anschluss.side === side) {
-      const f = anschluss.bis ?? posts.findIndex((q) => q.ok)
-      const ziel = posts[f]
-      const weg = Math.hypot(ziel.x - anschluss.x, ziel.z - anschluss.z)
-      const n = Math.ceil(weg / spacing)
-      const yaw = Math.atan2(ziel.x - anschluss.x, ziel.z - anschluss.z)
-      const davor = []
-      for (let k = 0; k < n; k++) {
-        const x = anschluss.x + (ziel.x - anschluss.x) * k / n
-        const z = anschluss.z + (ziel.z - anschluss.z) * k / n
-        davor.push({ x, y: terrainHeight(x, z), z, yaw, ok: true, tall: height, dark: k % 4 === 0, fremd: k === 0 })
-      }
-      posts.splice(0, f, ...davor)
-      brechbar = []
-      for (const q of posts) {
-        if (!q.ok) break
-        brechbar.push({ x: q.x, z: q.z, h: q.tall, dark: q.dark, fremd: q.fremd })
-        q.ok = false
-      }
     }
 
     const lean = side * 0.09
@@ -148,6 +125,82 @@ export function createSledFence(lane, { spacing = 3.6, inset = 0.4, height = 0.9
   const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.88 }))
   mesh.castShadow = true
   mesh.receiveShadow = true
-  mesh.userData.brechbar = brechbar
+  mesh.userData.brechbar = brechbar ? zaunLinie(lane, half, { spacing, height, ...brechbar }) : null
   return mesh
+}
+
+// Die Linie des brechbaren Zauns. Nicht wie die feste Bande in festen
+// Schritten entlang der Mittellinie abgetragen: in der Innenkurve bei
+// (-26, -45) liefen die Pfosten dann ein Stueck rueckwaerts, und wo das
+// Gelaende nicht abfaellt, liess die Bande Luecken (zwischen 38 und 46 m).
+// Hier ist es ein durchgehender Parallelzug mit Gehrung an den Ecken.
+function zaunLinie(lane, half, { side, von, bis, hindernis, spacing, height }) {
+  const P = lane.points
+  const normale = (a, b) => {
+    const l = Math.hypot(b.x - a.x, b.z - a.z)
+    return { x: -(b.z - a.z) / l * side, z: (b.x - a.x) / l * side }
+  }
+  const zug = P.map((p, i) => {
+    const n1 = normale(P[Math.max(0, i - 1)], P[Math.max(1, i)])
+    const n2 = normale(P[Math.min(i, P.length - 2)], P[Math.min(i + 1, P.length - 1)])
+    let mx = n1.x + n2.x
+    let mz = n1.z + n2.z
+    const ml = Math.hypot(mx, mz)
+    mx /= ml
+    mz /= ml
+    const k = half / (mx * n1.x + mz * n1.z)
+    return { x: p.x + mx * k, z: p.z + mz * k }
+  })
+  // Von beiden fremden Pfosten aus geht es gerade zur naechsten Ecke des
+  // Zugs; die Ecke am Ende ersetzt `bis` selbst.
+  const naechste = (q) => zug.reduce((m, p, i) => (Math.hypot(p.x - q.x, p.z - q.z) < Math.hypot(zug[m].x - q.x, zug[m].z - q.z) ? i : m), 0)
+  const linie = [{ ...von, fremd: true }, ...zug.slice(naechste(von), naechste(bis)), { ...bis, fremd: true }]
+
+  // Wo die Linie durch einen Felsen liefe, endet der Zaun an ihm und setzt
+  // dahinter wieder an. Gekappt wird bei 90 % des Kollisionskreises: der
+  // Fels ist kantig, und so steckt das letzte Brett sichtbar in ihm, ohne
+  // eine Luecke zum Durchschluepfen zu lassen.
+  const stuecke = []
+  let stueck = []
+  let zuletzt = null   // letzter Punkt vor dem Felsen
+  const drin = (x, z) => hindernis(x, z).some((c) => Math.hypot(c.x - x, c.z - z) < c.r * 0.9)
+  for (let i = 0; i < linie.length - 1; i++) {
+    const a = linie[i]
+    const b = linie[i + 1]
+    const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.25))
+    for (let k = i === 0 ? 0 : 1; k <= n; k++) {
+      const p = k === 0 ? a : k === n ? b : { x: a.x + (b.x - a.x) * k / n, z: a.z + (b.z - a.z) * k / n }
+      if (drin(p.x, p.z)) {
+        if (stueck.length && zuletzt) stueck.push(zuletzt)
+        if (stueck.length > 1) stuecke.push(stueck)
+        stueck = []
+        zuletzt = null
+        continue
+      }
+      // Stehen bleiben Ecken, Enden und die Raender an Felsen.
+      if (!stueck.length || k === n) stueck.push(p)
+      zuletzt = k === n ? null : p
+    }
+  }
+  if (stueck.length > 1) stuecke.push(stueck)
+
+  // Pfosten je Abschnitt gleichmaessig, hoechstens `spacing` auseinander.
+  const pfosten = []
+  let nr = 0
+  for (const st of stuecke) {
+    for (let i = 0; i < st.length; i++) {
+      const a = st[i]
+      const b = st[i + 1]
+      pfosten.push({ x: a.x, z: a.z, h: height + (nr % 3 === 0 ? 0.1 : 0), fremd: !!a.fremd })
+      nr++
+      if (!b) break
+      const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / spacing)
+      for (let k = 1; k < n; k++) {
+        pfosten.push({ x: a.x + (b.x - a.x) * k / n, z: a.z + (b.z - a.z) * k / n, h: height + (nr % 3 === 0 ? 0.1 : 0) })
+        nr++
+      }
+    }
+    pfosten[pfosten.length - 1].ende = true
+  }
+  return pfosten
 }

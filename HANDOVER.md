@@ -688,10 +688,15 @@ bricht ab 5 m/s wie die Seebank, aber nur im Umkreis von 2,6 m um den
 Aufprall; Pfosten und Latten sind zwei InstancedMeshes, gebaut wird nach
 10 s, wenn der Fahrer ≥ 12 m weg ist. `onHit` darf `true` zurückgeben – dann
 schiebt `World.resolve` nicht zurück, man fährt hindurch.
-Seit 07.10. bricht genauso der **Zaun zwischen Slalom und Nordabfahrt**
-(Bandenstück vom Starttor bis zur ersten Lücke, `createSledFence` gibt es
-in `userData.brechbar` heraus; `createBreakableFence(…, { bande: true })`).
-Vorher hatte er gar keine Kollision.
+Seit 07.10. bricht genauso der **Zaun zwischen Slalom und Nordabfahrt**.
+Er ist die ganze Funparkseite der Slalombande: vom rechten Pfosten des
+Starttors der Nordabfahrt durchgehend (Parallelzug mit Gehrung, nicht mehr
+in Schritten entlang der Mitte) bis an den letzten Pfosten des
+Funparkzauns (−12, −48). An Felsen (Kollisionskreis ≥ 1,2 m) endet er bei
+90 % des Radius und setzt dahinter wieder an. `createSledFence(…, {
+brechbar })` liefert die Pfosten in `userData.brechbar`,
+`createBreakableFence(…, { bande: true })` baut sie. Vorher hatte er gar
+keine Kollision, Lücken zwischen 38 und 46 m und lief durch zwei Felsen.
 
 **Anzeigetafeln** (`props/anzeigetafel.js`) stehen an Speedcheck,
 Klammsprung und seit 07.10. am Slalom (unten rechts hinter dem Ziel

@@ -15,11 +15,11 @@ import { makeRng } from '../../core/rng.js'
 // Fahrer mindestens 12 m weg ist.
 //
 // Mit `bande` steht statt der Pfostenliste ein fertiger Satz Pfosten
-// ({ x, z, h, fremd }) und gebaut wird im Stil der Slalombande: Kantholz,
+// ({ x, z, h, fremd, ende }) und gebaut wird im Stil der Slalombande: Kantholz,
 // zwei breite Bretter. So bricht auch der Zaun zwischen Slalom und
 // Nordabfahrt, durch den man vorher ohne Kollision hindurchfuhr. Ein
 // `fremd`er Pfosten gehoert einem anderen Bauteil (dem Starttor) – dort
-// haengen nur die Bretter.
+// haengen nur die Bretter; nach einem `ende` (an einem Felsen) keine.
 //
 // Pfosten und Latten sind je eine InstancedMesh: jedes Teil ist nur eine
 // Matrix, der ganze Zaun kostet zwei Draw Calls statt dreissig.
@@ -58,6 +58,12 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
     }
     carry = Math.max(0, (carry + (steps + 1) * spacing) - len)
   }
+  // Der letzte Punkt bekommt immer einen Pfosten: dort schliesst die
+  // Slalombande an. Vorher endete der Zaun bis zu einem Feld davor.
+  const last = points[points.length - 1]
+  const tail = spots[spots.length - 1]
+  if (!bande && Math.hypot(tail.x - last.x, tail.z - last.z) > 0.6) spots.push({ x: last.x, z: last.z })
+  else if (!bande) Object.assign(tail, { x: last.x, z: last.z })
 
   // Einheitsformen, die je Teil skaliert werden. Die Schneehaube sitzt fest
   // auf dem Pfosten und fliegt mit.
@@ -98,7 +104,7 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
   })
   spots.forEach((p, i) => {
     const next = spots[i + 1]
-    if (!next) return
+    if (!next || p.ende) return
     const dx = next.x - p.x
     const dz = next.z - p.z
     const span = Math.hypot(dx, dz)
@@ -158,7 +164,7 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
   spots.forEach((p, i) => {
     if (!p.fremd) addHit(p.x, p.z, i)
     const next = spots[i + 1]
-    if (!next) return
+    if (!next || p.ende) return
     // Alle 1,2 m ein Kreis: am Funpark ist das die Feldmitte, an der Bande
     // (3,6 m Feld) sind es zwei.
     const n = Math.max(2, Math.ceil(Math.hypot(next.x - p.x, next.z - p.z) / 1.2))

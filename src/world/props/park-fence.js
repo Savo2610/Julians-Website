@@ -102,7 +102,11 @@ export function createBreakableFence(world, points, { spacing = 2.3, height = 1.
     const dx = next.x - p.x
     const dz = next.z - p.z
     const span = Math.hypot(dx, dz)
-    const pitch = Math.atan2(next.y - p.y, span)
+    // Nach der Drehung um +90 Grad zeigt die Laengsachse der Latte von
+    // `next` zurueck zu `p` – deshalb kippt sie mit negativer Steigung.
+    // Mit positiver hing die Latte am Bandenhang (bis 30 Grad) mit einem
+    // Ende im Schnee und mit dem anderen in der Luft.
+    const pitch = -Math.atan2(next.y - p.y, span)
     const q = new THREE.Quaternion().setFromEuler(_e.set(0, Math.atan2(dx, dz) + Math.PI / 2, pitch, 'XYZ'))
     const h = (p.h + next.h) / 2
     for (const rel of latten) {

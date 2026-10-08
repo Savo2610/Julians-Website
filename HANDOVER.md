@@ -979,10 +979,17 @@ die Slalomzeit ist noch eingeblendet – im Lauf und 6 s nach dem Ziel
 (`race.zeitSichtbar`): dann geht es
 6 m über den Startbogen, ein laufender Lauf wird ohne Wertung abgebrochen
 (28.09., auf Ansage). Die
-Hinweis „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
-Gas oder Lenkung, unter 4 m/s und keine 3 m vorangekommen) oder sich
-verfranzt hat (7 s abseits jedes Weges mit ≥ 3 Bäumen im Umkreis von 4 m),
-und geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
+Hinweis „R Zurück zum Start“ erscheint, wenn man festgefahren ist (3 s lang
+Gas oder Lenkung, unter 4 m/s und keine 2,5 m vorangekommen) oder sich im
+Wald aufhält, auch fahrend: 4 s abseits von Wegen und Pisten (Pistenband
+plus 2 m) und nicht auf dem Eis, mit ≥ 2 Stämmen im Umkreis von 5 m oder
+schon im Waldgürtel am Rand (`playAreaDistance > −4`). Eine lichte Stelle
+zieht doppelt so schnell ab, wie der Wald zählt, statt die Zeit zu löschen,
+und gefragt wird in den Nachbarzellen des Rasters mit. Bis 08.10. waren es
+4 s + 1 s Festgefahren und 7 s mit ≥ 3 Stämmen in 4 m, ohne Nachbarzellen –
+im Wald kam der Hinweis so gut wie nie (Ansage: schneller, und auch im
+Wald). Gemessen: fahrend durch den Wald 3,6–5,2 s, die Nordabfahrt
+hinunter nie. Er geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
 Start-Hinweis entfällt dort (Kartenknopf).
 
 **Linkliste ohne Tal** (27.09., auf Ansage): Wer kein WebGL oder kein
@@ -1681,8 +1688,9 @@ Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
 - **Zweites Netz am Slalom** (`NETZ_SLALOM`, zweite Runde 08.10., Skizze
   Julian): der zerbrechliche Zaun zwischen Slalom und Nordabfahrt läuft am
   Kopf der Klamm vorbei, wo der Bach aus dem Rohr kommt; wer ihn durchbrach,
-  lag im Bach. Das Netz ersetzt dort 14 m Zaun, vom Felsen am Ende des oberen
-  Abschnitts bis hinter den Knick. Herausgeschnitten wird der Zaun mit einem
+  lag im Bach. Das Netz ersetzt dort den Zaun, vom Felsen am Ende des oberen
+  Abschnitts bis zum nächsten Knick auf Höhe von Tor 2 (drei Felder, 21 m;
+  das dritte kam mit einer zweiten Skizze). Herausgeschnitten wird der Zaun mit einem
   gedachten Felsen über dem Netz (`netzLuecke` in `populate.js`, gekappt bei
   90 % wie an echten Felsen), er endet also an den Netzpfosten. Von der Seite
   sieht man hier die Beule am besten: sie wölbt sich über die Klamm.

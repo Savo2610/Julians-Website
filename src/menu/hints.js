@@ -1,5 +1,6 @@
 import { TOUCH } from '../core/device.js'
 import { pathPreparation } from '../world/paths.js'
+import { playAreaDistance, aufSee, SLED_LANE, NORTH_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE } from '../world/heightfield.js'
 
 // Zwei kleine Hinweise unten in der Mitte, Frosttext ohne Behaelter. Beide
 // sind Knoepfe – wer mit Tasten nichts anfangen kann, klickt sie einfach an.
@@ -17,10 +18,31 @@ import { pathPreparation } from '../world/paths.js'
 // Am Handy gibt es den Kartenknopf oben rechts; der Start-Hinweis entfaellt
 // dort, der Rueckweg erscheint als Knopf ohne Taste.
 
+// Seit 08.10. schneller (Ansage): festgefahren nach 3 statt gut 5 s, und im
+// Wald nach 4 s, auch wenn man faehrt. Vorher kam der Hinweis im Wald so gut
+// wie nie: er verlangte bei jeder Probe drei Staemme im Umkreis von 4 m, sah
+// nur die eigene 6-m-Zelle des Rasters, und eine einzige lichte Stelle setzte
+// die Zeit auf null.
 const SAMPLE = 0.5        // s zwischen zwei Positionsproben
-const WINDOW = 8          // Proben = 4 s Rueckblick
-const STUCK_DIST = 3      // m: weniger Weg in 4 s trotz Gas = festgefahren
-const LOST_AFTER = 7      // s abseits der Wege zwischen Baeumen = verfranzt
+const WINDOW = 6          // Proben = 3 s Rueckblick
+const STUCK_DIST = 2.5    // m: weniger Weg in 3 s trotz Gas = festgefahren
+const LOST_AFTER = 4      // s abseits der Wege im Wald = verfranzt
+const WALD_RADIUS = 5     // m, in dem Staemme zaehlen
+const WALD_STAEMME = 2
+const LANES = [SLED_LANE, NORTH_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE]
+
+// Auf einer Piste (bis zwei Meter neben dem Band) ist man nie verfranzt –
+// die Nordabfahrt laeuft durch dichten Wald.
+function aufPiste(x, z) {
+  for (const lane of LANES) {
+    for (const g of lane.segments) {
+      const t = Math.max(0, Math.min(1, ((x - g.x) * g.dx + (z - g.z) * g.dz) / g.len2))
+      const w = g.w0 + (g.w1 - g.w0) * t
+      if (Math.hypot(x - g.x - g.dx * t, z - g.z - g.dz * t) < w / 2 + 2) return true
+    }
+  }
+  return false
+}
 
 export class Hints {
   constructor({ map, input, skier, world, onReset }) {
@@ -108,15 +130,17 @@ export class Hints {
     const allTrying = this._samples.length === WINDOW && this._samples.every((p) => p.trying && p.speed < 4)
     this._stuck = allTrying && moved < STUCK_DIST ? this._stuck + SAMPLE : 0
 
-    // Verfranzt: weit weg von jedem Weg und mitten zwischen Baeumen, auch
-    // wenn man sich noch bewegt. Gezaehlt wird, was im Umkreis von 4 m eine
-    // unendlich hohe Kollision hat – Baeume, Waende; Steine nicht.
-    const offPath = pathPreparation(s.position.x, s.position.z) < 0.05
-    const near = this.world.nearby(s.position.x, s.position.z, this._near || (this._near = []))
-      .filter((c) => c.h === Infinity && !c.off && Math.hypot(c.x - s.position.x, c.z - s.position.z) < 4).length
-    this._lost = offPath && near >= 3 ? this._lost + SAMPLE : 0
+    // Verfranzt: abseits von Wegen und Pisten im Wald, auch wenn man sich
+    // noch bewegt. Wald heisst: mindestens zwei Staemme oder Felsen der
+    // Grenze im Umkreis von 5 m (aus den Nachbarzellen des Rasters mit), oder
+    // schon im Waldguertel am Rand. Eine lichte Stelle zieht nur ab, statt
+    // die Zeit zu loeschen.
+    const { x, z } = s.position
+    const imWald = pathPreparation(x, z) < 0.05 && !aufPiste(x, z) && !aufSee(x, z) &&
+      (playAreaDistance(x, z) > -4 || this._staemme(x, z) >= WALD_STAEMME)
+    this._lost = imWald ? this._lost + SAMPLE : Math.max(0, this._lost - 2 * SAMPLE)
 
-    const show = this._stuck >= 1 || this._lost >= LOST_AFTER
+    const show = this._stuck >= SAMPLE || this._lost >= LOST_AFTER
     if (show) {
       this._clear = 0
       this._setReset(true)
@@ -126,5 +150,25 @@ export class Hints {
       this._clear += SAMPLE
       if (this._clear >= 2) this._setReset(false)
     }
+  }
+
+  // Staemme im Umkreis: Kreise ohne Daten (Baeume, Felsen), unendlich hoch,
+  // nicht die duennen Pfosten. Das Raster liefert nur die eigene Zelle (6 m),
+  // deshalb werden die Nachbarzellen mitgefragt.
+  _staemme(x, z) {
+    const gesehen = this._gesehen || (this._gesehen = new Set())
+    gesehen.clear()
+    let n = 0
+    for (const dx of [-6, 0, 6]) {
+      for (const dz of [-6, 0, 6]) {
+        for (const c of this.world.nearby(x + dx, z + dz, this._near || (this._near = []))) {
+          if (gesehen.has(c)) continue
+          gesehen.add(c)
+          if (c.data || c.off || c.h !== Infinity || c.r < 0.45) continue
+          if (Math.hypot(c.x - x, c.z - z) < WALD_RADIUS) n++
+        }
+      }
+    }
+    return n
   }
 }

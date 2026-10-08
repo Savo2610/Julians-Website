@@ -114,8 +114,8 @@ test('ohne Fahrer schwingt das Netz aus und kommt zur Ruhe', () => {
   assert.ok(Math.abs(netz.felder[0].tiefe) < 0.01, 'und steht wieder')
 })
 
-test('das Netz am Slalom faengt in beiden Feldern und wirft zurueck auf die Bahn', () => {
-  for (const feld of [0, 1]) {
+test('das Netz am Slalom faengt in allen drei Feldern und wirft zurueck auf die Bahn', () => {
+  for (const feld of [0, 1, 2]) {
     const v = fahre({ daten: NETZ_SLALOM, feld, tempo: 14, abstand: 5 })
     assert.ok(v.gefangen !== null && v.losgelassen !== null, `Feld ${feld}`)
     assert.ok(v.minD > -2.3)

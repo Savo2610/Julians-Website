@@ -65,10 +65,11 @@ export const NETZ = {
 // zerbrechliche Zaun zwischen Slalom und Nordabfahrt genau am Kopf der Klamm
 // vorbei, wo der Bach aus dem Rohr kommt. Wer den Zaun durchbrach, lag im
 // Bach. Das Netz ersetzt das Zaunstueck vom Felsen am Ende des oberen
-// Zaunabschnitts bis hinter den Knick; der Zaun endet an seinen Pfosten
-// (populate.js schneidet ihn mit einem gedachten Felsen heraus).
+// Zaunabschnitts bis zum naechsten Knick des Zauns auf Hoehe von Tor 2
+// (zweite Skizze: ein drittes Feld, 6,8 m); der Zaun endet an seinen
+// Pfosten (populate.js schneidet ihn mit einem gedachten Felsen heraus).
 export const NETZ_SLALOM = {
-  pfosten: [{ x: -33.1, z: -66.65 }, { x: -27.9, z: -62.45 }, { x: -22.7, z: -57.2 }],
+  pfosten: [{ x: -33.1, z: -66.65 }, { x: -27.9, z: -62.45 }, { x: -22.7, z: -57.2 }, { x: -19.85, z: -51.05 }],
   innen: { x: -32, z: -57 },
   hoehe: 1.9,
 }

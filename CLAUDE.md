@@ -79,6 +79,13 @@ Das Wichtigste in Kürze:
   Wohnt im Schuppen am Ende der Nordabfahrt (`SCHUPPEN` im Höhenfeld) und
   fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
 
+- **Grenzen** (`src/world/grenze.js`, HANDOVER 4a¹¹): Südzaun vom See bis
+  zum Funpark, zwei gelbe Fangnetze (Kante der Nordabfahrt, Kopf der Klamm
+  am Slalom; sie werfen zurück), sonst Ketten aus Bäumen und Felsen, die
+  nicht mehr durchlassen – auch hinter der Hütte und links vom Lift (dort
+  ein Stück im Wald). Oberhalb der Hütte bewusst nichts. Lieber Wald und
+  Fels als sichtbare Absperrung; Netze sparsam.
+
 `npm run dev` startet (Tal auf `/`, Kabelsee auf `/kabelsee/`),
 `npm run dev:api` den Worker dazu (Bestenlisten, Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas
 fertig ist. Zum Prüfen im Browser: `window.__ski` und `S.step(frames, dt)`; am See

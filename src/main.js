@@ -106,6 +106,30 @@ scene.add(spray.points)
 const goldstaub = new Spray({ max: 260, color: 0xf0a400 })
 scene.add(goldstaub.points)
 
+// Die Fangnetze: beim Einschlag faellt der Schnee vom oberen Seil und die
+// Kamera zuckt kurz, beim Abwurf staubt es am Fuss.
+for (const netz of props.fangnetze) {
+  netz.gefangen = (g, f) => {
+    chase.addShake(Math.min(0.5, g.stoss / 30))
+    const n = Math.round(10 + g.stoss * 2.2)
+    for (let i = 0; i < n; i++) {
+      const u = Math.max(0, Math.min(f.len, g.u + (Math.random() - 0.5) * 5))
+      const x = f.a.x + f.tx * u, z = f.a.z + f.tz * u
+      spray.emit(x, world.heightAt(x, z) + netz.hoehe, z,
+        -f.nx * g.stoss * 0.12 + (Math.random() - 0.5), 0.4 + Math.random(), -f.nz * g.stoss * 0.12 + (Math.random() - 0.5),
+        0.45 + Math.random() * 0.4, 0.9)
+    }
+  }
+  netz.losgelassen = ({ raus }) => {
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2
+      spray.emit(skier.position.x + Math.cos(a) * 0.6, skier.position.y + 0.1, skier.position.z + Math.sin(a) * 0.6,
+        skier._fahrt.x * raus * 0.3 + Math.cos(a), 1.5 + Math.random() * 2, skier._fahrt.z * raus * 0.3 + Math.sin(a),
+        0.5 + Math.random() * 0.5, 0.8)
+    }
+  }
+}
+
 // Der Pistenpass: Abzeichen im Hintergrund, Reiter in der Uebersicht.
 const pass = new Pistenpass()
 pass.onGold = () => skier.vergolden()
@@ -347,7 +371,11 @@ function advance(dt) {
   // Und die Rail im Funpark – dieselbe Mechanik, nur abwaerts und schneller.
   props.railRide.update(dt, skier, input)
   touch?.update()
+  // Ein Netz fuehrt den Fahrer, solange es ihn haelt, und faengt ihn nach
+  // seinem Schritt – im selben Bild, in dem er es beruehrt.
+  for (const netz of props.fangnetze) netz.update(dt, skier)
   skier.update(dt, input, trail)
+  for (const netz of props.fangnetze) netz.pruefen(skier)
   props.lift.spannen(skier)
   emitSpray(dt)
   spray.update(dt)

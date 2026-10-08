@@ -979,10 +979,17 @@ die Slalomzeit ist noch eingeblendet – im Lauf und 6 s nach dem Ziel
 (`race.zeitSichtbar`): dann geht es
 6 m über den Startbogen, ein laufender Lauf wird ohne Wertung abgebrochen
 (28.09., auf Ansage). Die
-Hinweis „R Zurück zum Start“ erscheint, wenn man festgefahren ist (4 s lang
-Gas oder Lenkung, unter 4 m/s und keine 3 m vorangekommen) oder sich
-verfranzt hat (7 s abseits jedes Weges mit ≥ 3 Bäumen im Umkreis von 4 m),
-und geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
+Hinweis „R Zurück zum Start“ erscheint, wenn man festgefahren ist (3 s lang
+Gas oder Lenkung, unter 4 m/s und keine 2,5 m vorangekommen) oder sich im
+Wald aufhält, auch fahrend: 4 s abseits von Wegen und Pisten (Pistenband
+plus 2 m) und nicht auf dem Eis, mit ≥ 2 Stämmen im Umkreis von 5 m oder
+schon im Waldgürtel am Rand (`playAreaDistance > −4`). Eine lichte Stelle
+zieht doppelt so schnell ab, wie der Wald zählt, statt die Zeit zu löschen,
+und gefragt wird in den Nachbarzellen des Rasters mit. Bis 08.10. waren es
+4 s + 1 s Festgefahren und 7 s mit ≥ 3 Stämmen in 4 m, ohne Nachbarzellen –
+im Wald kam der Hinweis so gut wie nie (Ansage: schneller, und auch im
+Wald). Gemessen: fahrend durch den Wald 3,6–5,2 s, die Nordabfahrt
+hinunter nie. Er geht nach 2 s freier Fahrt wieder. Am Handy ohne Tastenzeichen, der
 Start-Hinweis entfällt dort (Kartenknopf).
 
 **Linkliste ohne Tal** (27.09., auf Ansage): Wer kein WebGL oder kein
@@ -1613,6 +1620,115 @@ Gemessen mit einem simulierten Vorbeifahren bei 15 m/s: bei 25 m alle im Bau,
 die Wache nach 15 s wieder draußen, alle nach 24 s – also zwischen zwei
 Runden. Der See bleibt still; der Pfiff ist nur zu sehen. Zum Prüfen:
 `__kabel.murmeltiere.tiere`.
+
+## 4a¹¹. Grenzen des Tals: Südzaun, Fangnetz, Ketten (08.10., Zweig `grenze`)
+
+Ansage: die Welt klarer abgrenzen, ohne dass es nach Absperrung aussieht.
+Bis dahin hielt nur der weiche Rückschub neun Meter hinter dem Rand der
+Spielfläche (`skier.js`). Der Wald davor sieht geschlossen aus, ist es aber
+nicht: Bäume stehen mindestens 3,4 m auseinander, ihre Kreise lassen gut
+zwei Meter frei, der Fahrer braucht 1,1. Auch der alte Weidezaun ließ
+zwischen zwei Pfosten (2,3 m) 1,5 m frei. Gemessen mit einer Flutfüllung
+vom Startplatz (siehe unten): rundum war der ganze Waldgürtel befahrbar,
+und an der Nordseite fiel man hinter der Kante bis zu 20 m hinunter. Alle
+Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
+`tests/fangnetz.test.js`.
+
+- **Südzaun** (`SUEDZAUN`): der alte Weidezaun im Osten, verlängert vom
+  Absperrzaun am See (dessen mittlerer Pfosten ist sein Anfang) bis auf die
+  Höhe des Funparks, dort hinaus in den Gebirgsrand. Er läuft auf der Kontur
+  fünf Meter innerhalb des Randes, im dichten Teil des Waldes; aus der Kamera
+  blitzen nur Latten zwischen den Kronen. Zu Pisten und Wegen mindestens
+  elf Meter, nur der Stichweg zur abgestürzten Drohne endet 7,8 m davor (dort
+  stand schon der alte Zaun). An der Taille zwischen Talkessel und
+  Sportgelände knickt er nicht mit ein. `createFence(…, { dicht: true })`
+  setzt unter die Latten zwei Kreise je Feld (0,55 m alle 0,77 m) und einen
+  Pfosten ans Ende: näher als 1,03 m kommt keiner an die Mittellinie, mehr
+  als 1,08 m legt er in einem Bild nicht zurück (26 m/s bei 1/24 s). Bäume
+  im Zaun nimmt `populate.js` heraus. Weiter nördlich steigt die Flanke des
+  Sportbergs, und oberhalb der Hütte ist der Berg zu hoch – dort bewusst
+  nichts (Ansage).
+- **Fangnetz** (`NETZ`, `attractions/fangnetz.js` rechnet ohne three.js,
+  `props/fangnetz.js` ist das Bild): an der Nordabfahrt rechts oben, wo der
+  Hang hinter drei Tannen abbricht (sechs Meter auf sechs Meter, Skizze
+  Julian). Drei Pfosten, zwei Felder (12,4 und 8,3 m), 1,9 m hoch, knapp
+  zwei Meter vor der Kante. Das einzige – sparsam, wie gewünscht.
+  - Mechanik wie Lift und Rail (`skier.tow`): gefangen wird **nach**
+    `skier.update()` (`pruefen`, im selben Bild wie die Berührung), geführt
+    **davor** (`update`). `tow.direkt` setzt die Lage ohne Nachziehen,
+    `tow.haltung` lehnt den Fahrer ins Netz und beim Zurückfedern zurück.
+  - Feder zum Rand hin härter: `a = −ω²(1 + 0,6 p²) p − 1,0 v`, ω = 4,3.
+    8 m/s → 1,30 m tief, zurück mit 5,9; 13 m/s → 1,86 m, zurück mit 9,9
+    nach 0,46 s; 24 m/s → 2,76 m. Mindestens 3,5 m/s zurück, höchstens 15.
+    Die erste Fassung (ω 5, Dämpfung 1,4) gab bei 13 m/s nur 1,55 m nach
+    und sah steif aus.
+  - Abwurf mit Hopser (2,4 + 0,14 · Tempo); die Figur schaut noch ins Netz
+    und dreht sich in der Luft herum (`spin` hält die alte Blickrichtung und
+    läuft in `_updateTrick` von selbst auf null). `_fahrt` wird beim Abwurf
+    gesetzt – in der Luft folgt sie dem Ski nicht.
+  - Auch im Sprung wird gefangen: die Schulter vor dem Netz wirft bei
+    24 m/s gut zwei Meter hoch. Hinter dem Netz hält eine Reihe Kreise
+    (0,25 m dahinter) alles, was das Netz nicht fängt – am Pfosten, quer
+    hineinrutschend. Wer frei von innen kommt, fährt hindurch (`onHit` sagt
+    `true`), sonst kostete der Anprall bis zu 80 % Tempo, bevor das Netz es
+    zurückgeben kann.
+  - Bild: Rautenmasche als Canvas-Textur (Fläche 16 % deckend, Fäden voll),
+    beidseitig mit `forceSinglePass`. Die Beule ist ein Kosinusbuckel bis zu
+    den Pfosten, der Saum bleibt fast stehen, das obere Seil geht halb mit
+    und sinkt 0,3 m je Meter Beule – aus 36° von oben liest man das
+    Eindrücken erst am einknickenden Seil. Ohne Fahrer schwingt das Feld
+    frei aus (ω 13, etwa 1,5 s), die Nachbarfelder zucken mit, die Pfosten
+    neigen sich zur Beule. Beim Einschlag fällt Schnee vom Seil, die Kamera
+    zuckt (`main.js`). Bäume und Felsen bis 2,3 m hinter dem Netz nimmt
+    `imNetz()` in `populate.js` heraus. Weiter als 80 m weg ruht das Bild.
+  - Zum Prüfen: `__ski.props.fangnetze[0]` (`.fang`, `.felder`, `.lage(x, z)`).
+  - Fangen bis 0,3 m an den Pfosten heran, die Beule rutscht dann weich auf
+    1,2 m vom Pfosten weg. Vorher fing es erst ab 0,7 m, und wer dazwischen
+    traf, prallte an der Reihe dahinter ab (gemessen 10 → 0,3 m/s).
+- **Zweites Netz am Slalom** (`NETZ_SLALOM`, zweite Runde 08.10., Skizze
+  Julian): der zerbrechliche Zaun zwischen Slalom und Nordabfahrt läuft am
+  Kopf der Klamm vorbei, wo der Bach aus dem Rohr kommt; wer ihn durchbrach,
+  lag im Bach. Das Netz ersetzt dort den Zaun, vom Felsen am Ende des oberen
+  Abschnitts bis zum nächsten Knick auf Höhe von Tor 2 (drei Felder, 21 m;
+  das dritte kam mit einer zweiten Skizze). Herausgeschnitten wird der Zaun mit einem
+  gedachten Felsen über dem Netz (`netzLuecke` in `populate.js`, gekappt bei
+  90 % wie an echten Felsen), er endet also an den Netzpfosten. Von der Seite
+  sieht man hier die Beule am besten: sie wölbt sich über die Klamm.
+  „Die Kante noch steiler machen“ ist offen – das ginge über die Tiefe am
+  Kopf der Klamm (`KLAMM.tiefe`), verschiebt aber Rohr und Bach mit.
+- **Ketten aus Bäumen und Felsen** (`grenzeZiehen()` in `world/grenzkette.js`):
+  wo kein Zaun hingehört. Entlang einer Leitlinie werden Stämme und Felsen
+  bis 2,5 m daneben der Reihe nach verbunden; dazwischen stehen unsichtbare
+  Kreise (0,65 m alle 0,8 m), Lücken über 2,6 m bekommen einen Felsen, und
+  jeder Felsen der Kette ist nicht mehr zu überspringen. Man stößt also
+  immer zwischen zwei Bäumen oder Felsen an, nie im freien Schnee.
+  `KETTE_NORDWEST` vom obersten Pfosten der Lawinenverbauung über den
+  Gipfelrücken zum Netz (9 Felsen gesetzt, dort ist Baumgrenze),
+  `KETTE_NORDOST` vom Netz über die Mündung der Klamm bis hinter den weichen
+  Rand (2 Felsen; der Wald ist dicht), `KETTE_SEE` vom Ende des Seezauns
+  durchs Ufer hinaus – sonst käme man übers Eis hinter den Zaun.
+  Zweite Runde (08.10., Skizzen Julian): `KETTE_HUETTE` vom Hang oberhalb
+  der Hütte bis auf den Südzaun, gut 15 m östlich der Terrasse – östlich
+  davon lag ein Wald zwischen Hütte, Sportberg und Zaunende offen, in dem
+  man sich verlief (3 Felsen). `KETTE_WEST` links vom Lift: vom untersten
+  Pfosten der Lawinenverbauung etwa dort, wo der Rand der Spielfläche einen
+  Meter entfernt ist – sechs bis acht Meter im Bestand, man darf hinein,
+  aber nicht verfranzen –, hinter der Gefrorenen Quelle vorbei (Lichtung
+  frei) und hinaus an den Rand (7 Felsen). Vorher war der große Wald hinter
+  der Lawinenverbauung bis an die Gipfelflanke offen.
+- **Nachgemessen** (Flutfüllung, 0,5-m-Raster, Hindernisse um den Fahrer
+  vergrößert, Überspringbares und Zerbrechliches gilt als offen, das Netz
+  als Wand): außerhalb des Waldrands erreichbar bleiben nur der Hang
+  oberhalb der Hütte (gewollt) und der schmale Uferwald am See, zusammen
+  rund 500 m². Dazu eine Gegenprobe mit dem echten Fahrmodell: an jeder Linie
+  alle 1,5 m mehrere Anläufe mit Gas, zufälligem Winkel, Tempo 4–18 und
+  wechselnder Lenkung, sechs Sekunden lang – keiner endete hinter einer
+  Grenze. Beides stand nur in der Konsole (`__reach`, `__probe`); wer es
+  wieder braucht: Kreise aus `S.world.colliders` in ein Raster,
+  `playAreaDistance > 9` als Wand, vom Plateau aus fluten; für die Probe
+  `netz.update`, `skier.update`, `netz.pruefen` wie in `main.js` takten.
+- Kennzahlen: 440 Draw Calls im Tal (vorher 300–420); je Netz 3, Felsen
+  der Ketten bis zu 15.
 
 ## 4b. Handymodus
 

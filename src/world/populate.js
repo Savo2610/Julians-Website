@@ -40,6 +40,10 @@ import { createStartGate } from './props/start-gate.js'
 import { createGorgeBridge } from './props/gorge-bridge.js'
 import { createKlammSchanze } from './props/klamm-schanze.js'
 import { createKlammEis, rohrLage } from './props/klamm-eis.js'
+import { SUEDZAUN, SEEZAUN, NETZE, NETZ_SLALOM, KETTE_NORDWEST, KETTE_NORDOST, KETTE_SEE, KETTE_HUETTE, KETTE_WEST, aufLinie } from './grenze.js'
+import { grenzeZiehen } from './grenzkette.js'
+import { Fangnetz } from './attractions/fangnetz.js'
+import { createFangnetz } from './props/fangnetz.js'
 
 // Gesperrte Zonen: hier soll nichts wachsen, weil dort gefahren oder etwas
 // gebaut wird. Jede Station bringt ihre eigene Lichtung mit.
@@ -86,6 +90,28 @@ const FREE_PISTE = [
   [-44, -52], [-41, -46], [-38, -40], [-34.5, -34],
   [-31, -28], [-28.5, -22], [-27, -14],
 ]
+
+// Liegt (x, z) mit Radius r dort, wohin das Netz nachgibt? Das sind gut
+// zwei Meter dahinter und das Netz selbst, zwischen den Pfosten. Was davor
+// steht, bleibt: die kleine Tanne vor dem linken Feld stand in der Skizze mit
+// drauf.
+function imNetz(x, z, r) {
+  for (const netz of NETZE) {
+    const p = netz.pfosten
+    for (let i = 0; i < p.length - 1; i++) {
+      const a = p[i], b = p[i + 1]
+      const len = Math.hypot(b.x - a.x, b.z - a.z)
+      const tx = (b.x - a.x) / len, tz = (b.z - a.z) / len
+      const u = (x - a.x) * tx + (z - a.z) * tz
+      // Normale nach innen, wie in attractions/fangnetz.js.
+      let nx = -tz, nz = tx
+      if ((netz.innen.x - a.x) * nx + (netz.innen.z - a.z) * nz < 0) { nx = -nx; nz = -nz }
+      const d = (x - a.x) * nx + (z - a.z) * nz
+      if (u > 0.6 && u < len - 0.6 && d + r > -2.3 && d - r < 0.4) return true
+    }
+  }
+  return false
+}
 
 function inClearing(x, z, pad = 0) {
   for (const c of CLEARINGS) {
@@ -370,6 +396,12 @@ export function populate(world, sky, registry, stationOptions = {}) {
       if (Math.abs(entlang) < 4.2 && quer < 2.6) placements.splice(i, 1)
     }
   }
+  // Kein Stamm im Zaun und keiner dort, wohin das Netz nachgibt. Erst hier
+  // herausgenommen, damit der Zufall fuer alle anderen Baeume derselbe bleibt.
+  for (let i = placements.length - 1; i >= 0; i--) {
+    const p = placements[i]
+    if (aufLinie(SUEDZAUN, p.x, p.z).d < 1.1 || aufLinie(SEEZAUN, p.x, p.z).d < 1.1 || imNetz(p.x, p.z, 0.8)) placements.splice(i, 1)
+  }
   createForest(world, placements)
   const landscape = createLandscapeDetails(world, groveTrees)
   animatedProps.push((t, dt) => landscape.update(dt, skierRef.current))
@@ -438,7 +470,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
       scale: 0.65 + rng() * rng() * 1.75,
       stretch: 0.85 + rng() * 0.45,
       tilt: rng() - 0.5,
-    })),
+    })).filter((p) => !imNetz(p.x, p.z, p.scale * p.stretch) && aufLinie(SUEDZAUN, p.x, p.z).d > p.scale + 0.6),
   )
 
   // Zwei Landmarken-Findlinge, an denen man sich orientieren kann.
@@ -873,23 +905,13 @@ export function populate(world, sky, registry, stationOptions = {}) {
   markerRows.push(createPisteMarkers(world, route(RETURN_PATH, 5.0), { seed: 61, color: 0xe8703a }))
 
   // --- Zaeune -------------------------------------------------------------
-  // Ein alter Weidezaun im Osten, ein Absperrzaun oberhalb des Seeufers.
-  // Der Ostzaun folgt jetzt der Kante des Waldes statt einer geraden Linie
-  // durch ihn hindurch. Die Punkte liegen auf einer Kontur gleichen Abstands
-  // zum Rand der Spielflaeche – derselben Groesse, aus der auch die Waldbreite
-  // gerechnet wird. Damit laeuft der Zaun zwangslaeufig da, wo der Bestand
-  // aufhoert, und nicht quer hindurch. Vorn ist er ausserdem so weit
-  // hinausgezogen, dass der Loeschzug davor Platz hat und nicht mehr mitten
-  // im Zaun steht.
-  createFence(world, [
-    { x: 59.3, z: 16.3 }, { x: 57.0, z: 24.2 }, { x: 52.0, z: 31.0 },
-    { x: 46.2, z: 36.7 }, { x: 41.2, z: 42.2 }, { x: 35.7, z: 47.0 },
-    { x: 29.8, z: 50.9 }, { x: 23.5, z: 54.1 },
-  ], { seed: 41 })
-  createFence(world, [
-    // Am Ufer statt auf dem Eis: der letzte Pfosten lag 2 m im See.
-    { x: -26, z: 47 }, { x: -32, z: 56 }, { x: -42, z: 60 },
-  ], { seed: 77 })
+  // Der alte Weidezaun im Osten ist seit 08.10. die Suedgrenze: vom Seeufer
+  // bis auf die Hoehe des Funparks, im Wald auf der Kontur fuenf Meter
+  // innerhalb des Randes (Begruendung und Linie in grenze.js). Er ist dicht –
+  // vorher passte man zwischen zwei Pfosten hindurch. Der Absperrzaun am See
+  // (der letzte Pfosten lag frueher 2 m im See) ist sein Anfang.
+  createFence(world, SUEDZAUN, { seed: 41, dicht: true })
+  createFence(world, SEEZAUN, { seed: 77, dicht: true })
   // Der Zaun oben am Funpark gibt nach, siehe props/park-fence.js.
   const parkFenceEnde = { x: -12, z: -48 }
   const parkFence = createBreakableFence(world, [
@@ -911,12 +933,19 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Auf der anderen Seite laeuft sie durch bis ans Ende des Funparkzauns:
   // ein Zaun zwischen Slalom und Nordabfahrt, der wie der Funparkzaun
   // bricht. Felsen (Kreise ab 1,2 m) unterbrechen ihn.
+  const netzLuecke = (() => {
+    const a = NETZ_SLALOM.pfosten[0], b = NETZ_SLALOM.pfosten.at(-1)
+    return { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2, r: Math.hypot(b.x - a.x, b.z - a.z) / 2 / 0.9 }
+  })()
   const sledFence = createSledFence(SLED_LANE, {
     brechbar: {
       side: -1,
       von: { x: ax, z: az },
       bis: parkFenceEnde,
-      hindernis: (x, z) => world.nearby(x, z, []).filter((c) => c.r >= 1.2),
+      // Am Kopf der Klamm steht statt des Zauns das Netz: ein gedachter
+      // Felsen ueber dem Netz kappt den Zaun genau an dessen Pfosten (90 %
+      // des Radius, wie bei echten Felsen).
+      hindernis: (x, z) => [...world.nearby(x, z, []).filter((c) => c.r >= 1.2), netzLuecke],
     },
   })
   world.scene.add(sledFence)
@@ -1152,5 +1181,23 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Der Badesteg: von hier in den Sommer, siehe src/sommer/.
   const badesteg = createBadesteg(world)
 
-  return { trees: placements, huette, kreuz: cross, felsen, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
+  // --- Grenzen --------------------------------------------------------------
+  // Zwei Fangnetze (Kante der Nordabfahrt, Kopf der Klamm am Slalom) und
+  // Ketten aus Baeumen und Felsen, die nicht mehr durchlassen (grenze.js).
+  const fangnetze = NETZE.map((daten) => {
+    const netz = new Fangnetz(daten)
+    netz.kollision(world)
+    const bild = createFangnetz(world, netz)
+    animatedProps.push((t, dt) => bild.update(dt, skierRef.current))
+    return netz
+  })
+  const grenze = [
+    grenzeZiehen(world, KETTE_NORDWEST, { seed: 4401 }),
+    grenzeZiehen(world, KETTE_NORDOST, { seed: 4402 }),
+    grenzeZiehen(world, KETTE_SEE, { seed: 4403 }),
+    grenzeZiehen(world, KETTE_HUETTE, { seed: 4404 }),
+    grenzeZiehen(world, KETTE_WEST, { seed: 4405 }),
+  ]
+
+  return { fangnetze, grenze, trees: placements, huette, kreuz: cross, felsen, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
 }

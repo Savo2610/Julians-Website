@@ -10,7 +10,7 @@ const WOOD = 0x6f5038
 const WOOD_LIGHT = 0x8a6543
 const SNOW = 0xf7fbff
 
-export function createFence(world, points, { spacing = 2.3, height = 1.1, seed = 5 } = {}) {
+export function createFence(world, points, { spacing = 2.3, height = 1.1, seed = 5, dicht = false } = {}) {
   const rng = makeRng(seed)
   const parts = []
   const posts = []
@@ -31,6 +31,13 @@ export function createFence(world, points, { spacing = 2.3, height = 1.1, seed =
     }
     carry = (carry + (steps + 1) * spacing) - len
     if (carry < 0) carry = 0
+  }
+
+  // Ein dichter Zaun endet mit einem Pfosten am letzten Punkt; sonst bliebe
+  // hinter dem letzten Pfosten bis zu eine Feldbreite offen.
+  const ende = points.at(-1), letzter = posts.at(-1)
+  if (dicht && letzter && Math.hypot(ende.x - letzter.x, ende.z - letzter.z) > 0.3) {
+    posts.push({ x: ende.x, z: ende.z, angle: letzter.angle })
   }
 
   const base = posts.length ? terrainHeight(posts[0].x, posts[0].z) : 0
@@ -83,9 +90,17 @@ export function createFence(world, points, { spacing = 2.3, height = 1.1, seed =
   mesh.receiveShadow = true
   world.scene.add(mesh)
 
-  // Kollision: jeder zweite Pfosten reicht, die Latten dazwischen sind duenn.
+  // Kollision an jedem Pfosten. Das allein haelt niemanden auf: zwischen
+  // zwei Pfosten (2,3 m) bleiben 1,5 m frei, der Fahrer braucht 1,1. Ein
+  // dichter Zaun bekommt deshalb unter den Latten weitere Kreise, so eng,
+  // dass man nicht hindurchkommt (0,55 m alle 0,77 m: naeher als 1,03 m an
+  // die Mittellinie kommt keiner, und mehr als 1,08 m faehrt er auch bei
+  // 26 m/s und dem laengsten Bild von 1/24 s nicht).
   posts.forEach((p, i) => {
-    if (i % 1 === 0) world.addCollider(p.x, p.z, 0.4)
+    world.addCollider(p.x, p.z, 0.4)
+    const next = posts[i + 1]
+    if (!dicht || !next || Math.hypot(next.x - p.x, next.z - p.z) > spacing * 1.8) return
+    for (const k of [1, 2]) world.addCollider(p.x + (next.x - p.x) * k / 3, p.z + (next.z - p.z) * k / 3, 0.55)
   })
 
   return mesh

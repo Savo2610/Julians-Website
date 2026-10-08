@@ -856,8 +856,10 @@ export class Skier {
     const target = this.towTarget
     const groundY = terrainHeight(target.x, target.z)
 
-    // Weich nachziehen statt hart setzen, sonst ruckt der Einstieg.
-    const k = damp(9, dt)
+    // Weich nachziehen statt hart setzen, sonst ruckt der Einstieg. Das
+    // Fangnetz fuehrt direkt: es gibt die Lage in der Beule vor, und jede
+    // Verzoegerung liesse den Fahrer vor dem Netz in der Luft stehen.
+    const k = this.tow.direkt ? 1 : damp(9, dt)
     this.position.x += (target.x - this.position.x) * k
     this.position.z += (target.z - this.position.z) * k
     // `lift` hebt den Fahrer ueber den Boden – auf der Rail steht er auf dem
@@ -900,11 +902,13 @@ export class Skier {
     this.speed = this.tow.speed
     this.slope = slopeAlong(this.position.x, this.position.z, this.forward.x, this.forward.z)
 
-    // Haltung: leicht zurueckgelehnt, wie wenn man am Buegel haengt.
+    // Haltung: leicht zurueckgelehnt, wie wenn man am Buegel haengt. Im
+    // Fangnetz gibt das Netz sie vor (vorgelehnt, dann zurueckgeworfen).
     const hanging = this.tow.grab !== false
+    const haltung = this.tow.haltung
     this.lean += ((hanging ? this.steer * 0.12 : 0) - this.lean) * damp(4, dt)
-    this.pitch += ((hanging ? -0.1 : 0.02) - this.pitch) * damp(4, dt)
-    this.crouch += ((hanging ? 0.28 : 0.06) - this.crouch) * damp(5, dt)
+    this.pitch += ((haltung ? haltung.pitch : hanging ? -0.1 : 0.02) - this.pitch) * damp(haltung ? 12 : 4, dt)
+    this.crouch += ((haltung ? haltung.crouch : hanging ? 0.28 : 0.06) - this.crouch) * damp(haltung ? 12 : 5, dt)
     this.tuck += (0 - this.tuck) * damp(6, dt)
     this.plough += (0 - this.plough) * damp(6, dt)
     this.cross += (0 - this.cross) * damp(6, dt)

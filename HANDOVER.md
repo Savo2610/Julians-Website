@@ -1614,6 +1614,89 @@ die Wache nach 15 s wieder draußen, alle nach 24 s – also zwischen zwei
 Runden. Der See bleibt still; der Pfiff ist nur zu sehen. Zum Prüfen:
 `__kabel.murmeltiere.tiere`.
 
+## 4a¹¹. Grenzen des Tals: Südzaun, Fangnetz, Ketten (08.10., Zweig `grenze`)
+
+Ansage: die Welt klarer abgrenzen, ohne dass es nach Absperrung aussieht.
+Bis dahin hielt nur der weiche Rückschub neun Meter hinter dem Rand der
+Spielfläche (`skier.js`). Der Wald davor sieht geschlossen aus, ist es aber
+nicht: Bäume stehen mindestens 3,4 m auseinander, ihre Kreise lassen gut
+zwei Meter frei, der Fahrer braucht 1,1. Auch der alte Weidezaun ließ
+zwischen zwei Pfosten (2,3 m) 1,5 m frei. Gemessen mit einer Flutfüllung
+vom Startplatz (siehe unten): rundum war der ganze Waldgürtel befahrbar,
+und an der Nordseite fiel man hinter der Kante bis zu 20 m hinunter. Alle
+Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
+`tests/fangnetz.test.js`.
+
+- **Südzaun** (`SUEDZAUN`): der alte Weidezaun im Osten, verlängert vom
+  Absperrzaun am See (dessen mittlerer Pfosten ist sein Anfang) bis auf die
+  Höhe des Funparks, dort hinaus in den Gebirgsrand. Er läuft auf der Kontur
+  fünf Meter innerhalb des Randes, im dichten Teil des Waldes; aus der Kamera
+  blitzen nur Latten zwischen den Kronen. Zu Pisten und Wegen mindestens
+  elf Meter, nur der Stichweg zur abgestürzten Drohne endet 7,8 m davor (dort
+  stand schon der alte Zaun). An der Taille zwischen Talkessel und
+  Sportgelände knickt er nicht mit ein. `createFence(…, { dicht: true })`
+  setzt unter die Latten zwei Kreise je Feld (0,55 m alle 0,77 m) und einen
+  Pfosten ans Ende: näher als 1,03 m kommt keiner an die Mittellinie, mehr
+  als 1,08 m legt er in einem Bild nicht zurück (26 m/s bei 1/24 s). Bäume
+  im Zaun nimmt `populate.js` heraus. Weiter nördlich steigt die Flanke des
+  Sportbergs, und oberhalb der Hütte ist der Berg zu hoch – dort bewusst
+  nichts (Ansage).
+- **Fangnetz** (`NETZ`, `attractions/fangnetz.js` rechnet ohne three.js,
+  `props/fangnetz.js` ist das Bild): an der Nordabfahrt rechts oben, wo der
+  Hang hinter drei Tannen abbricht (sechs Meter auf sechs Meter, Skizze
+  Julian). Drei Pfosten, zwei Felder (12,4 und 8,3 m), 1,9 m hoch, knapp
+  zwei Meter vor der Kante. Das einzige – sparsam, wie gewünscht.
+  - Mechanik wie Lift und Rail (`skier.tow`): gefangen wird **nach**
+    `skier.update()` (`pruefen`, im selben Bild wie die Berührung), geführt
+    **davor** (`update`). `tow.direkt` setzt die Lage ohne Nachziehen,
+    `tow.haltung` lehnt den Fahrer ins Netz und beim Zurückfedern zurück.
+  - Feder zum Rand hin härter: `a = −ω²(1 + 0,6 p²) p − 1,0 v`, ω = 4,3.
+    8 m/s → 1,30 m tief, zurück mit 5,9; 13 m/s → 1,86 m, zurück mit 9,9
+    nach 0,46 s; 24 m/s → 2,76 m. Mindestens 3,5 m/s zurück, höchstens 15.
+    Die erste Fassung (ω 5, Dämpfung 1,4) gab bei 13 m/s nur 1,55 m nach
+    und sah steif aus.
+  - Abwurf mit Hopser (2,4 + 0,14 · Tempo); die Figur schaut noch ins Netz
+    und dreht sich in der Luft herum (`spin` hält die alte Blickrichtung und
+    läuft in `_updateTrick` von selbst auf null). `_fahrt` wird beim Abwurf
+    gesetzt – in der Luft folgt sie dem Ski nicht.
+  - Auch im Sprung wird gefangen: die Schulter vor dem Netz wirft bei
+    24 m/s gut zwei Meter hoch. Hinter dem Netz hält eine Reihe Kreise
+    (0,25 m dahinter) alles, was das Netz nicht fängt – am Pfosten, quer
+    hineinrutschend. Wer frei von innen kommt, fährt hindurch (`onHit` sagt
+    `true`), sonst kostete der Anprall bis zu 80 % Tempo, bevor das Netz es
+    zurückgeben kann.
+  - Bild: Rautenmasche als Canvas-Textur (Fläche 16 % deckend, Fäden voll),
+    beidseitig mit `forceSinglePass`. Die Beule ist ein Kosinusbuckel bis zu
+    den Pfosten, der Saum bleibt fast stehen, das obere Seil geht halb mit
+    und sinkt 0,3 m je Meter Beule – aus 36° von oben liest man das
+    Eindrücken erst am einknickenden Seil. Ohne Fahrer schwingt das Feld
+    frei aus (ω 13, etwa 1,5 s), die Nachbarfelder zucken mit, die Pfosten
+    neigen sich zur Beule. Beim Einschlag fällt Schnee vom Seil, die Kamera
+    zuckt (`main.js`). Bäume und Felsen bis 2,3 m hinter dem Netz nimmt
+    `imNetz()` in `populate.js` heraus. Weiter als 80 m weg ruht das Bild.
+  - Zum Prüfen: `__ski.props.fangnetz` (`.fang`, `.felder`, `.lage(x, z)`).
+- **Ketten aus Bäumen und Felsen** (`grenzeZiehen()` in `world/grenzkette.js`):
+  wo kein Zaun hingehört. Entlang einer Leitlinie werden Stämme und Felsen
+  bis 2,5 m daneben der Reihe nach verbunden; dazwischen stehen unsichtbare
+  Kreise (0,65 m alle 0,8 m), Lücken über 2,6 m bekommen einen Felsen, und
+  jeder Felsen der Kette ist nicht mehr zu überspringen. Man stößt also
+  immer zwischen zwei Bäumen oder Felsen an, nie im freien Schnee.
+  `KETTE_NORDWEST` vom obersten Pfosten der Lawinenverbauung über den
+  Gipfelrücken zum Netz (9 Felsen gesetzt, dort ist Baumgrenze),
+  `KETTE_NORDOST` vom Netz über die Mündung der Klamm bis hinter den weichen
+  Rand (2 Felsen; der Wald ist dicht), `KETTE_SEE` vom Ende des Seezauns
+  durchs Ufer hinaus – sonst käme man übers Eis hinter den Zaun.
+- **Nachgemessen** (Flutfüllung, 0,5-m-Raster, Hindernisse um den Fahrer
+  vergrößert, Überspringbares und Zerbrechliches gilt als offen, das Netz
+  als Wand): außerhalb des Waldrands erreichbar bleibt nur der Hang oberhalb
+  der Hütte und am Sportberg (gewollt) und die **Westseite** zwischen See und
+  Lawinenverbauung (nicht Teil der Ansage, das Gelände steigt dort an). Die
+  Funktion stand nur in der Konsole (`__reach`); wer sie wieder braucht:
+  Kreise aus `S.world.colliders` in ein Raster, `playAreaDistance > 9` als
+  Wand, vom Plateau aus fluten.
+- Kennzahlen: 431 Draw Calls und 884 k Dreiecke im Tal (vorher 300–420 /
+  800–865 k); Netz 3, Felsen der Ketten bis zu 9.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/
@@ -2017,6 +2100,10 @@ Abschnitt 1, Nordabfahrt).
      Fahrt und Auswertung dorthin, am Handy ein Menüknopf oben rechts.
      Bestenliste, Pass und Rekord teilen sich mit dem Tal den Speicher.
      Ein Ticket braucht es dort nicht.
+- **Westseite** zwischen See und Lawinenverbauung ist nicht abgegrenzt
+  (Grenzen, 4a¹¹). Dort steigt das Gelände an, man fällt nicht hinunter;
+  falls gewünscht, schließt eine weitere Kette vom unteren Ende der
+  Verbauung (−68, −43,5) bis an den Rand die Lücke.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.

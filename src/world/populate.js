@@ -40,7 +40,7 @@ import { createStartGate } from './props/start-gate.js'
 import { createGorgeBridge } from './props/gorge-bridge.js'
 import { createKlammSchanze } from './props/klamm-schanze.js'
 import { createKlammEis, rohrLage } from './props/klamm-eis.js'
-import { SUEDZAUN, SEEZAUN, NETZ, KETTE_NORDWEST, KETTE_NORDOST, KETTE_SEE, aufLinie } from './grenze.js'
+import { SUEDZAUN, SEEZAUN, NETZE, NETZ_SLALOM, KETTE_NORDWEST, KETTE_NORDOST, KETTE_SEE, KETTE_HUETTE, KETTE_WEST, aufLinie } from './grenze.js'
 import { grenzeZiehen } from './grenzkette.js'
 import { Fangnetz } from './attractions/fangnetz.js'
 import { createFangnetz } from './props/fangnetz.js'
@@ -96,17 +96,19 @@ const FREE_PISTE = [
 // steht, bleibt: die kleine Tanne vor dem linken Feld stand in der Skizze mit
 // drauf.
 function imNetz(x, z, r) {
-  const p = NETZ.pfosten
-  for (let i = 0; i < p.length - 1; i++) {
-    const a = p[i], b = p[i + 1]
-    const len = Math.hypot(b.x - a.x, b.z - a.z)
-    const tx = (b.x - a.x) / len, tz = (b.z - a.z) / len
-    const u = (x - a.x) * tx + (z - a.z) * tz
-    // Normale nach innen, wie in attractions/fangnetz.js.
-    let nx = -tz, nz = tx
-    if ((NETZ.innen.x - a.x) * nx + (NETZ.innen.z - a.z) * nz < 0) { nx = -nx; nz = -nz }
-    const d = (x - a.x) * nx + (z - a.z) * nz
-    if (u > 0.6 && u < len - 0.6 && d + r > -2.3 && d - r < 0.4) return true
+  for (const netz of NETZE) {
+    const p = netz.pfosten
+    for (let i = 0; i < p.length - 1; i++) {
+      const a = p[i], b = p[i + 1]
+      const len = Math.hypot(b.x - a.x, b.z - a.z)
+      const tx = (b.x - a.x) / len, tz = (b.z - a.z) / len
+      const u = (x - a.x) * tx + (z - a.z) * tz
+      // Normale nach innen, wie in attractions/fangnetz.js.
+      let nx = -tz, nz = tx
+      if ((netz.innen.x - a.x) * nx + (netz.innen.z - a.z) * nz < 0) { nx = -nx; nz = -nz }
+      const d = (x - a.x) * nx + (z - a.z) * nz
+      if (u > 0.6 && u < len - 0.6 && d + r > -2.3 && d - r < 0.4) return true
+    }
   }
   return false
 }
@@ -931,12 +933,19 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Auf der anderen Seite laeuft sie durch bis ans Ende des Funparkzauns:
   // ein Zaun zwischen Slalom und Nordabfahrt, der wie der Funparkzaun
   // bricht. Felsen (Kreise ab 1,2 m) unterbrechen ihn.
+  const netzLuecke = (() => {
+    const a = NETZ_SLALOM.pfosten[0], b = NETZ_SLALOM.pfosten.at(-1)
+    return { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2, r: Math.hypot(b.x - a.x, b.z - a.z) / 2 / 0.9 }
+  })()
   const sledFence = createSledFence(SLED_LANE, {
     brechbar: {
       side: -1,
       von: { x: ax, z: az },
       bis: parkFenceEnde,
-      hindernis: (x, z) => world.nearby(x, z, []).filter((c) => c.r >= 1.2),
+      // Am Kopf der Klamm steht statt des Zauns das Netz: ein gedachter
+      // Felsen ueber dem Netz kappt den Zaun genau an dessen Pfosten (90 %
+      // des Radius, wie bei echten Felsen).
+      hindernis: (x, z) => [...world.nearby(x, z, []).filter((c) => c.r >= 1.2), netzLuecke],
     },
   })
   world.scene.add(sledFence)
@@ -1172,19 +1181,23 @@ export function populate(world, sky, registry, stationOptions = {}) {
   // Der Badesteg: von hier in den Sommer, siehe src/sommer/.
   const badesteg = createBadesteg(world)
 
-  // --- Grenze im Norden ----------------------------------------------------
-  // Das Fangnetz an der Kante der Nordabfahrt und links und rechts davon eine
-  // Kette aus Baeumen und Felsen, die nicht mehr durchlaesst (grenze.js).
-  // Die dritte Kette schliesst den Seezaun an den Rand an.
-  const fangnetz = new Fangnetz(NETZ)
-  fangnetz.kollision(world)
-  const netzBild = createFangnetz(world, fangnetz)
-  animatedProps.push((t, dt) => netzBild.update(dt, skierRef.current))
+  // --- Grenzen --------------------------------------------------------------
+  // Zwei Fangnetze (Kante der Nordabfahrt, Kopf der Klamm am Slalom) und
+  // Ketten aus Baeumen und Felsen, die nicht mehr durchlassen (grenze.js).
+  const fangnetze = NETZE.map((daten) => {
+    const netz = new Fangnetz(daten)
+    netz.kollision(world)
+    const bild = createFangnetz(world, netz)
+    animatedProps.push((t, dt) => bild.update(dt, skierRef.current))
+    return netz
+  })
   const grenze = [
     grenzeZiehen(world, KETTE_NORDWEST, { seed: 4401 }),
     grenzeZiehen(world, KETTE_NORDOST, { seed: 4402 }),
     grenzeZiehen(world, KETTE_SEE, { seed: 4403 }),
+    grenzeZiehen(world, KETTE_HUETTE, { seed: 4404 }),
+    grenzeZiehen(world, KETTE_WEST, { seed: 4405 }),
   ]
 
-  return { fangnetz, grenze, trees: placements, huette, kreuz: cross, felsen, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
+  return { fangnetze, grenze, trees: placements, huette, kreuz: cross, felsen, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
 }

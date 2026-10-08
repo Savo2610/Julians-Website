@@ -61,6 +61,20 @@ export const NETZ = {
   hoehe: 1.9,
 }
 
+// Das zweite Netz steht am Slalom (Skizze Julian, 08.10.): dort laeuft der
+// zerbrechliche Zaun zwischen Slalom und Nordabfahrt genau am Kopf der Klamm
+// vorbei, wo der Bach aus dem Rohr kommt. Wer den Zaun durchbrach, lag im
+// Bach. Das Netz ersetzt das Zaunstueck vom Felsen am Ende des oberen
+// Zaunabschnitts bis hinter den Knick; der Zaun endet an seinen Pfosten
+// (populate.js schneidet ihn mit einem gedachten Felsen heraus).
+export const NETZ_SLALOM = {
+  pfosten: [{ x: -33.1, z: -66.65 }, { x: -27.9, z: -62.45 }, { x: -22.7, z: -57.2 }],
+  innen: { x: -32, z: -57 },
+  hoehe: 1.9,
+}
+
+export const NETZE = [NETZ, NETZ_SLALOM]
+
 // --- Kette aus Baeumen und Felsen ----------------------------------------
 // Wo kein Zaun hingehoert, sind es Baeume und Felsen, die nicht mehr
 // durchlassen (Ansage 08.10.). grenzeZiehen() in populate.js verbindet die
@@ -108,3 +122,28 @@ export function zwischen(a, b, schritt) {
   for (let k = 1; k < n; k++) out.push({ x: a.x + (b.x - a.x) * k / n, z: a.z + (b.z - a.z) * k / n })
   return out
 }
+
+// Hinter der Huette (Skizze Julian, 08.10.): oberhalb der Huette ist der Berg
+// zu hoch, aber oestlich davon stand ein Wald offen, in dem man sich
+// verlaufen konnte – zwischen Huette, Sportberg und dem Ende des Suedzauns.
+// Die Kette laeuft vom Hang (wo der weiche Rand beginnt) an der Huette vorbei
+// bis auf den Suedzaun, gut fuenfzehn Meter oestlich der Terrasse.
+export const KETTE_HUETTE = [
+  { x: 45.0, z: -85.2 }, { x: 42.4, z: -78.7 }, { x: 39.6, z: -71.7 },
+  { x: 47.1, z: -62.4 }, { x: 51.3, z: -60.1 }, { x: 54.7, z: -56.5 },
+  { x: 59.5, z: -54.5 }, { x: 63.5, z: -50.75 },
+]
+
+// Links vom Lift (Ansage 08.10.: ein Stueck in den Wald darf man, aber nicht
+// verfranzen). Hinter dem unteren Ende der Lawinenverbauung lag ein grosser
+// Wald bis an die Gipfelflanke offen. Die Kette laeuft vom untersten
+// Schneebrueckenpfosten etwa auf der Linie, wo der Rand der Spielflaeche
+// einen Meter entfernt ist – sechs bis acht Meter im Bestand –, hinter der
+// Gefrorenen Quelle vorbei (ihre Lichtung bleibt frei) und dann hinaus an den
+// weichen Rand. Suedlich davon bleibt nur der schmale Uferwald am See.
+export const KETTE_WEST = [
+  { x: -68.0, z: -43.5 }, { x: -69.5, z: -36.0 }, { x: -67.0, z: -29.0 },
+  { x: -64.5, z: -23.0 }, { x: -65.0, z: -16.0 }, { x: -66.0, z: -8.0 },
+  { x: -66.5, z: 0.0 }, { x: -66.2, z: 8.0 }, { x: -65.5, z: 14.0 },
+  { x: -65.5, z: 20.0 }, { x: -66.0, z: 26.0 }, { x: -73.1, z: 24.2 },
+]

@@ -1674,7 +1674,20 @@ Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
     neigen sich zur Beule. Beim Einschlag fällt Schnee vom Seil, die Kamera
     zuckt (`main.js`). Bäume und Felsen bis 2,3 m hinter dem Netz nimmt
     `imNetz()` in `populate.js` heraus. Weiter als 80 m weg ruht das Bild.
-  - Zum Prüfen: `__ski.props.fangnetz` (`.fang`, `.felder`, `.lage(x, z)`).
+  - Zum Prüfen: `__ski.props.fangnetze[0]` (`.fang`, `.felder`, `.lage(x, z)`).
+  - Fangen bis 0,3 m an den Pfosten heran, die Beule rutscht dann weich auf
+    1,2 m vom Pfosten weg. Vorher fing es erst ab 0,7 m, und wer dazwischen
+    traf, prallte an der Reihe dahinter ab (gemessen 10 → 0,3 m/s).
+- **Zweites Netz am Slalom** (`NETZ_SLALOM`, zweite Runde 08.10., Skizze
+  Julian): der zerbrechliche Zaun zwischen Slalom und Nordabfahrt läuft am
+  Kopf der Klamm vorbei, wo der Bach aus dem Rohr kommt; wer ihn durchbrach,
+  lag im Bach. Das Netz ersetzt dort 14 m Zaun, vom Felsen am Ende des oberen
+  Abschnitts bis hinter den Knick. Herausgeschnitten wird der Zaun mit einem
+  gedachten Felsen über dem Netz (`netzLuecke` in `populate.js`, gekappt bei
+  90 % wie an echten Felsen), er endet also an den Netzpfosten. Von der Seite
+  sieht man hier die Beule am besten: sie wölbt sich über die Klamm.
+  „Die Kante noch steiler machen“ ist offen – das ginge über die Tiefe am
+  Kopf der Klamm (`KLAMM.tiefe`), verschiebt aber Rohr und Bach mit.
 - **Ketten aus Bäumen und Felsen** (`grenzeZiehen()` in `world/grenzkette.js`):
   wo kein Zaun hingehört. Entlang einer Leitlinie werden Stämme und Felsen
   bis 2,5 m daneben der Reihe nach verbunden; dazwischen stehen unsichtbare
@@ -1686,16 +1699,28 @@ Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
   `KETTE_NORDOST` vom Netz über die Mündung der Klamm bis hinter den weichen
   Rand (2 Felsen; der Wald ist dicht), `KETTE_SEE` vom Ende des Seezauns
   durchs Ufer hinaus – sonst käme man übers Eis hinter den Zaun.
+  Zweite Runde (08.10., Skizzen Julian): `KETTE_HUETTE` vom Hang oberhalb
+  der Hütte bis auf den Südzaun, gut 15 m östlich der Terrasse – östlich
+  davon lag ein Wald zwischen Hütte, Sportberg und Zaunende offen, in dem
+  man sich verlief (3 Felsen). `KETTE_WEST` links vom Lift: vom untersten
+  Pfosten der Lawinenverbauung etwa dort, wo der Rand der Spielfläche einen
+  Meter entfernt ist – sechs bis acht Meter im Bestand, man darf hinein,
+  aber nicht verfranzen –, hinter der Gefrorenen Quelle vorbei (Lichtung
+  frei) und hinaus an den Rand (7 Felsen). Vorher war der große Wald hinter
+  der Lawinenverbauung bis an die Gipfelflanke offen.
 - **Nachgemessen** (Flutfüllung, 0,5-m-Raster, Hindernisse um den Fahrer
   vergrößert, Überspringbares und Zerbrechliches gilt als offen, das Netz
-  als Wand): außerhalb des Waldrands erreichbar bleibt nur der Hang oberhalb
-  der Hütte und am Sportberg (gewollt) und die **Westseite** zwischen See und
-  Lawinenverbauung (nicht Teil der Ansage, das Gelände steigt dort an). Die
-  Funktion stand nur in der Konsole (`__reach`); wer sie wieder braucht:
-  Kreise aus `S.world.colliders` in ein Raster, `playAreaDistance > 9` als
-  Wand, vom Plateau aus fluten.
-- Kennzahlen: 431 Draw Calls und 884 k Dreiecke im Tal (vorher 300–420 /
-  800–865 k); Netz 3, Felsen der Ketten bis zu 9.
+  als Wand): außerhalb des Waldrands erreichbar bleiben nur der Hang
+  oberhalb der Hütte (gewollt) und der schmale Uferwald am See, zusammen
+  rund 500 m². Dazu eine Gegenprobe mit dem echten Fahrmodell: an jeder Linie
+  alle 1,5 m mehrere Anläufe mit Gas, zufälligem Winkel, Tempo 4–18 und
+  wechselnder Lenkung, sechs Sekunden lang – keiner endete hinter einer
+  Grenze. Beides stand nur in der Konsole (`__reach`, `__probe`); wer es
+  wieder braucht: Kreise aus `S.world.colliders` in ein Raster,
+  `playAreaDistance > 9` als Wand, vom Plateau aus fluten; für die Probe
+  `netz.update`, `skier.update`, `netz.pruefen` wie in `main.js` takten.
+- Kennzahlen: 440 Draw Calls im Tal (vorher 300–420); je Netz 3, Felsen
+  der Ketten bis zu 15.
 
 ## 4b. Handymodus
 
@@ -2100,10 +2125,6 @@ Abschnitt 1, Nordabfahrt).
      Fahrt und Auswertung dorthin, am Handy ein Menüknopf oben rechts.
      Bestenliste, Pass und Rekord teilen sich mit dem Tal den Speicher.
      Ein Ticket braucht es dort nicht.
-- **Westseite** zwischen See und Lawinenverbauung ist nicht abgegrenzt
-  (Grenzen, 4a¹¹). Dort steigt das Gelände an, man fällt nicht hinunter;
-  falls gewünscht, schließt eine weitere Kette vom unteren Ende der
-  Verbauung (−68, −43,5) bis an den Rand die Lücke.
 - Die Wände der Klamm zeigen aus der Nähe **facettiertes Dreiecksschattieren**.
   Aus dem Fahrbetrieb heraus fällt es nicht auf, aus einer bodennahen
   Standaufnahme schon. Nicht untersucht.

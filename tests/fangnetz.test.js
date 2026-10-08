@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { Skier } from '../src/player/skier.js'
 import { terrainHeight } from '../src/world/heightfield.js'
 import { Fangnetz } from '../src/world/attractions/fangnetz.js'
-import { NETZ } from '../src/world/grenze.js'
+import { NETZ, NETZ_SLALOM } from '../src/world/grenze.js'
 
 // Das Fangnetz an der Nordabfahrt (08.10.): hineinfahren, einsinken,
 // zurueckgeworfen werden. Gefahren wird ohne Szene und ohne Hindernisse, in
@@ -25,8 +25,8 @@ function eingabe(tasten = ['forward']) {
 
 // Faehrt aus `abstand` Metern auf ein Feld zu, mit `winkel` gegen die
 // Senkrechte. Gibt den Verlauf zurueck.
-function fahre({ feld = 1, anteil = 0.5, tempo = 13, abstand = 4, winkel = 0, gas = true, bilder = 240 } = {}) {
-  const netz = new Fangnetz(NETZ)
+function fahre({ daten = NETZ, feld = 1, anteil = 0.5, tempo = 13, abstand = 4, winkel = 0, gas = true, bilder = 240 } = {}) {
+  const netz = new Fangnetz(daten)
   const f = netz.felder[feld]
   const u = f.len * anteil
   const s = new Skier(welt)
@@ -112,4 +112,21 @@ test('ohne Fahrer schwingt das Netz aus und kommt zur Ruhe', () => {
   assert.ok(max > 0.1, 'es schwingt')
   for (let i = 0; i < 240; i++) netz.update(1 / 60, null)
   assert.ok(Math.abs(netz.felder[0].tiefe) < 0.01, 'und steht wieder')
+})
+
+test('das Netz am Slalom faengt in beiden Feldern und wirft zurueck auf die Bahn', () => {
+  for (const feld of [0, 1]) {
+    const v = fahre({ daten: NETZ_SLALOM, feld, tempo: 14, abstand: 5 })
+    assert.ok(v.gefangen !== null && v.losgelassen !== null, `Feld ${feld}`)
+    assert.ok(v.minD > -2.3)
+    const l = v.netz.lage(v.s.position.x, v.s.position.z)
+    assert.ok(!l || l.d > 2)
+  }
+})
+
+test('knapp neben dem Pfosten faengt das Netz noch', () => {
+  // Gemessen am Slalomnetz: bei 0,66 m vom Pfosten prallte man vorher ab.
+  const f = new Fangnetz(NETZ_SLALOM).felder[1]
+  const v = fahre({ daten: NETZ_SLALOM, feld: 1, anteil: 0.5 / f.len, tempo: 10, abstand: 3 })
+  assert.ok(v.gefangen !== null)
 })

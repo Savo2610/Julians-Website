@@ -80,10 +80,11 @@ Das Wichtigste in Kürze:
   fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
 
 - **Grenzen** (`src/world/grenze.js`, HANDOVER 4a¹¹): Südzaun vom See bis
-  zum Funpark, gelbes Fangnetz an der Kante der Nordabfahrt (wirft zurück),
-  links und rechts davon Ketten aus Bäumen und Felsen, die nicht mehr
-  durchlassen. Oberhalb der Hütte bewusst nichts. Lieber Wald und Fels als
-  sichtbare Absperrung; Netz nur dort.
+  zum Funpark, zwei gelbe Fangnetze (Kante der Nordabfahrt, Kopf der Klamm
+  am Slalom; sie werfen zurück), sonst Ketten aus Bäumen und Felsen, die
+  nicht mehr durchlassen – auch hinter der Hütte und links vom Lift (dort
+  ein Stück im Wald). Oberhalb der Hütte bewusst nichts. Lieber Wald und
+  Fels als sichtbare Absperrung; Netze sparsam.
 
 `npm run dev` startet (Tal auf `/`, Kabelsee auf `/kabelsee/`),
 `npm run dev:api` den Worker dazu (Bestenlisten, Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas

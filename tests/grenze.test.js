@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { terrainHeight, playAreaDistance, NORTH_LANE, SLED_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE } from '../src/world/heightfield.js'
 import { VALLEY_PATHS } from '../src/world/paths.js'
-import { SUEDZAUN, SEEZAUN, NETZ, KETTE_NORDWEST, KETTE_NORDOST, KETTE_SEE, aufLinie } from '../src/world/grenze.js'
+import { SUEDZAUN, SEEZAUN, NETZ, NETZ_SLALOM, KETTE_NORDWEST, KETTE_NORDOST, KETTE_SEE, KETTE_HUETTE, KETTE_WEST, aufLinie } from '../src/world/grenze.js'
 import { createFence } from '../src/world/props/fence.js'
 import { grenzeZiehen } from '../src/world/grenzkette.js'
 
@@ -74,7 +74,8 @@ test('der Suedzaun bleibt im Wald und weg von Wegen und Pisten', () => {
 })
 
 test('die offenen Enden reichen bis hinter den weichen Rand', () => {
-  for (const [name, p] of [['Suedzaun', SUEDZAUN.at(-1)], ['Kette Nordost', KETTE_NORDOST.at(-1)], ['Kette See', KETTE_SEE.at(-1)]]) {
+  for (const [name, p] of [['Suedzaun', SUEDZAUN.at(-1)], ['Kette Nordost', KETTE_NORDOST.at(-1)], ['Kette See', KETTE_SEE.at(-1)],
+    ['Kette Huette', KETTE_HUETTE[0]], ['Kette West', KETTE_WEST.at(-1)]]) {
     const e = playAreaDistance(p.x, p.z)
     // Zwischen Ende und Rand darf keine Luecke bleiben, durch die der Fahrer passt.
     assert.ok(e > RAND + 2 * FAHRER, `${name}: Rand ${e.toFixed(1)}`)
@@ -85,6 +86,29 @@ test('die offenen Enden reichen bis hinter den weichen Rand', () => {
   assert.deepEqual(KETTE_NORDOST[0], NETZ.pfosten.at(-1))
   assert.deepEqual(KETTE_SEE[0], SEEZAUN.at(-1))
   assert.deepEqual(SUEDZAUN[0], SEEZAUN[1])
+  // Die Kette hinter der Huette endet auf dem Suedzaun, die im Westen am
+  // untersten Pfosten der Lawinenverbauung (-68, -43,5).
+  assert.ok(aufLinie(SUEDZAUN, KETTE_HUETTE.at(-1).x, KETTE_HUETTE.at(-1).z).d < 0.3)
+  assert.ok(Math.hypot(KETTE_WEST[0].x + 68, KETTE_WEST[0].z + 43.5) < 0.6)
+})
+
+test('die neuen Ketten lassen Huette, Quelle und Wege frei', () => {
+  // Terrasse der Huette (Lichtung 24, -60, 12 m) und Lichtung der Quelle
+  // (-58,5, 25, 5,5 m) mit Abstand.
+  for (const p of entlang(KETTE_HUETTE, 0.5)) assert.ok(Math.hypot(p.x - 24, p.z + 60) > 15)
+  for (const p of entlang(KETTE_WEST, 0.5)) assert.ok(Math.hypot(p.x + 58.5, p.z - 25) > 7)
+  const wege = VALLEY_PATHS.map((v) => v.path.map(([x, z]) => ({ x, z })))
+  for (const linie of [KETTE_HUETTE, KETTE_WEST]) {
+    for (const p of entlang(linie, 0.5)) {
+      for (const w of wege) assert.ok(aufLinie(w, p.x, p.z).d > 8, `Weg bei (${p.x.toFixed(1)}, ${p.z.toFixed(1)})`)
+    }
+  }
+  // Im Westen ein Stueck im Wald, nicht am Saum und nicht am Rand:
+  // ein bis vier Meter vor dem Rand der Spielflaeche.
+  for (const p of KETTE_WEST.slice(3, -2)) {
+    const e = playAreaDistance(p.x, p.z)
+    assert.ok(e > -4 && e < 4, `Rand ${e.toFixed(1)} bei (${p.x}, ${p.z})`)
+  }
 })
 
 test('hinter dem Netz faellt der Hang ab – dafuer steht es da', () => {

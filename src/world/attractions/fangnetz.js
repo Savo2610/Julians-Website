@@ -26,7 +26,12 @@ const OMEGA = 4.3        // 1/s, Eigenfrequenz am Anfang
 const HAERTE = 0.6       // 1/m², wie stark die Feder zum Rand hin anzieht
 const DAEMPFUNG = 1.0    // 1/s – gibt gut drei Viertel des Tempos zurueck
 const FANG = 0.75        // m, Abstand der Fahrermitte vom Netz bei Beruehrung
-const PFOSTEN_RAND = 0.7 // m, so nah an einen Pfosten heran faengt das Netz
+const PFOSTEN_RAND = 0.3 // m, so nah an einen Pfosten heran faengt das Netz
+// Die Beule rutscht im Netz bis hierher vom Pfosten weg: direkt am Pfosten
+// gibt ein Netz nicht nach. Vorher fing es erst ab 0,7 m, und wer dazwischen
+// traf (gemessen am Slalomnetz bei 0,66 m), prallte an der Reihe dahinter ab
+// und verlor 70 % Tempo.
+const BEULE_RAND = 1.2
 const RAUS_MIN = 3.5     // m/s, auch wer langsam kommt, wird sichtbar zurueckgeschubst
 const RAUS_MAX = 15
 const QUER_REIBUNG = 3   // 1/s, das Netz haelt fest, was quer laeuft
@@ -159,7 +164,8 @@ export class Fangnetz {
     if (!g) return
     g.zeit += dt
     const f = this.felder[g.feld]
-    g.u = Math.max(PFOSTEN_RAND, Math.min(f.len - PFOSTEN_RAND, g.u))
+    const ziel = Math.max(BEULE_RAND, Math.min(f.len - BEULE_RAND, g.u))
+    g.u += (ziel - g.u) * (1 - Math.exp(-8 * dt))
     g.luft *= Math.exp(-7 * dt)
     f.u = g.u
     f.tiefe = Math.max(0, g.p)

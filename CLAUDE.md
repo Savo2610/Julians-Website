@@ -79,6 +79,12 @@ Das Wichtigste in Kürze:
   Wohnt im Schuppen am Ende der Nordabfahrt (`SCHUPPEN` im Höhenfeld) und
   fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
 
+- **Kinderland** (`src/world/areas/kinderland.js`, HANDOVER 4a¹²): Teppich,
+  Karussell, Tierslalom (außen umfahren), Bremsfeld, Trampolin auf der
+  Westabfahrt (Fangnetz-Mechanik, liegend; unter dem Tuch eine Mulde, die
+  niemand befährt), Skischule mit fahrender Gruppe. Der Skilehrer-Ausweis
+  hängt nur an Tafel und Skilehrer, ohne Kachel. Die Leuchtstrecke ist weg.
+
 - **Grenzen** (`src/world/grenze.js`, HANDOVER 4a¹¹): Südzaun vom See bis
   zum Funpark, zwei gelbe Fangnetze (Kante der Nordabfahrt, Kopf der Klamm
   am Slalom; sie werfen zurück), sonst Ketten aus Bäumen und Felsen, die

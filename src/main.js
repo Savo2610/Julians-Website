@@ -197,7 +197,8 @@ const touch = TOUCH
   ? new TouchControls(input, canvas, {
     camera: chase,
     skier,
-    jumpVisible: () => inFunpark(skier.position.x, skier.position.z) || !!props.railRide.rider,
+    // Auf dem Trampolin schaukelt man sich mit dem Sprungknopf hoch.
+    jumpVisible: () => inFunpark(skier.position.x, skier.position.z) || !!props.railRide.rider || props.kinderland.trampolin.imSpiel,
     onMap: () => interaction.press('map'),
     mapVisible: () => !mapMenu.open && !interaction.focus && !skier.tow && !flight.active,
   })
@@ -376,6 +377,9 @@ function advance(dt) {
   for (const netz of props.fangnetze) netz.update(dt, skier)
   skier.update(dt, input, trail)
   for (const netz of props.fangnetze) netz.pruefen(skier)
+  // Das Trampolin faengt wie das Netz nach dem Schritt; Tierslalom und
+  // Bremsfeld lesen dort die neue Lage.
+  props.kinderland.pruefen(skier)
   props.lift.spannen(skier)
   emitSpray(dt)
   spray.update(dt)

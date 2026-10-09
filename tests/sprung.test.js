@@ -138,9 +138,9 @@ test('Ausserhalb des Parks springt die Leertaste sofort den alten Hopser', () =>
   assert.ok(Math.abs(s.vy - (SPRUNG.hopser - 18 / 60)) < 1e-9, `vy ${s.vy}`)
 })
 
-test('Parkregeln gelten nur im Kern des Bandes, nicht auf der Leuchtstrecke', () => {
+test('Parkregeln gelten nur im Kern des Bandes, nicht auf der Westabfahrt', () => {
   for (const f of PARK_FEATURES) assert.equal(parkFlug(f.x, f.z), true, f.kind)
-  // Kopf der Leuchtstrecke und Ende der Nordabfahrt: im Saum von
+  // Kopf der Westabfahrt (frueher Leuchtstrecke) und Ende der Nordabfahrt: im Saum von
   // inFunpark, aber ohne Parkflug.
   for (const [x, z] of [[34, -9.9], [6.3, -63.8]]) {
     assert.equal(inFunpark(x, z), true)

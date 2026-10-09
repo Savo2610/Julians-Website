@@ -361,3 +361,172 @@ export function createBuntingFence(points, { height = 1.15, spacing = 3.6, sampl
   mesh.castShadow = true
   return mesh
 }
+
+// --- Tierstange ----------------------------------------------------------------
+// Kinderslalom wie in jeder Skischule: einzelne Stangen mit einem Tierkopf
+// obendrauf, um die man im Wechsel herumfaehrt. Sie loesen die Huetchentore
+// ab (Ansage 09.10.: das Kinderland soll einladender werden) – ein Tor aus
+// zwei Pylonen ist eine Aufgabe, ein Pinguin, um den man herumfaehrt, ist
+// ein Spiel.
+//
+// Das Gesicht ist eine flache Scheibe zur Kamera, wie die Tafeln der
+// Wegweiser: aus 36 Grad von oben bleibt eine Kugel ein Fleck, eine Scheibe
+// mit Augen ist ein Tier. Die Stange steht auf einem Federfuss
+// (springMount in signpost.js) und legt sich um, wenn man sie trifft – der
+// weisse Teller bleibt liegen und ist deshalb ein eigenes Stueck
+// (userData.teller).
+
+export const TIERE = ['pinguin', 'baer', 'fuchs', 'frosch', 'hase', 'eule']
+
+const KOPF = 1.42          // m, Hoehe der Gesichtsmitte
+const GESICHT = 0.3        // m, Halbmesser der Scheibe
+
+function scheibe(r, farbe, z, { sx = 1, sy = 1, y = 0, x = 0, tiefe = 0.05 } = {}) {
+  const geo = new THREE.CylinderGeometry(r, r, tiefe, 18)
+  geo.rotateX(Math.PI / 2)
+  geo.scale(sx, sy, 1)
+  return { geo, color: farbe, position: [x, KOPF + y, z] }
+}
+
+function augen(parts, z, { abstand = 0.11, y = 0.06, r = 0.045, weiss = true } = {}) {
+  for (const sx of [-1, 1]) {
+    if (weiss) parts.push(scheibe(r * 1.7, SNOW, z, { x: sx * abstand, y, tiefe: 0.02 }))
+    parts.push(scheibe(r, 0x1d2129, z + 0.012, { x: sx * abstand, y: y - 0.005, tiefe: 0.02 }))
+  }
+}
+
+function ohr(parts, farbe, x, y, z, { r = 0.09, lang = 1, kegel = false, neigung = 0 } = {}) {
+  const geo = kegel
+    ? new THREE.ConeGeometry(r, r * 2.2 * lang, 4)
+    : new THREE.CapsuleGeometry(r, r * 2 * (lang - 1), 3, 8)
+  if (!kegel && lang === 1) geo.scale(1, 1, 0.5)
+  else geo.scale(1, 1, 0.4)
+  geo.rotateZ(neigung)
+  parts.push({ geo, color: farbe, position: [x, KOPF + y, z] })
+}
+
+function tierGesicht(art, parts) {
+  const z = 0.06
+  const vorn = z + 0.03
+  switch (art) {
+    case 'pinguin':
+      parts.push(scheibe(GESICHT, 0x23272e, z))
+      parts.push(scheibe(GESICHT * 0.72, SNOW, vorn - 0.01, { sy: 0.85, y: -0.04, tiefe: 0.02 }))
+      augen(parts, vorn + 0.005, { weiss: false, y: 0.04 })
+      parts.push({ geo: new THREE.ConeGeometry(0.055, 0.16, 6).rotateX(Math.PI / 2), color: 0xf09a2a, position: [0, KOPF - 0.04, vorn + 0.08] })
+      break
+    case 'baer':
+      ohr(parts, 0x8a5a36, -0.22, 0.22, z)
+      ohr(parts, 0x8a5a36, 0.22, 0.22, z)
+      parts.push(scheibe(GESICHT, 0x8a5a36, z))
+      parts.push(scheibe(0.13, 0xdcb68c, vorn, { y: -0.09, sx: 1.2, tiefe: 0.02 }))
+      parts.push(scheibe(0.045, 0x1d2129, vorn + 0.015, { y: -0.06, sx: 1.3, tiefe: 0.02 }))
+      augen(parts, vorn, { weiss: false, y: 0.07, abstand: 0.12 })
+      break
+    case 'fuchs':
+      ohr(parts, 0xe0702a, -0.19, 0.27, z, { r: 0.1, kegel: true, neigung: 0.3 })
+      ohr(parts, 0xe0702a, 0.19, 0.27, z, { r: 0.1, kegel: true, neigung: -0.3 })
+      parts.push(scheibe(GESICHT, 0xe0702a, z))
+      for (const sx of [-1, 1]) parts.push(scheibe(0.12, SNOW, vorn, { x: sx * 0.11, y: -0.11, tiefe: 0.02 }))
+      parts.push(scheibe(0.045, 0x1d2129, vorn + 0.015, { y: -0.13, tiefe: 0.02 }))
+      augen(parts, vorn, { weiss: false, y: 0.05, abstand: 0.12 })
+      break
+    case 'frosch':
+      parts.push(scheibe(GESICHT, 0x5bb043, z, { sy: 0.85 }))
+      for (const sx of [-1, 1]) {
+        parts.push({ geo: new THREE.SphereGeometry(0.1, 10, 8), color: 0x5bb043, position: [sx * 0.15, KOPF + 0.22, z] })
+        parts.push(scheibe(0.07, SNOW, z + 0.07, { x: sx * 0.15, y: 0.23, tiefe: 0.02 }))
+        parts.push(scheibe(0.035, 0x1d2129, z + 0.085, { x: sx * 0.15, y: 0.22, tiefe: 0.02 }))
+      }
+      parts.push({ geo: new THREE.BoxGeometry(0.3, 0.025, 0.02), color: 0x2f6a24, position: [0, KOPF - 0.08, vorn] })
+      break
+    case 'hase':
+      ohr(parts, 0xe3e7ee, -0.1, 0.42, z - 0.01, { r: 0.065, lang: 2.6, neigung: 0.12 })
+      ohr(parts, 0xe3e7ee, 0.1, 0.42, z - 0.01, { r: 0.065, lang: 2.6, neigung: -0.12 })
+      for (const sx of [-1, 1]) parts.push({ geo: new THREE.CapsuleGeometry(0.03, 0.2, 3, 6).scale(1, 1, 0.3), color: 0xf2a6b8, position: [sx * 0.1, KOPF + 0.42, z + 0.03] })
+      parts.push(scheibe(GESICHT * 0.9, 0xe3e7ee, z))
+      parts.push(scheibe(0.04, 0xf07a98, vorn + 0.005, { y: -0.06, tiefe: 0.02 }))
+      augen(parts, vorn, { weiss: false, y: 0.06, abstand: 0.1 })
+      break
+    case 'eule':
+      ohr(parts, 0x9b6a3c, -0.2, 0.24, z, { r: 0.08, kegel: true, neigung: 0.45 })
+      ohr(parts, 0x9b6a3c, 0.2, 0.24, z, { r: 0.08, kegel: true, neigung: -0.45 })
+      parts.push(scheibe(GESICHT, 0x9b6a3c, z))
+      for (const sx of [-1, 1]) {
+        parts.push(scheibe(0.11, 0xf2c53d, vorn, { x: sx * 0.12, y: 0.03, tiefe: 0.02 }))
+        parts.push(scheibe(0.05, 0x1d2129, vorn + 0.015, { x: sx * 0.12, y: 0.03, tiefe: 0.02 }))
+      }
+      parts.push({ geo: new THREE.ConeGeometry(0.04, 0.12, 4).rotateX(Math.PI), color: 0xf09a2a, position: [0, KOPF - 0.1, vorn + 0.02] })
+      break
+  }
+}
+
+export function createTierstange({ tier = 'pinguin', farbe = KINDER_COLORS[0] } = {}) {
+  const group = new THREE.Group()
+  const parts = []
+  // Die Stange in Streifen, wie eine Slalomstange, nur kuerzer.
+  const hoehe = KOPF - 0.12
+  const streifen = 5
+  for (let i = 0; i < streifen; i++) {
+    parts.push({
+      geo: new THREE.CylinderGeometry(0.032, 0.032, hoehe / streifen, 8),
+      color: i % 2 ? SNOW : farbe,
+      position: [0, (i + 0.5) * hoehe / streifen, 0],
+    })
+  }
+  tierGesicht(tier, parts)
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.6 }))
+  mesh.castShadow = true
+  group.add(mesh)
+
+  const tellerTeile = []
+  pad(tellerTeile, 0.36)
+  const teller = new THREE.Mesh(assemble(tellerTeile), vertexColorMaterial({ roughness: 0.9 }))
+  teller.receiveShadow = true
+  group.userData.teller = teller
+  return group
+}
+
+// --- Stoppschild ---------------------------------------------------------------
+// Am Bremsfeld unten: ein rotes Achteck mit HALT, niedrig wie fuer Kinder.
+// Die Tafel ist zur Kamera gedreht und um 0,5 rad zurueckgelehnt wie die
+// Wegweiser, sonst liest man sie von oben nur als Kante.
+export function createStoppschild() {
+  const group = new THREE.Group()
+  const parts = []
+  parts.push({ geo: new THREE.CylinderGeometry(0.04, 0.045, 1.1, 8), color: POST, position: [0, 0.55, 0] })
+  pad(parts, 0.3)
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
+  mesh.castShadow = true
+  group.add(mesh)
+
+  const c = document.createElement('canvas')
+  c.width = c.height = 256
+  const g = c.getContext('2d')
+  const acht = (r) => {
+    g.beginPath()
+    for (let i = 0; i < 8; i++) {
+      const a = (i + 0.5) / 8 * Math.PI * 2
+      g[i ? 'lineTo' : 'moveTo'](128 + Math.cos(a) * r, 128 + Math.sin(a) * r)
+    }
+    g.closePath()
+  }
+  acht(126); g.fillStyle = '#ffffff'; g.fill()
+  acht(112); g.fillStyle = '#d6332a'; g.fill()
+  g.fillStyle = '#ffffff'
+  g.font = '900 74px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText('HALT', 128, 134)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  const tafel = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.62, 0.62),
+    new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.5, roughness: 0.6, side: THREE.DoubleSide }),
+  )
+  tafel.position.set(0, 1.25, 0.05)
+  tafel.rotation.x = -0.5
+  tafel.castShadow = true
+  group.add(tafel)
+  return group
+}

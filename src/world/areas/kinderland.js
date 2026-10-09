@@ -1,36 +1,55 @@
 import * as THREE from 'three'
-import { KINDER_LANE, SHOOT_RUN, terrainHeight } from '../heightfield.js'
+import { KINDER_LANE, TRAMPOLIN, terrainHeight } from '../heightfield.js'
+import { CAMERA } from '../../config.js'
 import { MagicCarpet } from '../attractions/magic-carpet.js'
 import { SkiCarousel } from '../attractions/ski-carousel.js'
+import { Trampolin } from '../attractions/trampolin.js'
 import { readableYaw } from '../props/slalom.js'
-import { LightRun } from '../attractions/light-run.js'
+import { springMount } from '../props/signpost.js'
+import { createLipLine } from '../props/funpark.js'
 import { createMarker } from '../../stations/marker.js'
+import { LINKS } from '../../stations/links.js'
 import { createSnowCannon } from '../props/snow-cannon.js'
+import { createTrampolin } from '../props/trampolin.js'
+import { createTreffpunkt } from '../props/skischule.js'
+import { Skischulgruppe } from './skischule.js'
 import {
   createNoodleArch,
-  createCone,
   createSnowman,
   createBuntingFence,
+  createTierstange,
+  createStoppschild,
+  TIERE,
   KINDER_COLORS,
 } from '../props/kinderland.js'
 
 // Das Kinderland: Spielwiese oben auf der Osthoehe, Uebungshang darunter,
-// Zauberteppich dazwischen.
+// Zauberteppich dazwischen, westlich daneben das Trampolin, unten an der
+// Einfahrt die Skischule.
 //
 // Der Aufbau folgt einem echten Kinderland, und daran haengt der ganze
 // Zusammenhang: das Foerderband liegt am Westrand des praeparierten Bandes,
 // die Uebungsstrecke daneben auf demselben Band. Man faehrt hinauf, spielt
-// oben auf der Kuppe, faehrt durch den Slalom wieder hinunter und steht
-// wieder am Teppich. Nichts steht irgendwo – alles liegt an dieser Schleife.
+// oben auf der Kuppe, faehrt durch den Tierslalom wieder hinunter, haelt am
+// Bremsfeld und steht wieder am Teppich. Nichts steht irgendwo – alles liegt
+// an dieser Schleife.
+//
+// Neu seit 09.10. (Ansage: die Leuchtstrecke ist zu langweilig, das
+// Kinderland laedt noch nicht ein, ein Trampolin wie das Fangnetz, viele
+// Spiel- und Uebemoeglichkeiten, irgendwo der Skilehrer-Ausweis):
+// - die Leuchtstrecke ist weg, ihr Band ist die Westabfahrt mit dem
+//   Trampolin auf halber Hoehe;
+// - statt Huetchentoren ein Tierslalom: sechs Stangen mit Tierkoepfen, um
+//   die man im Wechsel herumfaehrt – wer alle auf der richtigen Seite
+//   nimmt, bekommt es gesagt;
+// - unten ein Bremsfeld: so nah wie moeglich vor der roten Linie anhalten;
+// - an der Einfahrt der Treffpunkt der Skischule, von dem eine Gruppe aus
+//   Skilehrer und vier Kindern ihre Runden faehrt. Tafel und Skilehrer
+//   fuehren zum Ausweis.
 //
 // Positionen auf dem Hang werden in Bandkoordinaten angegeben: s ist die
 // Strecke von unten, off der seitliche Versatz (negativ = zum Teppich hin).
 // Dadurch wandert die ganze Anlage mit, wenn das Band einmal anders liegt.
-//
-// Westlich davon, ausserhalb der Wimpelkette, faellt der Hang von selbst
-// gleichmaessig mit 8 bis 16 Grad – dort liegt die Leuchtstrecke. Sie braucht
-// kein eigenes Pistenband: ein zweites Band so dicht neben dem ersten wuerde
-// nur dagegen ziehen, und noetig ist es nicht.
 
 // Wo der Teppich auf dem Band liegt und wie weit er reicht.
 const CARPET_OFFSET = -4.2
@@ -44,6 +63,29 @@ const CARPET_TO = 23
 // Fahrradius passt.
 const CAP = { x: 46.6, z: -8.4 }
 
+// Der Tierslalom: sechs Stangen knapp neben der Mittellinie, im Wechsel
+// links und rechts, und jede wird aussen umfahren. Eine erste Fassung hatte
+// sie 1,7 m weit draussen und verlangte die Innenseite – dann zaehlte auch,
+// wer stur geradeaus durch die Mitte fuhr. Die Mittellinie liegt zwischen
+// Teppich (−4,2) und Ostzaun (7,8). 2,8 m Abstand laengs: bei Reisetempo
+// ein Schwung je Stange.
+const SLALOM_MITTE = 1.6
+const SLALOM = [18.5, 15.7, 12.9, 10.1, 7.3, 4.5].map((s, i) => ({ s, off: SLALOM_MITTE + (i % 2 ? -0.6 : 0.6) }))
+const ZIEL_S = 2.2
+
+// Das Bremsfeld liegt in der Mulde am Fuss des Hangs, 2,5 m unter dem Ende
+// des Bandes, wo der Boden mit 2 bis 4 Grad fast eben ist.
+const BREMS_S = -2.5
+const BREMS_VON = -0.5
+const BREMS_BIS = 4.5
+const SKISPITZE = 0.8   // m vor der Fahrermitte: dort zaehlt die Linie
+
+// Der Treffpunkt der Skischule: am Ostende des Bremsfelds, im ebenen Grund
+// der Mulde (4 Grad). Zuerst stand er westlich am Fuss des Teppichs – aus
+// der Kamera genau hinter dem Wegweiser an der Kreuzung (27,5, 23), zwei
+// Tafeln uebereinander.
+const TREFF = { s: -0.4, off: 4.8 }
+
 export class Kinderland {
   constructor(world, registry) {
     this.world = world
@@ -51,6 +93,7 @@ export class Kinderland {
     this.lane = KINDER_LANE
     this.reactors = []
     this.animated = []
+    this.federn = []
 
     const from = this.at(CARPET_FROM, CARPET_OFFSET)
     const to = this.at(CARPET_TO, CARPET_OFFSET)
@@ -80,30 +123,20 @@ export class Kinderland {
     this._buildCarousel()
     this._buildCap()
     this._buildSlope()
-    this._buildLightRun()
+    this._buildBremsfeld()
+    this._buildTrampolin()
     this._buildCannon()
-  }
-
-  // Die Leuchtstrecke: gerade, links am Teppich vorbei, aus dem Kinderland
-  // heraus ins Tal. Hier stand mittendrin ein Schneetunnel aus sieben Ringen.
-  // Er ist weg: aus der festen Kamera zeigten die Ringe nur ihre Kanten, sieben
-  // bunte Striche quer ueber der Gasse, und er stand direkt neben dem
-  // Auslauf des Funparks im Weg. Die Strecke reagiert selbst – den Tunnel
-  // brauchte sie dafuer nicht.
-  _buildLightRun() {
-    // Anfang und Ende kommen aus dem Hoehenfeld, nicht aus den
-    // Bandkoordinaten des Kinderlands: die Strecke hat dort inzwischen ihr
-    // eigenes Band, und beides muss dieselbe Linie meinen, sonst laufen
-    // Leuchtleisten und Aufschuettung auseinander.
-    this.lightRun = new LightRun(this.world, { from: SHOOT_RUN.from, to: SHOOT_RUN.to })
+    this._buildSkischule()
   }
 
   // --- Bandkoordinaten ----------------------------------------------------
 
+  // Unterhalb des Bandes (s < 0) geht es in der Richtung des ersten
+  // Abschnitts weiter – dort liegen Bremsfeld und Treffpunkt.
   at(s, off = 0) {
     const segs = this.lane.segments
-    let g = segs[segs.length - 1]
-    let t = 1
+    let g = s < 0 ? segs[0] : segs[segs.length - 1]
+    let t = s < 0 ? s / g.len : 1
     for (const seg of segs) {
       if (s >= seg.s0 && s <= seg.s0 + seg.len) {
         g = seg
@@ -121,6 +154,17 @@ export class Kinderland {
     }
   }
 
+  // Umkehrung von at() fuer den untersten Abschnitt – das Band ist ohnehin
+  // eine Gerade (alle Abschnitte 3,5 / −5,5).
+  lage(x, z) {
+    const g = this.lane.segments[0]
+    const ux = g.dx / g.len
+    const uz = g.dz / g.len
+    const dx = x - g.x
+    const dz = z - g.z
+    return { s: dx * ux + dz * uz, off: -dx * uz + dz * ux }
+  }
+
   // --- Aufbau -------------------------------------------------------------
 
   // Ein Objekt hinstellen und, wenn es reagieren kann, anmelden.
@@ -134,34 +178,35 @@ export class Kinderland {
     return object
   }
 
-  // Die Einfassung. Sie umschliesst Teppich, Uebungshang und Spielwiese in
-  // einem Zug – erst dadurch sind die Dinge darin ein Ort und nicht eine
-  // Ansammlung. Unten bleibt eine Luecke: das ist die Einfahrt.
+  // Die Einfassung. Sie umschliesst Teppich, Uebungshang, Spielwiese und
+  // Trampolin – erst dadurch sind die Dinge darin ein Ort und nicht eine
+  // Ansammlung. Drei Luecken: unten die Einfahrt, im Westen der Weg vom
+  // Sportgelaende (er laeuft quer durch, bei s 7 bis 11) und oben die
+  // Westabfahrt, die von der Kuppe zum Trampolin hinunterkommt.
   _buildFence() {
-    const west = [1.5, 7, 13, 19, 24.5].map((s) => {
-      const p = this.at(s, -7.8)
-      return [p.x, p.z]
-    })
-    const east = [24.5, 19, 13, 7, 1.5].map((s) => {
-      const p = this.at(s, 7.8)
-      return [p.x, p.z]
-    })
-    // Um die Kuppe herum: ein Bogen, der die Spielwiese fasst.
+    const zug = (punkte) => this.world.scene.add(createBuntingFence(punkte, {
+      sample: (x, z) => terrainHeight(x, z),
+      spacing: 3.4,
+    }))
+    const p = (s, off) => {
+      const q = this.at(s, off)
+      return [q.x, q.z]
+    }
+    // Um das Trampolin: zwischen Weg und Westabfahrt.
+    zug([p(11.5, -17), p(15, -19.6), p(19.5, -19.6), p(23.2, -16)])
+    // Um die Kuppe herum und den Ostrand hinunter.
     const cap = [
       [39.5, -5.8], [41.5, -10.5], [45.0, -14.2], [49.5, -13.6],
       [52.4, -10.0], [52.6, -5.4], [50.0, -2.2],
     ]
-    const ring = [...west, ...cap, ...east]
-    this.world.scene.add(createBuntingFence(ring, {
-      sample: (x, z) => terrainHeight(x, z),
-      spacing: 3.4,
-    }))
+    const east = [24.5, 19, 13, 7, 1.5].map((s) => p(s, 7.8))
+    zug([p(25.6, -9.4), ...cap, ...east])
   }
 
   // Das Skikarussell: Enter haengt einen an den naechsten Griff, nach einer
   // Runde laesst es los, wenn die Tangente auf den Einstieg des Slaloms
   // zeigt. Damit schliesst es die Schleife oben: Teppich hinauf, eine Runde
-  // im Kreis, hinaus in die Tore.
+  // im Kreis, hinaus in die Tierstangen.
   _buildCarousel() {
     const exit = this.at(21.5, 1.0)
     this.carousel = new SkiCarousel(this.world, { center: CAP, exit: { x: exit.x, z: exit.z } })
@@ -185,19 +230,12 @@ export class Kinderland {
 
   _buildCap() {
     // Ein Nudelbogen dort, wo das Karussell einen loslaesst – man wird
-    // hindurchgeschleudert, hinunter zum Slalom. Vorher standen drei Boegen
-    // mitten auf der Kuppe; dort dreht jetzt das Karussell, und ein zweiter
-    // am Ausstieg des Teppichs stand dem orangen Schneemann auf den Fuessen.
+    // hindurchgeschleudert, hinunter zum Slalom.
     this.add(createNoodleArch({ color: KINDER_COLORS[3], span: 4.6 }), 47.4, -2.6, {
       rotation: readableYaw(Math.atan2(0.62, -0.78)),
       trigger: 3.0,
       kind: 'arch',
     })
-
-    // Hier stand eine grosse Wimpelkette zwischen zwei Masten. Sie hing frei
-    // im Hang und gehoerte zu nichts – die Unterkante der Wiese markiert
-    // schon der Wimpelzaun, und zwei Sorten Wimpel nebeneinander sind eine zu
-    // viel. Der niedrige Zaun bleibt, die freistehende Kette ist weg.
 
     // Drei Schneemaenner, aufgestellt wie Zuschauer am Rand: verschieden
     // gross, verschiedene Huete, alle mit Blick auf die Wiese.
@@ -206,15 +244,12 @@ export class Kinderland {
       { x: 50.0, z: -5.2, scale: 0.9, hat: KINDER_COLORS[1] },
       { x: 44.2, z: -13.0, scale: 1.3, hat: KINDER_COLORS[3] },
     ]
-    snowmen.forEach((s, i) => {
-      const man = createSnowman({ scale: s.scale, hat: s.hat, seed: i * 2.1 })
-      this.add(man, s.x, s.z, {
-        rotation: Math.atan2(CAP.x - s.x, CAP.z - s.z),
-        collider: 0.62 * s.scale,
-        trigger: 7,
-        kind: 'snowman',
-      })
-    })
+    snowmen.forEach((s, i) => this._schneemann(s.x, s.z, s.scale, s.hat, i * 2.1, Math.atan2(CAP.x - s.x, CAP.z - s.z), 7))
+  }
+
+  _schneemann(x, z, scale, hat, seed, rotation, trigger = 6.5) {
+    const man = createSnowman({ scale, hat, seed })
+    this.add(man, x, z, { rotation, collider: 0.62 * scale, trigger, kind: 'snowman' })
   }
 
   // Die Schneekanone steht am oberen Drittel des Uebungshangs, hinter der
@@ -232,53 +267,155 @@ export class Kinderland {
     this.cannon = cannon
   }
 
+  // Der Uebungshang: oben der orange Bogen, durch den das Karussell einen
+  // wirft, dann sechs Tierstangen, unten ein gelber Bogen als Ziel.
   _buildSlope() {
-    // Der Slalom: Huetchen im Wechsel, dazwischen zwei Nudelboegen. Die
-    // Abstaende sind so gewaehlt, dass man bei Reisetempo einen Rhythmus
-    // findet und nicht zwischen zwei Toren steht.
-    const gates = [
-      { s: 21.0, off: 0.8, kind: 'arch' },
-      { s: 18.0, off: 3.0 },
-      { s: 15.2, off: -1.2 },
-      { s: 12.4, off: 3.0 },
-      { s: 9.6, off: -1.2 },
-      { s: 7.0, off: 1.4, kind: 'arch' },
-      { s: 4.0, off: 0.8, kind: 'arch' },
-    ]
-
-    gates.forEach((g, i) => {
-      const p = this.at(g.s, g.off)
+    for (const [s, off, i] of [[21.0, 0.8, 0], [ZIEL_S, SLALOM_MITTE, 2]]) {
+      const p = this.at(s, off)
       // Alles auf dem Hang schaut bergauf – also dem entgegen, der herunter
       // kommt.
-      const yaw = readableYaw(p.heading + Math.PI)
-      if (g.kind === 'arch') {
-        this.add(createNoodleArch({ color: KINDER_COLORS[i % 4], span: 4.8, height: 2.3 }), p.x, p.z, {
-          rotation: yaw, trigger: 2.9, kind: 'arch',
-        })
-      } else {
-        // Ein Tor aus zwei Huetchen: man faehrt dazwischen durch, und wer zu
-        // eng nimmt, legt eines um.
-        for (const sx of [-1, 1]) {
-          const cx = p.x + Math.cos(yaw) * sx * 1.6
-          const cz = p.z - Math.sin(yaw) * sx * 1.6
-          this.add(createCone({ color: KINDER_COLORS[i % 4] }), cx, cz, {
-            trigger: 1.15, kind: 'cone',
-          })
-        }
-      }
+      this.add(createNoodleArch({ color: KINDER_COLORS[i], span: 4.8, height: 2.3 }), p.x, p.z, {
+        rotation: readableYaw(p.heading + Math.PI), trigger: 2.9, kind: 'arch',
+      })
+    }
+
+    // Die Tierstangen. Der Kopf zeigt zur Kamera, nicht bergauf: von oben
+    // liest man das Tier, und wer herunterkommt, sieht es ohnehin.
+    this.slalom = SLALOM.map((g, i) => {
+      const p = this.at(g.s, g.off)
+      const stange = createTierstange({ tier: TIERE[i % TIERE.length], farbe: KINDER_COLORS[i % 4] })
+      // Etwas groesser als Kinderstangen in echt: aus 33 m Kameraabstand
+      // waren die Gesichter bei 0,3 m Halbmesser kaum mehr als Knoepfe.
+      stange.scale.setScalar(1.3)
+      this.world.place(stange, p.x, p.z, { rotation: CAMERA.azimuth })
+      this.world.place(stange.userData.teller, p.x, p.z, {})
+      this.federn.push(springMount(this.world, stange, p.x, p.z, CAMERA.azimuth))
+      return { ...g, x: p.x, z: p.z }
+    })
+    this._slalomLauf = null
+
+    // Zwei kleine Schneemaenner am Ostrand des Uebungshangs, damit die
+    // Strecke auch dort als Ort gefasst ist und nicht im Hang ausfranst. Der
+    // eine stand frueher westlich am Teppich; dort steht jetzt das Trampolin
+    // mit eigenen Zuschauern.
+    for (const [s, off, scale] of [[17.5, 6.2, 0.85], [8.5, 6.4, 0.95]]) {
+      const p = this.at(s, off)
+      this._schneemann(p.x, p.z, scale, KINDER_COLORS[2], s, p.heading + Math.PI)
+    }
+  }
+
+  // Das Bremsfeld: eine rote Linie quer im Auslauf, am Ostende ein HALT.
+  // Wer vom Hang kommt und davor zum Stehen kommt, bekommt gesagt, wie nah
+  // die Skispitzen an der Linie sind.
+  _buildBremsfeld() {
+    const punkte = []
+    for (let off = BREMS_VON; off <= BREMS_BIS + 0.01; off += 0.5) {
+      const p = this.at(BREMS_S, off)
+      punkte.push([p.x, terrainHeight(p.x, p.z) + 0.03, p.z])
+    }
+    this.world.scene.add(createLipLine(punkte, 0xd6332a))
+    // Am Westende stand es aus der Kamera genau hinter dem Wegweiser an der
+    // Kreuzung; am Ostende steht es links unter der Skischul-Tafel.
+    const schild = this.at(BREMS_S - 0.3, BREMS_BIS + 0.9)
+    this.world.place(createStoppschild(), schild.x, schild.z, { rotation: CAMERA.azimuth })
+    this.world.addCollider(schild.x, schild.z, 0.25)
+    this._bremsen = null
+  }
+
+  // Das Trampolin auf der Westabfahrt, mit zwei Zuschauern am Rand.
+  _buildTrampolin() {
+    this.trampolin = new Trampolin(TRAMPOLIN)
+    const bild = createTrampolin(TRAMPOLIN)
+    this.world.place(bild, TRAMPOLIN.x, TRAMPOLIN.z, { yOffset: TRAMPOLIN.h - terrainHeight(TRAMPOLIN.x, TRAMPOLIN.z) })
+    this.animated.push(() => bild.userData.update(this.trampolin.delle()))
+    // Hinter dem Tuch, von der Kamera aus gesehen: zwischen Tuch und
+    // Teppich standen sie dem Blick auf die Delle im Weg, und auf der Achse
+    // der Westabfahrt dem, der von oben kommt.
+    for (const [s, off, scale, hat, seed] of [[15.2, -17.4, 0.9, KINDER_COLORS[1], 3.3], [19.4, -17.2, 1.05, KINDER_COLORS[0], 5.1]]) {
+      const { x, z } = this.at(s, off)
+      this._schneemann(x, z, scale, hat, seed, Math.atan2(TRAMPOLIN.x - x, TRAMPOLIN.z - z))
+    }
+  }
+
+  // Die Skischule: Tafel am Treffpunkt und die Gruppe, die von dort ihre
+  // Runde faehrt. Beide fuehren zum Skilehrer-Ausweis – die Tafel als
+  // Station mit Ring wie der Teppich, der Skilehrer selbst, wenn man neben
+  // ihm steht.
+  _buildSkischule() {
+    const t = this.at(TREFF.s, TREFF.off)
+    this._treffpunkt = t
+    const tafel = createTreffpunkt()
+    this.world.place(tafel, t.x, t.z, { rotation: CAMERA.azimuth })
+    this.world.addCollider(t.x, t.z, 0.45)
+    this.animated.push(tafel.userData.animate)
+
+    const ausweis = {
+      label: 'Skilehrer-Ausweis', sub: 'geprüft · snowsports.at', glyph: 'ski',
+      url: LINKS.skilehrer, color: '#1f4fa8',
+    }
+    if (this.registry) {
+      const marker = createMarker(t.x, t.z, 3.6, '#1f4fa8')
+      this.world.scene.add(marker)
+      this.registry.add({
+        id: 'skischule',
+        label: 'Skischule',
+        hint: 'Treffpunkt',
+        color: '#1f4fa8',
+        position: { x: t.x, z: t.z },
+        radius: 3.6,
+        marker,
+        groundY: terrainHeight(t.x, t.z),
+        labelHeight: terrainHeight(t.x, t.z) + 3.9,
+        object: tafel,
+        // Die Tafel haengt oben am Mast.
+        focus: { abstand: 8, hoehe: 2.3, vor: 0.8 },
+        choices: [ausweis],
+      })
+    }
+
+    // Die Runde der Gruppe, Abschnitt fuer Abschnitt.
+    const p = (s, off) => {
+      const q = this.at(s, off)
+      return [q.x, q.z]
+    }
+    // Gewartet wird vor der Tafel, zur Kamera hin – dahinter verschwand der
+    // Skilehrer hinter seinem eigenen Schild.
+    const start = p(TREFF.s - 0.5, TREFF.off + 1.2)
+    const umTafel = p(TREFF.s - 1.4, TREFF.off - 1.3)
+    const vorTeppich = p(CARPET_FROM - 1.4, CARPET_OFFSET)
+    const slalom = SLALOM.map((g) => p(g.s, g.off + (g.off > SLALOM_MITTE ? 0.85 : -0.85)))
+    const halt = p(BREMS_S + SKISPITZE + 0.3, 1.6)
+    this.gruppe = new Skischulgruppe(this.world, {
+      teppich: this.carpet,
+      abschnitte: [
+        { art: 'gehen', tempo: 1.3, halt: 'treffpunkt', punkte: [start, umTafel, vorTeppich, p(CARPET_FROM, CARPET_OFFSET)] },
+        { art: 'teppich', tempo: this.carpet.speed, punkte: [p(CARPET_FROM, CARPET_OFFSET), p(CARPET_TO, CARPET_OFFSET)] },
+        // Oben ein Bogen ueber die Kuppe: lang genug, dass die ganze
+        // Schlange vor dem Slalom Platz hat. Bei 6,8 m stand das dritte Kind
+        // noch am Ausstieg, und das vierte kam auf dem Band in es hinein.
+        { art: 'gehen', tempo: 1.2, punkte: [p(CARPET_TO, CARPET_OFFSET), p(CARPET_TO + 1.6, -3.8), p(CARPET_TO + 2.8, -1.8), p(CARPET_TO + 2.4, 0.8), p(23.2, 1.6)] },
+        { art: 'fahren', tempo: 3.0, halt: 'oben', punkte: [p(23.2, 1.6), p(21, 1.6), ...slalom, p(ZIEL_S, SLALOM_MITTE), halt] },
+        { art: 'gehen', tempo: 1.1, halt: 'bremsen', punkte: [halt, p(BREMS_S + 0.9, 4.0), start] },
+      ],
     })
 
-    // Zwei kleine Schneemaenner am Rand des Uebungshangs, damit die Strecke
-    // auch dort als Ort gefasst ist und nicht im Hang ausfranst.
-    for (const [s, off, scale] of [[17, -6.6, 0.85], [8.5, 6.4, 0.95]]) {
-      const p = this.at(s, off)
-      const man = createSnowman({ scale, hat: KINDER_COLORS[2], seed: s })
-      this.add(man, p.x, p.z, {
-        rotation: p.heading + Math.PI,
-        collider: 0.6 * scale,
-        trigger: 6.5,
-        kind: 'snowman',
+    if (this.registry) {
+      const lehrer = this.gruppe.lehrer.model
+      lehrer.userData.select = () => {}
+      this.registry.add({
+        id: 'skilehrer',
+        label: 'Skilehrer',
+        hint: 'Ausweis zeigen',
+        color: '#1f4fa8',
+        position: { x: lehrer.position.x, z: lehrer.position.z },
+        radius: 2.6,
+        groundY: lehrer.position.y,
+        labelHeight: lehrer.position.y + 2.4,
+        object: lehrer,
+        focus: { abstand: 6, hoehe: 1.0, vor: 0.6 },
+        choices: [ausweis],
       })
+      this._lehrerStation = this.registry.stations.find((s) => s.id === 'skilehrer')
     }
   }
 
@@ -288,10 +425,28 @@ export class Kinderland {
     this._skier = skier
     this.carpet.update(dt, skier, input)
     this.carousel.update(dt, skier, input)
+    this.trampolin.update(dt, skier, input)
     if (this._carouselStation) {
       this._carouselStation.hint = this.carousel.rider ? 'Loslassen' : 'Einsteigen'
     }
-    this.lightRun.update(dt, skier)
+    for (const feder of this.federn) feder(dt, skier)
+
+    // Die Gruppe haelt an, solange man mit dem Skilehrer spricht, und die
+    // Station laeuft mit ihm mit.
+    const ls = this._lehrerStation
+    this.gruppe.halten = !!ls && this.registry.active === ls
+    this.gruppe.update(dt, skier)
+    if (ls) {
+      const m = this.gruppe.lehrer.model.position
+      ls.position.x = m.x
+      ls.position.z = m.z
+      ls.groundY = m.y
+      ls.labelHeight = m.y + 2.4
+      // Am Treffpunkt spricht die Tafel: sonst stuende der Lehrer naeher
+      // und die Tafel drehte sich nie um.
+      const t = this._treffpunkt
+      ls.radius = Math.hypot(m.x - t.x, m.z - t.z) < 4 ? 0 : 2.6
+    }
 
     const sx = skier.position.x
     const sz = skier.position.z
@@ -324,10 +479,67 @@ export class Kinderland {
       }
 
       if (r.cool > 0 || !moving) continue
-      r.cool = r.kind === 'cone' ? 2.5 : 1.2
+      r.cool = 1.2
       const strength = THREE.MathUtils.clamp(skier.speed / 12, 0.3, 1.2)
       r.obj.userData.react(strength, skier.heading)
     }
+  }
+
+  // Nach skier.update(): das Trampolin faengt im selben Bild, in dem man
+  // das Tuch erreicht, und Slalom und Bremsfeld lesen die neue Lage.
+  pruefen(skier) {
+    this.trampolin.pruefen(skier)
+    this._slalomPruefen(skier)
+    this._bremsfeldPruefen(skier)
+  }
+
+  // Wer die Tierstangen von oben nach unten nimmt, wird gezaehlt: richtig
+  // ist eine Stange, wenn man aussen an ihr vorbeikommt, auf der Seite weg
+  // von der Mittellinie. Gemeldet wird an der letzten, wie eine Figur im
+  // Park.
+  _slalomPruefen(skier) {
+    const { s, off } = this.lage(skier.position.x, skier.position.z)
+    const vorher = this._slalomVorher
+    this._slalomVorher = { s, off }
+    if (skier.tow || !vorher) { this._slalomLauf = null; return }
+    if (off < -3.5 || off > 7) { this._slalomLauf = null; return }
+    const lauf = this._slalomLauf
+    const i = lauf ? lauf.naechste : 0
+    const g = this.slalom[i]
+    if (!(vorher.s > g.s && s <= g.s)) {
+      // Wer wieder hinauffaehrt oder unten vorbei ist, faengt neu an.
+      if (lauf && s > this.slalom[0].s + 1) this._slalomLauf = null
+      return
+    }
+    if (!lauf) this._slalomLauf = { naechste: 0, richtig: 0 }
+    const l = this._slalomLauf
+    if ((off - g.off) * Math.sign(g.off - SLALOM_MITTE) > 0) l.richtig++
+    l.naechste++
+    if (l.naechste < this.slalom.length) return
+    const n = this.slalom.length
+    skier.trick = l.richtig === n
+      ? { text: `ALLE ${n} TIERE`, tone: 'good' }
+      : { text: `${l.richtig} VON ${n} TIEREN`, tone: l.richtig >= n - 2 ? 'meh' : 'bad' }
+    this._slalomLauf = null
+  }
+
+  // Das Bremsfeld schaut nur zu, wer vom Hang herunterkommt: scharf ab der
+  // Zielbogen-Hoehe mit Tempo, gemessen, sobald man steht.
+  _bremsfeldPruefen(skier) {
+    const { s, off } = this.lage(skier.position.x, skier.position.z)
+    const quer = off > BREMS_VON - 2 && off < BREMS_BIS + 2
+    if (skier.tow || !quer || s < BREMS_S - 6 || s > 9) { this._bremsen = null; return }
+    if (!this._bremsen) {
+      if (s < 6 && s > 1 && skier.speed > 2.5 && !skier.airborne) this._bremsen = { scharf: true }
+      return
+    }
+    if (skier.speed > 0.2 || skier.airborne) return
+    this._bremsen = null
+    const vor = s - SKISPITZE - BREMS_S
+    const cm = Math.round(Math.abs(vor) * 100)
+    if (Math.abs(vor) < 0.12) skier.trick = { text: 'PUNKTLANDUNG', tone: 'good' }
+    else if (vor > 0) skier.trick = { text: `${cm} CM VOR DER LINIE`, tone: vor < 1 ? 'good' : 'meh' }
+    else skier.trick = { text: `${cm} CM DRÜBER`, tone: 'bad' }
   }
 
   animate(t, dt) {

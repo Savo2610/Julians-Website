@@ -1,6 +1,6 @@
 # veerka.mp — Übergabe
 
-Stand: 01.10.2026. Dieses Dokument ist der Einstieg für jeden, der hier
+Stand: 09.10.2026. Dieses Dokument ist der Einstieg für jeden, der hier
 weiterarbeitet. Es beschreibt nicht nur *was* da ist, sondern *warum* — denn an
 mehreren Stellen sieht die naheliegende Lösung besser aus als die gewählte, und
 ist es nicht.
@@ -127,11 +127,11 @@ src/
                      Vorschau im Eis (siehe 4a)
     attractions/     Was den Fahrer übernimmt oder misst: drag-lift.js,
                      magic-carpet.js, rail-ride.js, race.js (Zeitnahme,
-                     Slalom), speed-check.js, light-run.js, north-run.js
+                     Slalom), speed-check.js, trampolin.js, north-run.js
     tiere/           Hase (auch als Familie), Schneehühner, Fuchs,
                      Eichhörnchen, Dohle, Steinbock (4a⁷): modelle.js,
                      je Tier ein Verhalten, wildnis.js entscheidet wann
-    areas/           Ensembles: kinderland.js, apres-layout.js und
+    areas/           Ensembles: kinderland.js (mit skischule.js), apres-layout.js und
                      apres-terrace.js (Hütte mit umwerfbaren Möbeln)
     props/           Ein Modul je Gegenstand, nur Geometrie und eigene
                      Bewegung; z. B. screens.js (leuchtende Bildschirme),
@@ -279,7 +279,8 @@ mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
 **Anlagen**: Schlepplift (Teller, damit der Fahrer auf den Ski bleibt und die
 Spur weiterläuft), Zauberteppich und Skikarussell im Kinderland, Rail im
 Funpark, Rennstrecke mit Zeitnahme, Speedcheck an der freien Piste, zwei
-Schneekanonen, Leuchtstrecke, Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
+Schneekanonen, Trampolin im Kinderland (die Leuchtstrecke ist seit 09.10. weg,
+siehe 4a¹²), Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
 
 **Skikarussell** (`attractions/ski-carousel.js`, 04.10.): mitten auf der
 Kuppe des Kinderlands (46,6, −8,4), Station mit Ring wie der Teppich. Enter
@@ -1730,6 +1731,93 @@ Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
   `netz.update`, `skier.update`, `netz.pruefen` wie in `main.js` takten.
 - Kennzahlen: 440 Draw Calls im Tal (vorher 300–420); je Netz 3, Felsen
   der Ketten bis zu 15.
+
+## 4a¹². Kinderland neu: Trampolin, Tierslalom, Bremsfeld, Skischule (09.10., Zweig `kinderland-neu`)
+
+Ansage: die lange Strecke mit den Lichtern ist zu langweilig, das Kinderland
+lädt noch nicht ein; ein Trampolin mit einer Mechanik wie das gelbe
+Fangnetz; das Skilehrer-Zertifikat irgendwo verlinken, ohne aufdringlich zu
+sein; sonst gern ganz neu, mit vielen Spiel- und Übemöglichkeiten.
+Rückfragen: Zertifikat per URL (`LINKS.skilehrer`), an der Skischule *und*
+am Skilehrer einer fahrenden Gruppe; Leuchtstrecke ganz weg; dazu
+Tierslalom und Bremsfeld (Eingangstor und Mini-Schanze nicht gewählt).
+Alles in `world/areas/kinderland.js`, Teppich und Karussell unverändert.
+
+- **Leuchtstrecke entfernt** (`attractions/light-run.js` gelöscht,
+  `SHOOT_RUN` weg). Ihr Band `SHOOT_LANE` bleibt als glatte **Westabfahrt**
+  von der Kuppe zum Tal, sonst stünde dort wieder gewachsener Buckelboden.
+- **Trampolin** (`TRAMPOLIN` in `heightfield.js`, `attractions/trampolin.js`
+  ohne three.js, `props/trampolin.js` das Bild, Tests in
+  `tests/trampolin.test.js`): ein Bodentrampolin auf halber Höhe der
+  Westabfahrt (29,15, −2,32), Tuch 2,5 m Halbmesser, Polster blau/gelb wie
+  der Teppich.
+  - Gelände: ebener Platz auf 3,03 m (3,7 m Halbmesser, 3,5 m Saum), unter
+    dem Tuch eine **Mulde** mit flachem Boden, 1,6 m tief (`muldeTiefe`).
+    Befahren wird sie nie – wer den Tuchrand erreicht, gehört im selben Bild
+    dem Trampolin. Sie ist da, damit die Delle nicht im Gelände
+    verschwindet. Eine Kosinus-Schüssel war 1,5 m vor der Mitte nur 0,5 m
+    tief, dort ragte der Grund durchs Tuch. `freiFlug` sagt über dem Tuch
+    ja, sonst sänke man im Sprung mit der Mulde ab.
+  - Mechanik wie Netz und Lift (`skier.tow`, `direkt`, `lift`, `haltung`):
+    aufgefangen nach `skier.update()` (`pruefen`, aus
+    `Kinderland.pruefen` in `main.js`), geführt davor. Feder ungedämpft
+    (ω 9, g 13), Verlust erst beim Abwurf: ohne Taste kommen 86 % zurück, die
+    **Leertaste** auf dem Tuch (oder bis 0,18 s vorher) legt 3 m/s drauf,
+    Deckel 11,5 m/s (gut 5 m Scheitel, 1,77 s Flug). Hochgeschaukelt in
+    acht Sprüngen. Unter 2,4 m/s steht man und gleitet mit 2,6 m/s in
+    Blickrichtung vom Tuch (A/D drehen, Leertaste springt wieder an).
+    Hineingefahren gibt es nach (`1,6 + 0,45 · Tempo` m/s), mit 6 m/s ein
+    Hopser von knapp einem halben Meter. Die Delle zieht zur Mitte
+    (7 m/s² je Meter), W schiebt.
+  - Im Flug gelten die Regeln des Parks: `skier.figurFlug` (leichte
+    Schwerkraft, A/D/W/S drehen, Landehilfe). Aufs Tuch zurück wertet
+    `skier.aufgefangen()` die Figur wie eine Landung; eine gesprungene halbe
+    Drehung wird zur Blickrichtung. Wer stürzt, bringt das Tuch nicht mehr
+    zum Schwingen. **Abzeichen 540/720 zählen dort nicht**
+    (`trampolin.imSpiel` in `pass-regeln.js`): aus dem Stand fliegt man
+    hier länger als an jedem Kicker. Das Trampolin zählt fürs Entdecken des
+    Kinderlands.
+  - Zum Prüfen: `__ski.props.kinderland.trampolin` (`fang`, `spruenge`).
+- **Tierslalom**: sechs Stangen mit Tierkopf (Pinguin, Bär, Fuchs, Frosch,
+  Hase, Eule – `createTierstange` in `props/kinderland.js`), Gesicht als
+  Scheibe zur Kamera, auf Federfuß (`springMount`). Sie stehen 0,6 m neben
+  der Mittellinie im Wechsel, 2,8 m auseinander, und **jede wird außen
+  umfahren**. Die erste Fassung (1,7 m draußen, Innenseite) zählte auch, wer
+  stur geradeaus fuhr. An der letzten Stange meldet es sich wie eine Figur:
+  `ALLE 6 TIERE` oder `4 VON 6 TIEREN`. Die Hütchentore sind weg.
+- **Bremsfeld**: rote Linie quer im Auslauf (2,5 m unter dem Bandende, 2–4°),
+  HALT-Schild am Ostende. Wer mit Tempo vom Hang kommt und vor ihr steht,
+  bekommt den Abstand der Skispitzen: `PUNKTLANDUNG` (unter 12 cm),
+  `35 CM VOR DER LINIE`, `20 CM DRÜBER`. Am Westende stand das Schild aus
+  der Kamera hinter dem Wegweiser an der Kreuzung.
+- **Skischule** (`props/skischule.js`, `areas/skischule.js`): Tafel
+  SKISCHULE · Treffpunkt am Ostende des Bremsfelds, Station `skischule`
+  mit Ring. Beim Heranzoomen dreht sich die Tafel um und zeigt SKILEHRER ·
+  Julian Veerkamp mit Haken, dann die Auswahl **Skilehrer-Ausweis**
+  (booking.snowsports.at). Bewusst **keine Kachel** in der Übersicht.
+  - Eine Gruppe aus Skilehrer (blaue Jacke, roter Helm – der Fahrer ist
+    orange) und vier Kindern (⅔ groß, Jacken in den Kinderland-Farben)
+    fährt ihre Runde: Treffpunkt → Teppich → Bogen über die Kuppe →
+    im Pflug durch den Tierslalom → Halt vor der Bremslinie → zurück, etwa
+    eine Minute, am Treffpunkt 12–22 s Pause. Ein Weg mit Abschnitten
+    (`gehen`, `teppich`, `fahren`), jede Figur hat ihre Stelle darauf, die
+    Kinder nie näher als 1,9 m. Gesammelt wird am Treffpunkt, oben vor dem
+    Slalom und vor der Linie. Auf den Teppich steigt man mit so viel
+    Abstand, dass es oben wieder 1,9 m sind (das Band trägt 5,4 m/s, oben
+    geht man 1,2). Steht der Fahrer vor dem Lehrer, wartet die Gruppe; wer
+    in eine Figur fährt, wird hinausgeschoben wie an der Pistenraupe.
+  - Station `skilehrer` läuft mit dem Lehrer mit (2,6 m): wer neben ihm
+    steht, kann ihn ansprechen, die Gruppe hält, er winkt. Am Treffpunkt ist
+    sie aus, dort spricht die Tafel – sonst stand der Lehrer näher und die
+    Tafel drehte sich nie.
+  - Zum Prüfen: `__ski.props.kinderland.gruppe` (`figuren`, `pause`,
+    `laenge`).
+- **Zaun** in zwei Zügen: um das Trampolin (zwischen dem Weg vom
+  Sportgelände, der bei s 7–11 quer durchläuft, und der Westabfahrt) und
+  um Kuppe und Ostrand. Der Westzaun direkt am Teppich ist weg.
+- Schneemänner: zwei am Ostrand des Hangs, zwei Zuschauer hinter dem
+  Trampolin (davor verdeckten sie die Delle, auf der Achse der Westabfahrt
+  standen sie im Weg).
 
 ## 4b. Handymodus
 

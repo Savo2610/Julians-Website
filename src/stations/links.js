@@ -39,5 +39,10 @@ export const LINKS = {
   // Welt, bevor es die Links gab; dass sie zueinander passen, ist der Grund,
   // warum sie sie bekommen haben und nicht irgendein Schild.
   jugendfeuerwehr: 'https://jf.veerka.mp/',
+
+  // Der Skilehrer-Ausweis haengt an der Skischule im Kinderland: an der
+  // Tafel am Treffpunkt und am Skilehrer der Gruppe. Bewusst ohne Kachel in
+  // der Uebersicht – er soll gefunden werden, nicht aufdraengen.
+  skilehrer: 'https://booking.snowsports.at/verify?uid=126812a1-73f6-4f1a-a1aa-3592adf889db',
   kidrohne: 'https://ai-drone-fra-uas.github.io/ai-drone/',
 }

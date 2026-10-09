@@ -59,6 +59,10 @@ export class Skier {
     this._nachsicht = 0             // s, in denen ein Druck nach der Kante noch zaehlt
     this._nachPop = 0               // m/s, die ein solcher Druck noch gibt
     this._parkSprung = false        // dieser Flug begann im Funpark
+    // Gesetzt von dem, der den Fahrer in die Luft wirft und Figuren erlaubt,
+    // ohne im Funpark zu liegen – das Trampolin im Kinderland. Gilt fuer
+    // einen Flug: leichtere Schwerkraft wie im Park, A/D/W/S drehen.
+    this.figurFlug = false
     this._luftY = null              // Flughoehe ueber Null bei freiem Flug, sonst NaN
     this._g = 18                    // Schwerkraft dieses Flugs, beim Absprung festgelegt
     this._abTempo = null            // Tempo beim Absprung im Park, sonst null
@@ -394,7 +398,7 @@ export class Skier {
     // in der Luft – aber mit der Schwerkraft des Tals (parkFlug sagt dort nein).
     const park = inFunpark(nx, nz) || klammFlug(nx, nz)
     const parkRegeln = parkFlug(nx, nz)
-    const G = this.airborne && this._luftY != null ? this._g : parkRegeln ? SPRUNG.schwerkraft : 18
+    const G = this.airborne && this._luftY != null ? this._g : parkRegeln || this.figurFlug ? SPRUNG.schwerkraft : 18
     const groundY = this._boden(nx, nz)
     // Wie schnell der Boden den Fahrer gerade anhebt. Auf einer Schanze ist
     // das die Steiggeschwindigkeit, mit der er ueber die Kante geht.
@@ -489,6 +493,7 @@ export class Skier {
       if (this.height <= 0) {
         this.height = 0
         this.airborne = false
+        this.figurFlug = false
         this.landImpact = Math.min(1, -this.vy / 12)
         // Und der Landehang gibt es zurueck: auf dem Gefaelle wird aus der
         // Fallgeschwindigkeit wieder Fahrt, hoechstens so viel wie beim
@@ -577,7 +582,7 @@ export class Skier {
     // Der Absprung, von wo auch immer er kam – auch die Rail wirft ab.
     if (this.airborne && !this._wasAirborne) {
       this._wasAirborne = true
-      this._parkSprung = inFunpark(this.position.x, this.position.z) || klammFlug(this.position.x, this.position.z)
+      this._parkSprung = inFunpark(this.position.x, this.position.z) || klammFlug(this.position.x, this.position.z) || this.figurFlug
       // Was beim Absprung schon gedrueckt ist, dreht nicht: W liegt beim
       // Fahren fast immer, und wer zur Schanze hin lenkt, soll nicht
       // ungewollt einen 180 springen. Erst loslassen, dann zaehlt die Taste;
@@ -687,7 +692,7 @@ export class Skier {
       this.speed *= 0.3
       this.landImpact = 1
       this.trick = { text: 'STURZ', tone: 'bad' }
-      return
+      return q.key
     }
     if (q.key === 'sketchy') this.speed *= 0.78
     // Wer quer von der Box kommt, dreht sich zurueck in die Fahrt – das ist
@@ -707,10 +712,39 @@ export class Skier {
     }
     // Erst die Box, dann was in der Luft kam: „BOARDSLIDE 5 m · 360°“.
     if (f.box) name = name ? `${f.box} · ${name}` : f.box
-    if (!name) return
+    if (!name) return q.key
     if (q.key === 'perfect') name += ' · PERFEKT'
     if (q.key === 'sketchy') name += ' · WACKELIG'
     this.trick = { text: name, tone: q.key === 'sketchy' ? 'meh' : 'good' }
+    return q.key
+  }
+
+  // Im Flug aufgefangen – vom Tuch des Trampolins, nicht vom Schnee. Die
+  // Figur wird gewertet wie eine Landung (Rueckgabe: 'perfect', 'clean',
+  // 'sketchy', 'crash' oder null ohne Figurenflug). Eine gesprungene halbe
+  // Drehung bleibt stehen und wird zur Blickrichtung: auf dem Tuch gibt es
+  // kein Rueckwaerts, und sonst drehte sich die Figur am Boden langsam
+  // zurueck, wie es nach einem 180 im Park richtig ist.
+  aufgefangen() {
+    const TAU = Math.PI * 2
+    const q = this._wasAirborne && this._parkSprung && this._flug ? this._landen() : null
+    this._wasAirborne = false
+    this._parkSprung = false
+    this.figurFlug = false
+    this.spinVel = 0
+    this.flipVel = 0
+    const halb = Math.round(this.spin / Math.PI) * Math.PI
+    this.heading += halb
+    this.facing += halb
+    this._prevFacing = this.facing
+    this.spin -= halb
+    this.flip -= Math.round(this.flip / TAU) * TAU
+    this.airborne = false
+    this.vy = 0
+    this.height = 0
+    this._luftY = null
+    this._nachsicht = 0
+    return q
   }
 
   // --- Box ---------------------------------------------------------------
@@ -1093,6 +1127,7 @@ export class Skier {
     this.flipVel = 0
     this._wasAirborne = false
     this._parkSprung = false
+    this.figurFlug = false
     this._box = null
     this._abTempo = null
     this._klammKante = false

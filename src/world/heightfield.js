@@ -532,6 +532,47 @@ function schuppenAuslauf(x, z, h) {
   return h - (h - ebene) * w
 }
 
+// --- Das Trampolin im Kinderland --------------------------------------------
+// Ein Bodentrampolin, buendig im Schnee, auf halber Hoehe der Westabfahrt
+// (Ansage 09.10.: ein Trampolin mit einer Mechanik wie das Fangnetz). Man
+// faehrt einfach darauf, und das Tuch traegt einen – gerechnet wird das in
+// attractions/trampolin.js, nicht hier.
+//
+// Hier liegt nur, was man befaehrt: ein ebener Platz von 3,7 m Halbmesser,
+// der weich in den Hang ueberblendet (am Hang liegen auf diesem Kreis 1,5 m
+// Hoehenunterschied, je die Haelfte ab- und aufgetragen), und unter dem Tuch
+// eine Mulde (muldeTiefe). Die Mulde befaehrt niemand: wer den Rand des Tuchs erreicht,
+// gehoert dem Trampolin, im selben Bild. Sie ist da, damit das Tuch beim
+// Einsinken nicht im Gelaende verschwindet – bei 11,5 m/s gibt es gerechnet
+// 1,39 m nach, die Mulde ist 1,6 tief. Die Hoehe des Platzes ist eine feste
+// Zahl, gemessen am Boden in der Mitte, damit die Funktion sich nicht selbst
+// fragt.
+export const TRAMPOLIN = { x: 29.15, z: -2.32, h: 3.03, r: 2.5, eben: 3.7, saum: 3.5, mulde: 1.6 }
+
+function trampolinPlatz(x, z, h) {
+  const T = TRAMPOLIN
+  const d = Math.hypot(x - T.x, z - T.z)
+  if (d >= T.eben + T.saum) return h
+  let y = d <= T.eben ? T.h : h + (T.h - h) * (1 - smooth((d - T.eben) / T.saum))
+  return y - muldeTiefe(d)
+}
+
+// Die Mulde hat einen flachen Boden und steile Raender: das Tuch sinkt nicht
+// nur in der Mitte tief ein, sondern ueberall, wo die Delle hinwandert. Eine
+// Schuessel (Kosinus ueber den ganzen Kreis) war 1,5 m vor der Mitte nur noch
+// 0,5 m tief, und dort ragte der Grund durch das Tuch.
+export function muldeTiefe(d) {
+  const T = TRAMPOLIN
+  const aussen = T.r - 0.1
+  if (d >= aussen) return 0
+  return T.mulde * (1 - smooth(Math.max(0, (d - (aussen - 0.9)) / 0.9)))
+}
+
+// Steht (x, z) auf dem Tuch?
+export function imTrampolin(x, z, rand = 0) {
+  return Math.hypot(x - TRAMPOLIN.x, z - TRAMPOLIN.z) < TRAMPOLIN.r - rand
+}
+
 export function stegDeck(x, z) {
   const l = stegLage(x, z)
   return Math.abs(l.laengs) <= DECK.halbL && Math.abs(l.quer) <= DECK.halbQ + 0.2 ? l : null
@@ -755,16 +796,17 @@ export const KINDER_LANE = makeLane([
   { x: 45.0, z: -3.0, h: 8.14 },
 ], { width: 16, feather: 7, endFade: 6, flat: 0.6 })
 
-// Die Schussstrecke westlich des Kinderlands. Sie hatte oben einen Knick:
-// dort trifft sie auf den Auslauf des Funparks, und was zwei Baender an
-// derselben Stelle verschieden hoch haben wollen, wird eine Stufe. Jetzt hat
-// sie ihr eigenes Band mit gleichmaessigen 8,6 Grad – hauptsaechlich
-// aufgeschuettet, stellenweise ein Vierteler abgetragen.
+// Das Band der frueheren Leuchtstrecke westlich des Kinderlands. Die Strecke
+// selbst ist weg (Ansage 09.10.: zu langweilig, eine gerade Linie ohne
+// Aufgabe), ihr Band bleibt: es ist die glatte Westabfahrt von der Kuppe
+// hinunter, und auf halber Hoehe liegt darin das Trampolin. Gleichmaessige
+// 8,6 Grad, hauptsaechlich aufgeschuettet, stellenweise ein Viertelmeter
+// abgetragen.
 //
-// Sie steht als letzte in der Reihe: die Baender werden nacheinander
+// Es steht als letztes in der Reihe: die Baender werden nacheinander
 // verrechnet, und wo zwei sich ueberlagern, gewinnt in der Mitte das spaetere.
-// Genau das ist hier gewollt – die Strecke soll gerade sein, auch wo der
-// Funpark daneben etwas anderes vorhat.
+// Oben trifft es auf den Auslauf des Funparks, und was zwei Baender an
+// derselben Stelle verschieden hoch haben wollen, wird eine Stufe.
 //
 // Sie bleibt gerade und wird keine Halfpipe – das war einmal versucht und ist
 // zweimal gescheitert. Fahrerisch: wer eine Wand anschneidet, bekommt Hoehe
@@ -772,13 +814,10 @@ export const KINDER_LANE = makeLane([
 // gibt nicht zurueck, was sie nimmt, also wird man aus der Pipe geworfen
 // statt in ihr gehalten. Baulich: die Bande reicht mit ihrem Federsaum ueber
 // das Band hinaus, und dort drueben liegt der Zauberteppich.
-
-// Die sichtbare Strecke – so weit reichen die Leuchtleisten.
-export const SHOOT_RUN = { from: { x: 34.0, z: -9.9 }, to: { x: 20.0, z: 12.0 } }
-
-// Das Band greift an beiden Enden zwei Meter darueber hinaus. Der endFade
-// nimmt dem Band an seinen Enden die Wirkung, und faenge es genau an der
-// Strecke an, laege der erste Meter wieder auf gewachsenem Grund.
+//
+// Das Band greift an beiden Enden zwei Meter ueber die alte Strecke
+// (34, −9,9) bis (20, 12) hinaus: der endFade nimmt ihm an den Enden die
+// Wirkung.
 export const SHOOT_LANE = makeLane([
   { x: 35.07, z: -11.59, h: 4.66 },
   { x: 18.93, z: 13.69, h: 0.10 },
@@ -959,16 +998,18 @@ export function klammFlug(x, z) {
 //
 // Im Funpark ja – dort traegt der Landehang den Flug, und erst so zaehlt er:
 // wer weiter fliegt, faellt tiefer und hat laenger Zeit fuer die Figur. Und
-// an der Klammschanze, wo sonst niemand ueber die Rinne kaeme.
+// an der Klammschanze, wo sonst niemand ueber die Rinne kaeme. Und ueber dem
+// Trampolin: unter dem Tuch liegt eine Mulde, und mit ihr sank der Fahrer
+// sonst in jedem Sprung anderthalb Meter mit hinab.
 export function freiFlug(x, z) {
-  return parkFlug(x, z) || klammFlug(x, z)
+  return parkFlug(x, z) || klammFlug(x, z) || imTrampolin(x, z)
 }
 
 // Wo ein Absprung nach den Regeln des Parks fliegt (leichtere Schwerkraft,
 // Kante wirft hoch statt weit, freier Flug). Enger als inFunpark: dessen
 // Saum reicht fuenfzehn Meter ueber die Mittellinie hinaus, bis auf den
-// Kopf der Leuchtstrecke und das Ende der Nordabfahrt – dort soll ein
-// Hopser bleiben, wie er war. Gezaehlt wird nur, wo das Band voll zieht.
+// Kopf der Westabfahrt des Kinderlands und das Ende der Nordabfahrt – dort
+// soll ein Hopser bleiben, wie er war. Gezaehlt wird nur, wo das Band voll zieht.
 export function parkFlug(x, z) {
   const hit = laneAt(x, z, PARK_LANE)
   return hit !== null && hit.weight >= 0.9
@@ -1148,6 +1189,7 @@ export function terrainHeight(x, z) {
   h = schuppenAuslauf(x, z, h)
   h = apresGround(x, z, h)
   h = schuppenPlatz(x, z, h)
+  h = trampolinPlatz(x, z, h)
 
   // Die Figuren im Funpark sitzen auf dem geglaetteten Band – deshalb erst
   // hier, nach der Bandformung.

@@ -22,8 +22,10 @@ export default defineConfig({
   plugins: [linkliste],
   // Die Bestenliste lebt im Worker. Lokal laeuft er mit `npm run dev:api`
   // auf 8787 (eigene D1 unter .wrangler/), vite reicht /api dorthin durch.
+  // API_PORT verlegt beides, damit ein zweiter Checkout (Worktree) seinen
+  // eigenen Worker samt eigener Bestenliste hat statt den von main.
   server: {
-    proxy: { '/api': 'http://localhost:8787' },
+    proxy: { '/api': `http://localhost:${process.env.API_PORT || 8787}` },
   },
   build: {
     chunkSizeWarningLimit: 700,

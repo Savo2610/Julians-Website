@@ -1137,7 +1137,8 @@ skriptet, kommt durch. Tests: `tests/slalom-worker.test.js`.
 Löschen: `npx wrangler d1 execute skiportfolio-slalom --remote --command
 "DELETE FROM fahrten WHERE name = '…'"`. Lokal: `npm run dev:api` (Eintrag
 `api` in `.claude/launch.json`, baut vorher einmal), vite reicht `/api` an
-8787 durch. Die lokale D1 liegt unter `.wrangler/`; zwei `wrangler dev`
+8787 durch (`API_PORT` verlegt Worker und Weiterleitung, für einen zweiten
+Checkout). Die lokale D1 liegt unter `.wrangler/`; zwei `wrangler dev`
 gleichzeitig sperren sich dort gegenseitig (SQLITE_BUSY) – ein zweiter
 braucht `--persist-to` in ein eigenes Verzeichnis.
 

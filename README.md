@@ -70,6 +70,7 @@ rechts.
 npm install
 npm run dev          # Tal auf http://localhost:5173, Kabelsee auf /kabelsee/
 npm run dev:api      # Worker auf :8787, Vite leitet /api dorthin weiter
+                     # (API_PORT=8801 verlegt beides, z. B. im zweiten Worktree)
 npm test             # node --test
 npm run build
 ```

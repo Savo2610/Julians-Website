@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:api": "wrangler dev --port 8787",
+    "dev:api": "wrangler dev --port ${API_PORT:-8787}",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",

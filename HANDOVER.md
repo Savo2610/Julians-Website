@@ -1790,7 +1790,7 @@ Alles in `world/areas/kinderland.js`, Teppich und Karussell unverändert.
   bekommt den Abstand der Skispitzen: `PUNKTLANDUNG` (unter 12 cm),
   `35 CM VOR DER LINIE`, `20 CM DRÜBER`. Am Westende stand das Schild aus
   der Kamera hinter dem Wegweiser an der Kreuzung.
-- **Skischule** (`props/skischule.js`, `areas/skischule.js`): Tafel
+- **Skischule** (`props/skischule.js`, `areas/skischule.js`): Tafel (seit 11.10. weg)
   SKISCHULE · Treffpunkt am Ostende des Bremsfelds, Station `skischule`
   mit Ring. Beim Heranzoomen dreht sich die Tafel um und zeigt SKILEHRER ·
   Julian Veerkamp mit Haken, dann die Auswahl **Skilehrer-Ausweis**
@@ -1909,8 +1909,8 @@ Teppich stand immer noch in der Luft – weglassen.
     im Bogen links um die Hütte zum Treffpunkt, 2 bis 3 Runden, am Ende der
     letzten Runde nicht zum Treffpunkt, sondern zurück in die Hütte, Tür zu.
     Der Hinweg liegt vor der Runde (s < 0), der Rückweg hinter `ende`.
-  - In der Hütte spricht der Skilehrer nicht; die Tafel führt weiter zum
-    Ausweis.
+  - In der Hütte spricht der Skilehrer nicht; die Tafel führte weiter zum
+    Ausweis (bis 11.10., siehe fünfte Runde).
   - Zum Prüfen: `?skischule` (sofort heraus, immer, 8 s Pause drinnen),
     `__ski.props.kinderland.gruppe` (`drinnen`, `raus`, `ende`, `runden`,
     `tuer`). Tests: `tests/skischule.test.js`.
@@ -1945,6 +1945,21 @@ anderen Uhrzeiten.
   Liegen alle sieben Schneemänner zugleich, ruft das die Gruppe herbei
   (`gruppe.herbeirufen()`): 4 bis 10 s später geht die Tür auf, auch
   nachts, und für den Rest des Besuchs fährt sie zu jeder Uhrzeit.
+
+### Fünfte Runde (11.10., Zweig `kinderland-neu`)
+
+- **Tafel am Treffpunkt weg** (Ansage: den Nachweis nur beim Skilehrer).
+  Station `skischule`, Ring und `createTreffpunkt` sind entfernt; der
+  Ausweis hängt allein an der Station `skilehrer`, die mit dem Lehrer
+  mitläuft. Sie ist jetzt auch am Treffpunkt an, nur in der Hütte aus. Wer
+  den Ausweis will, muss die Gruppe draußen erwischen. Das Schild
+  SKISCHULE im Giebel der Hütte bleibt (Schmuck, keine Station).
+- **Stufe an der Böschung**: die Kantentabelle hatte Stützstellen alle 4 m
+  und lag dazwischen bis 0,36 m über dem Hangrand. Am Zaun (z −15,7,
+  x 30–39) stand dadurch eine Stufe von bis zu 28 cm; wer vom Bremshang
+  nach Norden fuhr, hob dort mit 14 m/s ab (in der Simulation 11 m hoch).
+  Jetzt alle 2 m, 3 cm unter dem Messwert, die Böschung biegt auf 1,5 m
+  allmählich ab und setzt erst 0,75 m hinter dem Rand voll ein.
 
 ## 4b. Handymodus
 

@@ -204,3 +204,27 @@ test('Mit der Leertaste am Ende der Box springt man ab und dreht noch', () => {
   })
   assert.ok(r.meldungen.some((m) => /^50-50 \d+ m · 360°/.test(m)), r.meldungen.join(' | '))
 })
+
+// Am Nordrand des Bremshangs stand bis 11.10. eine Stufe von 28 cm, wo die
+// Boeschung ansetzt: wer vom Hang zum Zaun fuhr, hob mit 14 m/s ab, 11 m
+// hoch. Ueber die ganze Boeschung, schraeg und gerade, mit Reisetempo;
+// gemessen bis zu ihrem Fuss (z −22), dahinter beginnt der Funpark.
+test('Bremshang: der Rand zur Boeschung wirft nicht ab', () => {
+  const inp = eingabe()
+  inp.setze(['forward'])
+  let hoechst = 0
+  for (let x = 30; x <= 44; x += 1) {
+    for (const grad of [180, 202, 158]) {
+      for (const tempo of [6, 12]) {
+        const s = new Skier(welt)
+        s.versetzen(x, -13, grad * Math.PI / 180)
+        s.speed = tempo
+        for (let i = 0; i < 90 && s.position.z > -22; i++) {
+          s.update(1 / 60, inp, null)
+          if (s.airborne) hoechst = Math.max(hoechst, s.height)
+        }
+      }
+    }
+  }
+  assert.ok(hoechst < 0.6, `hoechstens ${hoechst.toFixed(2)} m ueber dem Boden`)
+})

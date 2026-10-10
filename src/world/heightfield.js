@@ -543,7 +543,15 @@ function schuppenAuslauf(x, z, h) {
 const BOESCHUNG = { rand: -15.6, breit: 9, gefaelle: 0.5, von: 30.5, bis: 44 }
 // Hoehe am Nordrand des Hangs (z −15,6), gemessen; eine Gerade lag an der
 // Kuppe 0,8 m zu hoch, eine Funktion hier darf terrainHeight nicht fragen.
-const BOESCHUNG_KANTE = [[30, 3.7], [34, 4.3], [38, 5.6], [42, 6.3], [46, 7.1]]
+// Alle 2 m und 3 cm unter dem Messwert: die erste Tabelle (alle 4 m) lag
+// zwischen den Stuetzstellen bis 0,36 m ueber dem Rand. Das war eine Stufe
+// von 28 cm am Zaun, und wer vom Bremshang nach Norden fuhr, hob dort mit
+// 14 m/s ab – 11 m hoch (Meldung 11.10.).
+const BOESCHUNG_KANTE = [[28, 2.73], [30, 3.55], [32, 3.78], [34, 4.11], [36, 4.62], [38, 5.21],
+  [40, 5.92], [42, 6.36], [44, 7.15], [46, 7.05]]
+// Die ersten 1,5 m biegt die Boeschung erst allmaehlich ab, statt mit
+// einem Knick von flach auf 27 Grad.
+const BOESCHUNG_RUNDUNG = 1.5
 
 function kuhleBoeschung(x, z, h) {
   const B = BOESCHUNG
@@ -553,11 +561,16 @@ function kuhleBoeschung(x, z, h) {
   while (i < K.length - 2 && x > K[i + 1][0]) i++
   const t = Math.min(1, Math.max(0, (x - K[i][0]) / (K[i + 1][0] - K[i][0])))
   const kante = K[i][1] + (K[i + 1][1] - K[i][1]) * t
-  const ziel = kante - (B.rand - z) * B.gefaelle
+  const d = B.rand - z
+  const r = BOESCHUNG_RUNDUNG
+  const ziel = kante - B.gefaelle * (d < r ? d * d / (2 * r) : d - r / 2)
   if (ziel <= h) return h
   const seite = smooth(Math.min(1, Math.max(0, (x - (B.von - 2)) / 2))) * smooth(Math.min(1, Math.max(0, (B.bis + 2 - x) / 2)))
   const ende = smooth(Math.min(1, Math.max(0, (z - (B.rand - B.breit - 1)) / 1)))
-  return h + (ziel - h) * seite * ende
+  // Am Rand selbst bleibt der Hang, wie er ist: zwischen den Stuetzstellen
+  // lag die Tabelle noch 3 cm darueber, und auch das hebt kurz an.
+  const rein = smooth(Math.min(1, d / 0.75))
+  return h + (ziel - h) * seite * ende * rein
 }
 
 // --- Die Trampoline im Kinderland -------------------------------------------

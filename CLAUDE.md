@@ -88,7 +88,7 @@ Das Wichtigste in Kürze:
   16 Uhr zu Ausflügen heraus (erstmals nach 30 s bis 8,5 min, dann alle
   4–12 min; liegen alle Schneemänner zugleich, auch außerhalb der Zeit;
   erzwingen mit `?skischule`). Der
-  Skilehrer-Ausweis hängt nur an Tafel und Skilehrer, ohne Kachel. Die
+  Skilehrer-Ausweis hängt nur am Skilehrer (keine Tafel mehr), ohne Kachel. Die
   Leuchtstrecke ist weg. Schneemänner lassen sich umfahren; ihre Kugeln
   rollen und wachsen (`world/schneekugel.js`, ohne three.js – gedacht auch
   für den großen Berg).

@@ -40,8 +40,8 @@ export const LINKS = {
   // warum sie sie bekommen haben und nicht irgendein Schild.
   jugendfeuerwehr: 'https://jf.veerka.mp/',
 
-  // Der Skilehrer-Ausweis haengt an der Skischule im Kinderland: an der
-  // Tafel am Treffpunkt und am Skilehrer der Gruppe. Bewusst ohne Kachel in
+  // Der Skilehrer-Ausweis haengt an der Skischule im Kinderland, nur am
+  // Skilehrer der Gruppe (seit 11.10. ohne Tafel). Bewusst ohne Kachel in
   // der Uebersicht – er soll gefunden werden, nicht aufdraengen.
   skilehrer: 'https://booking.snowsports.at/verify?uid=126812a1-73f6-4f1a-a1aa-3592adf889db',
   kidrohne: 'https://ai-drone-fra-uas.github.io/ai-drone/',

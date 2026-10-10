@@ -12,7 +12,7 @@ import { createMarker } from '../../stations/marker.js'
 import { LINKS } from '../../stations/links.js'
 import { createSnowCannon } from '../props/snow-cannon.js'
 import { createTrampolin } from '../props/trampolin.js'
-import { createTreffpunkt, createSkischulhuette, HUETTE as HUETTE_MASS } from '../props/skischule.js'
+import { createSkischulhuette, HUETTE as HUETTE_MASS } from '../props/skischule.js'
 import { Skischulgruppe } from './skischule.js'
 import {
   createNoodleArch,
@@ -49,8 +49,8 @@ import {
 // - Schneemaenner, die man umfahren kann: die Kugeln rollen den Hang
 //   hinunter und werden groesser (attractions/schneemann.js);
 // - an der Einfahrt der Treffpunkt der Skischule, von dem eine Gruppe aus
-//   Skilehrer und vier Kindern ihre Runden faehrt. Tafel und Skilehrer
-//   fuehren zum Ausweis.
+//   Skilehrer und vier Kindern ihre Runden faehrt. Nur der Skilehrer
+//   fuehrt zum Ausweis (die Tafel am Treffpunkt ist seit 11.10. weg).
 //
 // Positionen auf dem Hang werden in Bandkoordinaten angegeben: s ist die
 // Strecke von unten, off der seitliche Versatz (negativ = zum Teppich hin).
@@ -93,12 +93,8 @@ const SKISPITZE = 0.8   // m vor der Fahrermitte: dort zaehlt die Linie
 // er am Ostende des Bremsfelds, und sie fuhr hin, drehte um und lief an
 // sich selbst vorbei zurueck (Meldung 10.10.: starke Kehrtwende). Jetzt
 // ein weiter Bogen: vom Zielbogen nach Osten hinunter, am Treffpunkt
-// warten, unter der Tafel durch und hinueber zum Teppich. Westlich im Bogen
-// stand die Tafel aus der Kamera vor dem Wegweiser an der Kreuzung
-// (27,5, 23), dessen Arme nach rechts zeigen; hier steht sie aussen am
-// Bogen, und der Lehrer wartet knapp 2 m rechts neben ihr.
+// warten und hinueber zum Teppich.
 const TREFF = { s: -2.6, off: 4.2 }
-const TAFEL = { s: -4.5, off: 4.6 }
 
 // Die Huette der Skischule (Ansage 10.10.): suedoestlich vom Treffpunkt,
 // zwischen dem Weg nach Osten und dem Wald, die Front zur Kamera. Aus der
@@ -400,40 +396,14 @@ export class Kinderland {
     return this.trampoline.some((t) => t.fang)
   }
 
-  // Die Skischule: Tafel am Treffpunkt und die Gruppe, die von dort ihre
-  // Runde faehrt. Beide fuehren zum Skilehrer-Ausweis – die Tafel als
-  // Station mit Ring wie der Teppich, der Skilehrer selbst, wenn man neben
-  // ihm steht.
+  // Die Skischule: die Gruppe, die vom Treffpunkt aus ihre Runde faehrt.
+  // Der Skilehrer-Ausweis haengt nur am Skilehrer selbst – wer neben ihm
+  // steht, kann ihn ansprechen. Die Tafel am Treffpunkt, die ihn ausserdem
+  // zeigte, ist weg (Ansage 11.10.).
   _buildSkischule() {
-    const t = this.at(TAFEL.s, TAFEL.off)
-    this._treffpunkt = t
-    const tafel = createTreffpunkt()
-    this.world.place(tafel, t.x, t.z, { rotation: CAMERA.azimuth })
-    this.world.addCollider(t.x, t.z, 0.45)
-    this.animated.push(tafel.userData.animate)
-
     const ausweis = {
       label: 'Skilehrer-Ausweis', sub: 'geprüft · snowsports.at', glyph: 'ski',
       url: LINKS.skilehrer, color: '#1f4fa8',
-    }
-    if (this.registry) {
-      const marker = createMarker(t.x, t.z, 3.6, '#1f4fa8')
-      this.world.scene.add(marker)
-      this.registry.add({
-        id: 'skischule',
-        label: 'Skischule',
-        hint: 'Treffpunkt',
-        color: '#1f4fa8',
-        position: { x: t.x, z: t.z },
-        radius: 3.6,
-        marker,
-        groundY: terrainHeight(t.x, t.z),
-        labelHeight: terrainHeight(t.x, t.z) + 3.9,
-        object: tafel,
-        // Die Tafel haengt oben am Mast.
-        focus: { abstand: 8, hoehe: 2.3, vor: 0.8 },
-        choices: [ausweis],
-      })
     }
 
     // Die Runde der Gruppe, Abschnitt fuer Abschnitt.
@@ -441,8 +411,6 @@ export class Kinderland {
       const q = this.at(s, off)
       return [q.x, q.z]
     }
-    // Gewartet wird vor der Tafel, zur Kamera hin – dahinter verschwand der
-    // Skilehrer hinter seinem eigenen Schild.
     // Ein Bogen vom Zielbogen hinunter und hinueber zum Teppich: am
     // Treffpunkt wird gewartet, ohne Umkehr.
     const start = p(TREFF.s, TREFF.off)
@@ -531,10 +499,8 @@ export class Kinderland {
       ls.position.z = m.z
       ls.groundY = m.y
       ls.labelHeight = m.y + 2.4
-      // Am Treffpunkt spricht die Tafel: sonst stuende der Lehrer naeher
-      // und die Tafel drehte sich nie um. In der Huette spricht keiner.
-      const t = this._treffpunkt
-      ls.radius = !this.gruppe.sichtbar || !this.gruppe.lehrer.model.visible || Math.hypot(m.x - t.x, m.z - t.z) < 4 ? 0 : 2.6
+      // In der Huette spricht keiner.
+      ls.radius = !this.gruppe.sichtbar || !this.gruppe.lehrer.model.visible ? 0 : 2.6
     }
 
     const sx = skier.position.x

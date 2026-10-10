@@ -62,3 +62,14 @@ test('am Tag: Tuer auf, heraus, Runden, zurueck hinein, Tuer zu', () => {
   assert.ok(verlauf.offen, 'die Tuer ging auf')
   assert.deepEqual(zurueck, { tuer: 0, sichtbar: 0 })
 })
+
+test('herbeigerufen (alle Schneemaenner liegen) kommt sie auch nachts, und bald', () => {
+  const bild = tuer()
+  const g = new Skischulgruppe(welt, { abschnitte, huette: { bild, weg: hutweg }, tag: () => false })
+  laufen(g, 60)
+  assert.ok(g.drinnen)
+  g.herbeirufen()
+  let raus = null
+  laufen(g, 30, (k) => { if (raus === null && !g.drinnen) raus = k / 30 })
+  assert.ok(raus !== null && raus <= 10.1, `nach ${raus} s`)
+})

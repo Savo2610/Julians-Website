@@ -1915,6 +1915,37 @@ Teppich stand immer noch in der Luft – weglassen.
     `__ski.props.kinderland.gruppe` (`drinnen`, `raus`, `ende`, `runden`,
     `tuer`). Tests: `tests/skischule.test.js`.
 
+### Vierte Runde (10.10., Zweig `kinderland-neu`)
+
+Ansage mit zweiter Skizze: den Zaun in der Mitte weg, den anderen Zaun nach
+Westen verlängern (gelb), die Stopplinie quer unten (rot), mit
+Terraforming eine schöne Abfahrt; die Skischule kommt erstmals nach 30 s bis
+8,5 min, dann alle 4 bis 12 min; liegen alle Schneemänner, fährt sie auch zu
+anderen Uhrzeiten.
+
+- Die Skizze ins Gelände übertragen: Kamera aus fünf Ankerpunkten (HALT,
+  Trampolin, Teppichrolle, zwei Schneemänner) rekonstruiert, Abweichung
+  etwa 20 px, dann die Markierungen auf den Boden projiziert.
+- **Bremshang gerade nach Westen** (`BREMS_LANE`): von der Kuppe (44,8,
+  −12, 8 m) bis in den Auslauf (28,6, −12,1, 3,3 m), oben 21°, unten
+  auslaufend. Er kreuzt den Kopf der Westabfahrt; dort biegt man zu den
+  Trampolinen ab. Saum nur 3 m: mit 5 hob er den Landehang der kleinen
+  Schanze im Funpark an (`tests/sprung.test.js`).
+- **Linie** quer über die ganze Breite (7 m) bei x 30,8, wo der Hang in den
+  Auslauf übergeht, HALT am Südende. Man kommt mit etwa 4 m/s an.
+- **Zäune**: das kurze Stück zwischen Teppich und Kuppe ist weg; der Zaun
+  der Kuppe läuft jetzt vom Kopf des Hangs am Nordrand entlang bis
+  (33,4, −17,4). Der grüne Schneemann steht neben dem Kopf (47,2, −13).
+- **Kuhle**: nördlich des Hangs liegt der flache Auslauf des Funparks; der
+  Hangrand fiel dorthin auf 2 m um 2,3 m ab. `kuhleBoeschung` legt ihn
+  nach den Bändern mit 27° schräg, bis er den Auslauf trifft (Kantenhöhen
+  gemessen, `BOESCHUNG_KANTE`). Ein `bump` vor den Bändern wirkte dort
+  nicht: das Band des Funparks zieht seinen Auslauf wieder glatt.
+- **Skischule**: erstmals nach 30 s bis 8,5 min, dann alle 4 bis 12 min.
+  Liegen alle sieben Schneemänner zugleich, ruft das die Gruppe herbei
+  (`gruppe.herbeirufen()`): 4 bis 10 s später geht die Tür auf, auch
+  nachts, und für den Rest des Besuchs fährt sie zu jeder Uhrzeit.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/

@@ -85,7 +85,9 @@ Das Wichtigste in Kürze:
   niemand befährt; mit W hinüber, dort kein Salto), Bremsfeld am Fuß des
   Bremshangs (`BREMS_LANE`, von der Kuppe nach Westen), Skischule mit
   Hütte: die Gruppe (alle im Pflug) kommt nur nach echter Uhr von 6 bis
-  16 Uhr zu Ausflügen heraus (erzwingen mit `?skischule`). Der
+  16 Uhr zu Ausflügen heraus (erstmals nach 30 s bis 8,5 min, dann alle
+  4–12 min; liegen alle Schneemänner zugleich, auch außerhalb der Zeit;
+  erzwingen mit `?skischule`). Der
   Skilehrer-Ausweis hängt nur an Tafel und Skilehrer, ohne Kachel. Die
   Leuchtstrecke ist weg. Schneemänner lassen sich umfahren; ihre Kugeln
   rollen und wachsen (`world/schneekugel.js`, ohne three.js – gedacht auch

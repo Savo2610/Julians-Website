@@ -79,13 +79,13 @@ const SLALOM = [18.5, 15.7, 12.9, 10.1, 7.3, 4.5].map((s, i) => ({ s, off: SLALO
 const ZIEL_S = 2.2
 
 // Das Bremsfeld liegt am Fuss des Bremshangs (BREMS_LANE in heightfield.js,
-// s von oben), 2 m im fast ebenen Auslauf: davor kommt man mit 19,5 Grad
-// von der Kuppe herunter. Zuerst lag es im Auslauf des Uebungshangs, wo man
+// s von oben), quer ueber die ganze Breite, wo der Hang in den Auslauf
+// uebergeht: davor kommt man mit gut 20 Grad von der Kuppe herunter. Zuerst lag es im Auslauf des Uebungshangs, wo man
 // nach dem Tierslalom schon langsam war, dann kurz unten an der
 // Westabfahrt (Ansage 10.10.: ein eigener kleiner Hang von der Kuppe).
-const BREMS_S = BREMS_LANE.segments[4].s0 + 2.0
-const BREMS_VON = -3.0
-const BREMS_BIS = 3.0
+const BREMS_S = BREMS_LANE.segments[4].s0 + 0.5
+const BREMS_VON = -3.5
+const BREMS_BIS = 3.5
 const SKISPITZE = 0.8   // m vor der Fahrermitte: dort zaehlt die Linie
 
 // Der Treffpunkt der Skischule: am Fuss des Uebungshangs, im Bogen zwischen
@@ -235,10 +235,12 @@ export class Kinderland {
     zug([w(8, 5.2), w(12, 5.6), w(15.5, 5.6)])
     zug([w(21, 5.4), w(25, 5.0)])
     // Um die Kuppe herum und den Ostrand hinunter.
-    // An der Westflanke der Kuppe eine Luecke fuer den Bremshang.
-    zug([p(25.6, -9.4), [39.5, -5.8], [40.3, -7.8]])
+    // Von der Kuppe nach Westen faehrt man den Bremshang hinunter; der
+    // Zaun fasst ihn nach Norden ein, zum Funpark hin. Das kurze Stueck
+    // zwischen Teppich und Kuppe ist weg (zweite Skizze 10.10.): es stand
+    // mitten im Hang.
     const cap = [
-      [43.1, -12.2], [45.0, -14.2], [49.5, -13.6],
+      [33.4, -17.4], [37.4, -16.6], [41.4, -16.2], [45.0, -14.6], [49.5, -13.6],
       [52.4, -10.0], [52.6, -5.4], [50.0, -2.2],
     ]
     const east = [24.5, 19, 13, 7, 1.5].map((s) => p(s, 7.8))
@@ -284,7 +286,8 @@ export class Kinderland {
     const snowmen = [
       { x: 43.2, z: -4.6, scale: 1.15, hat: KINDER_COLORS[0] },
       { x: 50.0, z: -5.2, scale: 0.9, hat: KINDER_COLORS[1] },
-      { x: 44.2, z: -13.0, scale: 1.3, hat: KINDER_COLORS[3] },
+      // Neben dem Kopf des Bremshangs, nicht auf ihm.
+      { x: 47.2, z: -13.0, scale: 1.3, hat: KINDER_COLORS[3] },
     ]
     snowmen.forEach((s, i) => this._schneemann(s.x, s.z, s.scale, s.hat, i * 2.1, Math.atan2(CAP.x - s.x, CAP.z - s.z), 7))
   }
@@ -506,6 +509,12 @@ export class Kinderland {
     this.carousel.update(dt, skier, input)
     for (const tr of this.trampoline) tr.update(dt, skier, input)
     for (const m of this.schneemaenner) m.update(dt, skier)
+    // Liegen alle Schneemaenner zugleich, kommt die Skischule – auch
+    // ausserhalb ihrer Zeit, von da an fuer den ganzen Besuch (Ansage
+    // 10.10.). Eine Belohnung fuer alle, die das Kinderland abraeumen.
+    const alleUm = this.schneemaenner.every((m) => m.kaputt)
+    if (alleUm && !this._alleUm) this.gruppe.herbeirufen()
+    this._alleUm = alleUm
     if (this._carouselStation) {
       this._carouselStation.hint = this.carousel.rider ? 'Loslassen' : 'Einsteigen'
     }
@@ -613,7 +622,7 @@ export class Kinderland {
     if (skier.tow || !quer || s < 4 || s > BREMS_S + 6) { this._bremsen = null; return }
     if (!this._bremsen) {
       const bergab = skier._fahrt.x * ux + skier._fahrt.z * uz > 0.6
-      if (s > 9 && s < BREMS_S - 1 && skier.speed > 3 && !skier.airborne && bergab) this._bremsen = { scharf: true }
+      if (s > 6 && s < BREMS_S - 1 && skier.speed > 3 && !skier.airborne && bergab) this._bremsen = { scharf: true }
       return
     }
     if (skier.speed > 0.2 || skier.airborne) return

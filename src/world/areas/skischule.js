@@ -26,8 +26,11 @@ const WARTEN = [12, 22]      // s am Treffpunkt
 const KOERPER = { lehrer: 0.55, kind: 0.4 }
 const PLATZ = 3.2            // m vor dem Lehrer: steht dort der Fahrer, wartet die Gruppe
 const TUER_ZEIT = 1.2        // s, bis die Tuer der Huette offen oder zu ist
-const ERSTES = [20, 150]     // s nach dem Ankommen, bis sie zum ersten Mal herauskommt
-const DRINNEN = [180, 480]   // s Pause in der Huette zwischen zwei Ausfluegen
+// Ansage 10.10.: zum ersten Mal nach 30 s bis 8,5 min, danach alle 4 bis
+// 12 min – selten genug, dass es etwas Besonderes ist.
+const ERSTES = [30, 510]     // s nach dem Ankommen, bis sie zum ersten Mal herauskommt
+const DRINNEN = [240, 720]   // s Pause in der Huette zwischen zwei Ausfluegen
+const GERUFEN = [4, 10]      // s, bis sie kommt, wenn man sie herbeiruft
 const RUNDEN = [2, 3]        // so viele Runden je Ausflug
 
 const zufall = ([a, b]) => a + Math.random() * (b - a)
@@ -85,10 +88,18 @@ export class Skischulgruppe {
     this.runden = 0
     this.uhr = erzwungen ? 2 : zufall(ERSTES)
     this._erzwungen = erzwungen
+    this.frei = false          // herbeigerufen: faehrt auch ausserhalb der Zeit
     this.tuer = 0
     this._tuerZiel = 0
     for (const f of this.figuren) this._setzen(f, 0)
     if (this.drinnen) for (const f of this.figuren) f.model.visible = false
+  }
+
+  // Herbeirufen (alle Schneemaenner liegen, kinderland.js): sie kommt gleich
+  // heraus, wenn sie drinnen ist, und darf von da an auch nachts fahren.
+  herbeirufen() {
+    this.frei = true
+    if (this.drinnen) this.uhr = Math.min(this.uhr, zufall(GERUFEN))
   }
 
   get sichtbar() {
@@ -200,7 +211,7 @@ export class Skischulgruppe {
       this.huette.bild.setzeTuer(this.tuer)
       if (this.drinnen) {
         // Gezaehlt wird nur am Tag; wer nachmittags ankommt, sieht sie nicht.
-        if (this._erzwungen || this.tag()) this.uhr -= dt
+        if (this._erzwungen || this.frei || this.tag()) this.uhr -= dt
         if (this.uhr <= 0) this._hinaus()
         else return
       }

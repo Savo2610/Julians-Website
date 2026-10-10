@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Skier } from '../src/player/skier.js'
-import { terrainHeight, TRAMPOLIN, muldeTiefe, freiFlug } from '../src/world/heightfield.js'
+import { terrainHeight, TRAMPOLIN, TRAMPOLINE, muldeTiefe, freiFlug } from '../src/world/heightfield.js'
 import { Trampolin } from '../src/world/attractions/trampolin.js'
 
 // Das Trampolin im Kinderland (09.10.): hineinfahren oder -fallen, einsinken,
@@ -28,6 +28,7 @@ function eingabe() {
 // die Leertaste neu gedrueckt wird.
 function lauf({ x = TRAMPOLIN.x, z = TRAMPOLIN.z, heading = 0, tempo = 0, bilder = 600, druecken = () => false, tasten = [] } = {}) {
   const tr = new Trampolin()
+  // Allein: das zweite Tuch faengt hier nicht.
   const s = new Skier(welt)
   s.versetzen(x, z, heading)
   s.speed = tempo
@@ -87,8 +88,8 @@ test('hineingefahren: es gibt nach, wirft einen Hopser und man gleitet hinunter'
 test('mit der Leertaste schaukelt man sich hoch, bis zum Deckel', () => {
   const v = lauf({ bilder: 1500, druecken: (tr, s, i) => unten(tr) || (tr.fang?.stehen && i % 20 === 0) })
   const ueber = v.maxY - TRAMPOLIN.h
-  // Deckel 11,5 m/s bei g 13: gut 5 m Scheitel.
-  assert.ok(ueber > 4 && ueber < 5.4, `Scheitel ${ueber.toFixed(2)} m`)
+  // Deckel 14 m/s bei g 13: 7,5 m Scheitel (Ansage 10.10.: hoeher).
+  assert.ok(ueber > 6.8 && ueber < 7.8, `Scheitel ${ueber.toFixed(2)} m`)
   assert.ok(v.spruenge >= 8, `${v.spruenge} Spruenge`)
   // Man bleibt dabei auf dem Tuch: die Delle zieht zur Mitte.
   const d = Math.hypot(v.s.position.x - TRAMPOLIN.x, v.s.position.z - TRAMPOLIN.z)
@@ -139,4 +140,71 @@ test('Figuren auf dem Tuch werden gewertet, zaehlen aber nicht fuer den Pass', (
   }
   assert.ok(figuren.some((f) => /\d+°/.test(f.text)), figuren.map((f) => f.text).join(', '))
   assert.ok(figuren.every((f) => f.imSpiel), 'alle Figuren im Spiel')
+})
+
+// Beide Tuecher, wie im Kinderland: jedes kennt das andere.
+function zwei() {
+  const tt = TRAMPOLINE.map((t) => new Trampolin(t))
+  for (const t of tt) t.nachbarn = tt.filter((n) => n !== t)
+  return tt
+}
+
+test('zwei Tuecher: mit W springt man vom oberen aufs untere und zurueck', () => {
+  const [a, b] = zwei()
+  const s = new Skier(welt)
+  const zuB = Math.atan2(b.x - a.x, b.z - a.z)
+  s.versetzen(a.x, a.z, zuB)
+  const inp = eingabe()
+  const wege = []
+  let auf = null
+  for (let i = 0; i < 3000 && wege.length < 2; i++) {
+    inp.neu.clear()
+    const tr = a.fang ? a : b.fang ? b : null
+    if (tr && (unten(tr) || (tr.fang.stehen && i % 20 === 0))) inp.neu.add('jump')
+    // Hoch genug geschaukelt: W halten und hinueber.
+    inp.t.delete('forward')
+    if (tr && tr.spruenge >= 4 && !tr.fang.stehen) inp.t.add('forward')
+    for (const t of [a, b]) t.update(1 / 60, s, inp)
+    s.update(1 / 60, inp, null)
+    for (const t of [a, b]) if (t.pruefen(s)) break
+    const jetzt = a.fang ? 'a' : b.fang ? 'b' : auf
+    if (auf && jetzt !== auf) {
+      wege.push(jetzt)
+      // Umdrehen: auf dem Tuch zeigt man zum anderen zurueck.
+      const ziel = jetzt === 'b' ? a : b
+      const g = (jetzt === 'b' ? b : a).fang
+      g.heading = Math.atan2(ziel.x - g.x, ziel.z - g.z)
+    }
+    auf = jetzt
+  }
+  assert.deepEqual(wege, ['b', 'a'])
+})
+
+test('ohne W bleibt man beim Hochschaukeln auf dem Tuch, mit W kommt man herunter', () => {
+  const v = lauf({ bilder: 1500, druecken: (tr, s, i) => unten(tr) || (tr.fang?.stehen && i % 20 === 0) })
+  assert.ok(Math.hypot(v.s.position.x - TRAMPOLIN.x, v.s.position.z - TRAMPOLIN.z) < 1)
+  // Quer zum anderen Tuch, W gehalten: nach dem ersten Sprung ist man unten.
+  const w = lauf({ heading: Math.PI / 2, tasten: ['forward'], bilder: 400, druecken: (tr, s, i) => tr.fang?.stehen && i === 30 })
+  assert.ok(w.weg !== null, 'vom Tuch herunter')
+})
+
+test('auf dem Trampolin schlaegt W in der Luft keinen Salto', () => {
+  const tr = new Trampolin()
+  const s = new Skier(welt)
+  s.versetzen(TRAMPOLIN.x, TRAMPOLIN.z, 0)
+  const inp = eingabe()
+  let flip = 0
+  for (let i = 0; i < 1200; i++) {
+    inp.neu.clear()
+    if (unten(tr) || (tr.fang?.stehen && i % 20 === 0)) inp.neu.add('jump')
+    // Erst in der Luft druecken, sonst ist die Taste gesperrt.
+    if (!tr.fang && s.airborne && s.vy > 2) inp.t.add('forward')
+    else inp.t.delete('forward')
+    tr.update(1 / 60, s, inp)
+    s.update(1 / 60, inp, null)
+    tr.pruefen(s)
+    flip = Math.max(flip, Math.abs(s.flip))
+  }
+  assert.ok(tr.spruenge >= 5)
+  assert.ok(flip < 0.01, `Salto ${flip.toFixed(2)} rad`)
 })

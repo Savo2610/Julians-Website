@@ -80,10 +80,14 @@ Das Wichtigste in Kürze:
   fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
 
 - **Kinderland** (`src/world/areas/kinderland.js`, HANDOVER 4a¹²): Teppich,
-  Karussell, Tierslalom (außen umfahren), Bremsfeld, Trampolin auf der
-  Westabfahrt (Fangnetz-Mechanik, liegend; unter dem Tuch eine Mulde, die
-  niemand befährt), Skischule mit fahrender Gruppe. Der Skilehrer-Ausweis
-  hängt nur an Tafel und Skilehrer, ohne Kachel. Die Leuchtstrecke ist weg.
+  Karussell, Tierslalom (außen umfahren), zwei Trampoline hintereinander auf
+  der Westabfahrt (Fangnetz-Mechanik, liegend; unter dem Tuch eine Mulde, die
+  niemand befährt; mit W hinüber, dort kein Salto), Bremsfeld unten an der
+  Westabfahrt, Skischule mit fahrender Gruppe (alle im Pflug). Der
+  Skilehrer-Ausweis hängt nur an Tafel und Skilehrer, ohne Kachel. Die
+  Leuchtstrecke ist weg. Schneemänner lassen sich umfahren; ihre Kugeln
+  rollen und wachsen (`world/schneekugel.js`, ohne three.js – gedacht auch
+  für den großen Berg).
 
 - **Grenzen** (`src/world/grenze.js`, HANDOVER 4a¹¹): Südzaun vom See bis
   zum Funpark, zwei gelbe Fangnetze (Kante der Nordabfahrt, Kopf der Klamm

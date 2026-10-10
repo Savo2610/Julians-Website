@@ -6,7 +6,7 @@ import { createSkischulFigur, KINDER_JACKEN, SKISCHULE_BLAU } from '../props/ski
 
 // Die Skischulgruppe: ein Skilehrer und vier Kinder, die vom Treffpunkt aus
 // ihre Runde durchs Kinderland fahren – zum Teppich, hinauf, im Pflug durch
-// den Tierslalom, am Bremsfeld anhalten, zurueck zum Treffpunkt, warten.
+// den Tierslalom, unten anhalten, im Bogen zum Treffpunkt, warten.
 // Sie macht das Kinderland lebendig (Ansage 09.10.: es soll einladender
 // aussehen) und traegt den Skilehrer-Ausweis: wer neben dem Skilehrer
 // steht, kann ihn ansprechen (Station `skilehrer` in kinderland.js).
@@ -15,7 +15,7 @@ import { createSkischulFigur, KINDER_JACKEN, SKISCHULE_BLAU } from '../props/ski
 // Jede Figur hat ihre Stelle s darauf; die Kinder fahren hinter dem Lehrer
 // her und kommen ihm nie naeher als ABSTAND – an Halten rueckt die Schlange
 // zusammen wie eine echte Gruppe. Gehalten wird am Treffpunkt, oben vor dem
-// Slalom, kurz vor der Bremslinie, und wann immer der Fahrer vor dem Lehrer
+// Slalom, unten am Zielbogen, und wann immer der Fahrer vor dem Lehrer
 // steht: Ruecksicht
 // statt Kegelspiel. Wer in eine Figur faehrt, wird hinausgeschoben wie an
 // der Pistenraupe.
@@ -61,11 +61,12 @@ export class Skischulgruppe {
   // Der Weg wird einmal fein abgetastet: Position, Abschnittsart und Tempo
   // je Stelle. Die Fahrt durch den Slalom ist eine Catmull-Rom-Kurve durch
   // die Punkte – ein Polygonzug liess die Kinder an jeder Stange knicken.
+  // Ebenso Gehstrecken mit `rund` (der Bogen am Treffpunkt).
   _abtasten(abschnitte) {
     const weg = []
     for (const a of abschnitte) {
       const pts = a.punkte.map(([x, z]) => new THREE.Vector3(x, 0, z))
-      const kurve = a.art === 'fahren' && pts.length > 2
+      const kurve = (a.art === 'fahren' || a.rund) && pts.length > 2
         ? new THREE.CatmullRomCurve3(pts, false, 'centripetal')
         : new THREE.CurvePath()
       if (!(kurve instanceof THREE.CatmullRomCurve3)) {
@@ -209,9 +210,10 @@ export class Skischulgruppe {
     const v = f.v ?? 0
     f.lean += ((fahren ? THREE.MathUtils.clamp(-st.kruemmung * v * v * 0.08, -0.4, 0.4) : 0) - f.lean) * k
     f.crouch += ((fahren ? 0.32 : st.art === 'teppich' ? 0.05 : 0.15) - f.crouch) * k
-    // Die Kinder fahren im Pflug, und alle bremsen so vor der Linie.
+    // Alle fahren im Pflug hinunter, auch der Lehrer: er zeigt es vor
+    // (Ansage 10.10.; vorher fuhr er parallel und nur die Kinder pflugten).
     const bremsen = this._haltVoraus(f.s, 3, 'bremsen') !== null
-    f.pflug += (((f.kind && fahren) || bremsen ? 1 : 0) - f.pflug) * k
+    f.pflug += ((fahren || bremsen ? 1 : 0) - f.pflug) * k
 
     const boden = terrainHeight(x, z) + (st.art === 'teppich' && !steht ? this.belag : 0)
     f.model.position.set(x, boden, z)

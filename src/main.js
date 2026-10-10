@@ -198,7 +198,7 @@ const touch = TOUCH
     camera: chase,
     skier,
     // Auf dem Trampolin schaukelt man sich mit dem Sprungknopf hoch.
-    jumpVisible: () => inFunpark(skier.position.x, skier.position.z) || !!props.railRide.rider || props.kinderland.trampolin.imSpiel,
+    jumpVisible: () => inFunpark(skier.position.x, skier.position.z) || !!props.railRide.rider || props.kinderland.trampolinImSpiel,
     onMap: () => interaction.press('map'),
     mapVisible: () => !mapMenu.open && !interaction.focus && !skier.tow && !flight.active,
   })

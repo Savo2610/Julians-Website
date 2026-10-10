@@ -42,7 +42,7 @@ export class PassRegeln {
   trick(text) {
     // Auf dem Trampolin zaehlt keine Drehung: dort fliegt man aus dem Stand
     // bis zu 1,8 s, ein 720 ist dort leichter als jeder im Park.
-    if (this.props.kinderland.trampolin.imSpiel) return
+    if (this.props.kinderland.trampolinImSpiel) return
     // „540°“, aber auch „CORK 540° · PERFEKT“: es zaehlt die Drehung.
     const grad = Number(/(\d+)°/.exec(text)?.[1] ?? 0)
     if (grad >= 540) this.pass.erreiche('d540')
@@ -105,7 +105,7 @@ export class PassRegeln {
     // Teppich, Karussell oder Trampolin: wer eines davon benutzt, war im
     // Kinderland.
     const kl = this.props.kinderland
-    if (kl.carpet.rider || kl.carousel?.rider || kl.trampolin.fang) p.entdecke('kinderland')
+    if (kl.carpet.rider || kl.carousel?.rider || kl.aufTrampolin) p.entdecke('kinderland')
 
     const st = this.stations.active
     if (st && STATIONEN.includes(st.id)) p.entdecke(st.id)

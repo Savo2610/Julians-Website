@@ -158,11 +158,16 @@ export class MagicCarpet {
         color: 0x39414a,
         position: [0, 0.15, 0],
       })
+      // Die Rampe liegt mit ihrem Ende auf dem Schnee. Eine feste Neigung
+      // (0,16) liess sie unten frei in der Luft stehen: dort faellt der Hang
+      // auf 1,75 m um 0,6 m, sie senkte sich nur um 0,28 (Meldung 10.10.).
+      const ende = this.pointAt(t + sign * 1.75 / this.length)
+      const fall = this.groundAt(t) - terrainHeight(ende.x, ende.z) + 0.03
       parts.push({
         geo: new THREE.BoxGeometry(BELT_WIDTH + 0.7, 0.1, 1.5),
         color: 0xf7fbff,
-        position: [0, 0.05, sign * 1.0],
-        rotation: [sign * 0.16, 0, 0],
+        position: [0, 0.05 - fall / 1.75, sign * 1.0],
+        rotation: [sign * Math.asin(Math.max(-0.5, Math.min(0.5, fall / 1.75))), 0, 0],
       })
       const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
       mesh.castShadow = true

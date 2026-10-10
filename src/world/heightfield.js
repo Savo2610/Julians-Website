@@ -532,29 +532,46 @@ function schuppenAuslauf(x, z, h) {
   return h - (h - ebene) * w
 }
 
-// --- Das Trampolin im Kinderland --------------------------------------------
-// Ein Bodentrampolin, buendig im Schnee, auf halber Hoehe der Westabfahrt
-// (Ansage 09.10.: ein Trampolin mit einer Mechanik wie das Fangnetz). Man
-// faehrt einfach darauf, und das Tuch traegt einen – gerechnet wird das in
-// attractions/trampolin.js, nicht hier.
+// --- Die Trampoline im Kinderland -------------------------------------------
+// Zwei Bodentrampoline, buendig im Schnee, hintereinander auf der
+// Westabfahrt (Ansage 09.10.: ein Trampolin mit einer Mechanik wie das
+// Fangnetz; 10.10.: weiter nach links, ein zweites daneben, um von Tuch zu
+// Tuch zu springen). Man faehrt einfach darauf, und das Tuch traegt einen –
+// gerechnet wird das in attractions/trampolin.js, nicht hier.
 //
-// Hier liegt nur, was man befaehrt: ein ebener Platz von 3,7 m Halbmesser,
-// der weich in den Hang ueberblendet (am Hang liegen auf diesem Kreis 1,5 m
-// Hoehenunterschied, je die Haelfte ab- und aufgetragen), und unter dem Tuch
-// eine Mulde (muldeTiefe). Die Mulde befaehrt niemand: wer den Rand des Tuchs erreicht,
-// gehoert dem Trampolin, im selben Bild. Sie ist da, damit das Tuch beim
-// Einsinken nicht im Gelaende verschwindet – bei 11,5 m/s gibt es gerechnet
-// 1,39 m nach, die Mulde ist 1,6 tief. Die Hoehe des Platzes ist eine feste
-// Zahl, gemessen am Boden in der Mitte, damit die Funktion sich nicht selbst
-// fragt.
-export const TRAMPOLIN = { x: 29.15, z: -2.32, h: 3.03, r: 2.5, eben: 3.7, saum: 3.5, mulde: 1.6 }
+// "Links" heisst aus der Kamera fast genau die Abfahrt hinunter (sie laeuft
+// bei azimuth 45 Grad quer durchs Bild). Daneben war kein Platz: westlich
+// kreuzen zwei Wege, oestlich liegt der Teppich. Also liegen beide Tuecher
+// auf der Mittellinie, 8 m auseinander (3 m Polster zu Polster), und der
+// Weg zur Kreuzung (22, 0) laeuft durch die Luecke. Oberhalb bleibt die
+// Abfahrt frei als kleiner Hang, unten in der Senke liegt die Bremslinie.
+//
+// Hier liegt nur, was man befaehrt: je ein ebener Platz, der weich in den
+// Hang ueberblendet, und unter dem Tuch eine Mulde (muldeTiefe). Die Mulde
+// befaehrt niemand: wer den Rand des Tuchs erreicht, gehoert dem
+// Trampolin, im selben Bild. Sie ist da, damit das Tuch beim Einsinken
+// nicht im Gelaende verschwindet – beim Deckel von 14 m/s gibt es gerechnet
+// 1,7 m nach, die Mulde ist 2 m tief. Der ebene Platz ist knapper als beim
+// ersten (2,9 statt 3,7 m): neben den Tuechern faehrt man vorbei, und ein
+// breiter Platz nahm auf dem Weg zur Linie zu viel Tempo. Die Hoehe ist
+// eine feste Zahl, gemessen am Boden in der Mitte, damit die Funktion sich
+// nicht selbst fragt.
+const TUCH_MASS = { r: 2.5, eben: 2.9, saum: 3.0, mulde: 2.0 }
+export const TRAMPOLINE = [
+  { x: 27.54, z: 0.21, h: 2.50, ...TUCH_MASS },
+  { x: 23.24, z: 6.95, h: 1.34, ...TUCH_MASS },
+]
+// Das obere, fuer alles, was nur eines kennt (Tests, Masse).
+export const TRAMPOLIN = TRAMPOLINE[0]
 
 function trampolinPlatz(x, z, h) {
-  const T = TRAMPOLIN
-  const d = Math.hypot(x - T.x, z - T.z)
-  if (d >= T.eben + T.saum) return h
-  let y = d <= T.eben ? T.h : h + (T.h - h) * (1 - smooth((d - T.eben) / T.saum))
-  return y - muldeTiefe(d)
+  for (const T of TRAMPOLINE) {
+    const d = Math.hypot(x - T.x, z - T.z)
+    if (d >= T.eben + T.saum) continue
+    const y = d <= T.eben ? T.h : h + (T.h - h) * (1 - smooth((d - T.eben) / T.saum))
+    return y - muldeTiefe(d)
+  }
+  return h
 }
 
 // Die Mulde hat einen flachen Boden und steile Raender: das Tuch sinkt nicht
@@ -562,15 +579,16 @@ function trampolinPlatz(x, z, h) {
 // Schuessel (Kosinus ueber den ganzen Kreis) war 1,5 m vor der Mitte nur noch
 // 0,5 m tief, und dort ragte der Grund durch das Tuch.
 export function muldeTiefe(d) {
-  const T = TRAMPOLIN
+  const T = TUCH_MASS
   const aussen = T.r - 0.1
   if (d >= aussen) return 0
   return T.mulde * (1 - smooth(Math.max(0, (d - (aussen - 0.9)) / 0.9)))
 }
 
-// Steht (x, z) auf dem Tuch?
+// Auf welchem Tuch steht (x, z)? Das Trampolin oder null.
 export function imTrampolin(x, z, rand = 0) {
-  return Math.hypot(x - TRAMPOLIN.x, z - TRAMPOLIN.z) < TRAMPOLIN.r - rand
+  for (const T of TRAMPOLINE) if (Math.hypot(x - T.x, z - T.z) < T.r - rand) return T
+  return null
 }
 
 export function stegDeck(x, z) {
@@ -998,11 +1016,11 @@ export function klammFlug(x, z) {
 //
 // Im Funpark ja – dort traegt der Landehang den Flug, und erst so zaehlt er:
 // wer weiter fliegt, faellt tiefer und hat laenger Zeit fuer die Figur. Und
-// an der Klammschanze, wo sonst niemand ueber die Rinne kaeme. Und ueber dem
-// Trampolin: unter dem Tuch liegt eine Mulde, und mit ihr sank der Fahrer
+// an der Klammschanze, wo sonst niemand ueber die Rinne kaeme. Und ueber
+// den Trampolinen: unter dem Tuch liegt eine Mulde, und mit ihr sank der Fahrer
 // sonst in jedem Sprung anderthalb Meter mit hinab.
 export function freiFlug(x, z) {
-  return parkFlug(x, z) || klammFlug(x, z) || imTrampolin(x, z)
+  return parkFlug(x, z) || klammFlug(x, z) || !!imTrampolin(x, z)
 }
 
 // Wo ein Absprung nach den Regeln des Parks fliegt (leichtere Schwerkraft,

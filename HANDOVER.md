@@ -1819,6 +1819,64 @@ Alles in `world/areas/kinderland.js`, Teppich und Karussell unverändert.
   Trampolin (davor verdeckten sie die Delle, auf der Achse der Westabfahrt
   standen sie im Weg).
 
+### Zweite Runde (10.10., Zweig `kinderland-neu`)
+
+Ansage: Trampolin ein Stück nach links und ein zweites daneben, um von Tuch
+zu Tuch zu springen; Salto in der Luft weg, damit man wieder herunterkommt;
+höher springen; Stopplinie woanders hin, mit einem kleinen Hang, wo das
+Trampolin war; Skischule im Schneepflug; keine starke Kehrtwende am
+Treffpunkt; Schneemänner zum Umfahren, deren Kugeln den Berg hinunterrollen
+und wachsen (später auch am großen Berg). Dazu die Meldung: am Fuß des
+Teppichs stand die weiße Auffahrtsplatte frei in der Luft.
+Rückfragen: Linie ans Ende der Westabfahrt; Trampoline 6–8 m nach links,
+3 m auseinander.
+
+- **Zwei Trampoline** (`TRAMPOLINE` in `heightfield.js`, `TRAMPOLIN` ist das
+  obere): „links“ ist aus der Kamera fast genau die Westabfahrt hinunter.
+  Daneben war kein Platz (westlich kreuzen zwei Wege, östlich liegt der
+  Teppich), also liegen beide auf der Mittellinie bei s 14 und 22 (oben
+  2,50 m, unten 1,34 m hoch), Polster zu Polster 3 m; der Weg zur Kreuzung
+  (22, 0) läuft durch die Lücke. Ebener Platz nur noch 2,9 m (Saum 3 m),
+  daneben fährt man vorbei. Mulde 2 m tief.
+  - Deckel 14 m/s statt 11,5: 7,4 m Scheitel, gut 2 s Flug.
+  - Ohne W führt jeder Abwurf vier Fünftel zur Mitte zurück. Die Delle
+    allein war für die langen Flüge zu stark: jeder Sprung landete doppelt
+    so weit draußen wie der vorige, der sechste neben dem Tuch.
+  - **W beim Abwurf**: zeigt man auf das andere Tuch (bis 40° daneben),
+    landet man auf dessen Mitte (Flugzeit aus vy und Höhenunterschied,
+    höchstens 7,5 m/s quer); sonst 3,2 m/s nach vorn, vom Tuch herunter.
+  - **Kein Salto auf dem Trampolin**: `skier.figurFlug = 'trampolin'`
+    sperrt W/S in der Luft, A/D drehen weiter.
+  - Tests: Hinüberspringen hin und zurück, Herunterkommen mit W, kein
+    Salto (`tests/trampolin.test.js`).
+- **Bremsfeld** unten an der Westabfahrt, in der Senke bei s 29 (Band der
+  Westabfahrt, off −4 bis 2,5, westlich läuft der Weg ins Sportgelände),
+  HALT am Ostende. Scharf ab s 24,5 mit mehr als 3 m/s; gemessen wird die
+  Skispitze bergab. Oberhalb der Trampoline ist die Abfahrt wieder freier
+  Hang.
+- **Skischule**: alle im Pflug, auch der Lehrer, und mit 2,6 statt 3 m/s.
+  Der Treffpunkt liegt jetzt am Fuß des Übungshangs auf der Ostseite, die
+  Runde ein weiter Bogen (Gehstrecken mit `rund` als Catmull-Rom-Kurve):
+  Zielbogen → Treffpunkt → unter der Tafel durch → Teppich. Vorher fuhr die
+  Gruppe zum Treffpunkt hin, drehte um und lief an sich selbst vorbei
+  zurück. Die Tafel steht außen am Bogen; weiter westlich stand sie aus der
+  Kamera vor dem Wegweiser an der Kreuzung (27,5, 23), dessen Arme nach
+  rechts zeigen.
+- **Schneemänner zum Umfahren** (`attractions/schneemann.js`): ab 3,5 m/s
+  zerfällt er. Die drei Kugeln rollen (`world/schneekugel.js`, ohne
+  three.js: Hangabtrieb 5/7, fester Widerstand 0,9 m/s², liegen bleiben
+  unter gut 5°, Endtempo am Übungshang um 3 m/s), nehmen 2,2 cm je Meter
+  auf (höchstens das 2,2-fache) und prallen an Hindernissen ab. Knöpfe,
+  Augen und Kiesel zeigen, dass sie rollen. Hut, Nase und Arme fliegen wie
+  die Bretter der Seebank. Liegt alles still, ist man 14 m weg und sind
+  10 s um, schmelzen die Kugeln, und er wächst wieder aus dem Schnee. Die
+  Kollision hängt am Schneemann. Am großen Berg wiederverwendbar: die
+  Kugel kennt nur eine Höhenfunktion und `world.resolve`.
+  Tests: `tests/schneekugel.test.js`.
+- **Teppichfuß**: die Auffahrtsplatte nimmt ihre Neigung jetzt vom Boden
+  an ihrem Ende. Mit fester Neigung (0,16) sank sie auf 1,75 m um 0,28 m,
+  der Hang fiel dort um 0,6 m.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/

@@ -62,6 +62,8 @@ export class Skier {
     // Gesetzt von dem, der den Fahrer in die Luft wirft und Figuren erlaubt,
     // ohne im Funpark zu liegen – das Trampolin im Kinderland. Gilt fuer
     // einen Flug: leichtere Schwerkraft wie im Park, A/D/W/S drehen.
+    // 'trampolin' statt true: dort nur A/D, W/S schlagen keinen Salto
+    // (Ansage 10.10.: sonst kommt man nicht mehr herunter).
     this.figurFlug = false
     this._luftY = null              // Flughoehe ueber Null bei freiem Flug, sonst NaN
     this._g = 18                    // Schwerkraft dieses Flugs, beim Absprung festgelegt
@@ -587,7 +589,7 @@ export class Skier {
       // Fahren fast immer, und wer zur Schanze hin lenkt, soll nicht
       // ungewollt einen 180 springen. Erst loslassen, dann zaehlt die Taste;
       // von W direkt auf S zu wechseln reicht.
-      this._flug = { spin: this.spin, flip: this.flip, gesperrt: new Set(richtungen(input)) }
+      this._flug = { spin: this.spin, flip: this.flip, gesperrt: new Set(richtungen(input)), salto: this.figurFlug !== 'trampolin' }
     }
 
     if (this.airborne && this._parkSprung) {
@@ -603,7 +605,7 @@ export class Skier {
       } else {
         this.spinVel *= Math.exp(-TRICK.spinDecay * dt)
       }
-      const flipIn = (frei('vor') ? 1 : 0) - (frei('zurueck') ? 1 : 0)
+      const flipIn = f.salto ? (frei('vor') ? 1 : 0) - (frei('zurueck') ? 1 : 0) : 0
       if (flipIn) {
         this.flipVel = Math.max(-TRICK.flipMax, Math.min(TRICK.flipMax, this.flipVel + flipIn * TRICK.flipAccel * dt))
       } else {
@@ -879,6 +881,7 @@ export class Skier {
     this._flug = {
       spin: this.spin, flip: this.flip,
       gesperrt: new Set(richtungen(input)),
+      salto: true,
       box: `${stellung} ${meter} m`,
     }
   }

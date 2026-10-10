@@ -17,15 +17,23 @@ import { SPRUNG } from '../../config.js'
 // legt etwas dazu (SCHWUNG) – wie auf einem echten Trampolin, wo man unten
 // durch die Knie drueckt. Gerechnet (1/240 s, ω 9, g 13): wer mit 4 m/s
 // faellt, sinkt 0,63 m ein und ist nach 0,38 s wieder draussen; mit
-// 11,5 m/s 1,40 m in 0,40 s. Ohne Taste wird jeder Sprung um ein Siebtel
-// kleiner, mit Taste waechst er von 4 auf den Deckel in vier Spruengen.
+// 14 m/s 1,7 m in 0,40 s. Ohne Taste wird jeder Sprung um ein Siebtel
+// kleiner, mit Taste waechst er von 4 auf den Deckel.
+//
+// Seit 10.10. liegen zwei Tuecher hintereinander (heightfield.js). Wer beim
+// Abwurf W haelt, springt: zeigt er ungefaehr zum anderen Tuch, genau
+// dorthin, sonst so weit nach vorn, dass er vom Tuch herunterkommt. Vorher
+// zog die Delle jeden zur Mitte zurueck, und W schlug in der Luft einen
+// Salto, der fast immer im Sturz endete – man kam nicht mehr herunter.
+// Saltos gibt es hier deshalb keine mehr (skier.figurFlug = 'trampolin'),
+// gedreht wird weiter mit A/D.
 
 const OMEGA = 9           // 1/s – das Tuch ist straffer als das Netz
 const G = SPRUNG.schwerkraft
 const ABGABE = 0.86       // so viel vom Tempo kommt ohne Taste zurueck
 const SCHWUNG = 3.0       // m/s mehr, wer auf dem Tuch die Leertaste drueckt
 const VORHALT = 0.18      // s: so frueh vor dem Aufsetzen zaehlt ein Druck schon
-const DECKEL = 11.5       // m/s: 5,1 m Scheitel, 1,77 s Flug
+const DECKEL = 14         // m/s: 7,5 m Scheitel, 2,15 s Flug (vorher 11,5: 5,1 m)
 const ZU_KLEIN = 2.4      // m/s: darunter springt man nicht mehr, man steht
 const REIBUNG = 2.4       // 1/s, das Tuch haelt fest, was quer laeuft
 const MITTE = 7           // 1/s² je Meter Delle: die Delle zieht zur Mitte
@@ -33,6 +41,9 @@ const SCHIEBEN = 3.5      // m/s², wer auf dem Tuch W drueckt, kommt voran
 const DREHEN = 2.4        // rad/s, so schnell drehen A/D auf dem Tuch
 const GLEITEN = 2.6       // m/s, mit so viel faehrt man im Stehen vom Tuch
 const RAND = 0.12         // m innerhalb des Tuchrands faengt es
+const ZIELEN = 0.7        // rad: so weit daneben zeigt man noch aufs andere Tuch
+const HINUEBER = 7.5      // m/s hoechstens quer, wenn man hinueberspringt
+const WEG = 3.2           // m/s nach vorn, wer mit W vom Tuch springt
 
 // Das Tuch ohne Fahrer schwingt kurz nach, schneller als mit ihm.
 const TUCH_OMEGA = 16
@@ -53,6 +64,8 @@ export class Trampolin {
     this.imSpiel = false
     this.spruenge = 0
     this._druck = -1
+    // Die anderen Tuecher, zu denen man hinueberspringen kann (kinderland.js).
+    this.nachbarn = []
   }
 
   _abstand(x, z) {
@@ -175,7 +188,7 @@ export class Trampolin {
         g.stehen = false
         g.schwung = false
         g.v = -(SCHWUNG + 1.5)
-        this._loslassen(skier, -g.v)
+        this._loslassen(skier, -g.v, input)
         return
       }
       if (this._abstand(g.x, g.z) >= this.r) { this._absteigen(skier); return }
@@ -186,7 +199,7 @@ export class Trampolin {
         g.p = 0
         g.v = 0
       } else {
-        this._loslassen(skier, raus)
+        this._loslassen(skier, raus, input)
         return
       }
     }
@@ -204,9 +217,41 @@ export class Trampolin {
     return { x: g.x, z: g.z, heading: g.heading }
   }
 
+  // Mit W beim Abwurf: wohin es quer geht. Zeigt der Fahrer ungefaehr zu
+  // einem anderen Tuch, landet er auf dessen Mitte – die Flugzeit kommt aus
+  // vy und dem Hoehenunterschied, das untere liegt 1,2 m tiefer. Sonst geht
+  // es mit WEG nach vorn: bei einem kleinen Hopser (0,6 s) gut 2 m, genug,
+  // um vom Tuch zu kommen.
+  _sprungQuer(g, vy) {
+    const fx = Math.sin(g.heading), fz = Math.cos(g.heading)
+    for (const n of this.nachbarn) {
+      const dx = n.x - g.x, dz = n.z - g.z
+      const d = Math.hypot(dx, dz)
+      const winkel = Math.acos(Math.max(-1, Math.min(1, (dx * fx + dz * fz) / d)))
+      if (winkel > ZIELEN) continue
+      const fall = this.y - n.y
+      const w = vy * vy + 2 * G * fall
+      if (w < 0) continue
+      const t = (vy + Math.sqrt(w)) / G
+      const v = Math.min(HINUEBER, d / t)
+      return { vx: dx / d * v, vz: dz / d * v }
+    }
+    return { vx: fx * WEG, vz: fz * WEG }
+  }
+
   // Vom Tuch in die Luft.
-  _loslassen(skier, vy) {
+  _loslassen(skier, vy, input = null) {
     const g = this.fang
+    if ((input?.throttle ?? 0) > 0) Object.assign(g, this._sprungQuer(g, vy))
+    else {
+      // Ohne W fuehrt der Sprung zur Mitte zurueck: vier Fuenftel des Wegs
+      // in einem Flug. Die Delle allein zog im Kontakt (0,4 s) zu fest fuer
+      // die langen Fluege seit dem hoeheren Deckel – jeder Sprung landete
+      // doppelt so weit draussen wie der vorige, der sechste neben dem Tuch.
+      const t = 2 * vy / G
+      g.vx = g.vx * 0.3 + (this.x - g.x) * 0.8 / t
+      g.vz = g.vz * 0.3 + (this.z - g.z) * 0.8 / t
+    }
     this.fang = null
     this.spruenge++
     this.tuch.tiefe = 0
@@ -228,7 +273,7 @@ export class Trampolin {
     }
     skier.speed = tempo
     skier.airborne = true
-    skier.figurFlug = true
+    skier.figurFlug = 'trampolin'
     skier.vy = vy
     // Die Hoehe zaehlt ueber dem Boden der Mulde; geflogen wird frei
     // (freiFlug in heightfield.js), also auf fester Hoehe ueber Null.

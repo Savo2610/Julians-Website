@@ -82,8 +82,10 @@ Das Wichtigste in Kürze:
 - **Kinderland** (`src/world/areas/kinderland.js`, HANDOVER 4a¹²): Teppich,
   Karussell, Tierslalom (außen umfahren), zwei Trampoline hintereinander auf
   der Westabfahrt (Fangnetz-Mechanik, liegend; unter dem Tuch eine Mulde, die
-  niemand befährt; mit W hinüber, dort kein Salto), Bremsfeld unten an der
-  Westabfahrt, Skischule mit fahrender Gruppe (alle im Pflug). Der
+  niemand befährt; mit W hinüber, dort kein Salto), Bremsfeld am Fuß des
+  Bremshangs (`BREMS_LANE`, von der Kuppe nach Westen), Skischule mit
+  Hütte: die Gruppe (alle im Pflug) kommt nur nach echter Uhr von 6 bis
+  16 Uhr zu Ausflügen heraus (erzwingen mit `?skischule`). Der
   Skilehrer-Ausweis hängt nur an Tafel und Skilehrer, ohne Kachel. Die
   Leuchtstrecke ist weg. Schneemänner lassen sich umfahren; ihre Kugeln
   rollen und wachsen (`world/schneekugel.js`, ohne three.js – gedacht auch

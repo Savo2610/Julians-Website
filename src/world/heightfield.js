@@ -532,6 +532,8 @@ function schuppenAuslauf(x, z, h) {
   return h - (h - ebene) * w
 }
 
+const KUHLE = { x: 36.5, z: -19.5, r: 8, h: 1.3 }
+
 // --- Die Trampoline im Kinderland -------------------------------------------
 // Zwei Bodentrampoline, buendig im Schnee, hintereinander auf der
 // Westabfahrt (Ansage 09.10.: ein Trampolin mit einer Mechanik wie das
@@ -841,11 +843,28 @@ export const SHOOT_LANE = makeLane([
   { x: 18.93, z: 13.69, h: 0.10 },
 ], { width: 8, feather: 4, endFade: 1.5 })
 
+// Der Bremshang des Kinderlands (Ansage 10.10.): eine kleine Abfahrt von
+// der Kuppe nach Westen hinunter, unten die rote Bremslinie im Flachen. Sie
+// laeuft durch die Senke zwischen Kuppe, Kopf der Westabfahrt und Auslauf
+// des Funparks, die zuvor eine Kuhle war (KUHLE unten fuellt den Rest).
+// Gebogen, weil die Kuppe nach Westen mit fast 40 Grad abfaellt: erst nach
+// Norden an der Flanke entlang, dann nach Westen, so bleibt es bei
+// gleichmaessigen 19,5 Grad, wie am Uebungshang. Unten 3,7 m fast eben auf
+// Hoehe des Funpark-Auslaufs (1,2 bis 1,55), in den es uebergeht.
+export const BREMS_LANE = makeLane([
+  { x: 43.2, z: -8.0, h: 8.10 },
+  { x: 41.0, z: -12.6, h: 6.30 },
+  { x: 37.4, z: -16.0, h: 4.55 },
+  { x: 33.0, z: -17.6, h: 2.89 },
+  { x: 29.0, z: -17.0, h: 1.45 },
+  { x: 25.5, z: -15.8, h: 1.35 },
+], { width: 6, feather: 5, endFade: 2, flat: 0.6 })
+
 // Die Reihenfolge entscheidet, wer sich an einer Ueberlagerung durchsetzt: das
 // spaetere Band gewinnt auf seiner eigenen Mittellinie. NORTH_LANE steht vor
 // PARK_LANE, weil beide sich oben am Funpark auf sieben Metern begegnen und
 // dort der Funpark-Einstieg stimmen muss, nicht die Zufahrt.
-const LANES = globalThis.__noLanes ? [] : [SLED_LANE, NORTH_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE]
+const LANES = globalThis.__noLanes ? [] : [SLED_LANE, NORTH_LANE, PARK_LANE, KINDER_LANE, SHOOT_LANE, BREMS_LANE]
 
 // --- Figuren im Funpark ------------------------------------------------------
 // Schanzen, Wellen und Kanten sind Gelaende und keine Aufbauten. Nur so faehrt
@@ -1175,6 +1194,10 @@ export function terrainHeight(x, z) {
   h += bump(x, z, 4, -10, 28, 3.2)
   // Mulde, in der die Huette steht.
   h += bump(x, z, 33, 17, 19, -2.6)
+  // Die Kuhle zwischen Kinderland-Kuppe und Funpark-Auslauf aufgefuellt
+  // (Meldung 10.10.): sie lag 1 m unter ihrem Rand und 2,7 m unter dem Kopf
+  // der Westabfahrt. Was der Bremshang nicht selbst glattzieht, hebt das.
+  h += bump(x, z, KUHLE.x, KUHLE.z, KUHLE.r, KUHLE.h)
 
   // Handgeformte Ruecken und Wellen gliedern die bisher leeren Talraeume.
   // Vor den Pistenbaendern, damit bestehende Anlagen ihre Hoehen behalten.

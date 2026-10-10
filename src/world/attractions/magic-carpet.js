@@ -148,26 +148,17 @@ export class MagicCarpet {
   }
 
   _buildStations() {
-    // Unten eine flache Auffahrtsschanze, oben eine Abfahrtsnase – beide so
-    // niedrig, dass man im Vorbeifahren nicht dagegenstoesst.
-    for (const [t, sign] of [[0, -1], [1, 1]]) {
+    // An beiden Enden nur die Umlenkrolle. Hier lagen frueher eine weisse
+    // Auffahrts- und eine Abfahrtsplatte; am Hang standen sie mit einem Ende
+    // in der Luft, auch mit einer Neigung vom Boden (Meldung 10.10., zweimal),
+    // und man faehrt ohnehin ueber die Rolle aufs Band.
+    for (const t of [0, 1]) {
       const p = this.pointAt(t)
       const parts = []
       parts.push({
         geo: new THREE.CylinderGeometry(BELT_WIDTH / 2 + 0.34, BELT_WIDTH / 2 + 0.34, 0.3, 14),
         color: 0x39414a,
         position: [0, 0.15, 0],
-      })
-      // Die Rampe liegt mit ihrem Ende auf dem Schnee. Eine feste Neigung
-      // (0,16) liess sie unten frei in der Luft stehen: dort faellt der Hang
-      // auf 1,75 m um 0,6 m, sie senkte sich nur um 0,28 (Meldung 10.10.).
-      const ende = this.pointAt(t + sign * 1.75 / this.length)
-      const fall = this.groundAt(t) - terrainHeight(ende.x, ende.z) + 0.03
-      parts.push({
-        geo: new THREE.BoxGeometry(BELT_WIDTH + 0.7, 0.1, 1.5),
-        color: 0xf7fbff,
-        position: [0, 0.05 - fall / 1.75, sign * 1.0],
-        rotation: [sign * Math.asin(Math.max(-0.5, Math.min(0.5, fall / 1.75))), 0, 0],
       })
       const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
       mesh.castShadow = true

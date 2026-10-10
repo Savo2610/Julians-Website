@@ -184,3 +184,114 @@ export const KINDER_JACKEN = [
   { jacke: KINDER_COLORS[2], helm: 0x2f6bd8 },
   { jacke: 0xe94f8a, helm: 0xf7fbff },
 ]
+
+// --- Die Huette der Skischule ---------------------------------------------
+// Dort wohnt die Gruppe, wenn sie nicht faehrt (Ansage 10.10.: wie die
+// Pistenraupe im Schuppen, damit es etwas Besonderes ist, wenn die
+// Skischule kommt). Eine kleine Holzhuette mit blauen Laeden, vorn das Schild
+// SKISCHULE im Giebel, die Tuer links in der Front – zur Kamera, damit man
+// sieht, wie sie aufgeht und die Kinder herauskommen. Rechts lehnen kleine
+// Ski an der Wand.
+const HOLZ = 0x8a5a3a
+const HOLZ_HELL = 0xa06c45
+const HOLZ_DUNKEL = 0x5c3c28
+export const HUETTE = { breit: 3.2, tief: 2.4, wand: 2.0, tuerX: -0.75, tuerBreit: 0.9 }
+
+export function createSkischulhuette() {
+  const group = new THREE.Group()
+  const { breit: W, tief: D, wand: H, tuerX, tuerBreit } = HUETTE
+  const parts = []
+  // Sockel tief in den Schnee, die Huette steht am Hang.
+  parts.push({ geo: new THREE.BoxGeometry(W + 0.2, 0.9, D + 0.2), color: 0x6e7178, position: [0, -0.25, 0] })
+  // Bretterwaende, abwechselnd hell und dunkel.
+  const bretter = 8
+  for (let i = 0; i < bretter; i++) {
+    const y = 0.2 + (i + 0.5) * (H / bretter)
+    const farbe = i % 2 ? HOLZ : HOLZ_HELL
+    // Vorn mit der Tueroeffnung.
+    const links = -W / 2, rechts = W / 2
+    const tl = tuerX - tuerBreit / 2, tr = tuerX + tuerBreit / 2
+    const oben = y > 0.2 + 1.75
+    if (oben) parts.push({ geo: new THREE.BoxGeometry(W, H / bretter - 0.02, 0.12), color: farbe, position: [0, y, D / 2] })
+    else {
+      parts.push({ geo: new THREE.BoxGeometry(tl - links, H / bretter - 0.02, 0.12), color: farbe, position: [(links + tl) / 2, y, D / 2] })
+      parts.push({ geo: new THREE.BoxGeometry(rechts - tr, H / bretter - 0.02, 0.12), color: farbe, position: [(tr + rechts) / 2, y, D / 2] })
+    }
+    parts.push({ geo: new THREE.BoxGeometry(W, H / bretter - 0.02, 0.12), color: farbe, position: [0, y, -D / 2] })
+    for (const sx of [-1, 1]) {
+      parts.push({ geo: new THREE.BoxGeometry(0.12, H / bretter - 0.02, D), color: i % 2 ? HOLZ_HELL : HOLZ, position: [sx * W / 2, y, 0] })
+    }
+  }
+  // Dunkel hinter der Tuer, damit die offene Tuer nicht in einen leeren
+  // Kasten schauen laesst.
+  parts.push({ geo: new THREE.BoxGeometry(tuerBreit, 1.75, 0.04), color: 0x1b2230, position: [tuerX, 0.2 + 0.875, D / 2 - 0.3] })
+  // Tuerrahmen blau.
+  parts.push({ geo: new THREE.BoxGeometry(tuerBreit + 0.2, 0.12, 0.16), color: SKISCHULE_BLAU, position: [tuerX, 0.2 + 1.8, D / 2 + 0.02] })
+  for (const s of [-1, 1]) parts.push({ geo: new THREE.BoxGeometry(0.1, 1.8, 0.16), color: SKISCHULE_BLAU, position: [tuerX + s * (tuerBreit / 2 + 0.05), 0.2 + 0.9, D / 2 + 0.02] })
+
+  // Fenster rechts mit blauen Laeden und warmem Licht.
+  const fx = 0.75, fy = 0.2 + 1.15
+  parts.push({ geo: new THREE.BoxGeometry(0.8, 0.62, 0.05), color: 0xffd28a, position: [fx, fy, D / 2 + 0.05] })
+  parts.push({ geo: new THREE.BoxGeometry(0.06, 0.62, 0.07), color: 0xffffff, position: [fx, fy, D / 2 + 0.07] })
+  parts.push({ geo: new THREE.BoxGeometry(0.8, 0.06, 0.07), color: 0xffffff, position: [fx, fy, D / 2 + 0.07] })
+  for (const s of [-1, 1]) parts.push({ geo: new THREE.BoxGeometry(0.36, 0.7, 0.05), color: SKISCHULE_BLAU, position: [fx + s * 0.6, fy, D / 2 + 0.08] })
+  parts.push({ geo: new THREE.BoxGeometry(0.95, 0.08, 0.2), color: SNOW, position: [fx, fy - 0.38, D / 2 + 0.12] })
+
+  // Giebel und Dach, das Dach dick verschneit.
+  const giebel = new THREE.Shape()
+  giebel.moveTo(-W / 2 - 0.06, 0)
+  giebel.lineTo(W / 2 + 0.06, 0)
+  giebel.lineTo(0, 1.0)
+  giebel.closePath()
+  for (const sz of [-1, 1]) {
+    parts.push({ geo: new THREE.ExtrudeGeometry(giebel, { depth: 0.12, bevelEnabled: false }), color: HOLZ_DUNKEL, position: [0, 0.2 + H, sz * (D / 2) - 0.06] })
+  }
+  const lang = Math.hypot(W / 2 + 0.4, 1.0)
+  const neig = Math.atan2(1.0, W / 2 + 0.4)
+  for (const sx of [-1, 1]) {
+    parts.push({ geo: new THREE.BoxGeometry(lang, 0.12, D + 0.6), color: SKISCHULE_BLAU, position: [sx * (W / 4 + 0.18), 0.2 + H + 0.5, 0], rotation: [0, 0, sx * -neig] })
+    parts.push({ geo: new THREE.BoxGeometry(lang * 0.98, 0.2, D + 0.62), color: SNOW, position: [sx * (W / 4 + 0.18), 0.2 + H + 0.65, 0], rotation: [0, 0, sx * -neig] })
+  }
+
+  // Kinderski an der Wand rechts, in den Farben des Kinderlands.
+  KINDER_COLORS.forEach((c, i) => {
+    parts.push({ geo: new THREE.BoxGeometry(0.08, 1.1, 0.03), color: c, position: [W / 2 - 0.25 - i * 0.14, 0.2 + 0.55, D / 2 + 0.2], rotation: [0.18, 0, (i % 2 ? 1 : -1) * 0.05] })
+  })
+
+  const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.8 }))
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  group.add(mesh)
+
+  // Das Schild im Giebel.
+  const schild = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.5, 0.94),
+    new THREE.MeshStandardMaterial({ map: seite('SKISCHULE', 'Kinderland', { grund: '#1f4fa8', zeichen: skiZeichen }), roughness: 0.7 }),
+  )
+  schild.position.set(0, 0.2 + H + 0.42, D / 2 + 0.08)
+  group.add(schild)
+
+  // Die Tuer, an der linken Kante angeschlagen, geht nach aussen auf.
+  const angel = new THREE.Group()
+  angel.position.set(tuerX - tuerBreit / 2, 0.2, D / 2 + 0.07)
+  const tuerTeile = [
+    { geo: new THREE.BoxGeometry(tuerBreit - 0.04, 1.74, 0.07), color: SKISCHULE_BLAU, position: [tuerBreit / 2, 0.88, 0] },
+    { geo: new THREE.BoxGeometry(0.4, 0.3, 0.02), color: 0xffd28a, position: [tuerBreit / 2, 1.35, 0.04] },
+    { geo: new THREE.SphereGeometry(0.045, 8, 6), color: 0xd8dee6, position: [tuerBreit - 0.14, 0.9, 0.06] },
+  ]
+  const tuer = new THREE.Mesh(assemble(tuerTeile), vertexColorMaterial({ roughness: 0.6 }))
+  tuer.castShadow = true
+  angel.add(tuer)
+  group.add(angel)
+
+  let offen = 0
+  return {
+    group,
+    get offen() { return offen },
+    // 0 zu, 1 ganz offen.
+    setzeTuer(wert) {
+      offen = Math.max(0, Math.min(1, wert))
+      angel.rotation.y = -offen * 1.75
+    },
+  }
+}

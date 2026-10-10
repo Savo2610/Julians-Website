@@ -25,17 +25,44 @@ const SCHRITT = 0.25         // m, so dicht wird der Weg abgetastet
 const WARTEN = [12, 22]      // s am Treffpunkt
 const KOERPER = { lehrer: 0.55, kind: 0.4 }
 const PLATZ = 3.2            // m vor dem Lehrer: steht dort der Fahrer, wartet die Gruppe
+const TUER_ZEIT = 1.2        // s, bis die Tuer der Huette offen oder zu ist
+const ERSTES = [20, 150]     // s nach dem Ankommen, bis sie zum ersten Mal herauskommt
+const DRINNEN = [180, 480]   // s Pause in der Huette zwischen zwei Ausfluegen
+const RUNDEN = [2, 3]        // so viele Runden je Ausflug
+
+const zufall = ([a, b]) => a + Math.random() * (b - a)
+
+// Die Skischule faehrt nur am Tag, nach der echten Uhr des Besuchers: von
+// 6 bis 16 Uhr (Ansage 10.10.). Sonst bleibt die Huette zu – wie die
+// Pistenraupe, nur andersherum.
+export function skischulzeit(date = new Date()) {
+  const h = date.getHours()
+  return h >= 6 && h < 16
+}
 
 export class Skischulgruppe {
   // abschnitte: [{ art, tempo, punkte: [[x, z], …], halt? }]. Der letzte
   // Punkt eines Abschnitts ist der erste des naechsten; der Weg schliesst
   // sich, der letzte Abschnitt endet am Anfang des ersten.
-  constructor(world, { abschnitte, teppich = null, belag = 0.14 }) {
+  //
+  // huette: { bild, weg } – die Gruppe wohnt in der Huette (bild mit
+  // setzeTuer) und kommt nur zu Ausfluegen heraus: Tuer auf, auf `weg`
+  // (von drinnen bis zum Anfang der Runde) hinaus, ein paar Runden, auf
+  // demselben Weg zurueck. Dafuer liegt der Hinweg vor der Runde (s < 0)
+  // und der Rueckweg hinter ihrem Ende (s >= this.ende).
+  constructor(world, { abschnitte, teppich = null, belag = 0.14, huette = null, tag = skischulzeit, erzwungen = false }) {
     this.world = world
     this.teppich = teppich
     this.belag = belag
     this.weg = this._abtasten(abschnitte)
     this.laenge = this.weg.length * SCHRITT
+    this.huette = huette
+    this.tag = tag
+    if (huette) {
+      this.hinaus = this._abtastenOffen(huette.weg)
+      this.hinein = this._abtastenOffen([...huette.weg].reverse())
+      this.hutLaenge = this.hinaus.length * SCHRITT
+    }
 
     this.figuren = []
     const lehrer = createSkischulFigur({ jacke: SKISCHULE_BLAU, helm: 0xd6332a })
@@ -46,12 +73,61 @@ export class Skischulgruppe {
     for (const f of this.figuren) world.scene.add(f.model)
     this.lehrer = this.figuren[0]
 
-    // Die Gruppe beginnt am Treffpunkt und wartet dort schon eine Weile.
+    // Ohne Huette beginnt die Gruppe am Treffpunkt und wartet dort schon
+    // eine Weile; mit Huette sitzt sie drinnen.
     this.pause = 6
     this.halten = false        // von aussen: der Fahrer spricht mit dem Lehrer
     this._amHalt = null
     this.zeit = 0
+    this.drinnen = !!huette
+    this.raus = false          // solange noch jemand auf dem Hinweg ist
+    this.ende = null           // s, an dem die Runde in den Rueckweg uebergeht
+    this.runden = 0
+    this.uhr = erzwungen ? 2 : zufall(ERSTES)
+    this._erzwungen = erzwungen
+    this.tuer = 0
+    this._tuerZiel = 0
     for (const f of this.figuren) this._setzen(f, 0)
+    if (this.drinnen) for (const f of this.figuren) f.model.visible = false
+  }
+
+  get sichtbar() {
+    return !this.drinnen
+  }
+
+  // Ein Ausflug beginnt: alle stehen hintereinander auf dem Hinweg, der
+  // Lehrer an der Tuer, die Kinder noch drinnen.
+  _hinaus() {
+    this.drinnen = false
+    this.raus = true
+    this.ende = null
+    this._erste = true
+    this.runden = Math.round(zufall(RUNDEN))
+    this._amHalt = null
+    this.pause = TUER_ZEIT
+    this._tuerZiel = 1
+    this.figuren.forEach((f, i) => {
+      f.s = -this.hutLaenge - i * ABSTAND
+      f.v = 0
+    })
+  }
+
+  // Ein offener Weg (Hin- und Rueckweg zur Huette), abgetastet wie die Runde.
+  _abtastenOffen(punkte) {
+    const pts = punkte.map(([x, z]) => new THREE.Vector3(x, 0, z))
+    const kurve = new THREE.CatmullRomCurve3(pts, false, 'centripetal')
+    const n = Math.max(2, Math.round(kurve.getLength() / SCHRITT))
+    const weg = []
+    for (let i = 0; i < n; i++) {
+      const p = kurve.getPointAt(i / n)
+      weg.push({ x: p.x, z: p.z, art: 'gehen', tempo: 1.1, halt: null, kruemmung: 0 })
+    }
+    for (let i = 0; i < n; i++) {
+      const a = weg[Math.max(0, i - 2)]
+      const b = weg[Math.min(n - 1, i + 2)]
+      weg[i].heading = Math.atan2(b.x - a.x, b.z - a.z)
+    }
+    return weg
   }
 
   _figur(model, kind, s) {
@@ -94,6 +170,14 @@ export class Skischulgruppe {
   }
 
   _stelle(s) {
+    if (this.raus && s < 0) {
+      const i = Math.floor((this.hutLaenge + s) / SCHRITT)
+      return this.hinaus[Math.max(0, Math.min(this.hinaus.length - 1, i))]
+    }
+    if (this.ende !== null && s >= this.ende) {
+      const i = Math.floor((s - this.ende) / SCHRITT)
+      return this.hinein[Math.min(this.hinein.length - 1, i)]
+    }
     const n = this.weg.length
     const i = ((Math.floor(s / SCHRITT) % n) + n) % n
     return this.weg[i]
@@ -110,6 +194,17 @@ export class Skischulgruppe {
 
   update(dt, skier) {
     this.zeit += dt
+    if (this.huette) {
+      // Die Tuer folgt ihrem Ziel.
+      this.tuer = Math.max(0, Math.min(1, this.tuer + Math.sign(this._tuerZiel - this.tuer) * dt / TUER_ZEIT))
+      this.huette.bild.setzeTuer(this.tuer)
+      if (this.drinnen) {
+        // Gezaehlt wird nur am Tag; wer nachmittags ankommt, sieht sie nicht.
+        if (this._erzwungen || this.tag()) this.uhr -= dt
+        if (this.uhr <= 0) this._hinaus()
+        else return
+      }
+    }
     const fahrer = skier?.position
     const lehrer = this.lehrer
     const hier = this._stelle(lehrer.s)
@@ -124,9 +219,16 @@ export class Skischulgruppe {
       // Oben vor dem Slalom nur sammeln: vom Teppich kommen die Kinder
       // einzeln, und ohne Halt fuhr das letzte 20 m hinter dem Lehrer los.
       this.pause = hier.halt === 'treffpunkt'
-        ? WARTEN[0] + Math.random() * (WARTEN[1] - WARTEN[0])
+        ? (this._erste ? 5 : zufall(WARTEN))
         : hier.halt === 'oben' ? 0.8 : 2.2
       this._haltArt = hier.halt
+      // Am Treffpunkt beginnt eine Runde. Ist es die letzte, geht es an
+      // ihrem Ende nicht mehr zum Treffpunkt, sondern zurueck in die Huette.
+      if (hier.halt === 'treffpunkt' && this.huette) {
+        this._erste = false
+        if (this.runden <= 1) this.ende = this._amHalt * SCHRITT + this.laenge
+        this.runden--
+      }
     }
     if (this.pause > 0) {
       const zu = this.figuren.every((f, i) => lehrer.s - f.s <= i * ABSTAND + 0.6)
@@ -146,6 +248,29 @@ export class Skischulgruppe {
     const tr = this.teppich?.rider
     if (hier.art !== 'teppich' && naechste.art === 'teppich' && tr && tr.progress < 0.3) steht = true
 
+    if (this.huette) {
+      // Vor der Tuer warten, bis sie offen ist.
+      if (this.raus && this.tuer < 1 && this._tuerZiel === 1) steht = true
+      const letztes = this.figuren[this.figuren.length - 1]
+      // Alle draussen: Tuer zu. Alle auf der Runde: Hinweg vorbei.
+      if (this.raus && letztes.s > -this.hutLaenge + 3) this._tuerZiel = 0
+      if (this.raus && letztes.s >= 0) this.raus = false
+      // Auf dem Rueckweg geht die Tuer auf, wenn der Lehrer kommt, und zu,
+      // wenn alle drin sind. Dann ist der Ausflug vorbei.
+      if (this.ende !== null) {
+        const drin = this.ende + this.hutLaenge - 0.5
+        if (lehrer.s > drin - 4) this._tuerZiel = letztes.s > drin ? 0 : 1
+        if (lehrer.s > drin - 4 && this.tuer < 1 && letztes.s <= drin) steht = steht || lehrer.s > drin - 2
+        if (letztes.s > drin && this.tuer === 0) {
+          this.drinnen = true
+          this.ende = null
+          this.uhr = this._erzwungen ? 8 : zufall(DRINNEN)
+          for (const f of this.figuren) f.model.visible = false
+          return
+        }
+      }
+    }
+
     // --- Alle ziehen nach ---------------------------------------------
     this.figuren.forEach((f, i) => {
       const st = this._stelle(f.s)
@@ -163,7 +288,9 @@ export class Skischulgruppe {
       if (i === 0) {
         if (steht && st.art !== 'teppich') v = 0
       } else {
-        const vorne = this.figuren[i - 1].s - ABSTAND
+        // Wer schon in der Huette ist, haelt niemanden mehr auf.
+        const vorder = this.figuren[i - 1].s
+        const vorne = this.ende !== null && vorder >= this.ende + this.hutLaenge - 0.5 ? Infinity : vorder - ABSTAND
         if (st.art !== 'teppich') {
           // Am Teppich steigt man einzeln auf: wer noch nicht drauf ist,
           // wartet, bis der Fahrer unten weg ist.
@@ -182,9 +309,13 @@ export class Skischulgruppe {
           v = Math.min(Math.max(v, Math.min(vor, (f.v ?? 0) + 2 * dt)), Math.max(0, (vorne - f.s) * 3))
         }
       }
+      // Auf dem Rueckweg bleibt man drinnen stehen.
+      if (this.ende !== null && f.s >= this.ende + this.hutLaenge - 0.5) v = 0
       f.v = v
       f.s += v * dt
-      this._setzen(f, dt, fahrer && !skier.tow ? skier : null, i)
+      const drin = this.huette && ((this.raus && f.s < -this.hutLaenge + 0.6) || (this.ende !== null && f.s > this.ende + this.hutLaenge - 0.6))
+      f.model.visible = !drin
+      this._setzen(f, dt, fahrer && !skier.tow && !drin ? skier : null, i)
     })
   }
 
@@ -192,7 +323,7 @@ export class Skischulgruppe {
   _setzen(f, dt, skier = null, i = 0) {
     const st = this._stelle(f.s)
     const naechste = this._stelle(f.s + SCHRITT)
-    const t = (f.s / SCHRITT) % 1
+    const t = (((f.s / SCHRITT) % 1) + 1) % 1
     const x = st.x + (naechste.x - st.x) * t
     const z = st.z + (naechste.z - st.z) * t
     const k = dt ? 1 - Math.exp(-8 * dt) : 1

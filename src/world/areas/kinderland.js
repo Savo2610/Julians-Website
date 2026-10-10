@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { KINDER_LANE, SHOOT_LANE, TRAMPOLINE, terrainHeight } from '../heightfield.js'
+import { KINDER_LANE, SHOOT_LANE, BREMS_LANE, TRAMPOLINE, terrainHeight } from '../heightfield.js'
 import { CAMERA } from '../../config.js'
 import { MagicCarpet } from '../attractions/magic-carpet.js'
 import { SkiCarousel } from '../attractions/ski-carousel.js'
@@ -12,7 +12,7 @@ import { createMarker } from '../../stations/marker.js'
 import { LINKS } from '../../stations/links.js'
 import { createSnowCannon } from '../props/snow-cannon.js'
 import { createTrampolin } from '../props/trampolin.js'
-import { createTreffpunkt } from '../props/skischule.js'
+import { createTreffpunkt, createSkischulhuette, HUETTE as HUETTE_MASS } from '../props/skischule.js'
 import { Skischulgruppe } from './skischule.js'
 import {
   createNoodleArch,
@@ -44,8 +44,8 @@ import {
 //   die man im Wechsel herumfaehrt – wer alle auf der richtigen Seite
 //   nimmt, bekommt es gesagt;
 // - ein Bremsfeld: so nah wie moeglich vor der roten Linie anhalten. Seit
-//   10.10. unten an der Westabfahrt, damit man einen eigenen kleinen Hang
-//   dafuer hat, wo vorher das Trampolin lag;
+//   10.10. am Fuss eines eigenen kleinen Hangs, der von der Kuppe nach
+//   Westen hinunterfuehrt (BREMS_LANE);
 // - Schneemaenner, die man umfahren kann: die Kugeln rollen den Hang
 //   hinunter und werden groesser (attractions/schneemann.js);
 // - an der Einfahrt der Treffpunkt der Skischule, von dem eine Gruppe aus
@@ -78,15 +78,14 @@ const SLALOM_MITTE = 1.6
 const SLALOM = [18.5, 15.7, 12.9, 10.1, 7.3, 4.5].map((s, i) => ({ s, off: SLALOM_MITTE + (i % 2 ? -0.6 : 0.6) }))
 const ZIEL_S = 2.2
 
-// Das Bremsfeld liegt unten an der Westabfahrt, in der Senke bei s 29
-// (Bandkoordinaten der Westabfahrt, s von oben, off positiv nach Westen):
-// dort ist der Boden auf zwei Metern eben (−1 Grad), davor kommt man mit
-// 9 Grad herunter. Bis 10.10. lag es im Auslauf des Uebungshangs, wo man
-// nach dem Tierslalom schon langsam war. Nach Westen reicht es nur bis
-// off 2,5 – bei 3 laeuft der Weg ins Sportgelaende vorbei.
-const BREMS_S = 29.0
-const BREMS_VON = -4.0
-const BREMS_BIS = 2.5
+// Das Bremsfeld liegt am Fuss des Bremshangs (BREMS_LANE in heightfield.js,
+// s von oben), 2 m im fast ebenen Auslauf: davor kommt man mit 19,5 Grad
+// von der Kuppe herunter. Zuerst lag es im Auslauf des Uebungshangs, wo man
+// nach dem Tierslalom schon langsam war, dann kurz unten an der
+// Westabfahrt (Ansage 10.10.: ein eigener kleiner Hang von der Kuppe).
+const BREMS_S = BREMS_LANE.segments[4].s0 + 2.0
+const BREMS_VON = -3.0
+const BREMS_BIS = 3.0
 const SKISPITZE = 0.8   // m vor der Fahrermitte: dort zaehlt die Linie
 
 // Der Treffpunkt der Skischule: am Fuss des Uebungshangs, im Bogen zwischen
@@ -100,6 +99,12 @@ const SKISPITZE = 0.8   // m vor der Fahrermitte: dort zaehlt die Linie
 // Bogen, und der Lehrer wartet knapp 2 m rechts neben ihr.
 const TREFF = { s: -2.6, off: 4.2 }
 const TAFEL = { s: -4.5, off: 4.6 }
+
+// Die Huette der Skischule (Ansage 10.10.): suedoestlich vom Treffpunkt,
+// zwischen dem Weg nach Osten und dem Wald, die Front zur Kamera. Aus der
+// Kamera steht sie rechts unter dem Treffpunkt, 3,8 m daneben. Bei (39, 27)
+// stand sie nur 1,7 m daneben und verdeckte Treffpunkt und Fahrer.
+const HUETTE = { x: 42.0, z: 26.5 }
 
 export class Kinderland {
   constructor(world, registry) {
@@ -170,9 +175,22 @@ export class Kinderland {
     }
   }
 
-  // Umkehrung von at() fuer den untersten Abschnitt – das Band ist ohnehin
-  // eine Gerade (alle Abschnitte 3,5 / −5,5).
-  lage(x, z, lane = this.lane) {
+  // Umkehrung von at(): am Uebungshang fuer den untersten Abschnitt – das
+  // Band ist ohnehin eine Gerade (alle Abschnitte 3,5 / −5,5). Am gebogenen
+  // Bremshang der naechste Abschnitt (`alle`).
+  lage(x, z, lane = this.lane, alle = false) {
+    if (alle) {
+      let best = null
+      for (const g of lane.segments) {
+        const ux = g.dx / g.len, uz = g.dz / g.len
+        const dx = x - g.x, dz = z - g.z
+        const t = Math.max(0, Math.min(g.len, dx * ux + dz * uz))
+        const off = -dx * uz + dz * ux
+        const d = Math.hypot(dx - ux * t, dz - uz * t)
+        if (!best || d < best.d) best = { d, s: g.s0 + dx * ux + dz * uz, off, ux, uz }
+      }
+      return best
+    }
     const g = lane.segments[0]
     const ux = g.dx / g.len
     const uz = g.dz / g.len
@@ -217,12 +235,14 @@ export class Kinderland {
     zug([w(8, 5.2), w(12, 5.6), w(15.5, 5.6)])
     zug([w(21, 5.4), w(25, 5.0)])
     // Um die Kuppe herum und den Ostrand hinunter.
+    // An der Westflanke der Kuppe eine Luecke fuer den Bremshang.
+    zug([p(25.6, -9.4), [39.5, -5.8], [40.3, -7.8]])
     const cap = [
-      [39.5, -5.8], [41.5, -10.5], [45.0, -14.2], [49.5, -13.6],
+      [43.1, -12.2], [45.0, -14.2], [49.5, -13.6],
       [52.4, -10.0], [52.6, -5.4], [50.0, -2.2],
     ]
     const east = [24.5, 19, 13, 7, 1.5].map((s) => p(s, 7.8))
-    zug([p(25.6, -9.4), ...cap, ...east])
+    zug([...cap, ...east])
   }
 
   // Das Skikarussell: Enter haengt einen an den naechsten Griff, nach einer
@@ -331,18 +351,18 @@ export class Kinderland {
     }
   }
 
-  // Das Bremsfeld: eine rote Linie quer unten in der Westabfahrt, am
-  // Ostende ein HALT. Wer vom Hang kommt und davor zum Stehen kommt,
+  // Das Bremsfeld: eine rote Linie quer im Auslauf des Bremshangs, am
+  // Suedende ein HALT. Wer vom Hang kommt und davor zum Stehen kommt,
   // bekommt gesagt, wie nah die Skispitzen an der Linie sind.
   _buildBremsfeld() {
     const punkte = []
     for (let off = BREMS_VON; off <= BREMS_BIS + 0.01; off += 0.5) {
-      const p = this.at(BREMS_S, off, SHOOT_LANE)
+      const p = this.at(BREMS_S, off, BREMS_LANE)
       punkte.push([p.x, terrainHeight(p.x, p.z) + 0.03, p.z])
     }
     this.world.scene.add(createLipLine(punkte, 0xd6332a))
-    // Am Ostende, zur Kamera hin: im Westen laeuft der Weg vorbei.
-    const schild = this.at(BREMS_S + 0.3, BREMS_VON - 0.9, SHOOT_LANE)
+    // Am Suedende, zur Kamera hin, etwas hinter der Linie.
+    const schild = this.at(BREMS_S + 0.4, BREMS_VON - 0.9, BREMS_LANE)
     this.world.place(createStoppschild(), schild.x, schild.z, { rotation: CAMERA.azimuth })
     this.world.addCollider(schild.x, schild.z, 0.25)
     this._bremsen = null
@@ -426,8 +446,25 @@ export class Kinderland {
     const vorTeppich = p(CARPET_FROM - 1.4, CARPET_OFFSET)
     const slalom = SLALOM.map((g) => p(g.s, g.off + (g.off > SLALOM_MITTE ? 0.85 : -0.85)))
     const halt = p(0.4, 1.3)
+    // Die Huette: die Tuer liegt links in der Front, zur Kamera. Hinaus geht
+    // es zur Kamera hin und in einem Bogen links um die Huette zum
+    // Treffpunkt; hinein auf demselben Weg zurueck.
+    const huette = createSkischulhuette()
+    // Der Boden steigt zur Front um 0,37 m an: so viel hoeher, dass die Tuer
+    // nicht im Schnee steckt; hinten traegt der tiefe Sockel.
+    this.world.place(huette.group, HUETTE.x, HUETTE.z, { rotation: CAMERA.azimuth, yOffset: 0.25 })
+    const ca = Math.cos(CAMERA.azimuth), sa = Math.sin(CAMERA.azimuth)
+    const lokal = (lx, lz) => [HUETTE.x + lx * ca + lz * sa, HUETTE.z - lx * sa + lz * ca]
+    const tx = HUETTE_MASS.tuerX
+    for (const [lx, lz, r] of [[-1.0, 0, 1.2], [0.6, 0, 1.2], [0.8, 0.9, 0.45]]) this.world.addCollider(...lokal(lx, lz), r)
+    this.huette = huette
+    const hutweg = [lokal(tx, 0), lokal(tx, HUETTE_MASS.tief / 2), lokal(tx - 0.2, HUETTE_MASS.tief / 2 + 1.1),
+      lokal(-2.2, HUETTE_MASS.tief / 2 + 1.0), lokal(-3.3, 0.2), p(TREFF.s + 0.2, TREFF.off + 2.6), start]
+
     this.gruppe = new Skischulgruppe(this.world, {
       teppich: this.carpet,
+      huette: { bild: huette, weg: hutweg },
+      erzwungen: new URLSearchParams(globalThis.location?.search ?? '').has('skischule'),
       abschnitte: [
         { art: 'gehen', tempo: 1.3, halt: 'treffpunkt', rund: true, punkte: [start, p(-3.4, 3.6), p(-3.8, 2.4), p(-3.6, 0.2), p(-2.4, -1.9), p(-0.9, -3.4), vorTeppich, p(CARPET_FROM, CARPET_OFFSET)] },
         { art: 'teppich', tempo: this.carpet.speed, punkte: [p(CARPET_FROM, CARPET_OFFSET), p(CARPET_TO, CARPET_OFFSET)] },
@@ -486,9 +523,9 @@ export class Kinderland {
       ls.groundY = m.y
       ls.labelHeight = m.y + 2.4
       // Am Treffpunkt spricht die Tafel: sonst stuende der Lehrer naeher
-      // und die Tafel drehte sich nie um.
+      // und die Tafel drehte sich nie um. In der Huette spricht keiner.
       const t = this._treffpunkt
-      ls.radius = Math.hypot(m.x - t.x, m.z - t.z) < 4 ? 0 : 2.6
+      ls.radius = !this.gruppe.sichtbar || !this.gruppe.lehrer.model.visible || Math.hypot(m.x - t.x, m.z - t.z) < 4 ? 0 : 2.6
     }
 
     const sx = skier.position.x
@@ -567,15 +604,16 @@ export class Kinderland {
     this._slalomLauf = null
   }
 
-  // Das Bremsfeld schaut nur zu, wer die Abfahrt herunterkommt: scharf
-  // unterhalb der Trampoline mit Tempo, gemessen, sobald man steht. s waechst
-  // hier bergab.
+  // Das Bremsfeld schaut nur zu, wer den Bremshang herunterkommt: scharf
+  // im unteren Teil mit Tempo und bergab gerichtet (aus dem Funpark quert
+  // man den Auslauf), gemessen, sobald man steht. s waechst bergab.
   _bremsfeldPruefen(skier) {
-    const { s, off } = this.lage(skier.position.x, skier.position.z, SHOOT_LANE)
+    const { s, off, ux, uz } = this.lage(skier.position.x, skier.position.z, BREMS_LANE, true)
     const quer = off > BREMS_VON - 2 && off < BREMS_BIS + 2
-    if (skier.tow || !quer || s < 17 || s > BREMS_S + 6) { this._bremsen = null; return }
+    if (skier.tow || !quer || s < 4 || s > BREMS_S + 6) { this._bremsen = null; return }
     if (!this._bremsen) {
-      if (s > 24.5 && s < BREMS_S - 1 && skier.speed > 3 && !skier.airborne) this._bremsen = { scharf: true }
+      const bergab = skier._fahrt.x * ux + skier._fahrt.z * uz > 0.6
+      if (s > 9 && s < BREMS_S - 1 && skier.speed > 3 && !skier.airborne && bergab) this._bremsen = { scharf: true }
       return
     }
     if (skier.speed > 0.2 || skier.airborne) return

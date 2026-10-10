@@ -1877,6 +1877,44 @@ Rückfragen: Linie ans Ende der Westabfahrt; Trampoline 6–8 m nach links,
   an ihrem Ende. Mit fester Neigung (0,16) sank sie auf 1,75 m um 0,28 m,
   der Hang fiel dort um 0,6 m.
 
+### Dritte Runde (10.10., Zweig `kinderland-neu`)
+
+Ansage mit Screenshot: die Kuhle zwischen Kuppe und Funpark weg; beim
+gelben Pfeil (von der Kuppe nach Westen) eine kleine Abfahrt, unten die
+Stopplinie; eine Hütte für die Skischule wie der Schuppen der Pistenraupe,
+die Skischule fährt nur am Tag von 6 bis 16 Uhr; die Auffahrtsplatte am
+Teppich stand immer noch in der Luft – weglassen.
+
+- **Kuhle gefüllt** (`KUHLE` in `heightfield.js`, ein `bump` von 1,3 m vor
+  den Bändern): die Senke um (36, −18) lag 1 m unter ihrem Rand und 2,7 m
+  unter dem Kopf der Westabfahrt.
+- **Bremshang** (`BREMS_LANE`, letztes Band in `LANES`): von der Kuppe
+  (43,2, −8) erst nach Norden an der Flanke entlang, dann nach Westen in den
+  Auslauf des Funparks; gleichmäßig 19,5° (die Kuppe fällt nach Westen mit
+  fast 40° ab, deshalb gebogen), unten 3,7 m fast eben. Im Zaun der Kuppe
+  eine Lücke dafür. Man kommt mit etwa 4 m/s an.
+- **Bremsfeld** 2 m im Auslauf des Bremshangs, quer, HALT am Südende. Scharf
+  ab s 9 mit mehr als 3 m/s und nur bergab (aus dem Funpark quert man den
+  Auslauf). `Kinderland.lage(x, z, lane, true)` sucht dafür den nächsten
+  Abschnitt eines gebogenen Bandes. Die Linie unten an der Westabfahrt ist
+  wieder weg.
+- **Teppich**: an beiden Enden nur noch die Umlenkrolle, keine Platten.
+- **Skischulhütte** (`createSkischulhuette` in `props/skischule.js`, bei
+  (42, 26,5)): Holz mit blauem Dach und Läden, Schild SKISCHULE im Giebel,
+  Tür links in der Front zur Kamera, Kinderski an der Wand. Bei (39, 27)
+  verdeckte sie aus der Kamera den Treffpunkt.
+  - Die Gruppe wohnt drinnen (`Skischulgruppe` mit `huette`): nur nach
+    echter Uhr von 6 bis 16 Uhr (`skischulzeit`), zum ersten Mal 20 s bis
+    2,5 min nach dem Ankommen, dann alle 3 bis 8 min. Tür auf, heraus und
+    im Bogen links um die Hütte zum Treffpunkt, 2 bis 3 Runden, am Ende der
+    letzten Runde nicht zum Treffpunkt, sondern zurück in die Hütte, Tür zu.
+    Der Hinweg liegt vor der Runde (s < 0), der Rückweg hinter `ende`.
+  - In der Hütte spricht der Skilehrer nicht; die Tafel führt weiter zum
+    Ausweis.
+  - Zum Prüfen: `?skischule` (sofort heraus, immer, 8 s Pause drinnen),
+    `__ski.props.kinderland.gruppe` (`drinnen`, `raus`, `ende`, `runden`,
+    `tuer`). Tests: `tests/skischule.test.js`.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/

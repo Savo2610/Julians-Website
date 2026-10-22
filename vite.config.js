@@ -32,10 +32,12 @@ export default defineConfig({
     rolldownOptions: {
       // Zwei Seiten: das Tal und der Kabelsee fuer sich (veerka.mp/kabelsee/).
       // Im Tal wird der See ohnehin nachgeladen; die eigene Seite teilt sich
-      // mit ihm Three.js und alle Stuecke des Sees.
+      // mit ihm Three.js und alle Stuecke des Sees. Dazu die 404-Seite, die
+      // Cloudflare fuer jede unbekannte Adresse ausliefert (wrangler.jsonc).
       input: {
         tal: fileURLToPath(new URL('./index.html', import.meta.url)),
         kabelsee: fileURLToPath(new URL('./kabelsee/index.html', import.meta.url)),
+        abseits: fileURLToPath(new URL('./404.html', import.meta.url)),
       },
       output: {
         codeSplitting: {

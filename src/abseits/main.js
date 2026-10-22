@@ -6,8 +6,9 @@ import { TOUCH } from '../core/device.js'
 import { pointScale } from '../core/point-scale.js'
 import { createSky } from '../world/sky.js'
 import { createSnowfall } from '../world/weather.js'
+import { createMarkerSign } from '../world/props/signpost.js'
 import { Spray } from '../player/spray.js'
-import { createBoden, createLoch, createNetz, createSchild, createWald, hoehe, SCHILD, Spur, spurKurve, welt } from './gelaende.js'
+import { createBoden, createLoch, createNetz, createSchild, createWald, hoehe, NETZ_U, SCHILD, Spur, spurKurve, welt } from './gelaende.js'
 import { Fahrer } from './fahrer.js'
 
 // Die 404-Seite: abseits der Piste steckt einer kopfueber im Tiefschnee.
@@ -22,14 +23,13 @@ import { Fahrer } from './fahrer.js'
 
 const ruhig = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
-// Die Adresse, die es nicht gibt, steht im Satz. Unter /404.html selbst
-// (lokal beim Pruefen) bleibt es bei „Diese Seite“.
-const pfadEl = document.getElementById('pfad')
-if (!/\/404(\.html)?$/.test(location.pathname)) {
-  let pfad = location.pathname
-  try { pfad = decodeURIComponent(pfad) } catch {}
-  if (pfad.length > 42) pfad = pfad.slice(0, 41) + '…'
-  pfadEl.textContent = `„${pfad}“`
+// Die Adresse, die es nicht gibt, steht auf dem alten Wegweiser. Unter
+// /404.html selbst (lokal beim Pruefen) steht dort ein Beispiel.
+function pfad() {
+  if (/\/404(\.html)?$/.test(location.pathname)) return '/kontakt-alt'
+  let p = location.pathname
+  try { p = decodeURIComponent(p) } catch {}
+  return p.length > 28 ? p.slice(0, 27) + '…' : p
 }
 
 const canvas = document.getElementById('scene')
@@ -60,6 +60,21 @@ createWald(scene)
 scene.add(createNetz())
 const schild = createSchild()
 scene.add(schild)
+
+// Der alte Wegweiser auf der Piste zeigt noch immer durchs Netz zur Adresse,
+// die es nicht mehr gibt – derselbe Pfeil wie an den Kreuzungen im Tal. Ihm
+// ist der Fahrer gefolgt; das Sperrschild daneben kam zu spaet.
+{
+  const text = pfad()
+  const wegweiser = createMarkerSign([
+    { text, arrow: '→', background: '#346782', width: Math.min(4, Math.max(2.2, 1.1 + text.length * 0.16)), height: 0.6 },
+  ], { height: 2.9 })
+  const p = welt(NETZ_U - 0.9, -5.2)
+  wegweiser.position.set(p.x, hoehe(p.x, p.z), p.z)
+  wegweiser.rotation.y = CAMERA.azimuth
+  wegweiser.traverse((m) => { if (m.isMesh) m.castShadow = true })
+  scene.add(wegweiser)
+}
 scene.add(createLoch())
 
 const alteSpur = new Spur()
@@ -140,18 +155,19 @@ for (const o of [fahrer.helm, steckt, liegt]) {
 
 // --- Kamera ------------------------------------------------------------------
 // Dieselbe wie im Tal: Azimut und Hoehe fest, nur naeher dran. Im Hochformat
-// geht sie so weit zurueck, dass gut neun Meter in die Breite passen.
+// geht sie so weit zurueck, dass gut neun Meter in die Breite passen –
+// genug fuer Wegweiser und Sperrschild links und rechts der Luecke.
 const blick = new THREE.Vector3(
   Math.cos(CAMERA.elevation) * Math.sin(CAMERA.azimuth),
   Math.sin(CAMERA.elevation),
   Math.cos(CAMERA.elevation) * Math.cos(CAMERA.azimuth),
 )
-p = welt(0.3, 0.6)
+p = welt(0.3, -0.3)
 const ruhe = new THREE.Vector3(p.x, hoehe(p.x, p.z), p.z)
 const ziel = ruhe.clone()
 const soll = new THREE.Vector3()
 const breite = 2 * Math.tan(THREE.MathUtils.degToRad(CAMERA.fov / 2))
-const abstand = () => Math.max(15.5, 8.5 / (breite * camera.aspect))
+const abstand = () => Math.max(15.5, 9.4 / (breite * camera.aspect))
 
 function kamera(dt) {
   soll.copy(ruhe)

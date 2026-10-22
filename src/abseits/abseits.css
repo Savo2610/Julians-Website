@@ -1,6 +1,7 @@
-/* Die 404-Seite ueber dem Bild: oben Frosttext, unten der eine Link aus
-   Glas – das Einzige, was man hier bedient. Ohne .mit-3d (kein JavaScript
-   oder WebGL) gelten nur die Regeln inline in 404.html. */
+/* Die 404-Seite ueber dem Bild: unten Frosttext und der Link zurueck,
+   ebenfalls Frosttext – als Pille aus Glas sah er wie ein Knopf im Tal
+   aus und nicht wie der Weg hinaus. Ohne .mit-3d (kein JavaScript oder
+   WebGL) gelten nur die Regeln inline in 404.html. */
 
 #scene { cursor: pointer; touch-action: manipulation; opacity: 0; transition: opacity 0.8s ease; }
 #scene.da { opacity: 1; }
@@ -8,36 +9,27 @@
 
 :root.mit-3d #abseits {
   position: fixed;
-  inset: 0;
+  inset: auto 0 0;
   min-height: 0;
-  padding: 0;
-  display: block;
+  padding: 0 16px max(22px, env(safe-area-inset-bottom));
+  gap: 10px;
   pointer-events: none;
 }
 
-.oben, #hinweis { position: relative; }
-
-:root.mit-3d .oben {
-  position: absolute;
-  top: max(30px, env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(560px, calc(100% - 32px));
-}
-.oben h1 { font-weight: 800; }
-
-:root.mit-3d .unten {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: max(28px, env(safe-area-inset-bottom));
-  display: grid;
-  justify-items: center;
-  gap: 14px;
+/* Text und Link stehen unten: oben brauchen Zaun und Schild den Platz. */
+.text, #hinweis { position: relative; }
+.text { max-width: 560px; }
+.text h1 { font-weight: 800; }
+.text p { line-height: 1.45; }
+:root.mit-3d #abseits .text h1 { font-size: 26px; }
+:root.mit-3d #abseits .text p { font-size: 15px; }
+@media (max-width: 420px) {
+  :root.mit-3d #abseits .text h1 { font-size: 22px; }
+  :root.mit-3d #abseits .text p { font-size: 14px; }
 }
 
 #hinweis {
-  margin: 0;
+  margin: 0 0 6px;
   font-size: 15px;
   font-weight: 600;
   opacity: 0;
@@ -47,9 +39,13 @@
 #hinweis.an { opacity: 1; transform: none; }
 
 #abseits .zurueck {
+  position: relative;
+  padding: 6px 4px;
   pointer-events: auto;
-  font-size: 15px;
-  transition: transform 0.15s ease;
+  text-decoration: none;
 }
-#abseits .zurueck:hover { transform: translateY(-1px); }
-#abseits .zurueck:focus-visible { outline: 2px solid #22303f; outline-offset: 3px; }
+#abseits .zurueck span { display: inline-block; transition: transform 0.2s ease; }
+#abseits .zurueck:hover { text-decoration: underline 2px; }
+#abseits .zurueck:hover span { transform: translateX(-4px); }
+#abseits .zurueck:hover::before { background: radial-gradient(closest-side, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)); }
+#abseits .zurueck:focus-visible { outline: 2px solid #22303f; outline-offset: 4px; border-radius: 6px; }

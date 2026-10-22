@@ -177,7 +177,6 @@ export function createNetz() {
   const MASCHE = 0.32, ZEILEN = 8
   const pos = [], uv = [], index = []
   const seil = []
-  const helmPlatz = new THREE.Vector3()
   for (let f = 0; f < PFOSTEN_V.length - 1; f++) {
     const va = PFOSTEN_V[f], vb = PFOSTEN_V[f + 1]
     const spalten = Math.ceil((vb - va) / 0.3)
@@ -196,7 +195,6 @@ export function createNetz() {
         pos.push(p.x, boden + 0.12 + (oben - 0.12) * r, p.z)
         uv.push((v - va) / MASCHE, r * oben / MASCHE)
         if (j === ZEILEN) seil.push(new THREE.Vector3(p.x, boden + oben, p.z))
-        if (f === GERISSEN && j === ZEILEN && i === Math.round(spalten * 0.78)) helmPlatz.set(p.x, boden + oben, p.z)
       }
     }
     for (let j = 0; j < ZEILEN; j++) {
@@ -241,9 +239,76 @@ export function createNetz() {
     m.castShadow = true
     group.add(m)
   })
-  // Der Helm haengt am heruntergedrueckten Seil des gerissenen Feldes. Oben
-  // auf dem Pfosten stand er genau unter der Ueberschrift.
-  return { group, helmPlatz }
+  return group
+}
+
+// Das Sperrschild am Netz, gleich neben der Luecke: gelb mit schwarz
+// gestreiftem Rand, gross 404. Ohne Schild las sich das Bild als Skiunfall
+// und nicht als Seite, die es nicht gibt. Der Ursprung der Gruppe ist die
+// Mitte der Tafel, +z zeigt bergab zur Kamera.
+export const SCHILD = { u: NETZ_U + 0.12, v: 3.4, breite: 2.3, hoehe: 1.45 }
+
+function schildTextur() {
+  const W = 768, H = Math.round(W * SCHILD.hoehe / SCHILD.breite)
+  const c = document.createElement('canvas')
+  c.width = W
+  c.height = H
+  const g = c.getContext('2d')
+  g.fillStyle = '#f2c21b'
+  g.fillRect(0, 0, W, H)
+  // Warnstreifen als Rand.
+  const RAND = 34
+  g.save()
+  g.beginPath()
+  g.rect(0, 0, W, H)
+  g.rect(RAND, RAND, W - 2 * RAND, H - 2 * RAND)
+  g.clip('evenodd')
+  g.fillStyle = '#1b2430'
+  for (let x = -H; x < W + H; x += 56) {
+    g.beginPath()
+    g.moveTo(x, 0); g.lineTo(x + 28, 0); g.lineTo(x + 28 - H, H); g.lineTo(x - H, H)
+    g.fill()
+  }
+  g.restore()
+  g.fillStyle = '#1b2430'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  const schrift = (gewicht, px) => `${gewicht} ${px}px ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif`
+  g.font = schrift(900, 250)
+  g.fillText('404', W / 2, H * 0.43, W - 4 * RAND)
+  g.font = schrift(800, 64)
+  g.fillText('PISTE GESPERRT', W / 2, H * 0.78, W - 4 * RAND)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = 8
+  return tex
+}
+
+export function createSchild() {
+  const group = new THREE.Group()
+  const blech = new THREE.MeshStandardMaterial({ color: 0x8a939b, roughness: 0.5, metalness: 0.4 })
+  const vorne = new THREE.MeshStandardMaterial({ map: schildTextur(), roughness: 0.55 })
+  // BoxGeometry: die Flaeche +z ist die vierte.
+  const tafel = new THREE.Mesh(
+    new THREE.BoxGeometry(SCHILD.breite, SCHILD.hoehe, 0.04),
+    [blech, blech, blech, blech, vorne, blech],
+  )
+  tafel.castShadow = true
+  group.add(tafel)
+  // Kabelbinder an den Ecken: festgezurrt am Netz.
+  const binder = new THREE.MeshStandardMaterial({ color: 0x1b2430, roughness: 0.6 })
+  for (const sx of [-1, 1]) {
+    for (const sy of [-1, 1]) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.14, 0.07), binder)
+      b.position.set(sx * (SCHILD.breite / 2 - 0.1), sy * (SCHILD.hoehe / 2 - 0.02), -0.01)
+      group.add(b)
+    }
+  }
+  const p = welt(SCHILD.u, SCHILD.v)
+  group.position.set(p.x, hoehe(p.x, p.z) + 0.3 + SCHILD.hoehe / 2, p.z)
+  // Leicht schief: der Fahrer ist gleich daneben durchs Netz.
+  group.rotation.set(0, Math.PI / 4, -0.05)
+  return group
 }
 
 // Das Loch mit aufgeworfenem Rand und den Brocken, die beim Einschlag

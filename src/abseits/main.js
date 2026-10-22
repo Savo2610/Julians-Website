@@ -7,7 +7,7 @@ import { pointScale } from '../core/point-scale.js'
 import { createSky } from '../world/sky.js'
 import { createSnowfall } from '../world/weather.js'
 import { Spray } from '../player/spray.js'
-import { createBoden, createLoch, createNetz, createWald, hoehe, Spur, spurKurve, welt } from './gelaende.js'
+import { createBoden, createLoch, createNetz, createSchild, createWald, hoehe, SCHILD, Spur, spurKurve, welt } from './gelaende.js'
 import { Fahrer } from './fahrer.js'
 
 // Die 404-Seite: abseits der Piste steckt einer kopfueber im Tiefschnee.
@@ -57,8 +57,9 @@ const sky = createSky(scene, renderer)
 
 scene.add(createBoden())
 createWald(scene)
-const netz = createNetz()
-scene.add(netz.group)
+scene.add(createNetz())
+const schild = createSchild()
+scene.add(schild)
 scene.add(createLoch())
 
 const alteSpur = new Spur()
@@ -114,11 +115,19 @@ fahrer.einschlag = () => {
   if (wiederda) zeige('… oder auch nicht.', 2.6)
 }
 
-// Den Helm hat es ihm am Netz vom Kopf gerissen, die Stoecke liegen im Schnee.
-fahrer.helm.position.copy(netz.helmPlatz).add(new THREE.Vector3(0, -0.16, 0))
-fahrer.helm.rotation.set(0.5, Math.PI * 0.25, 0.25)
-scene.add(fahrer.helm)
+// Den Helm hat es ihm am Netz vom Kopf gerissen; er haengt an der Ecke des
+// Schilds. Weiss wie im Tal war er weder vor Schnee noch vor dem Gelb zu
+// erkennen, hier ist er dunkelblau mit orangem Brillenband. Die Stoecke
+// liegen im Schnee.
+const [schale, band] = fahrer.helm.children
+schale.material.color.set(0x2f3d5c)
+band.material.color.set(0xe4613a)
+fahrer.helm.position.set(SCHILD.breite / 2 - 0.12, SCHILD.hoehe / 2 - 0.22, 0.22)
+fahrer.helm.rotation.set(0.2, 0, -0.45)
+fahrer.helm.scale.setScalar(1.3)
+schild.add(fahrer.helm)
 const [steckt, liegt] = fahrer.stoecke
+scene.add(steckt, liegt)
 let p = welt(-1.3, 2.0)
 steckt.position.set(p.x, hoehe(p.x, p.z) + 0.3, p.z)
 steckt.rotation.set(0.45, 0.4, -0.4)
@@ -127,7 +136,6 @@ liegt.position.set(p.x, hoehe(p.x, p.z) + 0.03, p.z)
 liegt.rotation.set(0, 0.9, Math.PI / 2 + 0.12)
 for (const o of [fahrer.helm, steckt, liegt]) {
   o.traverse((m) => { if (m.isMesh) m.castShadow = true })
-  scene.add(o)
 }
 
 // --- Kamera ------------------------------------------------------------------
@@ -138,12 +146,12 @@ const blick = new THREE.Vector3(
   Math.sin(CAMERA.elevation),
   Math.cos(CAMERA.elevation) * Math.cos(CAMERA.azimuth),
 )
-p = welt(0, 0.3)
+p = welt(0.3, 0.6)
 const ruhe = new THREE.Vector3(p.x, hoehe(p.x, p.z), p.z)
 const ziel = ruhe.clone()
 const soll = new THREE.Vector3()
 const breite = 2 * Math.tan(THREE.MathUtils.degToRad(CAMERA.fov / 2))
-const abstand = () => Math.max(14, 8.5 / (breite * camera.aspect))
+const abstand = () => Math.max(15.5, 8.5 / (breite * camera.aspect))
 
 function kamera(dt) {
   soll.copy(ruhe)

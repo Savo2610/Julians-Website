@@ -1731,6 +1731,47 @@ Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
 - Kennzahlen: 440 Draw Calls im Tal (vorher 300–420); je Netz 3, Felsen
   der Ketten bis zu 15.
 
+## 4a¹². Die 404-Seite: abseits der Piste (22.10.)
+
+`not_found_handling: "404-page"` stand schon in `wrangler.jsonc`, aber es
+gab keine `404.html` – wer sich vertippte, sah eine leere Seite. Jetzt
+liefert Cloudflare für jede unbekannte Adresse (auch unter `/kabelsee/`)
+`404.html` mit Status 404; `/` und `/api/*` laufen weiter über den Worker.
+
+- **Das Bild** (`src/abseits/gelaende.js`, eigene Höhenquelle `hoehe()`):
+  oben die gewalzte Piste mit einem alten Wegweiser im Pfeilstil des Tals
+  (`createMarkerSign`), der die nicht vorhandene Adresse trägt und durch
+  ein heruntergerissenes Feld im gelben Fangnetz zeigt. Daneben am Netz das
+  gelbe Sperrschild „404 – Piste gesperrt“, an seiner Ecke hängt der Helm
+  (dunkelblau statt weiß – weiß war er weder vor Schnee noch vor Gelb zu
+  erkennen). Die Spur führt durch die Lücke über eine Wechte und hört auf;
+  vier Meter weiter steckt der Fahrer kopfüber im Tiefschnee, Ski als V.
+- **Text** unten, Frost ohne Behälter: „Diese Piste gibt’s nicht“ / „Die
+  Absperrung kam leider einen Fahrer zu spät.“ Darunter „← Zurück ins Tal“,
+  ebenfalls Frost – als Glaspille sah der Link wie ein Knopf aus (Julian).
+  Verworfen: Adresse im Satz, kleine „404“ über der Überschrift,
+  „(mehr)“, „Mein Fehler, nicht deiner“.
+- **Ablauf** (`src/abseits/fahrer.js`): steckt (strampelt, Schere, Tritt)
+  → Klick, Tippen oder Leertaste → raus (Ruck, Schneewolke, Rückwärtssalto)
+  → steht (schüttelt sich, schaut sich um) → weg (frische Spur nach unten)
+  → fort → kommt (die alte Spur herunter) → fliegt (überschlägt sich an
+  der Wechte) → steckt. Ein Klick, während er steht, erschreckt ihn zurück
+  ins Loch. Hinweise: „Antippen/Klicken zum Ausgraben“ nach 5 s,
+  „Er ist schon mal vorgefahren.“, „… oder auch nicht.“
+- **Kamera** wie im Tal (Azimut, Höhe, Bildwinkel fest), nur näher
+  (15,5 m); im Hochformat so weit zurück, dass 9,4 m in die Breite passen –
+  dann sind Wegweiser und Sperrschild beide im Bild. Beim Fahren geht der
+  Blick bis 5 m mit, ohne Schwenk.
+- **Schlank**: kein Höhenfeld, keine Stationen des Tals; 7,9 kB gzip
+  eigenes Skript, three.js teilt sie sich mit dem Tal. Ohne JavaScript oder
+  WebGL steht nur Text mit Link (Regeln inline in `404.html`, die Szene
+  setzt `.mit-3d`), bei `prefers-reduced-motion` ein Standbild.
+- **Prüfen**: `npm run dev`, dann `/404.html` (der Wegweiser zeigt dort
+  `/kontakt-alt`); im Browser `__abseits.step(n)`, `__abseits.anhalten()`
+  und `__abseits.fahrer.aktion()`. Echte 404 mit Status nur über
+  `npx wrangler dev` nach `npm run build` – vite liefert für unbekannte
+  Adressen das Tal.
+
 ## 4b. Handymodus
 
 Erkannt über `pointer: coarse` ohne feinen Zeiger, oder über einen Android-/

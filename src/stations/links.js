@@ -31,7 +31,7 @@ export const LINKS = {
   packlist: 'https://packliste.veerka.mp',
   worktime: 'https://zeit.veerka.mp',
   // Haengt an der gefrorenen Quelle am See, die zeigt, was dort laeuft.
-  broadcast: 'https://broadcast.veerka.mp',
+  funk: 'https://funk.veerka.mp',
 
   // Projekte. Sie haengen an den beiden Fundstuecken abseits der Wege – das
   // Loeschfahrzeug an der Lernwerkstatt der Jugendfeuerwehr, die abgestuerzte

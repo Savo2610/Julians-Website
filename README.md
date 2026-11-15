@@ -19,7 +19,7 @@ als Liste zur Verfügung, wenn man keine Lust hat zu spielen.
 | Materialdepot | Packliste (packliste.veerka.mp) |
 | Drohne | Uniprojekt, Rundflug (nicht auf der Karte) |
 | Löschzug | Lernwerkstatt der Jugendfeuerwehr (nicht auf der Karte) |
-| Gefrorene Quelle | aktuelle Sendung von broadcast.veerka.mp (nicht auf der Karte) |
+| Gefrorene Quelle | aktuelle Sendung von funk.veerka.mp (nicht auf der Karte) |
 | Badesteg am Eissee | mit Ticket: Countdown, dann verwandelt sich das Tal in den Kabelsee |
 
 Außerdem: Schlepplift, Nordabfahrt, Funpark, Slalom mit Bestenliste,
@@ -60,7 +60,7 @@ rechts.
   der Drohnen-Rundflug.
 - Cloudflare Worker mit statischen Assets. Der Worker bearbeitet `/` und
   `/api/*`: Umleitung von www, Bestenlisten von Slalom und Kabelsee in D1,
-  Durchreiche der Sendung von broadcast.veerka.mp.
+  Durchreiche der Sendung von funk.veerka.mp.
 - Der Kabelsee wird erst am Badesteg nachgeladen und zeichnet im selben
   Renderer wie das Tal; der Übergang mischt beide Bilder in einem Shader.
 
@@ -119,7 +119,7 @@ src/
   sommer/       Badesteg-Countdown, Verwandlung, Bestenliste des Kabelsees
   kabelsee/     Der Kabelsee (eigene README)
 kabelsee/       Eigene Seite des Kabelsees (index.html)
-worker/         Cloudflare Worker: Router, Bestenlisten, Broadcast
+worker/         Cloudflare Worker: Router, Bestenlisten, Funk
 public/         Icons
 tools/          skifahrer-icon.mjs erzeugt das Homescreen-Icon; kabelsee/
                 Bilder und Video des Sees
@@ -133,7 +133,7 @@ tests/          node --test
 |---|---|---|
 | [s.veerka.mp](https://s.veerka.mp) | Kurzlink-Fenster | Host in `TURNSTILE_HOSTNAMES` und im Turnstile-Widget |
 | [upload.veerka.mp](https://upload.veerka.mp) | Upload-Fenster an der Rohrpost | Herkunft in `CORS_HERKUNFT` des Upload-Workers |
-| [broadcast.veerka.mp](https://broadcast.veerka.mp) | Anzeige in der gefrorenen Quelle | keine, der Worker holt die Daten serverseitig |
+| [funk.veerka.mp](https://funk.veerka.mp) | Anzeige in der gefrorenen Quelle | keine, der Worker holt die Daten serverseitig |
 | [jf.veerka.mp](https://jf.veerka.mp) | Ziel des Löschzugs, Übergabe mit `?einfahrt=1` | siehe `docs/verwandte-projekte.md` im Repo der Lernwerkstatt |
 | Solana RPC, CoinGecko, Binance | Solana-Fenster | keine (CORS `*`) |
 

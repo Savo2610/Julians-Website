@@ -605,14 +605,30 @@ export const TRAMPOLINE = [
 // Das obere, fuer alles, was nur eines kennt (Tests, Masse).
 export const TRAMPOLIN = TRAMPOLINE[0]
 
+// Die beiden Plaetze liegen 8,0 m auseinander, ihre Saeume reichen je 5,9 m
+// weit: sie ueberlappen. Bis 17.11. zaehlte nur der erste, der traf – wo
+// der Saum des oberen anfing, sprang der Boden um 0,22 m (bei z 6,15 unter
+// dem oberen Tuch), und wer dort bergauf fuhr, wurde mit bis zu 13,5 m/s
+// hochgeworfen. Jetzt wirken beide zugleich: jeder mit seinem Gewicht w,
+// das des anderen weicht ihm im selben Mass (w0·(1−w1)). Auf einem ebenen
+// Platz (w = 1) zaehlt so nur er, und dazwischen gibt es keine Kante.
 function trampolinPlatz(x, z, h) {
-  for (const T of TRAMPOLINE) {
+  let rest = 1, summe = 0, gewicht = 0, mulde = 0
+  const w = TRAMPOLINE.map((T) => {
     const d = Math.hypot(x - T.x, z - T.z)
-    if (d >= T.eben + T.saum) continue
-    const y = d <= T.eben ? T.h : h + (T.h - h) * (1 - smooth((d - T.eben) / T.saum))
-    return y - muldeTiefe(d)
+    mulde += muldeTiefe(d)
+    return d >= T.eben + T.saum ? 0 : 1 - smooth(Math.max(0, d - T.eben) / T.saum)
+  })
+  for (let i = 0; i < w.length; i++) {
+    if (!w[i]) continue
+    rest *= 1 - w[i]
+    let g = w[i]
+    for (let k = 0; k < w.length; k++) if (k !== i) g *= 1 - w[k]
+    summe += g * TRAMPOLINE[i].h
+    gewicht += g
   }
-  return h
+  if (gewicht <= 0) return h - mulde
+  return h + (1 - rest) * (summe / gewicht - h) - mulde
 }
 
 // Die Mulde hat einen flachen Boden und steile Raender: das Tuch sinkt nicht

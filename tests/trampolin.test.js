@@ -208,3 +208,39 @@ test('auf dem Trampolin schlaegt W in der Luft keinen Salto', () => {
   assert.ok(tr.spruenge >= 5)
   assert.ok(flip < 0.01, `Salto ${flip.toFixed(2)} rad`)
 })
+
+// Die Plaetze der beiden Tuecher ueberlappen. Bis 17.11. sprang der Boden
+// dort, wo der Saum des oberen begann, um 0,22 m, und wer bergauf darueber
+// fuhr, flog mit bis zu 13,5 m/s hoch. Abgetastet in 5 cm: ausserhalb der
+// Mulden steigt der Boden nirgends steiler als 1 : 1.
+test('zwischen den Tuechern hat der Boden keine Kante', () => {
+  const schritt = 0.05
+  const [a, b] = TRAMPOLINE
+  let steilste = 0
+  for (let x = Math.min(a.x, b.x) - 7; x <= Math.max(a.x, b.x) + 7; x += 0.25) {
+    for (let z = Math.min(a.z, b.z) - 7; z <= Math.max(a.z, b.z) + 7; z += schritt) {
+      const inMulde = TRAMPOLINE.some((T) => Math.hypot(x - T.x, z - T.z) < T.r + 0.1 || Math.hypot(x - T.x, z + schritt - T.z) < T.r + 0.1)
+      if (inMulde) continue
+      steilste = Math.max(steilste, Math.abs(terrainHeight(x, z + schritt) - terrainHeight(x, z)) / schritt)
+    }
+  }
+  assert.ok(steilste < 1, `steilste Stelle ${steilste.toFixed(2)}`)
+})
+
+test('wer zwischen den Tuechern bergauf faehrt, hebt nicht ab', () => {
+  // Die Stelle der Meldung: vom unteren Tuch her auf das obere zu.
+  for (const tempo of [5, 9, 13]) {
+    const s = new Skier(welt)
+    s.versetzen(27.54, 8.2, Math.PI)
+    s.speed = tempo
+    const inp = eingabe()
+    let hoch = 0
+    // Bis vor das Tuch – ohne Trampolin faengt hier keins, und in der Mulde
+    // wuerde man sonst am Rand wieder herausgeworfen.
+    for (let i = 0; i < 90 && Math.hypot(s.position.x - TRAMPOLIN.x, s.position.z - TRAMPOLIN.z) > TRAMPOLIN.r + 0.3; i++) {
+      s.update(1 / 60, inp, null)
+      if (s.airborne) hoch = Math.max(hoch, s.vy)
+    }
+    assert.ok(hoch < 3, `mit ${tempo} m/s abgehoben, vy ${hoch.toFixed(1)}`)
+  }
+})

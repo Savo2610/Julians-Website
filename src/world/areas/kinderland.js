@@ -208,11 +208,10 @@ export class Kinderland {
     return object
   }
 
-  // Die Einfassung. Sie umschliesst Teppich, Uebungshang, Spielwiese und
-  // Westabfahrt – erst dadurch sind die Dinge darin ein Ort und nicht eine
-  // Ansammlung. Luecken: unten die Einfahrt, im Westen der Weg vom
-  // Sportgelaende (er kreuzt die Abfahrt zwischen den Trampolinen) und oben
-  // die Westabfahrt selbst.
+  // Die Einfassung. Sie umschliesst Spielwiese und Uebungshang im Norden
+  // und Osten – erst dadurch sind die Dinge darin ein Ort und nicht eine
+  // Ansammlung. Offen bleiben unten die Einfahrt und der Westen mit den
+  // Trampolinen, an dem der Weg ins Sportgelaende entlangfuehrt.
   _buildFence() {
     const zug = (punkte) => this.world.scene.add(createBuntingFence(punkte, {
       sample: (x, z) => terrainHeight(x, z),
@@ -222,14 +221,8 @@ export class Kinderland {
       const q = this.at(s, off)
       return [q.x, q.z]
     }
-    // Westlich der Trampoline, zwischen Abfahrt und Weg, mit einer Luecke
-    // fuer den Weg, der zwischen den Tuechern quert.
-    const w = (s, off) => {
-      const q = this.at(s, off, SHOOT_LANE)
-      return [q.x, q.z]
-    }
-    zug([w(8, 5.2), w(12, 5.6), w(15.5, 5.6)])
-    zug([w(21, 5.4), w(25, 5.0)])
+    // Westlich der Trampoline steht keine Wimpelkette mehr (Ansage 17.11.):
+    // dort fassen die zwei Schneemaenner und die Wegstangen den Rand.
     // Um die Kuppe herum und den Ostrand hinunter.
     // Von der Kuppe nach Westen faehrt man den Bremshang hinunter; der
     // Zaun fasst ihn nach Norden ein, zum Funpark hin. Das kurze Stueck
@@ -361,9 +354,12 @@ export class Kinderland {
     }
     this.world.scene.add(createLipLine(punkte, 0xd6332a))
     // Am Suedende, zur Kamera hin, etwas hinter der Linie.
+    // Ohne Kollisionskreis: es legt sich um wie die Tierstangen.
     const schild = this.at(BREMS_S + 0.4, BREMS_VON - 0.9, BREMS_LANE)
-    this.world.place(createStoppschild(), schild.x, schild.z, { rotation: CAMERA.azimuth })
-    this.world.addCollider(schild.x, schild.z, 0.25)
+    const halt = createStoppschild()
+    this.world.place(halt, schild.x, schild.z, { rotation: CAMERA.azimuth })
+    this.world.place(halt.userData.teller, schild.x, schild.z, {})
+    this.federn.push(springMount(this.world, halt, schild.x, schild.z, CAMERA.azimuth))
     this._bremsen = null
   }
 

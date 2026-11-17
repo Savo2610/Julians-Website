@@ -490,15 +490,21 @@ export function createTierstange({ tier = 'pinguin', farbe = KINDER_COLORS[0] } 
 // --- Stoppschild ---------------------------------------------------------------
 // Am Bremsfeld unten: ein rotes Achteck mit HALT, niedrig wie fuer Kinder.
 // Die Tafel ist zur Kamera gedreht und um 0,5 rad zurueckgelehnt wie die
-// Wegweiser, sonst liest man sie von oben nur als Kante.
+// Wegweiser, sonst liest man sie von oben nur als Kante. Es steht wie die
+// Tierstangen auf einem Federfuss und legt sich um, wer dagegen faehrt
+// (Ansage 17.11.); der Teller bleibt liegen (userData.teller).
 export function createStoppschild() {
   const group = new THREE.Group()
-  const parts = []
-  parts.push({ geo: new THREE.CylinderGeometry(0.04, 0.045, 1.1, 8), color: POST, position: [0, 0.55, 0] })
-  pad(parts, 0.3)
+  const parts = [{ geo: new THREE.CylinderGeometry(0.04, 0.045, 1.1, 8), color: POST, position: [0, 0.55, 0] }]
   const mesh = new THREE.Mesh(assemble(parts), vertexColorMaterial({ roughness: 0.7 }))
   mesh.castShadow = true
   group.add(mesh)
+
+  const tellerTeile = []
+  pad(tellerTeile, 0.3)
+  const teller = new THREE.Mesh(assemble(tellerTeile), vertexColorMaterial({ roughness: 0.9 }))
+  teller.receiveShadow = true
+  group.userData.teller = teller
 
   const c = document.createElement('canvas')
   c.width = c.height = 256

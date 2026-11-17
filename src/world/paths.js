@@ -28,7 +28,11 @@ export const TRAILS = {
     label: 'PISTEN & PARK',
     color: '#a86738',
     markerColor: 0xbc8355,
-    path: [[9, 22], [17, 11], [22, 0], [20, -14], [17, -26], [15, -38], [15, -48]],
+    // Westlich an den zwei Schneemaennern der Trampoline vorbei (Ansage
+    // 17.11.): ueber (17, 11) und (22, 0) stand eine Stange 0,7 m neben dem
+    // orangen, und die Mittellinie lief durch ihn hindurch. Jetzt liegen
+    // 3,2 und 4,9 m dazwischen, mehr als die halbe Wegbreite (2,3 m).
+    path: [[9, 22], [15, 11], [16, 3], [20, -5], [20, -14], [17, -26], [15, -38], [15, -48]],
   },
   tools: {
     label: 'TOOLS',

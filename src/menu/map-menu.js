@@ -36,7 +36,7 @@ import { listeZeichnen } from './bestenliste.js'
 // Das Gipfelbuch war auch versteckt; seit man sich eintragen kann, soll man
 // es finden (05.10., auf Ansage) – auf der Karte bei Kontakt & Gipfel.
 
-const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'broadcast'])
+const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'funk'])
 
 // Welche Station an welchem Weg liegt – fuer die Farbe in der Liste.
 const WEG = {

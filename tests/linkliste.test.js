@@ -18,7 +18,7 @@ test('Linkliste: jede Kachel der Uebersicht, Adressen aus links.js', () => {
 
 // Die Fundstuecke sollen gefunden werden, auch hier nicht verraten.
 test('Linkliste: Drohne, Loeschzug und Quelle bleiben versteckt', () => {
-  for (const key of ['jugendfeuerwehr', 'kidrohne', 'broadcast']) assert.ok(!hrefs.includes(LINKS[key]), key)
+  for (const key of ['jugendfeuerwehr', 'kidrohne', 'funk']) assert.ok(!hrefs.includes(LINKS[key]), key)
 })
 
 test('Linkliste: nur Webadressen oeffnen einen neuen Tab', () => {

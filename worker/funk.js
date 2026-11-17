@@ -1,20 +1,20 @@
-// Die gefrorene Quelle am See zeigt, was gerade auf broadcast.veerka.mp
+// Die gefrorene Quelle am See zeigt, was gerade auf funk.veerka.mp
 // laeuft. Der Dienst schickt keinen CORS-Kopf, und WebGL nimmt ein Bild von
 // fremder Adresse nicht als Textur – also holt der Worker beides und reicht
-// es unter der eigenen Adresse weiter. Am Broadcast-Dienst aendert sich
-// nichts. Gegenstueck im Spiel: src/stations/broadcast.js.
+// es unter der eigenen Adresse weiter. Am Funk-Dienst aendert sich
+// nichts. Gegenstueck im Spiel: src/stations/funk.js.
 
 import { json, fehler } from './antwort.js'
 
-const BROADCAST = 'https://broadcast.veerka.mp'
+const FUNK = 'https://funk.veerka.mp'
 // So sehen die Schluessel dort aus: 2026/09/26/vh58tleJ-team2.jpg. Alles
 // andere (Punkte am Anfang, Schraegstriche im Namen) kommt nicht durch.
 const SCHLUESSEL = /^\d{4}\/\d{2}\/\d{2}\/[\w-]{4,}-[\w.\- ()]{1,200}$/
 
-export const broadcastSchluessel = (key) => typeof key === 'string' && SCHLUESSEL.test(key) && !key.includes('..')
+export const funkSchluessel = (key) => typeof key === 'string' && SCHLUESSEL.test(key) && !key.includes('..')
 
-async function broadcastStand() {
-  const r = await fetch(`${BROADCAST}/api/state`, { cf: { cacheTtl: 20, cacheEverything: true } })
+async function funkStand() {
+  const r = await fetch(`${FUNK}/api/state`, { cf: { cacheTtl: 20, cacheEverything: true } })
   if (!r.ok) return json({ message: null, fehler: r.status }, 502)
   const { message: m } = await r.json()
   // Nur, was die Quelle braucht – Anmeldestand und Grenzen des Dienstes
@@ -29,13 +29,13 @@ async function broadcastStand() {
   return json({ message }, 200, { 'cache-control': 'public, max-age=20' })
 }
 
-async function broadcastDatei(request, url) {
+async function funkDatei(request, url) {
   const key = url.searchParams.get('key') ?? ''
-  if (!broadcastSchluessel(key)) return fehler('Schlüssel ungültig')
+  if (!funkSchluessel(key)) return fehler('Schlüssel ungültig')
   const kopf = {}
   const range = request.headers.get('range')
   if (range) kopf.range = range
-  const r = await fetch(`${BROADCAST}/api/file?key=${encodeURIComponent(key)}`, { headers: kopf })
+  const r = await fetch(`${FUNK}/api/file?key=${encodeURIComponent(key)}`, { headers: kopf })
   if (r.status !== 200 && r.status !== 206) return fehler('Nicht gefunden', r.status === 416 ? 416 : 404)
   // Nur Bilder, und kein SVG: alles andere liefe unter dem Namen des Spiels
   // aus und koennte dort Skript mitbringen. Videos liefen nicht zuverlaessig
@@ -58,9 +58,9 @@ async function broadcastDatei(request, url) {
   return new Response(r.body, { status: r.status, headers: aus })
 }
 
-export function broadcast(request, pfad) {
+export function funk(request, pfad) {
   if (request.method !== 'GET') return fehler('Nicht gefunden', 404)
-  if (pfad === '/api/broadcast/state') return broadcastStand()
-  if (pfad === '/api/broadcast/file') return broadcastDatei(request, new URL(request.url))
+  if (pfad === '/api/funk/state') return funkStand()
+  if (pfad === '/api/funk/file') return funkDatei(request, new URL(request.url))
   return fehler('Nicht gefunden', 404)
 }

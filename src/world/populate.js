@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { LANDSCAPE_PATHS, GROVES } from './landscape-layout.js'
 import { createLandscapeDetails, FALL_SPOT } from './landscape-details.js'
-import { BroadcastFeed } from '../stations/broadcast.js'
+import { FunkFeed } from '../stations/funk.js'
 import { LINKS } from '../stations/links.js'
 import { CONNECTIONS } from './paths.js'
 import { createWayfinding, arrow, PANORAMA, WEGWEISER } from './wayfinding.js'
@@ -407,13 +407,13 @@ export function populate(world, sky, registry, stationOptions = {}) {
   animatedProps.push((t, dt) => landscape.update(dt, skierRef.current))
 
   // Die gefrorene Quelle am See zeigt die laufende Sendung von
-  // broadcast.veerka.mp. Bewusst ohne Ring im Schnee, ohne Eintrag auf der
+  // funk.veerka.mp. Bewusst ohne Ring im Schnee, ohne Eintrag auf der
   // Karte und im Pistenpass: wer sie findet, hat gestoebert. Enter zoomt
   // heran, dann taut das Eis auf – deshalb eine Auswahl mit nur einem Ziel.
-  const feed = new BroadcastFeed(landscape.fall, FALL_SPOT)
+  const feed = new FunkFeed(landscape.fall, FALL_SPOT)
   const fallGround = terrainHeight(FALL_SPOT.x, FALL_SPOT.z)
   registry.add({
-    id: 'broadcast',
+    id: 'funk',
     label: 'Gefrorene Quelle',
     color: '#5fa8f0',
     position: FALL_SPOT,
@@ -430,7 +430,7 @@ export function populate(world, sky, registry, stationOptions = {}) {
     // Die Mitte des Eises liegt 1,1 m hinter und 1,9 m ueber dem Fuss.
     focus: { abstand: 12.5, hoehe: 1.9, vor: -0.4 },
     choices: [
-      { label: 'Broadcast', sub: () => feed.sub, glyph: 'broadcast', url: LINKS.broadcast, color: '#ff6b5a' },
+      { label: 'Funk', sub: () => feed.sub, glyph: 'funk', url: LINKS.funk, color: '#ff6b5a' },
     ],
   })
   // registry.add kopiert die Station; der Hinweis haengt am Stand der
@@ -1199,5 +1199,5 @@ export function populate(world, sky, registry, stationOptions = {}) {
     grenzeZiehen(world, KETTE_WEST, { seed: 4405 }),
   ]
 
-  return { fangnetze, grenze, trees: placements, huette, kreuz: cross, felsen, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, broadcast: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
+  return { fangnetze, grenze, trees: placements, huette, kreuz: cross, felsen, apresTerrace, eiszapfen, landscape, rohrpost: stations.pipe, funk: feed, lake, badesteg, parkFence, lift, race, kinderland, railRide, speedCheck, northRun, klammSprung, animated: [...stations.animated, ...animatedProps] }
 }

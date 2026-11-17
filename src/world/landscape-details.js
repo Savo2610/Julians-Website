@@ -19,7 +19,7 @@ export function createLandscapeDetails(world, trees) {
 
   // Die Quelle sitzt am oberen Seeufer: ein Eisfall im Felsrahmen, der
   // die Boeschung hinunter bis aufs Seeeis reicht. Im Eis steckt, was
-  // gerade auf broadcast.veerka.mp laeuft – siehe props/frozen-fall.js.
+  // gerade auf funk.veerka.mp laeuft – siehe props/frozen-fall.js.
   // Vorher lagen hier drei Findlinge mit einem Vorhang aus 13 Zapfen; die
   // Findlinge sind jetzt der Rahmen.
   const fall = createFrozenFall()

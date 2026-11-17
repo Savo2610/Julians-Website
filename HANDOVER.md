@@ -153,7 +153,7 @@ src/
     ui.js            Einladung (Frosttext) und Auswahl (Glas, Leuchtfeld)
     marker.js        Ring im Schnee vor jeder Station
     ticket.js        Rundflug-Ticket (Skikasse → Drohne)
-    broadcast.js     Laufende Sendung holen und ins Eis der Quelle legen;
+    funk.js          Laufende Sendung holen und ins Eis der Quelle legen;
                      auch die Vorschau eines eben eingeworfenen Bildes
   menu/              Die einzigen Menüs (CLAUDE.md)
     map-menu.js      Übersicht (M): Links, Talkarte, Pistenpass, Bestenliste
@@ -181,7 +181,7 @@ worker/              Der Cloudflare-Worker hinter der Seite
   slalom.js          Bestenliste: Marken, Plausibilität, D1
   kabelsee.js        Bestenliste des Kabelsees, dieselbe D1
   marken.js          Was beide teilen: Marken, Namen, Adresse
-  broadcast.js       Durchreiche zu broadcast.veerka.mp
+  funk.js            Durchreiche zu funk.veerka.mp (bis 11/2026: broadcast)
   antwort.js         JSON-Antworten
   migrations/        Schema der D1 skiportfolio-slalom
 public/              _headers (Cache für /assets/), Symbole, site.webmanifest
@@ -270,7 +270,7 @@ Strang zu Ende fahren kann.
 | Packlisten-App (Depot) | −48, 0 | zoomt, Deckel klappt, Inhalt hüpft; packliste.veerka.mp |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | zoomt, Blaulicht an; „Ausrücken“ fährt los und wechselt im selben Tab zu jf.veerka.mp/?einfahrt=1 (am Waldrand, eigene Baumgruppen) |
-| Gefrorene Quelle (Eisfall am See) | −56,2, 27,7 (Fuß) | broadcast.veerka.mp, zeigt die laufende Sendung (4a⁵) |
+| Gefrorene Quelle (Eisfall am See) | −56,2, 27,7 (Fuß) | funk.veerka.mp, zeigt die laufende Sendung (4a⁵) |
 | Badesteg (Nordufer des Sees) | −42,2, 30,6 (vorn) | Countdown, Verwandlung, Kabelsee (4a⁶) |
 
 Eine Station gilt als verdrahtet, wenn sie `url`, `onUse` oder eine Auswahl
@@ -280,7 +280,7 @@ mit Inhalt hat. Wie man sie benutzt, steht im nächsten Abschnitt.
 Spur weiterläuft), Zauberteppich und Skikarussell im Kinderland, Rail im
 Funpark, Rennstrecke mit Zeitnahme, Speedcheck an der freien Piste, zwei
 Schneekanonen, Trampolin im Kinderland (die Leuchtstrecke ist seit 09.10. weg,
-siehe 4a¹²), Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
+siehe 4a¹³), Après-Ski-Hütte mit Terrasse, Gipfelkreuz.
 
 **Skikarussell** (`attractions/ski-carousel.js`, 04.10.): mitten auf der
 Kuppe des Kinderlands (46,6, −8,4), Station mit Ring wie der Teppich. Enter
@@ -1143,10 +1143,10 @@ Checkout). Die lokale D1 liegt unter `.wrangler/`; zwei `wrangler dev`
 gleichzeitig sperren sich dort gegenseitig (SQLITE_BUSY) – ein zweiter
 braucht `--persist-to` in ein eigenes Verzeichnis.
 
-## 4a⁵. Gefrorene Quelle: Broadcast im Eis
+## 4a⁵. Gefrorene Quelle: Funk im Eis
 
 Seit 27.09. zeigt die Felsquelle am oberen Seeufer, was gerade auf
-broadcast.veerka.mp läuft. Die Quelle ist mitten im Fallen erstarrt
+funk.veerka.mp läuft. Die Quelle ist mitten im Fallen erstarrt
 (`props/frozen-fall.js`), und im Eis steckt die Sendung: Bild oder Text.
 Videos liefen nicht zuverlässig und sind seit 27.09. wieder draußen; eine
 Sendung nur mit Video zeigt den Dateinamen. Vorher hing dort nur ein Vorhang aus 13 Zapfen.
@@ -1169,7 +1169,7 @@ zählt jeder Meter 1,6-fach: Stechuhr und Abkürzung liegen 21 und 26 m weg,
 aber genau seitlich. Dort war das Bild schon klar, gewünscht war es erst
 „ein Stück weiter links“. Gewichtet sind es jetzt 34 und 41,5 m, das Eis ist
 dort zu. Es taut etwa 5 m hinter der Stechuhr Richtung See auf. Enter
-zoomt heran und taut immer ganz auf. Enter öffnet broadcast.veerka.mp, und
+zoomt heran und taut immer ganz auf. Enter öffnet funk.veerka.mp, und
 Eiskristalle steigen auf.
 
 **Das Bild steckt im Eis:** Parallaxe (0,035 in UV) setzt es hinter die
@@ -1181,7 +1181,7 @@ es gar nicht mehr.
 Die Einladung („Gefrorene Quelle · Gerade auf Sendung“ bzw. „Funkstille“)
 schwebt 3,2 m vor dem Fuß auf dem Eis (`labelAt` in der Station, `ui.js`).
 Am Fuß verdeckte sie das untere Drittel des Bildes. Die rote Lampe des Funkturms (wie auf der
-Broadcast-Seite) atmet rechts im Eis, solange gesendet wird, und leuchtet
+Funk-Seite) atmet rechts im Eis, solange gesendet wird, und leuchtet
 auch durch den Reif. Der Schein auf dem Schnee hat die Mittelfarbe des Bildes.
 Die Fläche lehnt 0,5 rad zurück: bei 36° Kamerahöhe bleiben 86 % der
 Bildhöhe statt 59 %.
@@ -1199,19 +1199,19 @@ additiv, weil Licht vor Schnee nur weiß wird. **Einseitig**, nie
 zweimal und baut dafür jeden Frame den Shaderschlüssel neu. Die sechs Bögen
 taten das 12-mal je Frame; das gab alle 1–2 s einen Ruckler.
 
-**Daten:** `worker/broadcast.js` reicht `/api/broadcast/state` (nur `message`,
-20 s Cache) und `/api/broadcast/file?key=` (mit Range) durch.
-Der Broadcast-Dienst schickt keinen CORS-Kopf, und WebGL nimmt fremde
+**Daten:** `worker/funk.js` reicht `/api/funk/state` (nur `message`,
+20 s Cache) und `/api/funk/file?key=` (mit Range) durch.
+Der Funk-Dienst schickt keinen CORS-Kopf, und WebGL nimmt fremde
 Bilder nicht als Textur. Am Dienst selbst ist nichts geändert.
 Durchgelassen werden nur Schlüssel in der Form des Dienstes und nur
 JPEG/PNG/WebP/GIF/AVIF. Kein SVG, denn das könnte unter dem Namen des
 Spiels Skript ausführen. Kein Ton, denn das Tal bleibt still. Tests:
-`tests/broadcast-worker.test.js`.
+`tests/funk-worker.test.js`.
 Gefragt wird erst, wenn der Fahrer näher als 55 m kommt, danach höchstens
 einmal pro Minute. Bilder werden im Browser auf 1280 px verkleinert (das
 erste Testbild hatte 2,6 MB). Mehrere Anhänge wechseln alle 8 s. Kurzer Text (≤ 140 Zeichen) läuft als Zeile
 unter dem Bild, langer bekommt eine eigene Folie vor dunklem Tiefenwasser.
-Zum Prüfen: `__ski.props.broadcast.zeigen({ id, text, createdAt,
+Zum Prüfen: `__ski.props.funk.zeigen({ id, text, createdAt,
 expiresAt, attachments: [] })` legt eine erfundene Sendung ins Eis.
 
 ## 4a⁶. Badesteg und Kabelsee: in den Sommer
@@ -1732,7 +1732,48 @@ Linien stehen in `world/grenze.js`, Tests in `tests/grenze.test.js` und
 - Kennzahlen: 440 Draw Calls im Tal (vorher 300–420); je Netz 3, Felsen
   der Ketten bis zu 15.
 
-## 4a¹². Kinderland neu: Trampolin, Tierslalom, Bremsfeld, Skischule (09.10., Zweig `kinderland-neu`)
+## 4a¹². Die 404-Seite: abseits der Piste (22.10.)
+
+`not_found_handling: "404-page"` stand schon in `wrangler.jsonc`, aber es
+gab keine `404.html` – wer sich vertippte, sah eine leere Seite. Jetzt
+liefert Cloudflare für jede unbekannte Adresse (auch unter `/kabelsee/`)
+`404.html` mit Status 404; `/` und `/api/*` laufen weiter über den Worker.
+
+- **Das Bild** (`src/abseits/gelaende.js`, eigene Höhenquelle `hoehe()`):
+  oben die gewalzte Piste mit einem alten Wegweiser im Pfeilstil des Tals
+  (`createMarkerSign`), der die nicht vorhandene Adresse trägt und durch
+  ein heruntergerissenes Feld im gelben Fangnetz zeigt. Daneben am Netz das
+  gelbe Sperrschild „404 – Piste gesperrt“, an seiner Ecke hängt der Helm
+  (dunkelblau statt weiß – weiß war er weder vor Schnee noch vor Gelb zu
+  erkennen). Die Spur führt durch die Lücke über eine Wechte und hört auf;
+  vier Meter weiter steckt der Fahrer kopfüber im Tiefschnee, Ski als V.
+- **Text** unten, Frost ohne Behälter: „Diese Piste gibt’s nicht“ / „Die
+  Absperrung kam leider einen Fahrer zu spät.“ Darunter „← Zurück ins Tal“,
+  ebenfalls Frost – als Glaspille sah der Link wie ein Knopf aus (Julian).
+  Verworfen: Adresse im Satz, kleine „404“ über der Überschrift,
+  „(mehr)“, „Mein Fehler, nicht deiner“.
+- **Ablauf** (`src/abseits/fahrer.js`): steckt (strampelt, Schere, Tritt)
+  → Klick, Tippen oder Leertaste → raus (Ruck, Schneewolke, Rückwärtssalto)
+  → steht (schüttelt sich, schaut sich um) → weg (frische Spur nach unten)
+  → fort → kommt (die alte Spur herunter) → fliegt (überschlägt sich an
+  der Wechte) → steckt. Ein Klick, während er steht, erschreckt ihn zurück
+  ins Loch. Hinweise: „Antippen/Klicken zum Ausgraben“ nach 5 s,
+  „Er ist schon mal vorgefahren.“, „… oder auch nicht.“
+- **Kamera** wie im Tal (Azimut, Höhe, Bildwinkel fest), nur näher
+  (15,5 m); im Hochformat so weit zurück, dass 9,4 m in die Breite passen –
+  dann sind Wegweiser und Sperrschild beide im Bild. Beim Fahren geht der
+  Blick bis 5 m mit, ohne Schwenk.
+- **Schlank**: kein Höhenfeld, keine Stationen des Tals; 7,9 kB gzip
+  eigenes Skript, three.js teilt sie sich mit dem Tal. Ohne JavaScript oder
+  WebGL steht nur Text mit Link (Regeln inline in `404.html`, die Szene
+  setzt `.mit-3d`), bei `prefers-reduced-motion` ein Standbild.
+- **Prüfen**: `npm run dev`, dann `/404.html` (der Wegweiser zeigt dort
+  `/kontakt-alt`); im Browser `__abseits.step(n)`, `__abseits.anhalten()`
+  und `__abseits.fahrer.aktion()`. Echte 404 mit Status nur über
+  `npx wrangler dev` nach `npm run build` – vite liefert für unbekannte
+  Adressen das Tal.
+
+## 4a¹³. Kinderland neu: Trampolin, Tierslalom, Bremsfeld, Skischule (09.10., seit 17.11. auf `main`)
 
 Ansage: die lange Strecke mit den Lichtern ist zu langweilig, das Kinderland
 lädt noch nicht ein; ein Trampolin mit einer Mechanik wie das gelbe
@@ -1960,6 +2001,15 @@ anderen Uhrzeiten.
   nach Norden fuhr, hob dort mit 14 m/s ab (in der Simulation 11 m hoch).
   Jetzt alle 2 m, 3 cm unter dem Messwert, die Böschung biegt auf 1,5 m
   allmählich ab und setzt erst 0,75 m hinter dem Rand voll ein.
+- **Nachtrag 17.11.** (Julian): Die Plätze der zwei Tücher überlappen
+  (8,0 m auseinander, je 5,9 m Saum), `trampolinPlatz()` zählte nur den
+  ersten – am Saumbeginn des oberen sprang der Boden um 0,22 m, und wer
+  dort bergauf fuhr, flog mit bis zu 13,5 m/s hoch. Jetzt wirken beide
+  gewichtet zugleich (w₀·(1−w₁)); Tests in `tests/trampolin.test.js`. Das
+  HALT steht auf dem Federfuß der Tierstangen und legt sich um. Die
+  Wimpelketten westlich der Trampoline sind weg. PISTEN & PARK läuft
+  westlich an den zwei Schneemännern vorbei (eine Stange stand 0,7 m neben
+  dem orangen).
 
 ## 4b. Handymodus
 
@@ -2035,11 +2085,11 @@ antwortet.
 | Kurzlink (s.veerka.mp) | `dialogs/kurz.js` | `TURNSTILE_HOSTNAMES` im Worker `kurz` und Domainliste des Turnstile-Widgets „kurz“ | veerka.mp und www eingetragen; Turnstile löst sich, der Knopf wird „Kürzen“ |
 | Upload (upload.veerka.mp) | `dialogs/upload.js` | `CORS_HERKUNFT` im Worker `upload` | veerka.mp und www: Preflight 204; fremde Herkunft 405 |
 | Solana | `dialogs/wallet.js` | nichts – publicnode, CoinGecko und Binance antworten mit CORS `*` | geprüft |
-| Broadcast | `worker/broadcast.js` | nichts – der Worker holt serverseitig | geprüft |
+| Funk | `worker/funk.js` | nichts – der Worker holt serverseitig | geprüft |
 | Bestenliste | `worker/slalom.js`, `worker/kabelsee.js` | D1-Bindung und Secret `SLALOM_GEHEIM` am Worker; für den Kabelsee die Tabelle aus `0002_kabelsee.sql` (remote anlegen, siehe 9) | am Worker `website`; Tabelle `kabelsee` remote angelegt am 01.10. |
 
 Die Repos der Dienste liegen unter `~/Git/` (`kurz`, `file-uploader`,
-`broadcast`). In beiden Hostlisten und im Turnstile-Widget steht noch
+`funk`, früher `broadcast`). In beiden Hostlisten und im Turnstile-Widget steht noch
 `beta.veerka.mp` – harmlos, weil dort nichts mehr läuft; beim nächsten
 Deploy des jeweiligen Dienstes kann es mit raus. **Wer dort deployt, prüft die Hostlisten**: im Repo `kurz`
 stand einmal nur `s.veerka.mp`, live schon drei Hosts – ein Deploy aus dem

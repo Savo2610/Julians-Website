@@ -6,7 +6,7 @@ import { createBoulder } from './rocks.js'
 
 // Die gefrorene Quelle am See. Das Wasser, das hier ueber den Fels lief,
 // ist mitten im Fallen erstarrt – und im Eis steckt, was gerade auf
-// broadcast.veerka.mp gesendet wird: ein Bild oder ein Text,
+// funk.veerka.mp gesendet wird: ein Bild oder ein Text,
 // eingefroren wie ein Blatt im Bach.
 //
 // Aus der Ferne ist es nur ein bereifter Eisfall, durch den etwas Farbe
@@ -162,7 +162,7 @@ const frag = /* glsl */ `
     col = mix(col, vec3(0.84, 0.93, 0.97), frost * (0.45 + 0.35 * frostTex) * (1.0 - vis * 0.25));
 
     // Die rote Lampe des Funkturms, mit eingefroren. Sie atmet, solange
-    // etwas gesendet wird – wie auf broadcast.veerka.mp – und leuchtet
+    // etwas gesendet wird – wie auf funk.veerka.mp – und leuchtet
     // auch durch den Reif, damit man sie aus der Ferne ahnt.
     vec2 lampPos = vec2(0.845, 0.66);
     float ld = length((uv - lampPos) * vec2(uAspect, 1.0));
@@ -403,7 +403,7 @@ export function createFrozenFall() {
 
   group.userData.select = (index) => { focused = index !== null && index !== undefined }
   // Ganz aufgetaut, ohne dass jemand davor steht – fuer die Vorschau eines
-  // eben hochgeladenen Bildes (stations/broadcast.js).
+  // eben hochgeladenen Bildes (stations/funk.js).
   let klar = false
   group.userData.setKlar = (v) => { klar = v }
   let funkenNoetig = true
@@ -422,7 +422,7 @@ export function createFrozenFall() {
   group.userData.setSicht = (v) => { sicht = v }
 
   // Neues Bild ins Eis; das alte blendet ueber. Entsorgt werden Texturen
-  // von dem, der sie gebaut hat (stations/broadcast.js).
+  // von dem, der sie gebaut hat (stations/funk.js).
   let current = null
   group.userData.setMedia = (texture, aspect = W / H) => {
     if (texture === current) return

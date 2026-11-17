@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#d6e6f5" />
+    <meta name="robots" content="noindex" />
+    <title>Abseits der Piste – Julian Veerkamp</title>
+    <!-- Die 404-Seite fuer alles unter veerka.mp, was es nicht gibt
+         (wrangler.jsonc: not_found_handling). Ohne JavaScript oder WebGL
+         steht nur der Text mit dem Link da; das Tal dahinter baut
+         src/abseits/main.js und setzt dann .mit-3d. Diese Regeln stehen
+         inline, weil sie auch ohne JavaScript tragen muessen. -->
+    <style>
+      :root:not(.mit-3d) #scene { display: none; }
+      body { margin: 0; background: linear-gradient(#dceaf7, #f3e9dd); color: #22303f; }
+      #abseits {
+        min-height: 100vh; box-sizing: border-box; padding: 24px 16px;
+        display: grid; place-content: center; justify-items: center; gap: 28px; text-align: center;
+        font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+      }
+      #abseits h1 { margin: 0; font-size: 30px; letter-spacing: -0.01em; }
+      #abseits .text p { margin: 6px auto 0; max-width: 30em; font-size: 16px; }
+      #hinweis:empty { display: none; }
+      #abseits .zurueck { display: inline-block; color: inherit; font-size: 18px; font-weight: 800; text-underline-offset: 4px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <main id="abseits">
+      <p id="hinweis" class="frost" aria-live="polite"></p>
+      <header class="text frost">
+        <h1>Diese Piste gibt’s nicht</h1>
+        <p>Die Absperrung kam leider einen Fahrer zu spät.</p>
+      </header>
+      <a class="zurueck frost" href="/"><span aria-hidden="true">←</span> Zurück ins Tal</a>
+    </main>
+    <script type="module" src="/src/abseits/main.js"></script>
+  </body>
+</html>

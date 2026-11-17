@@ -2,9 +2,9 @@ import * as THREE from 'three'
 import { FALL } from '../world/props/frozen-fall.js'
 import { CAMERA } from '../config.js'
 
-// Was gerade auf broadcast.veerka.mp laeuft, eingefroren in die Quelle am
+// Was gerade auf funk.veerka.mp laeuft, eingefroren in die Quelle am
 // See (world/props/frozen-fall.js). Der Worker reicht Stand und Dateien
-// unter /api/broadcast/* durch, siehe worker/broadcast.js.
+// unter /api/funk/* durch, siehe worker/funk.js.
 //
 // Gefragt wird nur, wer in die Naehe kommt – die allermeisten Besucher
 // fahren nie an den See, und fuer sie geht keine Anfrage raus. Danach
@@ -15,7 +15,7 @@ import { CAMERA } from '../config.js'
 // Text: Videos liefen nicht zuverlaessig und sind seit 27.09. wieder
 // draussen. Eine Sendung nur mit Video zeigt wie andere Dateien den Namen.
 
-const API = '/api/broadcast'
+const API = '/api/funk'
 const NEAR = 55          // m: ab hier wird gefragt
 // Klar ist das Bild auf der vorderen Haelfte des Sees (der Fuss des Falls
 // steht 18 m von der Seemitte), dann verschwindet es hinter dem Reif.
@@ -169,7 +169,7 @@ function vorWann(ms) {
   return tage === 1 ? 'seit gestern' : `seit ${tage} Tagen`
 }
 
-export class BroadcastFeed {
+export class FunkFeed {
   constructor(fall, position) {
     this.fall = fall
     this.position = position
@@ -237,15 +237,15 @@ export class BroadcastFeed {
 
   // Fuer die Einladung und die Auswahl.
   get hint() {
-    if (this.message === undefined) return 'Broadcast'
+    if (this.message === undefined) return 'Funk'
     if (!this.message) return 'Funkstille'
     return 'Gerade auf Sendung'
   }
 
   get sub() {
     const m = this.message
-    if (m === undefined) return 'broadcast.veerka.mp'
-    if (!m) return 'Funkstille · broadcast.veerka.mp'
+    if (m === undefined) return 'funk.veerka.mp'
+    if (!m) return 'Funkstille · funk.veerka.mp'
     const bilder = m.attachments.filter((a) => a.inline === 'image').length
     const art = bilder ? (bilder > 1 ? `${bilder} Bilder` : 'Bild')
       : m.text ? 'Text' : 'Dateien'

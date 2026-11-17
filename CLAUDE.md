@@ -79,7 +79,7 @@ Das Wichtigste in Kürze:
   Wohnt im Schuppen am Ende der Nordabfahrt (`SCHUPPEN` im Höhenfeld) und
   fährt eine feste Runde; auf der Brücke trägt sie `stegDeck()`.
 
-- **Kinderland** (`src/world/areas/kinderland.js`, HANDOVER 4a¹²): Teppich,
+- **Kinderland** (`src/world/areas/kinderland.js`, HANDOVER 4a¹³): Teppich,
   Karussell, Tierslalom (außen umfahren), zwei Trampoline hintereinander auf
   der Westabfahrt (Fangnetz-Mechanik, liegend; unter dem Tuch eine Mulde, die
   niemand befährt; mit W hinüber, dort kein Salto), Bremsfeld am Fuß des
@@ -101,7 +101,7 @@ Das Wichtigste in Kürze:
   Fels als sichtbare Absperrung; Netze sparsam.
 
 `npm run dev` startet (Tal auf `/`, Kabelsee auf `/kabelsee/`),
-`npm run dev:api` den Worker dazu (Bestenlisten, Broadcast). `npm test` und `npm run build` müssen durchlaufen, bevor etwas
+`npm run dev:api` den Worker dazu (Bestenlisten, Funk). `npm test` und `npm run build` müssen durchlaufen, bevor etwas
 fertig ist. Zum Prüfen im Browser: `window.__ski` und `S.step(frames, dt)`; am See
 `window.__kabel`, im Tal `__ski.sommer.see`.
 Fremde Dienste (Kurzlink, Upload) hängen an Hostlisten – siehe HANDOVER 4c.

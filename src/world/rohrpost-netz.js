@@ -42,7 +42,7 @@ const IM_EIS = 30         // s steht es insgesamt im Eis
 
 export class RohrpostNetz {
   // quelle: die Station der gefrorenen Quelle (Position, Boden, Fokus),
-  // feed: ihre Anzeige (stations/broadcast.js) – dort steht nach der
+  // feed: ihre Anzeige (stations/funk.js) – dort steht nach der
   // Ankunft kurz das hochgeladene Bild.
   constructor({ pipe, tower, world, camera, input, quelle = null, feed = null }) {
     this.pipe = pipe

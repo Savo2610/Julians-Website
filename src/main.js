@@ -165,7 +165,7 @@ input.onAction = (action) => sommer.taste(action) || interaction.press(action)
 // Ereignis, damit dialogs/upload.js nichts vom Tal wissen muss.
 const rohrpost = new RohrpostNetz({
   pipe: props.rohrpost, tower: props.landscape.tower, world, camera: chase, input,
-  quelle: stations.stations.find((s) => s.id === 'broadcast'), feed: props.broadcast,
+  quelle: stations.stations.find((s) => s.id === 'funk'), feed: props.funk,
 })
 interaction.rohrpost = rohrpost
 addEventListener('rohrpost', (e) => rohrpost.versenden(e.detail))

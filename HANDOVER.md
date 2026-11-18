@@ -267,7 +267,7 @@ Strang zu Ende fahren kann.
 | Rohrpost | −19, 25 | Klappe auf, Upload-Fenster; beim Schließen der Versand (4a, Rohrpost) |
 | Abkürzung (Felstunnel) | −34, 15 | Kurzlink-Fenster |
 | Arbeitszeitrechner (Stechuhr) | −41, 13 | zoomt, Zeiger rasen; öffnen stempelt, dann zeit.veerka.mp |
-| Packlisten-App (Depot) | −48, 0 | zoomt, Deckel klappt, Inhalt hüpft; packliste.veerka.mp |
+| Tourenbüro (Depot, md) | −48, 0 | zoomt; Dokument, Board, Memos, Packliste auf md.veerka.mp (4a¹⁴) |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | zoomt, Blaulicht an; „Ausrücken“ fährt los und wechselt im selben Tab zu jf.veerka.mp/?einfahrt=1 (am Waldrand, eigene Baumgruppen) |
 | Gefrorene Quelle (Eisfall am See) | −56,2, 27,7 (Fuß) | funk.veerka.mp, zeigt die laufende Sendung (4a⁵) |
@@ -2010,6 +2010,38 @@ anderen Uhrzeiten.
   Wimpelketten westlich der Trampoline sind weg. PISTEN & PARK läuft
   westlich an den zwei Schneemännern vorbei (eine Stange stand 0,7 m neben
   dem orangen).
+
+## 4a¹⁴. Tourenbüro: md.veerka.mp im Tal (18.11., Zweig `tourenbuero`)
+
+md.veerka.mp vereint Markdown-Dokument, Whiteboard, Memos und die frühere
+Packliste (packliste.veerka.mp leitet seit 11/2026 auf `md.veerka.mp/pack`
+um). Statt einer fünften Tools-Station ist das **Depot gewachsen**: Vor
+jeder Tour wird geschrieben, skizziert, notiert und gepackt – genau die
+vier Teile von md. `props/tourenbuero.js` stellt um die alte Kiste
+(`gear-depot.js`, unverändert) ein Holzpodest (4,5 × 2,4 m) mit Tafelwand,
+Vordach und Schild TOURENBÜRO, links ein Stehpult.
+
+- **Auswahl** in der Reihenfolge des Aufbaus von links: Dokument (Pult,
+  `md.veerka.mp`), Board (Tafel, `/#board` legt ein neues an), Memos
+  (Pinnwand, `/memos`, braucht Konto), Packliste (Kiste, `/pack`, die
+  zuletzt benutzte oder eine neue). Adressen in `LINKS` (`md`, `board`,
+  `memos`, `packlist`).
+- **Vorführungen**: Am Pult tippt sich die Seite neu, Markdown-Zeichen
+  blass wie im md-Editor, dahinter blinkt der blaue Cursor des md-Symbols.
+  An der Tafel holt der lila Marker die Route zum Gipfel nach (1,6 s) und
+  legt sich zurück; senkrecht zur Tafel zeigte er genau zur Kamera und war
+  nur ein Punkt, deshalb schräg nach rechts unten. An der Pinnwand fliegt
+  ein neues Memo oben links an (in der App steht das neueste oben), die
+  Zettel flattern; abgewählt verschwindet es wieder. Die Kiste wie bisher.
+- Marker und Seite sind größer als echt: in Originalgröße las man aus 9 m
+  (`focus.abstand`) weder Text noch Stift.
+- Tafel 0,2 rad zurückgelehnt, Unterkante 1,0 m über dem Podest: der
+  aufgeklappte Deckel der Kiste (Oberkante 1,25 m, 0,5 m davor) verdeckt
+  sie so aus 36° nicht.
+- Station-Id bleibt `packlist`, damit Pistenpass-Stände (`erkundet`) und
+  Kacheln weiter passen; angezeigt wird überall „Tourenbüro“.
+- Übersicht: unter Meine Tools die Kacheln **md** (Pick 0) und
+  **Packliste** (Pick 3).
 
 ## 4b. Handymodus
 

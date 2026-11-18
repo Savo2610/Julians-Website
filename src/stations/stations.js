@@ -6,7 +6,7 @@ import { createCabin } from '../world/props/cabin.js'
 import { createDrone } from '../world/props/drone.js'
 import { createFireTruck } from '../world/props/firetruck.js'
 import { createShortcutTunnel } from '../world/props/shortcut-tunnel.js'
-import { createGearDepot } from '../world/props/gear-depot.js'
+import { createTourenbuero } from '../world/props/tourenbuero.js'
 import { createWorkbench } from '../world/props/workbench.js'
 import { createTicketBooth } from '../world/props/ticket-booth.js'
 import { createTimeClock } from '../world/props/time-clock.js'
@@ -72,7 +72,7 @@ export const STATION_SPOTS = {
   clock:     { x: -41, z: 13, clearing: 3, footprint: 1.4, search: 1, trail: 'tools' },
   pipe:      { x: -19, z: 25, clearing: 8, footprint: 1.4, search: 6, trail: 'tools' },
   tunnel:    { x: -34, z: 15, clearing: 9, footprint: 2.0, search: 6, trail: 'tools' },
-  depot:     { x: -48, z: 0, clearing: 8, footprint: 2.0, search: 7, trail: 'tools' },
+  depot:     { x: -48, z: 0, clearing: 8, footprint: 2.6, search: 7, trail: 'tools' },
 
   // Abseits der Wege – nur wer stoebert, findet sie.
   //
@@ -379,22 +379,42 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     },
   })
 
-  const depot = createGearDepot()
-  place(depot, STATION_SPOTS.depot, { rotation: FACING - 0.25, collider: 1.1 })
+  // Das Tourenbuero (props/tourenbuero.js) ist das alte Depot, gewachsen:
+  // md.veerka.mp hat die Packliste aufgenommen, also stehen um die Kiste
+  // jetzt Tafel, Pinnwand und Pult – je eins der vier Werkzeuge. Die Id
+  // bleibt 'packlist', damit der Pistenpass den Ort nicht vergisst.
+  const buero = createTourenbuero()
+  place(buero, STATION_SPOTS.depot, { rotation: FACING })
+  {
+    const cos = Math.cos(FACING)
+    const sin = Math.sin(FACING)
+    for (const c of buero.userData.kollision) {
+      world.addCollider(
+        STATION_SPOTS.depot.x + c.dx * cos + c.dz * sin,
+        STATION_SPOTS.depot.z - c.dx * sin + c.dz * cos,
+        c.r,
+      )
+    }
+  }
   register({
     id: 'packlist',
-    label: 'Packlisten-App',
-    hint: 'Liste aufschlagen',
-    color: '#c98a3a',
-    url: LINKS.packlist,
+    label: 'Tourenbüro',
+    hint: 'Tour planen',
+    color: '#1287d8',
     position: STATION_SPOTS.depot,
-    radius: 5,
-    labelHeight: world.heightAt(STATION_SPOTS.depot.x, STATION_SPOTS.depot.z) + 2.6,
-    object: depot,
-    // Die Kiste ist kaum anderthalb Meter breit.
-    focus: { abstand: 6.5, hoehe: 0.6, vor: 0.9 },
+    radius: 6,
+    labelHeight: world.heightAt(STATION_SPOTS.depot.x, STATION_SPOTS.depot.z) + 3.6,
+    object: buero,
+    // Gut vier Meter breit: so weit weg, dass Pult und Kiste beide im Bild
+    // stehen, so nah, dass man die Seite auf dem Pult noch liest.
+    focus: { abstand: 9, hoehe: 1.1, vor: 1.0 },
+    // Reihenfolge wie im Aufbau von links nach rechts: Pult, Tafel,
+    // Pinnwand, Kiste.
     choices: [
-      { label: 'Packliste', sub: 'packliste.veerka.mp', glyph: 'liste', url: LINKS.packlist, color: '#c98a3a' },
+      { label: 'Dokument', sub: 'md.veerka.mp', glyph: 'md', url: LINKS.md, color: '#1287d8' },
+      { label: 'Board', sub: 'Skizzieren & planen', glyph: 'board', url: LINKS.board, color: '#7b5fd1' },
+      { label: 'Memos', sub: 'Kurznotizen', glyph: 'memo', url: LINKS.memos, color: '#c99410' },
+      { label: 'Packliste', sub: 'Nichts vergessen', glyph: 'liste', url: LINKS.packlist, color: '#c98a3a' },
     ],
   })
 

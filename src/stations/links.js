@@ -28,7 +28,14 @@ export const LINKS = {
   // Eigene Dienste
   upload: 'https://upload.veerka.mp',
   shortener: 'https://s.veerka.mp',
-  packlist: 'https://packliste.veerka.mp',
+  // md.veerka.mp vereint Dokument, Whiteboard, Memos und die Packliste, die
+  // vorher packliste.veerka.mp war (leitet seit 11/2026 dorthin um). Alle
+  // vier haengen am Tourenbuero. /#board und /#pack legen etwas Neues an,
+  // /pack oeffnet die zuletzt benutzte Liste, /memos braucht ein Konto.
+  md: 'https://md.veerka.mp',
+  board: 'https://md.veerka.mp/#board',
+  memos: 'https://md.veerka.mp/memos',
+  packlist: 'https://md.veerka.mp/pack',
   worktime: 'https://zeit.veerka.mp',
   // Haengt an der gefrorenen Quelle am See, die zeigt, was dort laeuft.
   funk: 'https://funk.veerka.mp',

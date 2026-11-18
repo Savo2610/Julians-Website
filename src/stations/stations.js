@@ -9,7 +9,7 @@ import { createShortcutTunnel } from '../world/props/shortcut-tunnel.js'
 import { createTourenbuero } from '../world/props/tourenbuero.js'
 import { createWorkbench } from '../world/props/workbench.js'
 import { createTicketBooth } from '../world/props/ticket-booth.js'
-import { createTimeClock } from '../world/props/time-clock.js'
+import { createEinmalblock } from '../world/props/einmalblock.js'
 import { createGipfelbuch } from '../world/props/gipfelbuch.js'
 import { gipfelbuchOeffnen } from '../menu/gipfelbuch.js'
 import { CAMERA } from '../config.js'
@@ -62,14 +62,13 @@ export const STATION_SPOTS = {
   ticket:    { x: -40, z: -2, clearing: 9, footprint: 2.4, search: 2.5, trail: 'social' },
 
   // Weg 3 – Werkzeuge
-  // Die Stechuhr stand am Anfang des Weges und war damit das Erste, was man
-  // von den Werkzeugen sah – das langweiligste zuerst. Jetzt steht sie
-  // hinter der Abkuerzung am linken Rand, an der Waldkante zum See hin,
-  // gut drei Meter neben dem Weg: wer ihn zu Ende faehrt, sieht sie, aber
-  // sie draengt sich nicht vor Rohrpost und Abkuerzung. Die Lichtung ist
-  // mit drei Metern klein, damit die Baeume dahinter stehen bleiben – sie
-  // sind der Rand, an dem sie lehnt. Gefaelle dort 0,07.
-  clock:     { x: -41, z: 13, clearing: 3, footprint: 1.4, search: 1, trail: 'tools' },
+  // Der Einmalblock liegt, wo bis 18.11. die Stechuhr stand: hinter der
+  // Abkuerzung am linken Rand, an der Waldkante zum See hin, gut drei Meter
+  // neben dem Weg – wer ihn zu Ende faehrt, sieht ihn, aber er draengt sich
+  // nicht vor Rohrpost und Abkuerzung. Die Lichtung ist mit drei Metern
+  // klein, damit die Baeume dahinter stehen bleiben – sie sind der Rand,
+  // an dem der Stumpf steht. Gefaelle dort 0,07.
+  block:      { x: -41, z: 13, clearing: 3, footprint: 1.4, search: 1, trail: 'tools' },
   pipe:      { x: -19, z: 25, clearing: 8, footprint: 1.4, search: 6, trail: 'tools' },
   tunnel:    { x: -34, z: 15, clearing: 9, footprint: 2.0, search: 6, trail: 'tools' },
   depot:     { x: -48, z: 0, clearing: 8, footprint: 2.6, search: 7, trail: 'tools' },
@@ -345,38 +344,30 @@ export function populateStations(world, registry, { rundflug = () => {} } = {}) 
     onUse: () => kurzDialog(),
   })
 
-  // Stechuhr, Depot und Loeschzug oeffneten frueher sofort ihre Seite. Wer
+  // Einmalblock, Depot und Loeschzug oeffneten frueher sofort ihre Seite. Wer
   // im Tal gelernt hat, dass man ueberall heranfahren und etwas ausloesen
   // kann, stand dann ploetzlich woanders. Jetzt zoomen sie heran wie die
-  // Stationen mit zwei Zielen und fuehren erst etwas vor: die Uhr rast,
-  // das Depot zaehlt durch, der Loeschzug schaltet das Blaulicht an. Die
-  // Auswahl hat dann nur ein Ziel – Enter oder Tippen oeffnet es.
-  const clock = createTimeClock()
-  place(clock, STATION_SPOTS.clock, { rotation: FACING, collider: 0.5 })
-  const stempeln = () => {
-    if (LINKS.worktime) window.open(LINKS.worktime, '_blank', 'noopener,noreferrer')
-  }
+  // Stationen mit zwei Zielen und fuehren erst etwas vor: ein Blatt
+  // verbrennt, das Depot zaehlt durch, der Loeschzug schaltet das Blaulicht
+  // an. Die Auswahl hat dann nur ein Ziel – Enter oder Tippen oeffnet es.
+  const block = createEinmalblock()
+  place(block, STATION_SPOTS.block, { rotation: FACING, collider: 0.5 })
   register({
-    id: 'worktime',
-    label: 'Arbeitszeitrechner',
-    hint: LINKS.worktime ? 'Stempeln' : 'noch nicht verlinkt',
-    color: '#37b87c',
-    position: STATION_SPOTS.clock,
+    id: 'pad',
+    label: 'One-Time-Pad',
+    hint: 'Blatt abreißen',
+    color: '#d9452b',
+    url: LINKS.pad,
+    position: STATION_SPOTS.block,
     radius: 4.5,
-    labelHeight: world.heightAt(STATION_SPOTS.clock.x, STATION_SPOTS.clock.z) + 3.2,
-    object: clock,
-    focus: { abstand: 7, hoehe: 1.7, vor: 0.6 },
-    // Beim Oeffnen stempelt sie (press in time-clock.js). Die Karte faehrt
-    // auch dann heraus, wenn noch keine Adresse hinterlegt ist – das Geraet
-    // funktioniert, nur der Link fehlt, und das soll man am Geraet sehen.
+    labelHeight: world.heightAt(STATION_SPOTS.block.x, STATION_SPOTS.block.z) + 2.4,
+    object: block,
+    // Stumpf und Schale zusammen sind gut anderthalb Meter breit, der Block
+    // liegt auf 0,7 m Hoehe. Bei 5,5 m Abstand blieben die Ziffern Grau.
+    focus: { abstand: 4, hoehe: 0.5, vor: 0.5 },
     choices: [
-      { label: 'Arbeitszeit', sub: 'zeit.veerka.mp', glyph: 'uhr', color: '#37b87c', action: stempeln },
+      { label: 'Pad', sub: 'pad.veerka.mp', glyph: 'pad', url: LINKS.pad, color: '#d9452b' },
     ],
-    // Aus der Uebersicht heraus, ohne Heranzoomen.
-    onUse: () => {
-      clock.userData.stamp?.()
-      stempeln()
-    },
   })
 
   // Das Tourenbuero (props/tourenbuero.js) ist das alte Depot, gewachsen:

@@ -15,7 +15,7 @@ als Liste zur Verfügung, wenn man keine Lust hat zu spielen.
 | Skikasse | PayPal, Solana, Tickets für Drohnen-Rundflug und Kabelsee |
 | Rohrpost | Upload (upload.veerka.mp) |
 | Abkürzung | Kurzlink (s.veerka.mp) |
-| Stechuhr | Arbeitszeitrechner (zeit.veerka.mp) |
+| Einmalblock | One-Time-Pad-Messenger (pad.veerka.mp) |
 | Materialdepot | Packliste (packliste.veerka.mp) |
 | Drohne | Uniprojekt, Rundflug (nicht auf der Karte) |
 | Löschzug | Lernwerkstatt der Jugendfeuerwehr (nicht auf der Karte) |

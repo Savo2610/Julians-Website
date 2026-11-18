@@ -178,7 +178,7 @@ html.touch .sheet-option .opt-go { display: none; }
 .sheet-keys kbd { height: 20px; min-width: 20px; font-size: 10.5px; }
 .sheet-keys i { width: 3px; height: 3px; margin: 0 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
 .k-waehlen { display: contents; }
-/* Ein einzelnes Ziel (Stechuhr, Depot, Loeschzug): schmaler, sonst wird der
+/* Ein einzelnes Ziel (Einmalblock, Depot, Loeschzug): schmaler, sonst wird der
    Schein zu einem langen Oval, und ohne Wahl auch ohne Pfeiltasten. */
 .station-sheet.einzeln { width: min(280px, calc(100vw - 24px)); }
 .station-sheet.einzeln .k-waehlen { display: none; }

@@ -6,7 +6,7 @@ import { CAMERA } from '../config.js'
 // Kamera faehrt auf das Objekt zu, unten klappt die Auswahl auf, und die
 // Pfeiltasten wechseln zwischen den Zielen. Das Objekt zeigt mit, welches
 // gewaehlt ist, und fuehrt beim Heranzoomen etwas vor. Das gilt auch fuer
-// Stationen mit nur einem Ziel (Stechuhr, Depot, Loeschzug): wer im Tal
+// Stationen mit nur einem Ziel (Einmalblock, Depot, Loeschzug): wer im Tal
 // lernt, dass man heranfaehrt und etwas ausloest, soll nicht ploetzlich
 // auf einer anderen Seite stehen. Sofort geht nur auf, was ein Fenster ist
 // (Rohrpost, Abkuerzung).

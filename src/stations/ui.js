@@ -37,8 +37,9 @@ const GLYPHS = {
   uni: '<svg viewBox="0 0 24 24"><path d="M2.5 9.5 12 5l9.5 4.5L12 14z" fill="currentColor"/><path d="M6.5 11.6v4.2c1.4 1.5 3.3 2.2 5.5 2.2s4.1-.7 5.5-2.2v-4.2M20 10.3v5.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   // Der Funkturm von funk.veerka.mp: Mast mit zwei Wellen.
   funk: '<svg viewBox="0 0 24 24"><path d="M12 10.5 8.2 21M12 10.5l3.8 10.5M9.4 17.6h5.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8.6" r="1.9" fill="currentColor"/><path d="M8.3 5.2a5 5 0 0 0 0 6.8M15.7 5.2a5 5 0 0 1 0 6.8M5.6 2.8a8.6 8.6 0 0 0 0 11.6M18.4 2.8a8.6 8.6 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
-  // Stechuhr, Klemmbrett mit Haken, Blaulicht mit Strahlen.
-  uhr: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.4 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  // Abreissblock mit Leimrand und Zifferngruppen, Klemmbrett mit Haken,
+  // Blaulicht mit Strahlen.
+  pad: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="1.6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 4h15v3.4h-15z" fill="currentColor"/><path d="M8 11.5h3M13 11.5h3M8 15.5h3M13 15.5h3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
   liste: '<svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 3.5h6v2.6H9z" fill="currentColor"/><path d="m8 11 1.4 1.4L12 10M8 16l1.4 1.4L12 15M14 11.4h2.5M14 16.4h2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   // md: das Symbol der Seite – Zeilen und ein Cursor; Board: Tafel mit
   // Zettel und Pfeil; Memos: zwei Zettel uebereinander.

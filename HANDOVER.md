@@ -266,7 +266,7 @@ Strang zu Ende fahren kann.
 | Kontakt (Telefon + Fernglas) | 2, −3,5 | Auswahl: Signal / Instagram |
 | Rohrpost | −19, 25 | Klappe auf, Upload-Fenster; beim Schließen der Versand (4a, Rohrpost) |
 | Abkürzung (Felstunnel) | −34, 15 | Kurzlink-Fenster |
-| Arbeitszeitrechner (Stechuhr) | −41, 13 | zoomt, Zeiger rasen; öffnen stempelt, dann zeit.veerka.mp |
+| Einmalblock (Baumstumpf + Feuerschale, bis 18.11. Stechuhr) | −41, 13 | zoomt, oberstes Blatt reißt ab und verbrennt; pad.veerka.mp |
 | Tourenbüro (Depot, md) | −48, 0 | zoomt; Dokument, Board, Memos, Packliste auf md.veerka.mp (4a¹⁴) |
 | Abgestürzte Drohne | 51, 20 | Uniprojekt |
 | Löschzug (Feuerwehrauto) | −15, 43 | zoomt, Blaulicht an; „Ausrücken“ fährt los und wechselt im selben Tab zu jf.veerka.mp/?einfahrt=1 (am Waldrand, eigene Baumgruppen) |

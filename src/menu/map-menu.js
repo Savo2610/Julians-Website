@@ -42,7 +42,7 @@ const VERSTECKT = new Set(['talplan', 'drone', 'firetruck', 'funk'])
 const WEG = {
   werkstatt: 'career',
   kontakt: 'social', kasse: 'social', gipfelbuch: 'social',
-  worktime: 'tools', upload: 'tools', shortener: 'tools', packlist: 'tools',
+  pad: 'tools', upload: 'tools', shortener: 'tools', packlist: 'tools',
 }
 
 // Wie auf der alten Kachelseite: ein Satz nach dem anderen, getippt und

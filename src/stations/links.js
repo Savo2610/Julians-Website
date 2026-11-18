@@ -36,7 +36,7 @@ export const LINKS = {
   board: 'https://md.veerka.mp/#board',
   memos: 'https://md.veerka.mp/memos',
   packlist: 'https://md.veerka.mp/pack',
-  worktime: 'https://zeit.veerka.mp',
+  pad: 'https://pad.veerka.mp',
   // Haengt an der gefrorenen Quelle am See, die zeigt, was dort laeuft.
   funk: 'https://funk.veerka.mp',
 

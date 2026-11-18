@@ -33,7 +33,7 @@ export const ORTE_ERKUNDET = [
   { id: 'upload', name: 'Rohrpost' },
   { id: 'shortener', name: 'Abkürzung' },
   { id: 'worktime', name: 'Stechuhr' },
-  { id: 'packlist', name: 'Packliste' },
+  { id: 'packlist', name: 'Tourenbüro' },
   { id: 'drone', name: 'Drohne', versteckt: true },
   { id: 'firetruck', name: 'Löschzug', versteckt: true },
   { id: 'see', name: 'See' },

@@ -30,7 +30,7 @@ export const KACHELN = [
     { icon: '🔗', label: 'Kurzlink', sub: 'Links kürzen', link: 'shortener', station: 'shortener' },
     { icon: '📝', label: 'md', sub: 'Schreiben, Boards & Memos', link: 'md', station: 'packlist', pick: 0 },
     { icon: '🎒', label: 'Packliste', sub: 'Nichts vergessen', link: 'packlist', station: 'packlist', pick: 3 },
-    { icon: '⏱️', label: 'Arbeitszeit', sub: 'Wie lange arbeitest du?', link: 'worktime', station: 'worktime' },
+    { icon: '🔐', label: 'Pad', sub: 'Unknackbar schreiben', link: 'pad', station: 'pad' },
     { icon: '📤', label: 'File Uploader', sub: 'Sende mir Dateien', link: 'upload', station: 'upload' },
   ] },
   // Spotify hat noch keinen Platz im Tal (HANDOVER, Offen); Komoot liegt im

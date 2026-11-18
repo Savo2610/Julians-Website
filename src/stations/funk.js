@@ -19,7 +19,7 @@ const API = '/api/funk'
 const NEAR = 55          // m: ab hier wird gefragt
 // Klar ist das Bild auf der vorderen Haelfte des Sees (der Fuss des Falls
 // steht 18 m von der Seemitte), dann verschwindet es hinter dem Reif.
-// Seitlich zaehlt jeder Meter 1,6-fach: Stechuhr und Abkuerzung liegen
+// Seitlich zaehlt jeder Meter 1,6-fach: Einmalblock und Abkuerzung liegen
 // 21 und 26 m weg, aber genau seitlich vom Fall (vorn 0,3 und 6,7 m) –
 // dort war das Bild schon klar, gesehen von der Seite. Gewichtet sind es
 // 34 und 40 m, also ganz im Reif; die Seemitte bleibt bei 17 m klar.

@@ -32,7 +32,7 @@ export const ORTE_ERKUNDET = [
   { id: 'kasse', name: 'Skikasse' },
   { id: 'upload', name: 'Rohrpost' },
   { id: 'shortener', name: 'Abkürzung' },
-  { id: 'worktime', name: 'Stechuhr' },
+  { id: 'pad', name: 'Einmalblock' },
   { id: 'packlist', name: 'Tourenbüro' },
   { id: 'drone', name: 'Drohne', versteckt: true },
   { id: 'firetruck', name: 'Löschzug', versteckt: true },
@@ -76,6 +76,9 @@ function laden() {
   try { d = JSON.parse(localStorage.getItem(STORE)) } catch { /* leer oder gesperrt */ }
   if (!d || typeof d !== 'object') return { erreicht: {}, orte: [] }
   const orte = new Set(Array.isArray(d.orte) ? d.orte : [])
+  // Die Stechuhr ist seit 18.11. der Einmalblock, am selben Platz. Wer sie
+  // gefunden hatte, kennt den Ort schon.
+  if (orte.delete('worktime')) orte.add('pad')
   const erreicht = {}
   for (const [id, t] of Object.entries(d.erreicht ?? {})) if (MELDBAR.has(id)) erreicht[id] = t
   return { erreicht, orte: [...orte].filter((id) => IST_ORT.has(id)) }

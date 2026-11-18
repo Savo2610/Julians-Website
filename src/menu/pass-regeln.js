@@ -7,7 +7,7 @@ import { terraceDistance } from '../world/areas/apres-layout.js'
 // Stelle. Nur Tricks kommen als Meldung herein – der Fahrer legt sie ab, und
 // main.js raeumt sie im selben Bild wieder weg.
 
-const STATIONEN = ['werkstatt', 'kontakt', 'kasse', 'upload', 'shortener', 'worktime', 'packlist', 'drone', 'firetruck']
+const STATIONEN = ['werkstatt', 'kontakt', 'kasse', 'upload', 'shortener', 'pad', 'packlist', 'drone', 'firetruck']
 
 // Am Tellerlift: so weit muss man zur Seite, damit ein Wechsel zaehlt. Die
 // Spur laesst 1,7 zu; 1,1 heisst deutlich ausgeschert, nicht nur gezuckt.
